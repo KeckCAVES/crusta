@@ -22,6 +22,12 @@ LIB_VRUI = $(HOME)/dev/lib/vrui
 #configuration dependent parameters
 TMP_DIR_ROOT = tmp
 
+INITIAL_TARGET =
+ifeq ($(cfg),)
+  TARGET        =
+  INITIAL_TARGET = debug
+endif
+
 ifeq ($(cfg),debug)
   TMP_DIR    = $(TMP_DIR_ROOT)/dbg
   TARGET     = $(PROJECT)_d
@@ -64,14 +70,14 @@ SRC_FILES      += $(shell find $(SRC_DIRS) -type f -name '*.c')
 SRC_OBJS        = $(patsubst $(SRC_DIRS)/%, $(TMP_DIR)/%o, $(SRC_FILES))
 SRC_DEPS        = $(patsubst $(SRC_DIRS)/%, $(TMP_DIR)/%d, $(SRC_FILES))
 
-.DEFAULT_GOAL   := debug
-.PHONY: debug clean superclean debug-clean debug-superclean\
+.PHONY: all debug clean superclean debug-clean debug-superclean\
         release release-clean release-superclean\
         profile profile-clean profile-superclean\
         print_header directories internal-clean internal-superclean
 
+all: $(INITIAL_TARGET)$(TARGET)
 debug:
-	@make cfg=debug $(TARGET)
+	@make cfg=debug 
 clean: debug-clean
 superclean: debug-superclean
 debug-clean:
@@ -79,13 +85,13 @@ debug-clean:
 debug-superclean:
 	@make cfg=debug internal-superclean
 release:
-	@make cfg=release $(TARGET)
+	@make cfg=release 
 release-clean:
 	@make cfg=release internal-clean
 release-superclean:
 	@make cfg=release internal-superclean
 profile:
-	@make cfg=profile $(TARGET)
+	@make cfg=profile 
 profile-clean:
 	@make cfg=profile profile-clean
 profile-superclean:

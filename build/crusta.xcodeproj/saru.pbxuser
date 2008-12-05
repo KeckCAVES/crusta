@@ -12,7 +12,7 @@
 				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
 				PBXFileTableDataSourceColumnWidthsKey = (
 					20,
-					364,
+					834,
 					20,
 					48,
 					43,
@@ -54,6 +54,14 @@
 			PBXPerProjectTemplateStateSaveDate = 248859076;
 			PBXWorkspaceStateSaveDate = 248859076;
 		};
+		perUserProjectItems = {
+			5C6D6C490ED68DA60094927A /* PBXTextBookmark */ = 5C6D6C490ED68DA60094927A /* PBXTextBookmark */;
+			5C6D6C4B0ED68DA60094927A /* PBXTextBookmark */ = 5C6D6C4B0ED68DA60094927A /* PBXTextBookmark */;
+			5C6D6C4C0ED68DA60094927A /* PBXTextBookmark */ = 5C6D6C4C0ED68DA60094927A /* PBXTextBookmark */;
+			5C6D6C4E0ED68DA60094927A /* PBXTextBookmark */ = 5C6D6C4E0ED68DA60094927A /* PBXTextBookmark */;
+			5C6D6C4F0ED68DA60094927A /* PBXTextBookmark */ = 5C6D6C4F0ED68DA60094927A /* PBXTextBookmark */;
+			5C6D6C510ED68DA60094927A /* PBXTextBookmark */ = 5C6D6C510ED68DA60094927A /* PBXTextBookmark */;
+		};
 		sourceControlManager = 5CF9B5180ED4CFA400B60E0C /* Source Control */;
 		userBuildSettings = {
 			OBJROOT = /Users/saru/dev/proj/Crusta/build/tmp;
@@ -62,10 +70,95 @@
 	};
 	5C6D6C3B0ED549F10094927A /* makefile */ = {
 		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {1012, 1932}}";
-			sepNavSelRange = "{3969, 0}";
-			sepNavVisRange = "{2692, 1277}";
+			sepNavIntBoundsRect = "{{0, 0}, {1012, 2002}}";
+			sepNavSelRange = "{3383, 0}";
+			sepNavVisRange = "{2633, 1390}";
 		};
+	};
+	5C6D6C440ED557370094927A /* main.cpp */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {1012, 555}}";
+			sepNavSelRange = "{105, 0}";
+			sepNavVisRange = "{0, 107}";
+		};
+	};
+	5C6D6C490ED68DA60094927A /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 5C6D6C4A0ED68DA60094927A /* makefile */;
+		name = "makefile: 1";
+		rLen = 0;
+		rLoc = 0;
+		rType = 0;
+		vrLen = 2334;
+		vrLoc = 27609;
+	};
+	5C6D6C4A0ED68DA60094927A /* makefile */ = {
+		isa = PBXFileReference;
+		name = makefile;
+		path = "/Users/saru/dev/proj/Vrui-1.0-053/makefile";
+		sourceTree = "<absolute>";
+	};
+	5C6D6C4B0ED68DA60094927A /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 5C6D6C440ED557370094927A /* main.cpp */;
+		name = "main.cpp: 6";
+		rLen = 0;
+		rLoc = 105;
+		rType = 0;
+		vrLen = 107;
+		vrLoc = 0;
+	};
+	5C6D6C4C0ED68DA60094927A /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 5C6D6C4D0ED68DA60094927A /* makefile */;
+		name = "makefile: 53";
+		rLen = 190;
+		rLoc = 1180;
+		rType = 0;
+		vrLen = 1172;
+		vrLoc = 781;
+	};
+	5C6D6C4D0ED68DA60094927A /* makefile */ = {
+		isa = PBXFileReference;
+		name = makefile;
+		path = /Users/saru/dev/proj/Emineo/build/makefile;
+		sourceTree = "<absolute>";
+	};
+	5C6D6C4E0ED68DA60094927A /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 5C6D6C3B0ED549F10094927A /* makefile */;
+		name = "makefile: 52";
+		rLen = 0;
+		rLoc = 1327;
+		rType = 0;
+		vrLen = 1270;
+		vrLoc = 735;
+	};
+	5C6D6C4F0ED68DA60094927A /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 5C6D6C500ED68DA60094927A /* makefile */;
+		name = "makefile: 53";
+		rLen = 190;
+		rLoc = 1180;
+		rType = 0;
+		vrLen = 1172;
+		vrLoc = 781;
+	};
+	5C6D6C500ED68DA60094927A /* makefile */ = {
+		isa = PBXFileReference;
+		name = makefile;
+		path = /Users/saru/dev/proj/Emineo/build/makefile;
+		sourceTree = "<absolute>";
+	};
+	5C6D6C510ED68DA60094927A /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 5C6D6C3B0ED549F10094927A /* makefile */;
+		name = "makefile: 116";
+		rLen = 0;
+		rLoc = 3383;
+		rType = 0;
+		vrLen = 1390;
+		vrLoc = 2633;
 	};
 	5CF9B5180ED4CFA400B60E0C /* Source Control */ = {
 		isa = PBXSourceControlManager;
