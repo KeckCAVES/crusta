@@ -1,2 +1,0 @@
-tmp/dbg/LodEvaluator.cppo: ../source/LodEvaluator.cpp \
-  ../include/LodEvaluator.h ../include/basics.h ../include/Scope.h
