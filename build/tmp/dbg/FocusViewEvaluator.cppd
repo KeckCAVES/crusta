@@ -1,0 +1,3 @@
+tmp/dbg/FocusViewEvaluator.cppo: ../source/FocusViewEvaluator.cpp \
+  ../include/FocusViewEvaluator.h ../include/LodEvaluator.h \
+  ../include/basics.h

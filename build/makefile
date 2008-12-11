@@ -1,12 +1,10 @@
 #name of your project. Will end up being the name of your binary
-PROJECT         = crusta
+PROJECT         = Crusta
 
 #project directories (for now I can only support a single source directory)
 SRC_DIRS        = ../source
 INCLUDE_DIRS    = ../include
 LIB_DIRS        =
-
-OUTPUT_DIR      = ../bin
 
 #project preprocessor definitions and dependent libraries
 PREPROC         =
@@ -14,7 +12,7 @@ LIBS            =
 
 #project flags
 CFLAGS          = -pipe -Wall
-LFLAGS          = -pipe -fopenmp
+LFLAGS          = -pipe
 
 #default project configuration
 LIB_VRUI = $(HOME)/dev/lib/vrui
@@ -22,15 +20,15 @@ LIB_VRUI = $(HOME)/dev/lib/vrui
 #configuration dependent parameters
 TMP_DIR_ROOT = tmp
 
-INITIAL_TARGET =
+INITIAL_TARGET   =
 ifeq ($(cfg),)
-  TARGET        =
+  TARGET        :=
   INITIAL_TARGET = debug
 endif
 
 ifeq ($(cfg),debug)
   TMP_DIR    = $(TMP_DIR_ROOT)/dbg
-  TARGET     = $(PROJECT)_d
+  TARGET    := $(PROJECT)
   CFLAGS    += -DDEBUG -g3 -O0
   LFLAGS	+=
   include $(LIB_VRUI)/etc/Vrui.debug.makeinclude
@@ -38,20 +36,26 @@ endif
 
 ifeq ($(cfg),profile)
   TMP_DIR    = $(TMP_DIR_ROOT)/prf
-  TARGET     = $(PROJECT)_p
+  TARGET    := $(PROJECT)
   CFLAGS    += -pg
   LFLAGS    += -pg
   include $(LIB_VRUI)/etc/Vrui.debug.makeinclude
 endif
 
 ifeq ($(cfg),release)
-  TMP_DIR   = $(TMP_DIR_ROOT)/rel
-  TARGET    = $(PROJECT)
+  TMP_DIR    = $(TMP_DIR_ROOT)/rel
+  TARGET    := $(PROJECT)
   CFLAGS    += -DRELEASE -O2 -floop-optimize -finline-functions\
                -fstrength-reduce
   LFLAGS    +=
   include $(LIB_VRUI)/etc/Vrui.makeinclude
 endif
+
+#vrui plugin parameters
+TARGET      := $(patsubst %,lib%.$(VRUI_PLUGINFILEEXT),$(TARGET))
+CFLAGS      += $(VRUI_PLUGINCFLAGS)
+LFLAGS      += $(VRUI_PLUGINLINKFLAGS)
+OUTPUT_DIR   = $(VRUI_VISLETSDIR)
 
 #no need to touch anything below this point, unless you know
 #what it is you're doing ;)
@@ -146,4 +150,6 @@ $(TMP_DIR)/%.co: $(SRC_DIRS)/%.c
 	$(depend_source)
 	$(compile_source)
 
--include $(patsubst %, %d, $(SRC_FILES))
+ifeq ($(INITIAL_TARGET),)
+  -include $(SRC_DEPS)
+endif

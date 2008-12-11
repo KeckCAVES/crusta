@@ -7,8 +7,17 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		5C535AAD0EEE33190001C6A8 /* LodEvaluator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LodEvaluator.h; path = ../include/LodEvaluator.h; sourceTree = SOURCE_ROOT; };
+		5C535AAF0EEE365C0001C6A8 /* FocusViewEvaluator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FocusViewEvaluator.h; path = ../include/FocusViewEvaluator.h; sourceTree = SOURCE_ROOT; };
+		5C535AB20EEEFF060001C6A8 /* LodEvaluator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = LodEvaluator.cpp; path = ../source/LodEvaluator.cpp; sourceTree = SOURCE_ROOT; };
+		5C535AD70EEF02090001C6A8 /* Scope.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Scope.h; path = ../include/Scope.h; sourceTree = SOURCE_ROOT; };
+		5C535AED0EEF2E030001C6A8 /* FocusViewEvaluator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FocusViewEvaluator.cpp; path = ../source/FocusViewEvaluator.cpp; sourceTree = SOURCE_ROOT; };
+		5C535B060EEF379E0001C6A8 /* Crusta.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Crusta.h; path = ../include/Crusta.h; sourceTree = SOURCE_ROOT; };
+		5C535B0C0EEF445E0001C6A8 /* Crusta.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Crusta.cpp; path = ../source/Crusta.cpp; sourceTree = SOURCE_ROOT; };
 		5C6D6C3B0ED549F10094927A /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; tabWidth = 4; usesTabs = 0; };
-		5C6D6C440ED557370094927A /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../source/main.cpp; sourceTree = SOURCE_ROOT; };
+		5CEE11D00EEDE8A100DDCF47 /* GlobalGrid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlobalGrid.h; path = ../include/GlobalGrid.h; sourceTree = SOURCE_ROOT; };
+		5CEE11E50EEDF28F00DDCF47 /* Refinement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Refinement.h; path = ../include/Refinement.h; sourceTree = SOURCE_ROOT; };
+		5CEE11F20EEE177D00DDCF47 /* basics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = basics.h; path = ../include/basics.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -25,7 +34,9 @@
 		5CF9B5210ED4CFEC00B60E0C /* sources */ = {
 			isa = PBXGroup;
 			children = (
-				5C6D6C440ED557370094927A /* main.cpp */,
+				5C535AED0EEF2E030001C6A8 /* FocusViewEvaluator.cpp */,
+				5C535AB20EEEFF060001C6A8 /* LodEvaluator.cpp */,
+				5C535B0C0EEF445E0001C6A8 /* Crusta.cpp */,
 			);
 			name = sources;
 			sourceTree = "<group>";
@@ -33,6 +44,13 @@
 		5CF9B5270ED4D05E00B60E0C /* headers */ = {
 			isa = PBXGroup;
 			children = (
+				5C535AD70EEF02090001C6A8 /* Scope.h */,
+				5C535AAD0EEE33190001C6A8 /* LodEvaluator.h */,
+				5CEE11F20EEE177D00DDCF47 /* basics.h */,
+				5CEE11E50EEDF28F00DDCF47 /* Refinement.h */,
+				5CEE11D00EEDE8A100DDCF47 /* GlobalGrid.h */,
+				5C535AAF0EEE365C0001C6A8 /* FocusViewEvaluator.h */,
+				5C535B060EEF379E0001C6A8 /* Crusta.h */,
 			);
 			name = headers;
 			sourceTree = "<group>";
