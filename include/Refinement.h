@@ -2,8 +2,12 @@
 #define _Refinement_H_
 
 #include <basics.h>
+#include <gridProcessing.h>
 
 BEGIN_CRUSTA
+
+class LodEvaluator;
+class VisibilityEvaluator;
 
 /**
     Base class for refinement algorithms on base patches.
@@ -16,10 +20,14 @@ BEGIN_CRUSTA
 class Refinement
 {
 public:
-    Refinement();
+    virtual ~Refinement() {}
+
+    virtual void registerClient(gridProcessing::Id id) = 0;
     
-protected:
-    /** update the refinement based on the given guide */
+    /** generate the ideal multi-scale tiling given the LOD criterion */
+    virtual void refine(VisibilityEvaluator& visibility, LodEvaluator& lod) = 0;
+    /** update registered clients to reflect changes to refinement */
+    virtual void updateClients() const = 0;
 };
 
 END_CRUSTA

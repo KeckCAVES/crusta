@@ -16,7 +16,25 @@ BEGIN_CRUSTA
     data from preprocessed sources (e.g. elevation or texture hierarchies).
 */
 class Scope
-{    
+{
+public:
+    enum {
+        UPPER_LEFT = 0,
+        LOWER_LEFT,
+        LOWER_RIGHT,
+        UPPER_RIGHT
+    };
+
+    Scope() {
+        corners[0] = corners[1] = corners[2] = corners[3] = Point(0);
+    }
+    Scope(const Point& p1, const Point& p2, const Point& p3, const Point& p4) {
+        corners[0] = p1; corners[1] = p2; corners[2] = p3; corners[3] = p4;
+    }
+
+    /** corner points of the scope in cartesian space in counter-clockwise
+        order */
+    Point corners[4];
 };
 
 END_CRUSTA

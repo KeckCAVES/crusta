@@ -16,12 +16,12 @@ class Scope;
  
     The LOD-value returned adheres to the following convention:
     - a negative value characterises the degree to which the evaluated scope is
-      coarser than the ideal. A value smaller or equal to -1 recommends
-      refinement.
+      finer than the ideal. A value smaller or equal to -1 recommends
+      coarsening.
     - a value equal to zero denotes the ideal.
     - a positive value characterises teh degree to which the evaluated scope is
-      finer than the ideal. A value greater or equal to 1 recommends
-      coarsening.
+      coarser than the ideal. A value greater or equal to 1 recommends
+      refinement.
     The LOD-value can be scaled (linearly) to relax or tighten the 
     recommendations at -1 and 1.
  

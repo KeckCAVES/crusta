@@ -3,6 +3,8 @@
 
 #include <LodEvaluator.h>
 
+#include <GL/GLFrustum.h>
+
 BEGIN_CRUSTA
 
 /**
@@ -13,12 +15,9 @@ BEGIN_CRUSTA
 class FocusViewEvaluator : public LodEvaluator
 {
 public:
-    /** guides used during evaluation */
-    struct Guide
-    {
-        /** the specification of the viewing parameters */
-        /** the position of the point of focus */
-    };
+    /** the specification of the viewing parameters */
+    GLFrustum<float> frustum;
+    /** the position of the point of focus */
 
 //- inherited from LodEvaluator
 public:

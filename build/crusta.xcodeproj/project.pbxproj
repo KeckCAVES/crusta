@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		5C31CB880EF6F17A008F2D2F /* RefinementScope.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RefinementScope.h; path = ../include/RefinementScope.h; sourceTree = SOURCE_ROOT; };
 		5C535AAD0EEE33190001C6A8 /* LodEvaluator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LodEvaluator.h; path = ../include/LodEvaluator.h; sourceTree = SOURCE_ROOT; };
 		5C535AAF0EEE365C0001C6A8 /* FocusViewEvaluator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FocusViewEvaluator.h; path = ../include/FocusViewEvaluator.h; sourceTree = SOURCE_ROOT; };
 		5C535AB20EEEFF060001C6A8 /* LodEvaluator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = LodEvaluator.cpp; path = ../source/LodEvaluator.cpp; sourceTree = SOURCE_ROOT; };
@@ -15,6 +16,19 @@
 		5C535B060EEF379E0001C6A8 /* Crusta.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Crusta.h; path = ../include/Crusta.h; sourceTree = SOURCE_ROOT; };
 		5C535B0C0EEF445E0001C6A8 /* Crusta.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Crusta.cpp; path = ../source/Crusta.cpp; sourceTree = SOURCE_ROOT; };
 		5C6D6C3B0ED549F10094927A /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; tabWidth = 4; usesTabs = 0; };
+		5C789D820F279831009A38A8 /* gridProcessing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = gridProcessing.h; path = ../include/gridProcessing.h; sourceTree = SOURCE_ROOT; };
+		5C789D860F27AD5C009A38A8 /* GlobalGrid.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GlobalGrid.cpp; path = ../source/GlobalGrid.cpp; sourceTree = SOURCE_ROOT; };
+		5C8D55F80F16C1400094BB6F /* SpheroidGrid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SpheroidGrid.h; path = ../include/SpheroidGrid.h; sourceTree = SOURCE_ROOT; };
+		5C8D55F90F179B430094BB6F /* SpheroidGrid.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SpheroidGrid.cpp; path = ../source/SpheroidGrid.cpp; sourceTree = SOURCE_ROOT; };
+		5C8D92640EFD6E6E00AD54BD /* QuadTree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = QuadTree.h; path = ../include/QuadTree.h; sourceTree = SOURCE_ROOT; };
+		5C8D92650EFD817500AD54BD /* QuadTree.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = QuadTree.cpp; path = ../source/QuadTree.cpp; sourceTree = SOURCE_ROOT; };
+		5C8D92660EFFF4AF00AD54BD /* Reference.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Reference.h; path = ../include/Reference.h; sourceTree = SOURCE_ROOT; };
+		5CAD93750F0557D700927B60 /* dummies.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dummies.h; path = ../include/dummies.h; sourceTree = SOURCE_ROOT; };
+		5CAD93800F0C156500927B60 /* ViewLod.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ViewLod.h; path = ../include/ViewLod.h; sourceTree = SOURCE_ROOT; };
+		5CAD93810F0C161800927B60 /* ViewLod.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ViewLod.cpp; path = ../source/ViewLod.cpp; sourceTree = SOURCE_ROOT; };
+		5CAD94DB0F0EA59900927B60 /* FrustumVisibility.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FrustumVisibility.h; path = ../include/FrustumVisibility.h; sourceTree = SOURCE_ROOT; };
+		5CAD94DC0F0EA75C00927B60 /* FrustumVisibility.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FrustumVisibility.cpp; path = ../source/FrustumVisibility.cpp; sourceTree = SOURCE_ROOT; };
+		5CBA46570F0297300007C9D5 /* VisibilityEvaluator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VisibilityEvaluator.h; path = ../include/VisibilityEvaluator.h; sourceTree = SOURCE_ROOT; };
 		5CEE11D00EEDE8A100DDCF47 /* GlobalGrid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlobalGrid.h; path = ../include/GlobalGrid.h; sourceTree = SOURCE_ROOT; };
 		5CEE11E50EEDF28F00DDCF47 /* Refinement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Refinement.h; path = ../include/Refinement.h; sourceTree = SOURCE_ROOT; };
 		5CEE11F20EEE177D00DDCF47 /* basics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = basics.h; path = ../include/basics.h; sourceTree = SOURCE_ROOT; };
@@ -37,6 +51,11 @@
 				5C535AED0EEF2E030001C6A8 /* FocusViewEvaluator.cpp */,
 				5C535AB20EEEFF060001C6A8 /* LodEvaluator.cpp */,
 				5C535B0C0EEF445E0001C6A8 /* Crusta.cpp */,
+				5C8D92650EFD817500AD54BD /* QuadTree.cpp */,
+				5CAD93810F0C161800927B60 /* ViewLod.cpp */,
+				5CAD94DC0F0EA75C00927B60 /* FrustumVisibility.cpp */,
+				5C8D55F90F179B430094BB6F /* SpheroidGrid.cpp */,
+				5C789D860F27AD5C009A38A8 /* GlobalGrid.cpp */,
 			);
 			name = sources;
 			sourceTree = "<group>";
@@ -51,6 +70,15 @@
 				5CEE11D00EEDE8A100DDCF47 /* GlobalGrid.h */,
 				5C535AAF0EEE365C0001C6A8 /* FocusViewEvaluator.h */,
 				5C535B060EEF379E0001C6A8 /* Crusta.h */,
+				5C31CB880EF6F17A008F2D2F /* RefinementScope.h */,
+				5C8D92640EFD6E6E00AD54BD /* QuadTree.h */,
+				5C8D92660EFFF4AF00AD54BD /* Reference.h */,
+				5CBA46570F0297300007C9D5 /* VisibilityEvaluator.h */,
+				5CAD93750F0557D700927B60 /* dummies.h */,
+				5CAD93800F0C156500927B60 /* ViewLod.h */,
+				5CAD94DB0F0EA59900927B60 /* FrustumVisibility.h */,
+				5C8D55F80F16C1400094BB6F /* SpheroidGrid.h */,
+				5C789D820F279831009A38A8 /* gridProcessing.h */,
 			);
 			name = headers;
 			sourceTree = "<group>";

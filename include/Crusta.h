@@ -5,12 +5,20 @@
 
 ///\todo remove once other stuff has been added?
 #include <basics.h>
+#if 0
+#include <QuadTree.h>
+#include <ViewLod.h>
+#include <FrustumVisibility.h>
+#include <dummies.h>
+#endif
 
 namespace Vrui {
     class VisletManager;
 }
 
 BEGIN_CRUSTA
+
+class GlobalGrid;
 
 ///\todo comment properly
 class CrustaFactory : public Vrui::VisletFactory
@@ -23,8 +31,8 @@ public:
 
 //- inherited from VisletFactory
 public:
-    virtual Vrui::Vislet* createVislet(int numVisletArguments,
-                                       const char* visletArguments[]) const;
+    virtual Vrui::Vislet* createVislet(
+        int numVisletArguments, const char* const visletArguments[]) const;
     virtual void destroyVislet(Vrui::Vislet* vislet) const;
 };
 
@@ -36,10 +44,22 @@ public:
 class Crusta : public Vrui::Vislet
 {
     friend class CrustaFactory;
-    
+
+public:
+    Crusta();
+    ~Crusta();
+
 private:
     /** handle to the factory object for this class */
     static CrustaFactory* factory;
+
+#if 0
+///\todo remove. Debug shit
+QuadTree* tree;
+ViewLod* lod;
+FrustumVisibility* visibility;
+#endif
+    GlobalGrid* globalGrid;
 
 //- inherited from Vislet
 public:
