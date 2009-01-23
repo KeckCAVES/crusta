@@ -11,7 +11,7 @@ class VisibilityEvaluator;
 
 /**
     Base class for refinement algorithms on base patches.
- 
+
     \todo maintains scope hierarchy
     \todo exports changes to active scopes
     \todo queryable active scopes
@@ -22,12 +22,12 @@ class Refinement
 public:
     virtual ~Refinement() {}
 
-    virtual void registerClient(gridProcessing::Id id) = 0;
-    
+    virtual void registerDataSlot(gridProcessing::Id id) = 0;
+
     /** generate the ideal multi-scale tiling given the LOD criterion */
     virtual void refine(VisibilityEvaluator& visibility, LodEvaluator& lod) = 0;
-    /** update registered clients to reflect changes to refinement */
-    virtual void updateClients() const = 0;
+    /** traverse leaf nodes of the refinement and apply given scope callbacks */
+    virtual void traverseLeaves(gridProcessing::ScopeCallbacks& callbacks) = 0;
 };
 
 END_CRUSTA

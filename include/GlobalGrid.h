@@ -20,19 +20,19 @@ BEGIN_CRUSTA
     \see Refinement
     \see Scope
 */
-class GlobalGrid 
+class GlobalGrid
 {
 public:
     virtual ~GlobalGrid() {}
 
     virtual void frame() = 0;
     virtual void display(GLContextData& contextData) const = 0;
-    
-    virtual void registerClient(
+
+    virtual void registerDataSlot(
         const gridProcessing::RegistrationCallback callback) = 0;
     void registerScopeCallback(gridProcessing::Phase phase,
         const gridProcessing::ScopeCallback callback);
-    
+
 protected:
     gridProcessing::ScopeCallbacks updateCallbacks;
     gridProcessing::ScopeCallbacks displayCallbacks;

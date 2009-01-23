@@ -37,7 +37,7 @@ protected:
             uint64 level : 16;
             uint64 index : 32;
         };
-        
+
         Node();
 
         Scope scope;
@@ -56,12 +56,13 @@ protected:
 
     void deleteSubTree(Node* base);
     void discardSubTree(Node* base);
-    
+
     void refine(Node* node, VisibilityEvaluator& visibility, LodEvaluator& lod);
     void split(Node* node);
+    void traverseLeaves(Node* node, gridProcessing::ScopeCallbacks& callbacks);
 
     Node* root;
-    
+
     bool splitOnSphere;
 
 ///\todo remove. Used for debug
@@ -69,9 +70,9 @@ void drawTree(Node* node);
 
 //- inherited from Refinement
 public:
-    virtual void registerClient(gridProcessing::Id id);
+    virtual void registerDataSlot(gridProcessing::Id id);
     virtual void refine(VisibilityEvaluator& visibility, LodEvaluator& lod);
-    virtual void updateClients() const;
+    virtual void traverseLeaves(gridProcessing::ScopeCallbacks& callbacks);
 };
 
 END_CRUSTA

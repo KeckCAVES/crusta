@@ -14,7 +14,7 @@ PointParam
 toSphere(const PointParam& p)
 {
     typedef typename PointParam::Scalar Scalar;
-    
+
     double len = Geometry::mag(p);
     return PointParam(Scalar(p[0]/len), Scalar(p[1]/len), Scalar(p[2]/len));
 }
@@ -25,7 +25,7 @@ PointParam
 centroid(const PointParam& p0, const PointParam& p1, const PointParam& p2)
 {
     typedef typename PointParam::Scalar Scalar;
-    
+
     return PointParam( (p0[0] + p1[0] + p2[0]) / Scalar(3),
                        (p0[1] + p1[1] + p2[1]) / Scalar(3),
                        (p0[2] + p1[2] + p2[2]) / Scalar(3) );
@@ -38,12 +38,12 @@ centroid(const PointParam& p0, const PointParam& p1,
          const PointParam& p2, const PointParam& p3)
 {
     typedef typename PointParam::Scalar Scalar;
-    
+
     return PointParam( (p0[0] + p1[0] + p2[0] + p3[0]) / Scalar(4),
                        (p0[1] + p1[1] + p2[1] + p3[1]) / Scalar(4),
                        (p0[2] + p1[2] + p2[2] + p3[2]) / Scalar(4) );
 }
-    
+
 }
 
 
@@ -90,7 +90,7 @@ deleteSubTree(Node* base)
     {
         for (uint i=0; i<4; ++i)
             deleteSubTree(&base->children[i]);
-        
+
         delete[] base->children;
         base->children = NULL;
     }
@@ -115,14 +115,14 @@ refine(Node* node, VisibilityEvaluator& visibility, LodEvaluator& lod)
     }
 
     node->lod = lod.evaluate(node->scope);
-    
+
     if (node->lod > 1.0)
     {
         node->leaf = false;
 
         if (node->children == NULL)
             split(node);
-        
+
         for (uint i=0; i<4; ++i)
             refine(&node->children[i], visibility, lod);
     }
@@ -138,7 +138,7 @@ split(Node* node)
 {
     node->children = new Node[4];
     const Point* corners = node->scope.corners;
-    
+
     Point mids[4];
     uint midIndices[8] = {
         Scope::UPPER_LEFT,  Scope::LOWER_LEFT,
@@ -153,10 +153,10 @@ split(Node* node)
         mids[i] = Geometry::mid(c1, c2);
         mids[i] = splitOnSphere ? toSphere(mids[i]) : mids[i];
     }
-    
+
     Point center = centroid(corners[0], corners[1], corners[2], corners[3]);
     center = splitOnSphere ? toSphere(center) : center;
-    
+
     const Point* newCorners[16] = {
         &corners[Scope::UPPER_LEFT], &mids[0], &center, &mids[3],
         &mids[3], &center, &mids[2], &corners[Scope::UPPER_RIGHT],
@@ -171,6 +171,26 @@ split(Node* node)
 
     for (uint i=0; i<4; ++i)
         node->children[i].parent = node;
+}
+
+void QuadTree::
+traverseLeaves(Node* node, gridProcessing::ScopeCallbacks& callbacks)
+{
+    if (!node->leaf)
+    {
+        for (uint i=0; i<4; ++i)
+            traverseLeaves(&(node->children[i]), callbacks);
+    }
+    else
+    {
+        //construct the scope data
+        gridProcessing::ScopeData scopeData;
+        scopeData.scope = node->scope;
+
+        uint numCallbacks = static_cast<uint>(callbacks.size());
+        for (uint i=0; i<numCallbacks; ++i)
+            callbacks[i](scopeData);
+    }
 }
 
 void QuadTree::
@@ -205,14 +225,14 @@ drawTree(Node* node)
                 glNormal(node->scope.corners[i] - Point::origin);
                 glVertex(node->scope.corners[i]);
 			}
-            glEnd();            
+            glEnd();
         }
     }
 }
 
 
 void QuadTree::
-registerClient(gridProcessing::Id id)
+registerDataSlot(gridProcessing::Id id)
 {
 }
 
@@ -223,8 +243,9 @@ refine(VisibilityEvaluator& visibility, LodEvaluator& lod)
 }
 
 void QuadTree::
-updateClients() const
+traverseLeaves(gridProcessing::ScopeCallbacks& callbacks)
 {
+    traverseLeaves(root, callbacks);
 }
 
 END_CRUSTA

@@ -29,14 +29,14 @@ protected:
         FrustumVisibility* visibility;
         ViewLod* lod;
     };
-    
+
     gridProcessing::Id newClientId;
 
 //- inherited from GlobalGrid
 public:
     virtual void frame();
     virtual void display(GLContextData& contextData) const;
-    virtual void registerClient(
+    virtual void registerDataSlot(
         const gridProcessing::RegistrationCallback callback);
 
 //- inherited from GLObject
