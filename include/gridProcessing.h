@@ -27,29 +27,33 @@ struct ScopeData
     Scope scope;
 };
 
-struct RegistrationCallback
+class RegistrationCallback
 {
-    void* object;
-    RegistrationCallbackFunc method;
-    
-    RegistrationCallback(void* object, RegistrationCallbackFunc method) {
-        this->object = object; this->method = method;
-    }
+public:
+    RegistrationCallback(void* callObject, RegistrationCallbackFunc callMethod):
+        object(callObject), method(callMethod) {}
+
     void operator()(const Id newId) {
         method(object, newId);
     }
+    
+protected:
+    void* object;
+    RegistrationCallbackFunc method;
 };
 
-struct ScopeCallback {
-    void* object;
-    ScopeCallbackFunc method;
+class ScopeCallback {
+public:
+    ScopeCallback(void* callObject, ScopeCallbackFunc callMethod) :
+        object(callObject), method(callMethod) {}
 
-    ScopeCallback(void* object, ScopeCallbackFunc method) {
-        this->object = object; this->method = method;
-    }
     void operator()(const ScopeData& scopeData) {
         method(object, scopeData);
     }
+
+protected:
+    void* object;
+    ScopeCallbackFunc method;    
 };
 
 typedef std::vector<ScopeCallback> ScopeCallbacks;

@@ -5,12 +5,7 @@
 
 ///\todo remove once other stuff has been added?
 #include <basics.h>
-#if 0
-#include <QuadTree.h>
-#include <ViewLod.h>
-#include <FrustumVisibility.h>
-#include <dummies.h>
-#endif
+#include <GridClient.h>
 
 namespace Vrui {
     class VisletManager;
@@ -53,13 +48,8 @@ private:
     /** handle to the factory object for this class */
     static CrustaFactory* factory;
 
-#if 0
-///\todo remove. Debug shit
-QuadTree* tree;
-ViewLod* lod;
-FrustumVisibility* visibility;
-#endif
     GlobalGrid* globalGrid;
+    GridClientPtrs gridClients;
 
 //- inherited from Vislet
 public:

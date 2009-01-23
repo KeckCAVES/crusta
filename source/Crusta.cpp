@@ -5,14 +5,8 @@
 #include <Vrui/VisletManager.h>
 #include <Vrui/Vrui.h>
 
-#if 0
-///DBG
-#include <Geometry/ProjectiveTransformation.h>
-#include <GL/gl.h>
-#include <GL/GLGeometryWrappers.h>
-///DBG
-#endif
 #include <SpheroidGrid.h>
+#include <Terrain.h>
 
 BEGIN_CRUSTA
 
@@ -73,39 +67,19 @@ CrustaFactory* Crusta::factory = NULL;
 Crusta::
 Crusta()
 {
-#if 0
-///\todo remove. Debug
-Scope patch;
-patch.corners[0] = Point(-1, 0.5, 1);
-patch.corners[1] = Point(-1, 0.5,-1);
-patch.corners[2] = Point( 1, 0.5,-1);
-patch.corners[3] = Point( 1, 0.5, 1);
-
-for (uint i=0; i<4; ++i)
-{
-    float mag = Geometry::mag(patch.corners[i]);
-    for (uint j=0; j<3; ++j)
-        patch.corners[i][j] /= mag;
-}
-
-tree = new QuadTree(patch);
-lod = new ViewLod;
-visibility = new FrustumVisibility;
-#endif
-
     globalGrid = new SpheroidGrid;
+    Terrain* terrain = new Terrain;
+    terrain->registerToGrid(globalGrid);
+    gridClients.push_back(terrain);
 }
 
 Crusta::
 ~Crusta()
 {
-#if 0
-///\todo remove. Debug
-delete tree;
-delete lod;
-delete visibility;
-#endif
     delete globalGrid;
+    uint numClients = static_cast<uint>(gridClients.size());
+    for (uint i=0; i<numClients; ++i)
+        delete gridClients[i];
 }
 
 Vrui::VisletFactory* Crusta::
@@ -118,6 +92,7 @@ void Crusta::
 frame()
 {
     globalGrid->frame();
+///\todo also add a frame to GridClients
     Vrui::requestUpdate();
 }
 
@@ -159,25 +134,6 @@ glMultMatrix(Vrui::getNavigationTransformation());
     glEnable(GL_LIGHTING);
     glDisable(GL_COLOR_MATERIAL);
 
-#if 0
-lod->frustum.setFromGL();
-visibility->frustum.setFromGL();
-
-/** offset the view in Z */
-#if 1
-//    glTranslatef(0.0f, 2.0f, 0.0f);
-#else
-typedef Geometry::ProjectiveTransformation<double,3> PTransform;
-/* Read projection and modelview matrices from OpenGL: */
-PTransform pmv=glGetProjectionMatrix<double>();
-pmv*=glGetModelviewMatrix<double>();
-glLoadMatrix
-#endif
-
-
-tree->refine(*visibility, *lod);
-tree->draw();
-#endif
     globalGrid->display(contextData);
 
 glPopMatrix();

@@ -34,8 +34,9 @@ public:
         const gridProcessing::ScopeCallback callback);
 
 protected:
-    gridProcessing::ScopeCallbacks updateCallbacks;
-    gridProcessing::ScopeCallbacks displayCallbacks;
+///\todo because of const in display method, need to make mutable. Fix it!!
+    mutable gridProcessing::ScopeCallbacks updateCallbacks;
+    mutable gridProcessing::ScopeCallbacks displayCallbacks;
 };
 
 END_CRUSTA

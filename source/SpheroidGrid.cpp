@@ -192,7 +192,11 @@ display(GLContextData& contextData) const
     {
         viewData->basePatches[i]->refine(*(viewData->visibility),
                                          *(viewData->lod));
-        viewData->basePatches[i]->draw();
+    }
+    
+    for (uint i=0; i<numPatches; ++i)
+    {
+        viewData->basePatches[i]->traverseLeaves(displayCallbacks);
     }
 }
 void SpheroidGrid::
