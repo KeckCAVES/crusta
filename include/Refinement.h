@@ -22,7 +22,7 @@ class Refinement
 public:
     virtual ~Refinement() {}
 
-    virtual void registerDataSlot(gridProcessing::Id id) = 0;
+    virtual void addDataSlots(uint numSlots=1) = 0;
 
     /** generate the ideal multi-scale tiling given the LOD criterion */
     virtual void refine(VisibilityEvaluator& visibility, LodEvaluator& lod) = 0;

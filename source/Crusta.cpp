@@ -5,6 +5,7 @@
 #include <Vrui/VisletManager.h>
 #include <Vrui/Vrui.h>
 
+#include <Cache.h>
 #include <SpheroidGrid.h>
 #include <Terrain.h>
 
@@ -67,6 +68,9 @@ CrustaFactory* Crusta::factory = NULL;
 Crusta::
 Crusta()
 {
+    Cache* mainCache = Cache::getMainCache();
+    mainCache->setCacheSize(100 * (1<<20));
+    
     globalGrid = new SpheroidGrid;
     Terrain* terrain = new Terrain;
     terrain->registerToGrid(globalGrid);
@@ -91,6 +95,9 @@ getFactory() const
 void Crusta::
 frame()
 {
+    Cache::getMainCache()->frame();
+    Cache::getVideoCache()->frame();
+
     globalGrid->frame();
 ///\todo also add a frame to GridClients
     Vrui::requestUpdate();

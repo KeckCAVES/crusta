@@ -30,14 +30,16 @@ protected:
         ViewLod* lod;
     };
 
-    gridProcessing::Id newClientId;
+    gridProcessing::Id newDataSlotId;
+///\todo find a better solution for this mutable issue with the display call
+    mutable uint dataSlotsToAdd;
+
 
 //- inherited from GlobalGrid
 public:
     virtual void frame();
     virtual void display(GLContextData& contextData) const;
-    virtual void registerDataSlot(
-        const gridProcessing::RegistrationCallback callback);
+    virtual gridProcessing::Id registerDataSlot();
 
 //- inherited from GLObject
 public:

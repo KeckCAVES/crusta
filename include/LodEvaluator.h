@@ -22,7 +22,7 @@ class Scope;
     - a positive value characterises teh degree to which the evaluated scope is
       coarser than the ideal. A value greater or equal to 1 recommends
       refinement.
-    The LOD-value can be scaled (linearly) to relax or tighten the 
+    The LOD-value can be scaled and biased (linearly) to relax or tighten the 
     recommendations at -1 and 1.
  
     \see Refinement
@@ -35,9 +35,11 @@ public:
     
     /** computes the LOD-value of a given scope */
     float evaluate(const Scope& scope);
-    
-    /** scaling factor applied to the computed LOD-value to map it into the -1
-        to 1 boundaries of the refinement recommendations (default scaling is
+
+    /** biasing factor applied to the computed LOD-value. (default biasing is
+        0) */
+    float bias;
+    /** scaling factor applied to the computed LOD-value. (default scaling is
         1) */
     float scale;
     

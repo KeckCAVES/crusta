@@ -14,10 +14,10 @@ PointParam
 toSphere(
          const PointParam& p)
 {
-	typedef typename PointParam::Scalar Scalar;
+    typedef typename PointParam::Scalar Scalar;
 
-	double len=Geometry::mag(p);
-	return PointParam(Scalar(p[0]/len),Scalar(p[1]/len),Scalar(p[2]/len));
+    double len=Geometry::mag(p);
+    return PointParam(Scalar(p[0]/len),Scalar(p[1]/len),Scalar(p[2]/len));
 }
 
 template <class PointParam>
@@ -28,13 +28,14 @@ centroid(
          const PointParam& p1,
          const PointParam& p2)
 {
-	typedef typename PointParam::Scalar Scalar;
+    typedef typename PointParam::Scalar Scalar;
 
-	return PointParam((p0[0]+p1[0]+p2[0])/Scalar(3),(p0[1]+p1[1]+p2[1])/Scalar(3),(p0[2]+p1[2]+p2[2])/Scalar(3));
+    return PointParam((p0[0]+p1[0]+p2[0])/Scalar(3),(p0[1]+p1[1]+p2[1])/Scalar(3),(p0[2]+p1[2]+p2[2])/Scalar(3));
 }
 
 SpheroidGrid::
-SpheroidGrid()
+SpheroidGrid() :
+    newDataSlotId(0), dataSlotsToAdd(0)
 {
 }
 
@@ -142,6 +143,10 @@ ViewData()
      each tetrahedron vertex:
      ********************************************************************/
 
+#if 1
+    basePatches.resize(1);
+	basePatches[ 0] = new QuadTree(Scope(t0,e01,f2,e03));
+#else
     basePatches.resize(12);
 	basePatches[ 0] = new QuadTree(Scope(t0,e01,f2,e03));
 	basePatches[ 1] = new QuadTree(Scope(t0,e03,f1,e02));
@@ -159,8 +164,11 @@ ViewData()
 	basePatches[10] = new QuadTree(Scope(t3,e13,f0,e23));
 	basePatches[11] = new QuadTree(Scope(t3,e23,f1,e03));
 #endif
+#endif
 
     lod = new ViewLod;
+//    lod->scale = 0.25f;
+    lod->bias = -3.0f;
     visibility = new FrustumVisibility;
 }
 
@@ -184,24 +192,41 @@ display(GLContextData& contextData) const
 {
     ViewData* viewData = contextData.retrieveDataItem<ViewData>(this);
 
+    uint numPatches = static_cast<uint>(viewData->basePatches.size());
+    if (dataSlotsToAdd != 0)
+    {
+        for (uint i=0; i<numPatches; ++i)
+            viewData->basePatches[i]->addDataSlots(dataSlotsToAdd);
+        dataSlotsToAdd = 0;
+    }
+
     viewData->visibility->frustum.setFromGL();
     viewData->lod->frustum = viewData->visibility->frustum;
 
-    uint numPatches = static_cast<uint>(viewData->basePatches.size());
     for (uint i=0; i<numPatches; ++i)
     {
         viewData->basePatches[i]->refine(*(viewData->visibility),
                                          *(viewData->lod));
     }
-    
+
     for (uint i=0; i<numPatches; ++i)
+    {
+        viewData->basePatches[i]->traverseLeaves(updateCallbacks);
+    }
+
+for (uint i=0; i<numPatches; ++i)
     {
         viewData->basePatches[i]->traverseLeaves(displayCallbacks);
     }
 }
-void SpheroidGrid::
-registerDataSlot(const gridProcessing::RegistrationCallback callback)
+
+gridProcessing::Id SpheroidGrid::
+registerDataSlot()
 {
+    gridProcessing::Id newId = newDataSlotId;
+    ++newDataSlotId;
+    ++dataSlotsToAdd;
+    return newId;
 }
 
 

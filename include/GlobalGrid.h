@@ -28,8 +28,7 @@ public:
     virtual void frame() = 0;
     virtual void display(GLContextData& contextData) const = 0;
 
-    virtual void registerDataSlot(
-        const gridProcessing::RegistrationCallback callback) = 0;
+    virtual gridProcessing::Id registerDataSlot() = 0;
     void registerScopeCallback(gridProcessing::Phase phase,
         const gridProcessing::ScopeCallback callback);
 

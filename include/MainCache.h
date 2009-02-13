@@ -1,0 +1,1 @@
+#ifndef _MainCache_H_#define _MainCache_H_#include <basics.h>BEGIN_CRUSTAclass MainCache{public:    static MainCache* getInstance();protected:    MainCache* instance;};END_CRUSTA#endif //_MainCache_H_

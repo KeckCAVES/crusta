@@ -7,8 +7,12 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		5C084FF00F409D8A0045A917 /* Cache.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Cache.cpp; path = ../source/Cache.cpp; sourceTree = SOURCE_ROOT; };
 		5C6D6C3B0ED549F10094927A /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; tabWidth = 4; usesTabs = 0; };
 		5C8CAAB60F2986AE0056B0F0 /* Terrain.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Terrain.cpp; path = ../source/Terrain.cpp; sourceTree = SOURCE_ROOT; };
+		5CFC08C20F3E43E0005E66C2 /* BufferPool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BufferPool.h; path = ../include/BufferPool.h; sourceTree = SOURCE_ROOT; };
+		5CFC08C30F3E43E0005E66C2 /* Cache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Cache.h; path = ../include/Cache.h; sourceTree = SOURCE_ROOT; };
+		5CFC08C40F3E43E0005E66C2 /* MainCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MainCache.h; path = ../include/MainCache.h; sourceTree = SOURCE_ROOT; };
 		5CFFB65E0F29809A004E84EE /* basics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = basics.h; path = ../include/basics.h; sourceTree = "<group>"; };
 		5CFFB65F0F29809A004E84EE /* Crusta.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Crusta.h; path = ../include/Crusta.h; sourceTree = "<group>"; };
 		5CFFB6600F29809A004E84EE /* dummies.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dummies.h; path = ../include/dummies.h; sourceTree = "<group>"; };
@@ -60,6 +64,7 @@
 				5CFFB6760F2980CD004E84EE /* SpheroidGrid.cpp */,
 				5CFFB6770F2980CD004E84EE /* ViewLod.cpp */,
 				5C8CAAB60F2986AE0056B0F0 /* Terrain.cpp */,
+				5C084FF00F409D8A0045A917 /* Cache.cpp */,
 			);
 			name = sources;
 			sourceTree = "<group>";
@@ -67,6 +72,9 @@
 		5CF9B5270ED4D05E00B60E0C /* headers */ = {
 			isa = PBXGroup;
 			children = (
+				5CFC08C20F3E43E0005E66C2 /* BufferPool.h */,
+				5CFC08C30F3E43E0005E66C2 /* Cache.h */,
+				5CFC08C40F3E43E0005E66C2 /* MainCache.h */,
 				5CFFB65E0F29809A004E84EE /* basics.h */,
 				5CFFB65F0F29809A004E84EE /* Crusta.h */,
 				5CFFB6600F29809A004E84EE /* dummies.h */,

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <basics.h>
+#include <Cache.h>
 #include <Scope.h>
 
 BEGIN_CRUSTA
@@ -14,6 +15,7 @@ struct ScopeData;
 
 typedef uint Id;
 typedef void (*RegistrationCallbackFunc)(void* object, const Id newId);
+typedef void (*ScopePrePostFunc)(void* object);
 typedef void (*ScopeCallbackFunc)(void* object, const ScopeData& scopeData);
     
 enum Phase
@@ -24,7 +26,8 @@ enum Phase
 
 struct ScopeData
 {
-    Scope scope;
+    Scope* scope;
+    Cache::BufferPtrs* data;
 };
 
 class RegistrationCallback
@@ -44,16 +47,30 @@ protected:
 
 class ScopeCallback {
 public:
-    ScopeCallback(void* callObject, ScopeCallbackFunc callMethod) :
-        object(callObject), method(callMethod) {}
+    ScopeCallback(void* callObject, ScopeCallbackFunc callMethod,
+                  ScopePrePostFunc callPreMethod=NULL,
+                  ScopePrePostFunc callPostMethod=NULL) :
+        object(callObject), preMethod(callPreMethod),
+        method(callMethod), postMethod(callPostMethod) {}
 
-    void operator()(const ScopeData& scopeData) {
+    void preTraversal() {
+        if (preMethod != NULL)
+            preMethod(object);
+    }
+    void traversal(const ScopeData& scopeData) {
+        assert(method!=NULL && "ScopeCallback: calling bogus callback\n");
         method(object, scopeData);
+    }
+    void postTraversal() {
+        if (postMethod != NULL)
+            postMethod(object);
     }
 
 protected:
     void* object;
-    ScopeCallbackFunc method;    
+    ScopePrePostFunc  preMethod;
+    ScopeCallbackFunc method;
+    ScopePrePostFunc  postMethod;
 };
 
 typedef std::vector<ScopeCallback> ScopeCallbacks;

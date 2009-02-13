@@ -33,7 +33,7 @@ public:
     }
 
     /** corner points of the scope in cartesian space in counter-clockwise
-        order */
+        order starting at the top-left */
     Point corners[4];
 };
 

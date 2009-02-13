@@ -12,9 +12,10 @@ public:
     Reference() { object = NULL; }
     Reference(T*& target) { object = &target; }
 
+    void set(T*& target) { object = &target; }
     bool isValid() { return object!=NULL ? *object!=NULL : false; }
     T* operator->() { return *object; }
-    
+
 protected:
     T** object;
 };

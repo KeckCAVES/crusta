@@ -99,7 +99,56 @@ deleteSubTree(Node* base)
 void QuadTree::
 discardSubTree(Node* base)
 {
-    deleteSubTree(base);
+    if (base->children != NULL)
+    {
+        //recurse down to the bottom of the tree first
+        for (uint i=0; i<4; ++i)
+            discardSubTree(&base->children[i]);
+
+        //on our way back up the tree, discard our children if they aren't
+        //subtrees and if they don't link to data that is still available.
+        bool deleteChildren = true;
+        for (uint i=0; i<4; ++i)
+        {
+            Node* child = &base->children[i];
+            if (child->children!=NULL)
+            {
+                deleteChildren = false;
+                break;
+            }
+            uint numData = static_cast<uint>(child->data.size());
+            for (uint j=0; j<numData; ++j)
+            {
+                if (child->data[j] != NULL)
+                {
+                    deleteChildren = false;
+                    break;
+                }
+            }
+            if (!deleteChildren)
+                break;
+        }
+
+        if (deleteChildren)
+        {
+            delete[] base->children;
+            base->children = NULL;
+        }
+    }
+}
+
+void QuadTree::
+addDataSlots(Node* node, uint numDataSlots)
+{
+    //add the new slot to the current node
+    uint newSize = static_cast<uint>(node->data.size()) + numDataSlots;
+    node->data.resize(newSize, NULL);
+    //add the new slot to the children
+    if (node->children != NULL)
+    {
+        for (uint i=0; i<4; ++i)
+            addDataSlots(&node->children[i], numDataSlots);
+    }
 }
 
 void QuadTree::
@@ -137,6 +186,14 @@ void QuadTree::
 split(Node* node)
 {
     node->children = new Node[4];
+    uint numDataSlots = static_cast<uint>(node->data.size());
+    for (uint i=0; i<4; ++i)
+    {
+        node->children[i].data.resize(numDataSlots);
+        uint level = node->index.level;
+        node->children[i].index = Node::TreeIndex(i, level+1, i << level);
+    }
+
     const Point* corners = node->scope.corners;
 
     Point mids[4];
@@ -174,22 +231,21 @@ split(Node* node)
 }
 
 void QuadTree::
-traverseLeaves(Node* node, gridProcessing::ScopeCallbacks& callbacks)
+traverseLeaves(Node* node, gridProcessing::ScopeCallback& callback)
 {
     if (!node->leaf)
     {
         for (uint i=0; i<4; ++i)
-            traverseLeaves(&(node->children[i]), callbacks);
+            traverseLeaves(&(node->children[i]), callback);
     }
     else
     {
         //construct the scope data
         gridProcessing::ScopeData scopeData;
-        scopeData.scope = node->scope;
+        scopeData.scope = &(node->scope);
+        scopeData.data  = &(node->data);
 
-        uint numCallbacks = static_cast<uint>(callbacks.size());
-        for (uint i=0; i<numCallbacks; ++i)
-            callbacks[i](scopeData);
+        callback.traversal(scopeData);
     }
 }
 
@@ -197,11 +253,11 @@ void QuadTree::
 draw()
 {
     glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_POLYGON_BIT);
-	glDisable(GL_LIGHTING);
-	glDisable(GL_CULL_FACE);
-	glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
-	glLineWidth(1.0f);
-	glColor3f(1.0f,1.0f,1.0f);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_CULL_FACE);
+    glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+    glLineWidth(1.0f);
+    glColor3f(1.0f,1.0f,1.0f);
 
     drawTree(root);
     glPopAttrib();
@@ -221,10 +277,10 @@ drawTree(Node* node)
         {
             glBegin(GL_QUADS);
             for(int i=0; i<4; ++i)
-			{
+            {
                 glNormal(node->scope.corners[i] - Point::origin);
                 glVertex(node->scope.corners[i]);
-			}
+            }
             glEnd();
         }
     }
@@ -232,8 +288,9 @@ drawTree(Node* node)
 
 
 void QuadTree::
-registerDataSlot(gridProcessing::Id id)
+addDataSlots(uint numSlots)
 {
+    addDataSlots(root, numSlots);
 }
 
 void QuadTree::
@@ -245,7 +302,13 @@ refine(VisibilityEvaluator& visibility, LodEvaluator& lod)
 void QuadTree::
 traverseLeaves(gridProcessing::ScopeCallbacks& callbacks)
 {
-    traverseLeaves(root, callbacks);
+    uint numCallbacks = static_cast<uint>(callbacks.size());
+    for (uint i=0; i<numCallbacks; ++i)
+    {
+        callbacks[i].preTraversal();
+        traverseLeaves(root, callbacks[i]);
+        callbacks[i].postTraversal();
+    }
 }
 
 END_CRUSTA
