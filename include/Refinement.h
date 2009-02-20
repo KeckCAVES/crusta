@@ -27,7 +27,8 @@ public:
     /** generate the ideal multi-scale tiling given the LOD criterion */
     virtual void refine(VisibilityEvaluator& visibility, LodEvaluator& lod) = 0;
     /** traverse leaf nodes of the refinement and apply given scope callbacks */
-    virtual void traverseLeaves(gridProcessing::ScopeCallbacks& callbacks) = 0;
+    virtual void traverseLeaves(gridProcessing::ScopeCallbacks& callbacks,
+                                GLContextData& contextData) = 0;
 };
 
 END_CRUSTA

@@ -68,8 +68,8 @@ CrustaFactory* Crusta::factory = NULL;
 Crusta::
 Crusta()
 {
-    Cache* mainCache = Cache::getMainCache();
-    mainCache->setCacheSize(100 * (1<<20));
+    Cache::getMainCache()->setCacheSize (100 * (1<<20));
+    Cache::getVideoCache()->setCacheSize(100 * (1<<20));
     
     globalGrid = new SpheroidGrid;
     Terrain* terrain = new Terrain;

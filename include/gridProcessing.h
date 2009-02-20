@@ -7,6 +7,8 @@
 #include <Cache.h>
 #include <Scope.h>
 
+class GLContextData;
+
 BEGIN_CRUSTA
 
 namespace gridProcessing {
@@ -15,8 +17,9 @@ struct ScopeData;
 
 typedef uint Id;
 typedef void (*RegistrationCallbackFunc)(void* object, const Id newId);
-typedef void (*ScopePrePostFunc)(void* object);
-typedef void (*ScopeCallbackFunc)(void* object, const ScopeData& scopeData);
+typedef void (*ScopePrePostFunc)(void* object, GLContextData& contextData);
+typedef void (*ScopeCallbackFunc)(void* object, const ScopeData& scopeData,
+                                  GLContextData& contextData);
     
 enum Phase
 {
@@ -53,17 +56,17 @@ public:
         object(callObject), preMethod(callPreMethod),
         method(callMethod), postMethod(callPostMethod) {}
 
-    void preTraversal() {
+    void preTraversal(GLContextData& contextData) {
         if (preMethod != NULL)
-            preMethod(object);
+            preMethod(object, contextData);
     }
-    void traversal(const ScopeData& scopeData) {
+    void traversal(const ScopeData& scopeData, GLContextData& contextData) {
         assert(method!=NULL && "ScopeCallback: calling bogus callback\n");
-        method(object, scopeData);
+        method(object, scopeData, contextData);
     }
-    void postTraversal() {
+    void postTraversal(GLContextData& contextData) {
         if (postMethod != NULL)
-            postMethod(object);
+            postMethod(object, contextData);
     }
 
 protected:

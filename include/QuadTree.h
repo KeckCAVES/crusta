@@ -67,7 +67,8 @@ protected:
     void addDataSlots(Node* node, uint numSlots);
     void refine(Node* node, VisibilityEvaluator& visibility, LodEvaluator& lod);
     void split(Node* node);
-    void traverseLeaves(Node* node, gridProcessing::ScopeCallback& callback);
+    void traverseLeaves(Node* node, gridProcessing::ScopeCallback& callback,
+                        GLContextData& contextData);
 
     Node* root;
 
@@ -80,7 +81,8 @@ void drawTree(Node* node);
 public:
     virtual void addDataSlots(uint numSlots=1);
     virtual void refine(VisibilityEvaluator& visibility, LodEvaluator& lod);
-    virtual void traverseLeaves(gridProcessing::ScopeCallbacks& callbacks);
+    virtual void traverseLeaves(gridProcessing::ScopeCallbacks& callbacks,
+                                GLContextData& contextData);
 };
 
 END_CRUSTA

@@ -1,13 +1,23 @@
 #include <Terrain.h>
 
+#include <GL/GLContextData.h>
 #include <GL/GLGeometryWrappers.h>
 
 #include <GlobalGrid.h>
+#include <TextureAllocator.h>
+
+///\todo remove
+#include <simplexnoise1234.h>
+
 
 BEGIN_CRUSTA
 
 static const uint NUM_GEOMETRY_INDICES =
     TILE_RESOLUTION*((TILE_RESOLUTION+1)*2+2)-2;
+static const uint ELEVATION_RESOLUTION = TILE_RESOLUTION+1;
+static const float ELEVATION_COORD_START = (1.0/(ELEVATION_RESOLUTION-1)) * 0.5;
+static const float ELEVATION_COORD_END = 1.0 - ELEVATION_COORD_START;
+    
 
 static void
 mid(uint oneIndex, uint twoIndex, Terrain::Vertex* vertices)
@@ -71,21 +81,45 @@ Terrain()
     geometryIndices = new uint16[NUM_GEOMETRY_INDICES];
     generateGeometryIndices(geometryIndices);
 /*
-       7
-    /  |
-  8  -  456
-  0  - 3
-  |  / |
-  1  - 2
+      12
+       |
+10 11 13 - 14 
+       9 -  7
+       | /  |
+       8  -  456
+       0  - 3
+       |  / |
+       1  - 2
 */
+    
+elevationAllocator = new TextureAllocator(
+    32, GL_INTENSITY32F_ARB, ELEVATION_RESOLUTION, ELEVATION_RESOLUTION,
+    GL_LINEAR, GL_LINEAR);
+elevationPool = Cache::registerVideoCachePool(elevationAllocator);
 }
-                                                
+
 Terrain::
 ~Terrain()
 {
     delete geometryAllocator;
+delete elevationAllocator;
     delete[] geometryIndices;
 }
+
+
+Terrain::GlData::
+GlData()
+{
+    elevationShader.compileVertexShader("elevation.vs");
+    elevationShader.compileFragmentShader("elevation.fs");
+    elevationShader.linkShader();
+    
+    elevationShader.useProgram();
+    GLint heightTexUniform = elevationShader.getUniformLocation("heights");
+    glUniform1i(heightTexUniform, 1);
+    elevationShader.disablePrograms();
+}
+
 
 void Terrain::
 generateGeometryIndices(uint16* indices)
@@ -119,8 +153,10 @@ generateGeometry(const Scope* scope, Vertex* vertices)
         TILE_RESOLUTION, TILE_RESOLUTION*(TILE_RESOLUTION+1) + TILE_RESOLUTION
     };
     static const Vertex::TexCoord cornerTexCoords[] = {
-        Vertex::TexCoord(0,1), Vertex::TexCoord(0,0),
-        Vertex::TexCoord(1,0), Vertex::TexCoord(1,1)
+        Vertex::TexCoord(ELEVATION_COORD_START,ELEVATION_COORD_END),
+        Vertex::TexCoord(ELEVATION_COORD_START,ELEVATION_COORD_START),
+        Vertex::TexCoord(ELEVATION_COORD_END,ELEVATION_COORD_START),
+        Vertex::TexCoord(ELEVATION_COORD_END,ELEVATION_COORD_END)
     };
     for (uint i=0; i<4; ++i)
     {
@@ -162,15 +198,41 @@ generateGeometry(const Scope* scope, Vertex* vertices)
     }
 }
 
+void Terrain::
+generateElevation(Vertex* vertices, uint textureId)
+{
+///\todo need to make the cache main to video transparent
+    uint numVertices = ELEVATION_RESOLUTION*ELEVATION_RESOLUTION;
+    float* tex = new float[numVertices];
+    for (float* cur=tex; cur<tex+numVertices; ++cur, ++vertices)
+    {
+        float theta = acos(vertices->position[2]);
+        float phi = atan2(vertices->position[1], vertices->position[0]);
+        float elevation = SimplexNoise1234::noise(theta, phi);
+        elevation += 1.0f;
+        elevation /= 8.0f;
+        elevation += 1.0f;
+        *cur = elevation;
+    }
+    
+    glBindTexture(GL_TEXTURE_2D, textureId);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+                    ELEVATION_RESOLUTION, ELEVATION_RESOLUTION,
+                    GL_RED, GL_FLOAT, tex);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    delete[] tex;
+}
+
 
 
 void Terrain::
-updateCallback(void* object, const gridProcessing::ScopeData& scopeData)
+updateCallback(void* object, const gridProcessing::ScopeData& scopeData,
+               GLContextData& contextData)
 {
     Terrain* self = static_cast<Terrain*>(object);
 
 ///\todo remove
-assert(scopeData.data->size() > self->geometrySlot);
+assert(scopeData.data->size() > self->elevationSlot);
     //geometry is generated on the spot if it isn't available yet
     Cache::Buffer*& geometryBuffer = (*scopeData.data)[self->geometrySlot];
     if (geometryBuffer == NULL)
@@ -178,33 +240,63 @@ assert(scopeData.data->size() > self->geometrySlot);
         Cache* mainCache = Cache::getMainCache();
         mainCache->grabNew(self->geometryPool, geometryBuffer);
 assert(geometryBuffer->getMemory() != NULL);
-        generateGeometry(scopeData.scope,
-                         static_cast<Vertex*>(geometryBuffer->getMemory()));
+        generateGeometry(
+            scopeData.scope,
+            reinterpret_cast<Vertex*>(geometryBuffer->getMemory()));
     }
+    else
+        Cache::getMainCache()->touch(geometryBuffer);
+    
+    Cache::Buffer*& elevationBuffer = (*scopeData.data)[self->elevationSlot];
+    if (elevationBuffer == NULL)
+    {
+        Cache::getVideoCache()->grabNew(self->elevationPool, elevationBuffer);
+assert(elevationBuffer->getId() != 0);
+        generateElevation(
+            reinterpret_cast<Vertex*>(geometryBuffer->getMemory()),
+            elevationBuffer->getId());
+    }
+    else
+        Cache::getVideoCache()->touch(elevationBuffer);
 }
 
 
 void Terrain::
-preDisplayCallback(void* object)
+preDisplayCallback(void* object, GLContextData& contextData)
 {
+    Terrain* self = reinterpret_cast<Terrain*>(object);
+
     glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_POLYGON_BIT);
 	glDisable(GL_LIGHTING);
-	glDisable(GL_CULL_FACE);
-	glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+	glEnable(GL_CULL_FACE);
+    glEnable(GL_TEXTURE_2D);
+//	glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 	glLineWidth(1.0f);
+    
+    glActiveTexture(GL_TEXTURE1);
+
+    GlData* glData = contextData.retrieveDataItem<GlData>(self);
+    glData->elevationShader.useProgram();
 }
 
 void Terrain::
-displayCallback(void* object, const gridProcessing::ScopeData& scopeData)
+displayCallback(void* object, const gridProcessing::ScopeData& scopeData,
+                GLContextData& contextData)
 {
-    Terrain* self = static_cast<Terrain*>(object);
-    
+    Terrain* self = reinterpret_cast<Terrain*>(object);
+
 ///\todo remove
-assert(scopeData.data->size() > self->geometrySlot);
+assert(scopeData.data->size() > self->elevationSlot);
     
 assert(((*scopeData.data)[self->geometrySlot])->getMemory() != NULL);
-    Vertex* vertices = static_cast<Vertex*>(
+assert(((*scopeData.data)[self->elevationSlot])->getId() != 0);
+    Vertex* vertices = reinterpret_cast<Vertex*>(
         ((*scopeData.data)[self->geometrySlot])->getMemory());
+    GLuint textureId = ((*scopeData.data)[self->elevationSlot])->getId();
+    
+    glBindTexture(GL_TEXTURE_2D, textureId);
+    
+    
     glColor3f(0.5f,0.5f,0.5f);
 #if 1
     glVertexPointer(vertices);
@@ -229,6 +321,10 @@ assert(((*scopeData.data)[self->geometrySlot])->getMemory() != NULL);
     }
 #endif
 
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+#if 0
+    glDisable(GL_TEXTURE_2D);
 	glColor3f(1.0f,1.0f,1.0f);
     glBegin(GL_QUADS);
     for (int i=0; i<4; ++i)
@@ -237,11 +333,20 @@ assert(((*scopeData.data)[self->geometrySlot])->getMemory() != NULL);
         glVertex(scopeData.scope->corners[i]);
     }
     glEnd();
+    glEnable(GL_TEXTURE_2D);
+#endif
 }
 
 void Terrain::
-postDisplayCallback(void* object)
+postDisplayCallback(void* object, GLContextData& contextData)
 {
+    Terrain* self = reinterpret_cast<Terrain*>(object);
+
+    GlData* glData = contextData.retrieveDataItem<GlData>(self);
+    glData->elevationShader.disablePrograms();
+
+    glActiveTexture(GL_TEXTURE0);
+
     glPopAttrib();
 }
 
@@ -249,6 +354,7 @@ void Terrain::
 registerToGrid(GlobalGrid* grid)
 {
     geometrySlot = grid->registerDataSlot();
+elevationSlot = grid->registerDataSlot();
 
     gridProcessing::ScopeCallback updating(this, &Terrain::updateCallback);
     grid->registerScopeCallback(gridProcessing::UPDATE_PHASE, updating);
@@ -258,5 +364,13 @@ registerToGrid(GlobalGrid* grid)
                                              &Terrain::postDisplayCallback);
     grid->registerScopeCallback(gridProcessing::DISPLAY_PHASE, displaying);
 }
+
+void Terrain::
+initContext(GLContextData& contextData) const
+{
+    GlData* glData = new GlData;
+    contextData.addDataItem(this, glData);
+}
+
 
 END_CRUSTA

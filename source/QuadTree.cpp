@@ -231,12 +231,13 @@ split(Node* node)
 }
 
 void QuadTree::
-traverseLeaves(Node* node, gridProcessing::ScopeCallback& callback)
+traverseLeaves(Node* node, gridProcessing::ScopeCallback& callback,
+               GLContextData& contextData)
 {
     if (!node->leaf)
     {
         for (uint i=0; i<4; ++i)
-            traverseLeaves(&(node->children[i]), callback);
+            traverseLeaves(&(node->children[i]), callback, contextData);
     }
     else
     {
@@ -245,7 +246,7 @@ traverseLeaves(Node* node, gridProcessing::ScopeCallback& callback)
         scopeData.scope = &(node->scope);
         scopeData.data  = &(node->data);
 
-        callback.traversal(scopeData);
+        callback.traversal(scopeData, contextData);
     }
 }
 
@@ -300,14 +301,15 @@ refine(VisibilityEvaluator& visibility, LodEvaluator& lod)
 }
 
 void QuadTree::
-traverseLeaves(gridProcessing::ScopeCallbacks& callbacks)
+traverseLeaves(gridProcessing::ScopeCallbacks& callbacks,
+               GLContextData& contextData)
 {
     uint numCallbacks = static_cast<uint>(callbacks.size());
     for (uint i=0; i<numCallbacks; ++i)
     {
-        callbacks[i].preTraversal();
-        traverseLeaves(root, callbacks[i]);
-        callbacks[i].postTraversal();
+        callbacks[i].preTraversal(contextData);
+        traverseLeaves(root, callbacks[i], contextData);
+        callbacks[i].postTraversal(contextData);
     }
 }
 

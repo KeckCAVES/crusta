@@ -210,14 +210,10 @@ display(GLContextData& contextData) const
     }
 
     for (uint i=0; i<numPatches; ++i)
-    {
-        viewData->basePatches[i]->traverseLeaves(updateCallbacks);
-    }
+        viewData->basePatches[i]->traverseLeaves(updateCallbacks, contextData);
 
-for (uint i=0; i<numPatches; ++i)
-    {
-        viewData->basePatches[i]->traverseLeaves(displayCallbacks);
-    }
+    for (uint i=0; i<numPatches; ++i)
+        viewData->basePatches[i]->traverseLeaves(displayCallbacks, contextData);
 }
 
 gridProcessing::Id SpheroidGrid::
