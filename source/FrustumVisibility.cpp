@@ -26,7 +26,7 @@ evaluate(const Scope& scope)
         radius = std::max(radius, length);
     }
     
-    return frustum.containsSphere(center, radius);
+    return frustum.doesSphereIntersect(center, radius);
 }
 
 END_CRUSTA

@@ -5,9 +5,7 @@
 #include <Vrui/VisletManager.h>
 #include <Vrui/Vrui.h>
 
-#include <Cache.h>
-#include <SpheroidGrid.h>
-#include <Terrain.h>
+#include <Spheroid.h>
 
 BEGIN_CRUSTA
 
@@ -65,27 +63,6 @@ destroyCrustaFactory(Vrui::VisletFactory* factory)
 
 CrustaFactory* Crusta::factory = NULL;
 
-Crusta::
-Crusta()
-{
-    Cache::getMainCache()->setCacheSize (100 * (1<<20));
-    Cache::getVideoCache()->setCacheSize(100 * (1<<20));
-    
-    globalGrid = new SpheroidGrid;
-    Terrain* terrain = new Terrain;
-    terrain->registerToGrid(globalGrid);
-    gridClients.push_back(terrain);
-}
-
-Crusta::
-~Crusta()
-{
-    delete globalGrid;
-    uint numClients = static_cast<uint>(gridClients.size());
-    for (uint i=0; i<numClients; ++i)
-        delete gridClients[i];
-}
-
 Vrui::VisletFactory* Crusta::
 getFactory() const
 {
@@ -95,11 +72,8 @@ getFactory() const
 void Crusta::
 frame()
 {
-    Cache::getMainCache()->frame();
-    Cache::getVideoCache()->frame();
-
-    globalGrid->frame();
-///\todo also add a frame to GridClients
+    spheroid.frame();
+///\todo only update when something has changed
     Vrui::requestUpdate();
 }
 
@@ -141,7 +115,7 @@ glMultMatrix(Vrui::getNavigationTransformation());
     glEnable(GL_LIGHTING);
     glDisable(GL_COLOR_MATERIAL);
 
-    globalGrid->display(contextData);
+    spheroid.display(contextData);
 
 glPopMatrix();
 }

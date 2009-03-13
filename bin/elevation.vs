@@ -7,7 +7,8 @@ const vec3  sobelCoeff  = vec3(1.0, 2.0, 1.0);
 //vpNormalZ = 6.0f/(float)(quadRes - 1);
 
 
-uniform sampler2D heights;
+uniform sampler2D geometry;
+uniform sampler2D height;
 
 void main()
 {

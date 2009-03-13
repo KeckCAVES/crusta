@@ -29,7 +29,7 @@ typedef Geometry::Point<float,3> Point;
 typedef Geometry::Vector<float,3> Vector;
 
 
-const uint TILE_RESOLUTION = 4;
+const uint TILE_RESOLUTION = 5;
 
 END_CRUSTA
     

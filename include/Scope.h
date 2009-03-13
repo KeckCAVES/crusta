@@ -8,20 +8,14 @@ BEGIN_CRUSTA
 /**
     A scope is used to define an area on the surface of the earth at a 
     particular resolution.
- 
-    The global grid in combination with the refinement produce a tiling of the
-    surface of the glob by use of scopes. Associated with each scope may be a
-    set of clients that process them or provide visual representations within
-    them. The area defined by the scopes can be used by these clients to query
-    data from preprocessed sources (e.g. elevation or texture hierarchies).
 */
 class Scope
 {
 public:
     enum {
-        UPPER_LEFT = 0,
-        LOWER_LEFT,
+        LOWER_LEFT  = 0,
         LOWER_RIGHT,
+        UPPER_LEFT,
         UPPER_RIGHT
     };
 
@@ -32,8 +26,8 @@ public:
         corners[0] = p1; corners[1] = p2; corners[2] = p3; corners[3] = p4;
     }
 
-    /** corner points of the scope in cartesian space in counter-clockwise
-        order starting at the top-left */
+    /** corner points of the scope in cartesian space in order lower-left,
+        lower-right, upper-left, upper-right*/
     Point corners[4];
 };
 

@@ -3,9 +3,7 @@
 
 #include <Vrui/Vislet.h>
 
-///\todo remove once other stuff has been added?
-#include <basics.h>
-#include <GridClient.h>
+#include <Spheroid.h>
 
 namespace Vrui {
     class VisletManager;
@@ -40,16 +38,11 @@ class Crusta : public Vrui::Vislet
 {
     friend class CrustaFactory;
 
-public:
-    Crusta();
-    ~Crusta();
-
 private:
     /** handle to the factory object for this class */
     static CrustaFactory* factory;
 
-    GlobalGrid* globalGrid;
-    GridClientPtrs gridClients;
+    Spheroid spheroid;
 
 //- inherited from Vislet
 public:
