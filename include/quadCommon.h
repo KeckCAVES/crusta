@@ -33,7 +33,10 @@ struct TreeIndex
         patch(i.patch), child(i.child), level(i.level), index(i.index) {}
     
     TreeIndex up() const {
-        return TreeIndex(patch, (index>>((level-2)*2)) & 0x3, level-1, index);
+        assert(level>0);
+        return level>1 ? TreeIndex(patch, (index>>((level-2)*2)) & 0x3, level-1,
+                                   index & ~(0x3<<((level-1)*2))) :
+                         TreeIndex(patch, 0, 0, 0);
     }
     TreeIndex down(uint8 which) const {
         return TreeIndex(patch, which, level+1, index | (which<<(level*2)));
@@ -42,7 +45,17 @@ struct TreeIndex
         return *(reinterpret_cast<const uint64*>(this)) ==
             *(reinterpret_cast<const uint64*>(&other));
     }
-
+    friend std::ostream& operator<<(std::ostream& os, const TreeIndex& i) {
+        if (i.level == uint16(~0))
+            return os << std::string("i");
+        if (i.level == 0)
+            return os << std::string("r");
+        uint32 index = i.index;
+        for (uint j=0; j<i.level; ++j, index>>=2)
+            os << (index&0x3);
+        return os;
+    }
+    
     uint64 patch :  8; ///< index of the base patch of the global hierarchy
     uint64 child :  8; ///< index within the group of siblings
     uint64 level : 16; ///< level in the global hierarchy (0 is root)
@@ -51,6 +64,7 @@ struct TreeIndex
         significant bits. */
     uint64 index : 32;
 };
+
 
 /** stores the main RAM view-independent data of the terrain that can be shared
     between multiple view-dependent trees */
@@ -79,7 +93,7 @@ struct QuadNodeMainData
     between multiple view-dependent trees */
 struct QuadNodeVideoData
 {
-    void createTexture(GLuint texture, GLint internalFormat, uint size) {
+    void createTexture(GLuint& texture, GLint internalFormat, uint size) {
         glGenTextures(1, &texture); glBindTexture(GL_TEXTURE_2D, texture);
         glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, size, size, 0,
                      GL_RGB, GL_UNSIGNED_INT, NULL);
@@ -117,7 +131,9 @@ public:
     /** retrieve the main memory node data from the buffer */
     const NodeDataType& getData() const { return data; }
     /** confirm use of the buffer for the current frame */
-    void touch(uint curFrameNumber) { frameNumber = curFrameNumber; }
+    void touch(uint curFrameNumber) {
+        frameNumber = std::max(frameNumber, curFrameNumber);
+    }
     /** pin the element in the cache such that it cannot be swaped out */
     void pin(bool wantPinned=true) { frameNumber = wantPinned ? ~0 : 0; }
     /** query the frame number of the buffer */

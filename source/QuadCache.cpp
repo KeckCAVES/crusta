@@ -8,7 +8,7 @@
 
 BEGIN_CRUSTA
 
-Cache crustaQuadCache(100 * (1<<20), 100 * (1<<20));
+Cache crustaQuadCache(1024, 512);
 
 MainCache::
 MainCache(uint size) :
@@ -61,7 +61,10 @@ frame()
 ///\todo currently processes all data
         const QuadNodeMainData& data = buf->getData();
         QuadTerrain::generateGeometry(it->scope, data.geometry);
-        QuadTerrain::generateHeights(data.geometry, data.height);
+        QuadTerrain::generateHeight(data.geometry, data.height);
+        QuadTerrain::generateColor(data.height, data.color);
+std::cout << "MainCache::frame: request for Index " << it->index
+          << " processed" << std::endl;
     }
 
     criticalRequests.clear();
@@ -78,7 +81,7 @@ lazyThreadFunc()
 
 VideoCache::
 VideoCache(uint size) :
-    CacheUnit<VideoCacheBuffer>(size), streamBuffer(size)
+    CacheUnit<VideoCacheBuffer>(size), streamBuffer(TILE_RESOLUTION)
 {
 }
 

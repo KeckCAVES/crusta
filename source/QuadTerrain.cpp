@@ -1,5 +1,6 @@
 #include <QuadTerrain.h>
 
+#include <algorithm>
 #include <assert.h>
 
 #include <QuadCache.h>
@@ -83,7 +84,8 @@ QuadTerrain(uint8 patch, const Scope& scope) :
     //generate/fetch the data content for the static data
     const QuadNodeMainData& rootData = rootBuffer->getData();
     generateGeometry(scope, rootData.geometry);
-generateHeights(rootData.geometry, rootData.height);
+    generateHeight(rootData.geometry, rootData.height);
+    generateColor(rootData.height, rootData.color);
 ///\todo color data
 }
 
@@ -97,9 +99,6 @@ frame()
 void QuadTerrain::
 display(GLContextData& contextData)
 {
-    //notify the video cache of a new frame
-    crustaQuadCache.getVideoCache(contextData).frame();
-
     //grab the context dependent active set
     GlData* glData = contextData.retrieveDataItem<GlData>(this);
 
@@ -112,7 +111,7 @@ display(GLContextData& contextData)
     glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &elementArrayBuffer);
     
     glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_POLYGON_BIT);
-	glEnable(GL_CULL_FACE);
+//	glEnable(GL_CULL_FACE);
     glEnable(GL_TEXTURE_2D);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glLineWidth(1.0f);
@@ -121,6 +120,11 @@ display(GLContextData& contextData)
 
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
     glEnableClientState(GL_VERTEX_ARRAY);
+
+    //setup the evaluators
+    glData->visibility.frustum.setFromGL();
+    glData->lod.frustum = glData->visibility.frustum;
+
     /* display could be multi-threaded. Buffer all the node data requests and
        merge them into the request list en block */
     MainCacheRequests dataRequests;
@@ -137,7 +141,7 @@ display(GLContextData& contextData)
        none of the children are close to needing to be merged.
      */
     for (ActiveList::iterator it=activeList.begin(); it!=activeList.end(); ++it)
-        evaluateActive(activeList, it, dataRequests);
+        evaluateActive(glData, it, dataRequests);
 
     /* second pass: confirm activity and issue drawing commands */
     for (ActiveList::iterator it=activeList.begin(); it!=activeList.end(); ++it)
@@ -158,6 +162,9 @@ display(GLContextData& contextData)
     
     //merge the data requests
     crustaQuadCache.getMainCache().request(dataRequests);
+
+    //notify the video cache that a new frame has been processed
+    crustaQuadCache.getVideoCache(contextData).frame();
 }
 
 void QuadTerrain::
@@ -210,19 +217,45 @@ generateGeometry(const Scope& scope, QuadNodeMainData::Vertex* vertices)
 }
 
 void QuadTerrain::
-generateHeights(QuadNodeMainData::Vertex* vertices, float* heights)
+generateHeight(QuadNodeMainData::Vertex* vertices, float* heights)
 {
     uint numHeights = TILE_RESOLUTION*TILE_RESOLUTION;
-    float* tex = new float[numHeights];
-    for (float* cur=tex; cur<tex+numHeights; ++cur, ++vertices)
+    float* end = heights + numHeights;
+    for (; heights<end; ++heights, ++vertices)
     {
         float theta = acos(vertices->position[2]);
         float phi = atan2(vertices->position[1], vertices->position[0]);
-        float elevation = SimplexNoise1234::noise(theta, phi);
-        elevation += 1.0f;
-        elevation /= 8.0f;
-        elevation += 1.0f;
-        *cur = elevation;
+        *heights = SimplexNoise1234::noise(theta, phi);
+        *heights += 1.0f;
+        *heights /= 8.0f;
+        *heights += 1.0f;
+    }
+}
+
+void QuadTerrain::
+generateColor(float* heights, uint8* colors)
+{
+    static const uint  PALETTE_SIZE = 3;
+    static const float PALETTE_BUCKET_SIZE = 1.0f / (PALETTE_SIZE-1);
+    static const float heightPalette[PALETTE_SIZE][3] = {
+        {0.85f, 0.83f, 0.66f}, {0.80f, 0.21f, 0.28f}, {0.29f, 0.37f, 0.50f} };
+
+    uint numHeights = TILE_RESOLUTION*TILE_RESOLUTION;
+    float* end = heights + numHeights;
+    for (; heights<end; ++heights, colors+=3)
+    {
+        float alpha = (*heights - 1.0f) * 4.0f;
+        alpha /= PALETTE_BUCKET_SIZE;
+        uint low  = (uint)(alpha);
+        uint high = low==(PALETTE_SIZE-1) ? (PALETTE_SIZE-1) : low+1;
+        alpha -= low;
+        
+        colors[0] = ((1.0f-alpha)*heightPalette[low][0] +
+                    alpha*heightPalette[high][0]) * 255;
+        colors[1] = ((1.0f-alpha)*heightPalette[low][1] +
+                    alpha*heightPalette[high][1]) * 255;
+        colors[2] = ((1.0f-alpha)*heightPalette[low][2] +
+                    alpha*heightPalette[high][2]) * 255;
     }
 }
 
@@ -245,7 +278,14 @@ void QuadTerrain::
 computeParentScope(const ActiveList& activeList,
                    const ActiveList::iterator& curNode)
 {
+    if (curNode->index.level == 0)
+        return;
+
     TreeIndex parentIndex = curNode->index.up();
+if (parentIndex.level!=0 && parentIndex.index==0)
+{
+    std::cout << "ComputeParentScope:up(): cur " << (int)(curNode->index.level) << "," << (int)(curNode->index.child) << "," << curNode->index << " up " << (int)(parentIndex.level) << "," << (int)(parentIndex.child) << "," << parentIndex << std::endl;
+}
 
     //we need to combine the subtree scopes into the parent's 
     Scope& parentScope = curNode->parentScope;
@@ -253,8 +293,7 @@ computeParentScope(const ActiveList& activeList,
     /* build a mask to separate the index into the path to parent part and the
      subtree part */
     uint32 mask = 0x0;
-    for (uint i=1; i<parentIndex.level; ++i, mask<<=2)
-        mask |= 0x3;
+    for (uint i=0; i<parentIndex.level; ++i, mask<<=2, mask|=0x3) ;
     //mask out the subtree from the parent index
     uint32 toParent = parentIndex.index & mask;
     
@@ -276,14 +315,22 @@ computeParentScope(const ActiveList& activeList,
     }
     //determine the "right end" of the subtree
     ActiveList::const_iterator end = curNode;
-    for (++end; ((end->index.index)&mask) == toParent && end!=activeList.end();
+    for (++end; end!=activeList.end() && ((end->index.index)&mask)==toParent;
          ++end) ;
 
     //parse out the parentScope from the subtree
+std::cout<< "Pscope start "<<start->index<<" end ";
+    if (end==activeList.end())
+        std::cout << "e";
+    else
+        std::cout << end->index;
+std::cout<<std::endl;
     for (ActiveList::const_iterator it=start; it!=end; ++it)
     {
-        //compute the residual path (including parent)
-        uint32 toNode = it->index.index >> ((parentIndex.level-1)*2);
+std::cout << " " << it->index;
+        //compute the residual path
+        uint32 toNode = it->index.index >> (parentIndex.level==0 ? 0 :
+                                            parentIndex.level * 2);
         //verify that the path to the node is of a corner of the parent
         bool  isCorner = true;
         uint8 corner   = toNode&0x3;
@@ -299,8 +346,12 @@ computeParentScope(const ActiveList& activeList,
         }
         //set the corner value
         if (isCorner)
+        {
             parentScope.corners[corner] = it->scope.corners[corner];
+std::cout << " c" << it->index;
+        }
     }
+std::cout << std::endl;
 }
 
 void QuadTerrain::
@@ -387,16 +438,37 @@ mergeInList(ActiveList& activeList, ActiveList::iterator& curNode,
     /* build a mask to separate the index into the path to parent part and the
        subtree part */
     uint32 mask = 0x0;
-    for (uint i=0; i<parentNode.index.level; ++i, mask<<=2)
-        mask |= 0x3;
+    for (uint i=0; i<parentNode.index.level; ++i, mask<<=2, mask|=0x3) ;
     //mask out the subtree from the parent index
     uint32 toParent = parentNode.index.index & mask;
 
+std::cout << "Merge: ParentIndex " << parentNode.index << " Mask " << mask;
+std::cout << " toParent " << toParent << " Start: " << std::endl;
+    
     //determine the "left end" of the subtree
     ActiveList::iterator start = curNode;
+std::cout << start->index;
     if (start != activeList.begin())
     {
         bool reachedBegin = false;
+#if 1
+--start;
+std::cout << "->" << start->index;
+uint32 masked = start->index.index & mask;
+std::cout << "." << masked;
+while (masked == toParent)
+{
+    if (start == activeList.begin())
+    {
+        reachedBegin = true;
+        break;
+    }
+    --start;
+    std::cout << "->" << start->index;
+    masked = start->index.index & mask;
+    std::cout << "." << masked;    
+}
+#else
         for (--start; ((start->index.index)&mask) == toParent; --start)
         {
             if (start == activeList.begin())
@@ -405,34 +477,68 @@ mergeInList(ActiveList& activeList, ActiveList::iterator& curNode,
                 break;
             }
         }
+#endif
         if (!reachedBegin)
+        {
             ++start; //because now we're one too far
+std::cout << "->" << start->index;
+        }
     }
     //determine the "right end" of the subtree
+std::cout << std::endl << "End:" << std::endl;
     ActiveList::iterator end = curNode;
-    for (++end; ((end->index.index)&mask) == toParent && end!=activeList.end();
+std::cout << end->index;
+#if 1
+uint32 masked;
+masked = (end->index.index)&mask;
+std::cout << "." << masked;
+while (end!=activeList.end() && masked==toParent)
+{
+    ++end;
+    if (end==activeList.end())
+        std::cout << "->e";
+    else
+        std::cout << "->" << end->index;
+    masked = end==activeList.end()?0:(end->index.index)&mask;
+    std::cout << "." << masked;
+}
+#else
+    for (++end; end!=activeList.end() && ((end->index.index)&mask) == toParent;
          ++end) ;
+#endif
+std::cout << std::endl;
     
     //just get rid of the subtree
-    curNode = activeList.erase(start, end);    
+std::cout << "Merge: activeList was " << activeList.size();
+    curNode = activeList.erase(start, end);
+std::cout << " now after delete " << activeList.size();
     //insert the parent into the list
     curNode = activeList.insert(curNode, parentNode);
+std::cout << " and finally " << activeList.size() << std::endl;
+
+std::cout << std::endl << "-- ActiveList (Merge):" << std::endl;
+for (ActiveList::const_iterator it=activeList.begin(); it!=activeList.end();
+     ++it)
+    std::cout << it->index << " ";
+std::cout << std::endl;
+
     computeParentScope(activeList, curNode);
     computeChildScopes(curNode);
 }
 
 void QuadTerrain::
-merge(ActiveList& activeList, ActiveList::iterator& it, float lod,
+merge(GlData* glData, ActiveList::iterator& it, float lod,
       MainCacheRequests& requests)
 {
     TreeIndex parentIndex = it->index.up();
     
     //evaluate the parent's visibility and lod
-    bool  parentVisible = visibilityEvaluator.evaluate(it->parentScope);
-    float parentLod     = lodEvaluator.evaluate(it->parentScope);
+    bool  parentVisible = glData->visibility.evaluate(it->parentScope);
+    float parentLod     = glData->lod.evaluate(it->parentScope);
     //perform the merge if it agrees with the parent's evaluation
     if (!parentVisible || parentLod<-1.0)
     {
+std::cout << "merge:up(): cur " << (int)it->index.level << "," << (int)it->index.child << "," << it->index << " up " << (int)parentIndex.level << "," << (int)parentIndex.child << "," << parentIndex << std::endl;
         //if we don't have the parent's data then we must request it
         MainCacheBuffer* parentBuffer =
             crustaQuadCache.getMainCache().findCached(parentIndex);
@@ -444,8 +550,9 @@ merge(ActiveList& activeList, ActiveList::iterator& it, float lod,
         }
 
         //replace the parent's subtree with the parent in the active list
-        mergeInList(activeList, it, ActiveNode(parentIndex, parentBuffer,
-                                               it->parentScope, parentVisible));
+        mergeInList(glData->activeList, it,
+                    ActiveNode(parentIndex, parentBuffer, it->parentScope,
+                               parentVisible));
     }
 }
 
@@ -460,6 +567,10 @@ split(ActiveList& activeList, ActiveList::iterator& it, float lod,
     {
         ActiveNode& child = children[i];
         child.index = it->index.down(i);
+if (child.index.level!=0 && child.index.index==0)
+{
+    std::cout << "split:up(): cur " << (int)(it->index.level) << "," << (int)(it->index.child) << "," << it->index << " down " << (int)(child.index.level) << "," << (int)(child.index.child) << "," << child.index << std::endl;
+}
         child.mainBuffer =
             crustaQuadCache.getMainCache().findCached(child.index);
         if (child.mainBuffer == NULL)
@@ -481,27 +592,33 @@ split(ActiveList& activeList, ActiveList::iterator& it, float lod,
         it = activeList.insert(it, children[i]);
         computeChildScopes(it);
     }
+
+std::cout << std::endl << "++ ActiveList (Split):" << std::endl;
+for (ActiveList::const_iterator it=activeList.begin(); it!=activeList.end();
+     ++it)
+    std::cout << it->index << " ";
+std::cout << std::endl;
 }
 
 
 void QuadTerrain::
-evaluateActive(ActiveList& activeList, ActiveList::iterator& it,
+evaluateActive(GlData* glData, ActiveList::iterator& it,
                MainCacheRequests& requests)
 {
     //update the visibility and lod
-    it->visible = visibilityEvaluator.evaluate(it->scope);
-    float lod = lodEvaluator.evaluate(it->scope);
+    it->visible = glData->visibility.evaluate(it->scope);
+    float lod   = glData->lod.evaluate(it->scope);
     
 //- evaluate merge, only if we're not already at the root
     if (it->index.level!=0 && (!it->visible || lod<-1.0))
     {
-        merge(activeList, it, lod, requests);
+        merge(glData, it, lod, requests);
         return;
     }
 
 //- evaluate node for splitting
     if (it->visible && lod>1.0)
-        split(activeList, it, lod, requests);
+        split(glData->activeList, it, lod, requests);
 }
 
 const QuadNodeVideoData& QuadTerrain::
@@ -510,6 +627,7 @@ prepareGLData(const ActiveList::iterator it, GLContextData& contextData)
     //check if we already have the data locally cached
     if (it->videoBuffer != NULL)
     {
+        it->videoBuffer->touch(frameNumber);
         return it->videoBuffer->getData();
     }
 
@@ -522,6 +640,7 @@ prepareGLData(const ActiveList::iterator it, GLContextData& contextData)
     {
         //if there was already a match in the cache, just use that data
         it->videoBuffer = videoBuf;
+        it->videoBuffer->touch(frameNumber);
         return it->videoBuffer->getData();
     }
     else
@@ -532,6 +651,7 @@ prepareGLData(const ActiveList::iterator it, GLContextData& contextData)
         {
             //if we can use a stable buffer, then associate it with the node
             it->videoBuffer = videoBuf;
+            it->videoBuffer->touch(frameNumber);
             xferBuf = videoBuf;
         }
         else
@@ -553,7 +673,12 @@ prepareGLData(const ActiveList::iterator it, GLContextData& contextData)
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
                         TILE_RESOLUTION, TILE_RESOLUTION, GL_RED, GL_FLOAT,
                         mainData.height);
+
         //transfer the color
+        glBindTexture(GL_TEXTURE_2D, videoData.color);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+                        TILE_RESOLUTION, TILE_RESOLUTION, GL_RGB,
+                        GL_UNSIGNED_BYTE, mainData.color);
         
         //return the data
         return videoData;
@@ -567,22 +692,43 @@ drawActive(const ActiveList::iterator& it, GlData* glData,
 ///\todo accommodate for lazy data fetching
     const QuadNodeVideoData& data = prepareGLData(it, contextData);
 
-    glActiveTexture(GL_TEXTURE0); 
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, data.geometry);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, data.height);
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, data.color);
-    
+
     glBindBuffer(GL_ARRAY_BUFFER,         glData->vertexAttributeTemplate);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glData->indexTemplate);
 
     glVertexPointer(2, GL_FLOAT, 0, 0);
-//    glIndexPointer(GL_UNSIGNED_SHORT, 0, 0);
+    glIndexPointer(GL_SHORT, 0, 0);
 
     glDrawRangeElements(GL_TRIANGLE_STRIP, 0,
                         (TILE_RESOLUTION*TILE_RESOLUTION) - 1,
                         NUM_GEOMETRY_INDICES, GL_UNSIGNED_SHORT, 0);
+
+#if 0
+glData->shader.disablePrograms();
+    Point* c = it->scope.corners;
+    glDisable(GL_LIGHTING);
+    glActiveTexture(GL_TEXTURE0);
+    glDisable(GL_TEXTURE_2D);
+    glBegin(GL_LINE_STRIP);
+        glColor3f(1.0f, 0.0f, 0.0f);
+        glVertex3f(c[0][0], c[0][1], c[0][2]);
+        glColor3f(1.0f, 1.0f, 0.0f);
+        glVertex3f(c[1][0], c[1][1], c[1][2]);
+        glColor3f(0.0f, 1.0f, 0.0f);
+        glVertex3f(c[3][0], c[3][1], c[3][2]);
+        glColor3f(0.0f, 1.0f, 1.0f);
+        glVertex3f(c[2][0], c[2][1], c[2][2]);
+        glColor3f(0.0f, 0.0f, 1.0f);
+        glVertex3f(c[0][0], c[0][1], c[0][2]);
+    glEnd();
+glData->shader.useProgram();
+#endif
 }
 
 
@@ -642,7 +788,7 @@ generateIndexTemplate()
     uint alt        = 1;
     uint index[2]   = {0, TILE_RESOLUTION};
     uint16* indices = indicesInMemory;
-    for (uint b=0; b<TILE_RESOLUTION+1; ++b, inc=-inc, alt=1-alt,
+    for (uint b=0; b<TILE_RESOLUTION-1; ++b, inc=-inc, alt=1-alt,
          index[0]+=TILE_RESOLUTION, index[1]+=TILE_RESOLUTION)
     {
         for (uint i=0; i<TILE_RESOLUTION*2;
@@ -705,11 +851,17 @@ GlData(const TreeIndex& iRootIndex, MainCacheBuffer* iRootBuffer,
     shader.compileFragmentShader("elevation.fs");
     shader.linkShader();
     shader.useProgram();
-    GLint geometryUniform = shader.getUniformLocation("geometry");
-    glUniform1i(geometryUniform, 0);
-    GLint heightUniform = shader.getUniformLocation("height");
-    glUniform1i(heightUniform, 1);
+    GLint uniform;
+    uniform = shader.getUniformLocation("geometryTex");
+    glUniform1i(uniform, 0);
+    uniform = shader.getUniformLocation("heightTex");
+    glUniform1i(uniform, 1);
+    uniform = shader.getUniformLocation("colorTex");
+    glUniform1i(uniform, 2);
     shader.disablePrograms();
+
+///\todo debug, remove: makes LOD recommend very coarse
+    lod.bias = -3.0;
 }
 
 QuadTerrain::GlData::

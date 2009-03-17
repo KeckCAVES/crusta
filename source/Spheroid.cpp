@@ -30,7 +30,7 @@ centroid(const PointParam& p0,
 Spheroid::
 Spheroid()
 {
-#if 1
+#if 0
     //Triacontahedron from Mathematica 6-7.
     static const Point baseVertices[] = {
         Point(0,0,0), //dummy because Mathematica indices start a 1 not 0
@@ -127,7 +127,7 @@ Spheroid()
     
 #if 1
     basePatches.resize(1);
-	basePatches[ 0] = new QuadTerrain(0, Scope(t0,e01,f2,e03));
+	basePatches[ 0] = new QuadTerrain(0, Scope(t0,e01,e03,f2));
 #else
     basePatches.resize(12);
 	basePatches[ 0] = new QuadTerrain( 0, Scope(t0,e01,f2,e03));

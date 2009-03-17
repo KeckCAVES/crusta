@@ -45,7 +45,8 @@ public:
     static void generateGeometry(const Scope& scope,
                           QuadNodeMainData::Vertex* vertices);
 ///\todo remove
-static void generateHeights(QuadNodeMainData::Vertex* vertices, float* heights);
+static void generateHeight(QuadNodeMainData::Vertex* vertices, float* heights);
+static void generateColor(float* heights, uint8* colors);
     
 protected:
     struct GlData;
@@ -95,7 +96,7 @@ protected:
         data required is available. In such a case the list is traversed and
         all the nodes under the introduced parent removed. True is returned if
         a merge has been performed, false otherwise. */
-    void merge(ActiveList& activeList, ActiveList::iterator& it, float lod,
+    void merge(GlData* glData, ActiveList::iterator& it, float lod,
                MainCacheRequests& requests);
     /** check for the possibility of a split and perform it if the critical
         data required is available. In such a case the parent is removed and
@@ -106,7 +107,7 @@ protected:
     /** evaluate the active node specified by the iterator and apply
         modifications. The active list is manipulated to add/remove nodes as
         necessary. */
-    void evaluateActive(ActiveList& activeList, ActiveList::iterator& it,
+    void evaluateActive(GlData* glData, ActiveList::iterator& it,
                         MainCacheRequests& requests);
 
     /** make sure the required GL data for drawing is available. In case a
@@ -121,12 +122,6 @@ protected:
     void drawActive(const ActiveList::iterator& it, GlData* glData,
                     GLContextData& contextData);
     
-    
-    /** evaluates the visibility of a scope */
-    FrustumVisibility visibilityEvaluator;
-    /** evaluates the level of detail of a scope */
-    FocusViewEvaluator lodEvaluator;
-
     /** spheroid base patch ID (specified at construction but needed during
         initContext) */
     uint8 basePatchId;
@@ -159,6 +154,11 @@ protected:
         
         /** list of nodes that currently make up the terrain approximation */
         ActiveList activeList;
+
+        /** evaluates the visibility of a scope */
+        FrustumVisibility visibility;
+        /** evaluates the level of detail of a scope */
+        FocusViewEvaluator lod;
 
         /** basic data being passed to the GL to represent a vertex. The
             template provides simply texel-centered, normalized texture
