@@ -30,7 +30,7 @@ centroid(const PointParam& p0,
 Spheroid::
 Spheroid()
 {
-#if 0
+#if 1
     //Triacontahedron from Mathematica 6-7.
     static const Point baseVertices[] = {
         Point(0,0,0), //dummy because Mathematica indices start a 1 not 0
@@ -67,6 +67,27 @@ Spheroid()
         Point(-0.276393, -0.850651, -1.17082),
         Point(-0.276393, 0.850651, -1.17082)
     };
+#if 1
+//mirrored-Z indices
+    static const uint baseIndices[] = {
+        16, 15, 12, 11,         14, 13, 18, 17,
+        10, 28, 30, 20,         8, 5, 25, 6,
+        12, 28, 16, 31,         32, 30, 18, 14,
+        6, 3, 15, 11,           8, 17, 4, 13,
+        11, 21, 27, 19,         13, 29, 22, 19,
+        7, 16, 26, 23,          24, 18, 26, 9,
+        12, 11, 28, 27,         30, 29, 14, 13,
+        7, 6, 16, 15,           18, 17, 9, 8,
+        2, 22, 21, 19,          23, 1, 26, 24,
+        3, 2, 11, 21,           4, 13, 2, 22,
+        16, 31, 23, 1,          1, 32, 24, 18,
+        31, 28, 1, 10,          10, 30, 1, 32,
+        6, 5, 3, 2,             8, 4, 5, 2,
+        28, 27, 20, 19,         20, 19, 30, 29,
+        26, 25, 7, 6,           9, 8, 26, 25
+    };
+#else
+//counter-clockwise indices
     static const uint baseIndices[] = {
         16, 15, 11, 12,         14, 13, 17, 18,
         10, 28, 20, 30,         8, 5, 6, 25,
@@ -84,6 +105,7 @@ Spheroid()
         28, 27, 19, 20,         20, 19, 29, 30,
         26, 25, 6, 7,           9, 8, 25, 26
     };
+#endif
     
     basePatches.resize(30);
     for (uint i=0, j=0; i<30; ++i, j+=4)
@@ -128,6 +150,13 @@ Spheroid()
 #if 1
     basePatches.resize(1);
 	basePatches[ 0] = new QuadTerrain(0, Scope(t0,e01,e03,f2));
+///\todo debug generate a flat surface to debug light direction
+#if 0
+    basePatches[ 0] = new QuadTerrain(0, Scope(toSphere(Point(-1,-1,-1)),
+                                               toSphere(Point( 1,-1,-1)),
+                                               toSphere(Point(-1,-1, 1)),
+                                               toSphere(Point( 1,-1, 1))));
+#endif
 #else
     basePatches.resize(12);
 	basePatches[ 0] = new QuadTerrain( 0, Scope(t0,e01,f2,e03));

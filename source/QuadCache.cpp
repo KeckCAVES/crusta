@@ -1,6 +1,5 @@
 #include <QuadCache.h>
 
-#include <iostream>
 #include <GL/GLContextData.h>
 #include <Vrui/Vrui.h>
 
@@ -42,7 +41,7 @@ void MainCache::
 frame()
 {
     //giver the cache update 0.08ms (8ms for 120 fps, so 1% of frame time)
-    double endTime = Vrui::getApplicationTime() + 0.08e-3;
+    double endTime = Vrui::getApplicationTime() + 0.08e-5;//0.08e-3;
 
     //update as much as possible
     for (MainCacheRequests::iterator it=criticalRequests.begin();
@@ -52,10 +51,11 @@ frame()
             crustaQuadCache.getMainCache().getBuffer(it->index);
         if (buf == NULL)
         {
-            std::cout << "MainCache::frame: no more room in the cache for"
-                         "new data" << std::endl;
+            DEBUG_OUT(2, "MainCache::frame: no more room in the cache for ");
+            DEBUG_OUT(2, "new data\n");
             break;
         }
+        buf->touch(frameNumber);
         
         //process the critical data for that request
 ///\todo currently processes all data
@@ -63,8 +63,8 @@ frame()
         QuadTerrain::generateGeometry(it->scope, data.geometry);
         QuadTerrain::generateHeight(data.geometry, data.height);
         QuadTerrain::generateColor(data.height, data.color);
-std::cout << "MainCache::frame: request for Index " << it->index
-          << " processed" << std::endl;
+        DEBUG_OUT(5, "MainCache::frame: request for Index %s processed\n",
+                  it->index.str().c_str());
     }
 
     criticalRequests.clear();

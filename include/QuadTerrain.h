@@ -51,76 +51,63 @@ static void generateColor(float* heights, uint8* colors);
 protected:
     struct GlData;
 
-    /** stores the active aspects of the terrain */
-    struct ActiveNode
+    /** stores aspects of the terrain required for approximation management */
+    struct Node
     {
-        ActiveNode();
-        ActiveNode(const TreeIndex& iIndex, MainCacheBuffer* iBuffer,
-                   const Scope& iScope, bool iVisible);
+        typedef std::vector<Node*> ChildBlocks;
+
+        Node();
+        /** discard the nodes of the subtree */
+        void discardSubTree(GlData* glData);
 
         /** uniquely characterize this node's "position" in the tree. The tree
             index must correlate with the global hierarchy of the data
             sources */
         TreeIndex index;
+        /** caches this node's scope for visibility and lod evaluation */
+        Scope scope;
+
         /** cache buffer containing the data related to this node */
         MainCacheBuffer* mainBuffer;
         /** cache buffer containing the GL data related to this node (can be
             stored here, since an ActiveNode exists only in a GL context) */
         VideoCacheBuffer* videoBuffer;
-        
-        /** caches the parent scope so that visibility and lod can be evaluated
-            even before a request for data is issued */
-        Scope parentScope;
-        /** caches this node's scope for visibility and lod evaluation */
-        Scope scope;
-        /** caches the child scopes so that visibility and lod can be evaluated
-            even before requests for data is issued */
-        Scope childScopes[4];
-        /** caches the visibility flag that is computed during evaluation and
-            reused for drawing purposes */
-        bool visible;
+
+        /** pointer to the parent node in the tree */
+        Node* parent;
+        /** pointer to the children nodes in the tree */
+        Node* children;
     };
 
-    typedef std::list<ActiveNode> ActiveList;
+///\todo remove, debug
+    void printTree(Node* node);
+    void checkTree(Node* node);
 
-    /** regenerate the scope of the specified node's parent using the nodes of
-        the subtree */
-    static void computeParentScope(const ActiveList& activeList,
-                                   const ActiveList::iterator& curNode);
-    /** derive the scope of a child from the specified node */
-    static void computeChildScopes(const ActiveList::iterator& curNode);
-    /** replace the parent's subtree with the parent in the active list */
-    void mergeInList(ActiveList& activeList, ActiveList::iterator& curNode,
-                     const ActiveNode& parentNode);
     /** check for the possibility of a merge and perform it if the critical
-        data required is available. In such a case the list is traversed and
-        all the nodes under the introduced parent removed. True is returned if
-        a merge has been performed, false otherwise. */
-    void merge(GlData* glData, ActiveList::iterator& it, float lod,
+        data required is available */
+    bool merge(GlData* glData, Node* node, float lod,
                MainCacheRequests& requests);
+    /** compute the scopes of the children of specified node */
+    void computeChildScopes(Node* node);
     /** check for the possibility of a split and perform it if the critical
-        data required is available. In such a case the parent is removed and
-        the four child nodes inserted in the list. True is returned if a merge
-        has been performed, false otherwise. */
-    void split(ActiveList& activeList, ActiveList::iterator& it, float lod,
+        data required is available */
+    bool split(GlData* glData, Node* node, float lod,
                MainCacheRequests& requests);
-    /** evaluate the active node specified by the iterator and apply
-        modifications. The active list is manipulated to add/remove nodes as
-        necessary. */
-    void evaluateActive(GlData* glData, ActiveList::iterator& it,
-                        MainCacheRequests& requests);
+    /** evaluate the terrain tree starting with the node specified. The terrain
+        tree is manipulated to add/remove nodes as necessary. */
+    void traverse(GlData* glData, Node* node, MainCacheRequests& requests,
+                  GLContextData& contextData);
 
     /** make sure the required GL data for drawing is available. In case a
         buffer cannot be associated with the specified node (cache is full),
         then a temporary buffer is provided that has had the data streamed to
         it */
-    const QuadNodeVideoData& prepareGLData(const ActiveList::iterator it,
-                                     GLContextData& contextData);
+    const QuadNodeVideoData& prepareGlData(Node* node,
+                                           GLContextData& contextData);
     /** issue the drawing commands for displaying a node. The video cache 
         operations to stream data from the main cache are performed at this
         point. */
-    void drawActive(const ActiveList::iterator& it, GlData* glData,
-                    GLContextData& contextData);
+    void drawNode(Node* node, GlData* glData, GLContextData& contextData);
     
     /** spheroid base patch ID (specified at construction but needed during
         initContext) */
@@ -138,9 +125,18 @@ public:
 protected:
     struct GlData : public GLObject::DataItem
     {
+        typedef std::vector<Node*> NodeBlocks;
+
         GlData(const TreeIndex& iRootIndex, MainCacheBuffer* iRootBuffer,
                const Scope& baseScope);
         ~GlData();
+
+        /** grab a set of four nodes from the node pool. Used during split
+         operations */
+        Node* grabNodeBlock();
+        /** release a set of four nodes into the node pool. Used during merge
+         operations */
+        void releaseNodeBlock(Node* children);
 
         /** generate the vertex stream template characterizing a node and
             stream it to the graphics card as a vertex buffer. This buffer
@@ -152,8 +148,10 @@ protected:
             the graphics card as a index buffer. */
         void generateIndexTemplate();
         
-        /** list of nodes that currently make up the terrain approximation */
-        ActiveList activeList;
+        /** root of the tree that currently defines the terrain approximation */
+        Node* root;
+        /** a pool of four-sets of nodes */
+        NodeBlocks nodePool;
 
         /** evaluates the visibility of a scope */
         FrustumVisibility visibility;

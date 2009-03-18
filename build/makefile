@@ -122,7 +122,7 @@ internal-superclean: internal-clean
 
 internal-clean:
 	@echo Deleting intermediate files for '$(PROJECT) - $(cfg)'
-	-@if [ -d "$(TMP_DIR)" ]; then rm $(SRC_OBJS) $(SRC_DEPS); fi
+	-@if [ -d "$(TMP_DIR)" ]; then rm -f $(SRC_OBJS) $(SRC_DEPS); fi
 	-@if [ -d "$(TMP_DIR_ROOT)" ]; then\
          find "$(TMP_DIR_ROOT)" -depth -type d -empty -exec rmdir {} \;; fi
 

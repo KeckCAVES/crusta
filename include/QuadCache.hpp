@@ -37,12 +37,12 @@ findCached(const TreeIndex& index) const
     typename BufferPtrMap::const_iterator it = cached.find(index);
     if (it != cached.end())
     {
-std::cout << "Cache::find: found " << index << std::endl;
+        DEBUG_OUT(7, "Cache::find: found %s\n", index.str().c_str());
         return it->second;
     }
     else
     {
-std::cout << "Cache::find: missed " << index << std::endl;
+        DEBUG_OUT(5, "Cache::find: missed %s\n", index.str().c_str());
         return NULL;
     }
 }
@@ -54,7 +54,7 @@ getBuffer(const TreeIndex& index)
     BufferType* buffer = findCached(index);
     if (buffer != NULL)
     {
-std::cout << "Cache::get: found " << index << std::endl;
+        DEBUG_OUT(7, "Cache::get: found %s\n", index.str().c_str());
         return buffer;
     }
 
@@ -62,8 +62,8 @@ std::cout << "Cache::get: found " << index << std::endl;
     if (lruCached.size() > 0)
     {
         IndexedBuffer lruBuf = lruCached.back();
-std::cout << "Cache::get: swaped " << lruBuf.index << " for " << index
-          << std::endl;
+        DEBUG_OUT(5, "Cache::get: swaped %s for %s\n",
+                  lruBuf.index.str().c_str(), index.str().c_str());
         lruCached.pop_back();
         cached.erase(lruBuf.index);
         cached.insert(typename BufferPtrMap::value_type(index, lruBuf.buffer));
@@ -71,7 +71,8 @@ std::cout << "Cache::get: swaped " << lruBuf.index << " for " << index
     }
     else
     {
-std::cout << "Cache::get: unable to provide for " << index << std::endl;
+        DEBUG_OUT(3, "Cache::get: unable to provide for %s\n",
+                  index.str().c_str());
         return NULL;
     }
 }
@@ -83,7 +84,7 @@ getBuffer(const TreeIndex& index, bool& existed)
     BufferType* buffer = findCached(index);
     if (buffer != NULL)
     {
-std::cout << "Cache::get: found " << index << std::endl;
+        DEBUG_OUT(7, "Cache::get: found %s\n", index.str().c_str());
         existed = true;
         return buffer;
     }
@@ -93,8 +94,8 @@ std::cout << "Cache::get: found " << index << std::endl;
     if (lruCached.size() > 0)
     {
         IndexedBuffer lruBuf = lruCached.back();
-std::cout << "Cache::get: swaped " << lruBuf.index << " for " << index
-          << std::endl;
+        DEBUG_OUT(5, "Cache::get: swaped %s for %s\n", 
+                  lruBuf.index.str().c_str(), index.str().c_str());
         lruCached.pop_back();
         cached.erase(lruBuf.index);
         cached.insert(typename BufferPtrMap::value_type(index, lruBuf.buffer));
@@ -102,7 +103,8 @@ std::cout << "Cache::get: swaped " << lruBuf.index << " for " << index
     }
     else
     {
-std::cout << "Cache::get: unable to provide for " << index << std::endl;
+        DEBUG_OUT(3, "Cache::get: unable to provide for %s\n",
+                  index.str().c_str());
         return NULL;
     }
 }
@@ -149,12 +151,32 @@ refreshLru()
         std::sort(lruCached.begin(), lruCached.end(),
                   std::greater<IndexedBuffer>());
 
-std::cout << "RefreshLRU:" << std::endl;
-for (typename IndexedBuffers::const_iterator it=lruCached.begin(); it!=lruCached.end(); ++it)
+        DEBUG_OUT(6, "RefreshLRU:\n");
+        for (typename IndexedBuffers::const_iterator it=lruCached.begin();
+             it!=lruCached.end(); ++it)
+        {
+            DEBUG_OUT(6, "%s.%u ", it->index.str().c_str(),
+                      (unsigned int)(it->buffer->getFrameNumber()));
+        }
+        DEBUG_OUT(6, "\n");
+
+        ///\todo debug
+#if 0
+        for (typename IndexedBuffers::const_iterator it=lruCached.begin();
+             it!=lruCached.end(); ++it)
+        {
+        }
+#endif
+        
+bool encounteredNonInvalid = false;
+for (typename IndexedBuffers::reverse_iterator it=lruCached.rbegin();
+     it!=lruCached.rend(); ++it)
 {
-    std::cout << it->index << " ";
+    if (it->index.patch != uint8(~0))
+        encounteredNonInvalid = true;
+    else if (encounteredNonInvalid)
+        std::cout << "FRAKAMUNDO!";
 }
-std::cout << std::endl;
         sortFrameNumber = frameNumber;
     }
 }

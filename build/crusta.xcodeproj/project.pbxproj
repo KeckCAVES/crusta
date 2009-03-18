@@ -16,6 +16,7 @@
 		5C5DB33D0F663D9D0039615D /* QuadCache.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = QuadCache.cpp; path = ../source/QuadCache.cpp; sourceTree = SOURCE_ROOT; };
 		5C5DB33E0F66E6D10039615D /* QuadCache.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = QuadCache.hpp; path = ../include/QuadCache.hpp; sourceTree = SOURCE_ROOT; };
 		5C6D6C3B0ED549F10094927A /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; tabWidth = 4; usesTabs = 0; };
+		5C9904810F7084E0003B9A65 /* litElevation.vs */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = litElevation.vs; path = ../bin/litElevation.vs; sourceTree = SOURCE_ROOT; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		5CA26DFF0F4E120A00EFF83C /* elevation.vs */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = elevation.vs; path = ../bin/elevation.vs; sourceTree = SOURCE_ROOT; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		5CA26E000F4E14F300EFF83C /* elevation.fs */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = elevation.fs; path = ../bin/elevation.fs; sourceTree = SOURCE_ROOT; };
 		5CFFB65E0F29809A004E84EE /* basics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = basics.h; path = ../include/basics.h; sourceTree = "<group>"; };
@@ -23,7 +24,6 @@
 		5CFFB6610F29809A004E84EE /* FocusViewEvaluator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FocusViewEvaluator.h; path = ../include/FocusViewEvaluator.h; sourceTree = "<group>"; };
 		5CFFB6620F29809A004E84EE /* FrustumVisibility.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FrustumVisibility.h; path = ../include/FrustumVisibility.h; sourceTree = "<group>"; };
 		5CFFB6650F29809A004E84EE /* LodEvaluator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LodEvaluator.h; path = ../include/LodEvaluator.h; sourceTree = "<group>"; };
-		5CFFB6690F29809A004E84EE /* RefinementScope.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RefinementScope.h; path = ../include/RefinementScope.h; sourceTree = "<group>"; };
 		5CFFB66A0F29809A004E84EE /* Scope.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Scope.h; path = ../include/Scope.h; sourceTree = "<group>"; };
 		5CFFB66D0F29809A004E84EE /* ViewLod.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ViewLod.h; path = ../include/ViewLod.h; sourceTree = "<group>"; };
 		5CFFB66E0F29809A004E84EE /* VisibilityEvaluator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VisibilityEvaluator.h; path = ../include/VisibilityEvaluator.h; sourceTree = "<group>"; };
@@ -49,6 +49,7 @@
 		5CA26DFE0F4E11D500EFF83C /* shaders */ = {
 			isa = PBXGroup;
 			children = (
+				5C9904810F7084E0003B9A65 /* litElevation.vs */,
 				5CA26DFF0F4E120A00EFF83C /* elevation.vs */,
 				5CA26E000F4E14F300EFF83C /* elevation.fs */,
 			);
@@ -79,7 +80,6 @@
 				5CFFB6610F29809A004E84EE /* FocusViewEvaluator.h */,
 				5CFFB6620F29809A004E84EE /* FrustumVisibility.h */,
 				5CFFB6650F29809A004E84EE /* LodEvaluator.h */,
-				5CFFB6690F29809A004E84EE /* RefinementScope.h */,
 				5CFFB66A0F29809A004E84EE /* Scope.h */,
 				5CFFB66D0F29809A004E84EE /* ViewLod.h */,
 				5CFFB66E0F29809A004E84EE /* VisibilityEvaluator.h */,

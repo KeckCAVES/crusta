@@ -12,6 +12,19 @@
 
 BEGIN_CRUSTA
 
+#ifndef CRUSTA_BEBUG_LEVEL
+#define CRUSTA_BEBUG_LEVEL 6
+#endif //CRUSTA_BEBUG_LEVEL
+#ifndef CRUSTA_DEBUG_OUTPUT_DESTINATION
+#define CRUSTA_DEBUG_OUTPUT_DESTINATION stderr
+#endif //CRUSTA_DEBUG_OUTPUT_DESTINATION
+#if CRUSTA_BEBUG_LEVEL>0
+#define DEBUG_OUT(a, b, args...)\
+if ((a)<=CRUSTA_BEBUG_LEVEL) fprintf(CRUSTA_DEBUG_OUTPUT_DESTINATION, b, ## args)
+#else
+#define DEBUG_OUT(a, b, args...)
+#endif
+
 typedef size_t		uint;
     
 typedef uint8_t		uint8;
@@ -29,7 +42,7 @@ typedef Geometry::Point<float,3> Point;
 typedef Geometry::Vector<float,3> Vector;
 
 
-const uint TILE_RESOLUTION = 3;
+const uint TILE_RESOLUTION = 33;
 
 END_CRUSTA
     

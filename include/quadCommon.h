@@ -1,8 +1,9 @@
 #ifndef _quadCommon_H_
 #define _quadCommon_H_
 
-#include <GL/gl.h>
+#include <sstream>
 
+#include <GL/gl.h>
 #include <GL/GLVertex.h>
 
 #include <basics.h>
@@ -40,6 +41,17 @@ struct TreeIndex
     }
     TreeIndex down(uint8 which) const {
         return TreeIndex(patch, which, level+1, index | (which<<(level*2)));
+    }
+    std::string str() const {
+        std::ostringstream os;
+        if (level == uint16(~0))
+            return "i";
+        if (level == 0)
+            return "r";
+        uint32 i = index;
+        for (uint j=0; j<level; ++j, i>>=2)
+            os << (i&0x3);
+        return os.str();
     }
     bool operator==(const TreeIndex& other) const {
         return *(reinterpret_cast<const uint64*>(this)) ==
