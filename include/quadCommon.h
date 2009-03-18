@@ -143,8 +143,8 @@ public:
     /** retrieve the main memory node data from the buffer */
     const NodeDataType& getData() const { return data; }
     /** confirm use of the buffer for the current frame */
-    void touch(uint curFrameNumber) {
-        frameNumber = std::max(frameNumber, curFrameNumber);
+    void touch() {
+        frameNumber = std::max(frameNumber, crustaFrameNumber);
     }
     /** pin the element in the cache such that it cannot be swaped out */
     void pin(bool wantPinned=true) { frameNumber = wantPinned ? ~0 : 0; }

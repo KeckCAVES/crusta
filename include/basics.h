@@ -13,7 +13,7 @@
 BEGIN_CRUSTA
 
 #ifndef CRUSTA_BEBUG_LEVEL
-#define CRUSTA_BEBUG_LEVEL 6
+#define CRUSTA_BEBUG_LEVEL 0
 #endif //CRUSTA_BEBUG_LEVEL
 #ifndef CRUSTA_DEBUG_OUTPUT_DESTINATION
 #define CRUSTA_DEBUG_OUTPUT_DESTINATION stderr
@@ -43,6 +43,12 @@ typedef Geometry::Vector<float,3> Vector;
 
 
 const uint TILE_RESOLUTION = 33;
+
+
+/** keep track of the number of frames processed. Used, for example, by the
+    cache to perform LRU that is aware of currently active nodes (the ones from
+    the previous frame) */
+extern uint crustaFrameNumber;
 
 END_CRUSTA
     

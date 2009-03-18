@@ -190,16 +190,6 @@ Spheroid::
 
 
 void Spheroid::
-frame()
-{
-    for (TerrainPtrs::iterator it=basePatches.begin(); it!=basePatches.end();
-         ++it)
-    {
-        (*it)->frame();
-    }
-}
-
-void Spheroid::
 display(GLContextData& contextData) const
 {
     for (TerrainPtrs::const_iterator it=basePatches.begin(); it!=basePatches.end();

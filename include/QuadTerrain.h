@@ -16,6 +16,8 @@
 
 BEGIN_CRUSTA
 
+class VideoCache;
+
 /**
     Manages a visual approximation of a terrain based on a quadtree approach.
     The terrain is approximated as a gapless set of geometric tiles, that are
@@ -31,10 +33,6 @@ class QuadTerrain : public GLObject
 public:
     QuadTerrain(uint8 patch, const Scope& scope);
 
-    /** handle frame-specific events, e.g. fetching of new nodes, updating the
-        cache, etc. The frame is used as a synchronization point for data
-        manipulations concerning the shared main RAM.  */
-    void frame();
     /** diplay has several functions:
         1. evaluate the current active set (as it is view-dependent)
         2. issue requests for loading in new nodes (from splits or merges)
@@ -81,7 +79,7 @@ protected:
 
 ///\todo remove, debug
     void printTree(Node* node);
-    void checkTree(Node* node);
+    void checkTree(GlData* glData, Node* node);
 
     /** check for the possibility of a merge and perform it if the critical
         data required is available */
@@ -95,19 +93,17 @@ protected:
                MainCacheRequests& requests);
     /** evaluate the terrain tree starting with the node specified. The terrain
         tree is manipulated to add/remove nodes as necessary. */
-    void traverse(GlData* glData, Node* node, MainCacheRequests& requests,
-                  GLContextData& contextData);
+    void traverse(GlData* glData, Node* node, MainCacheRequests& requests);
 
     /** make sure the required GL data for drawing is available. In case a
         buffer cannot be associated with the specified node (cache is full),
         then a temporary buffer is provided that has had the data streamed to
         it */
-    const QuadNodeVideoData& prepareGlData(Node* node,
-                                           GLContextData& contextData);
+    const QuadNodeVideoData& prepareGlData(GlData* glData, Node* node);
     /** issue the drawing commands for displaying a node. The video cache 
         operations to stream data from the main cache are performed at this
         point. */
-    void drawNode(Node* node, GlData* glData, GLContextData& contextData);
+    void drawNode(GlData* glData, Node* node);
     
     /** spheroid base patch ID (specified at construction but needed during
         initContext) */
@@ -115,8 +111,6 @@ protected:
     /** spheroid base scope (specified at construction but needed during
         initContext) */
     Scope baseScope;
-    /** keep track of the number of frames processed. Used for LRU caching. */
-    uint frameNumber;
 
 //- inherited from GLObject
 public:
@@ -128,7 +122,7 @@ protected:
         typedef std::vector<Node*> NodeBlocks;
 
         GlData(const TreeIndex& iRootIndex, MainCacheBuffer* iRootBuffer,
-               const Scope& baseScope);
+               const Scope& baseScope, VideoCache& iVideoCache);
         ~GlData();
 
         /** grab a set of four nodes from the node pool. Used during split
@@ -152,6 +146,10 @@ protected:
         Node* root;
         /** a pool of four-sets of nodes */
         NodeBlocks nodePool;
+
+        /** store a handle to the video cache of this context for convenient
+            access */
+        VideoCache& videoCache;
 
         /** evaluates the visibility of a scope */
         FrustumVisibility visibility;

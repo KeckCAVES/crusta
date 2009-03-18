@@ -7,7 +7,7 @@
 
 BEGIN_CRUSTA
 
-Cache crustaQuadCache(1024, 512);
+Cache crustaQuadCache(4096, 2048);
 
 MainCache::
 MainCache(uint size) :
@@ -35,13 +35,17 @@ request(const MainCacheRequests& reqs)
 
     //reprioritize the requests
     std::sort(criticalRequests.begin(), criticalRequests.end());
+
+    //request a frame to process these requests
+    if (!criticalRequests.empty())
+        Vrui::requestUpdate();
 }
 
 void MainCache::
 frame()
 {
     //giver the cache update 0.08ms (8ms for 120 fps, so 1% of frame time)
-    double endTime = Vrui::getApplicationTime() + 0.08e-5;//0.08e-3;
+    double endTime = Vrui::getApplicationTime() + 0.08e-3;
 
     //update as much as possible
     for (MainCacheRequests::iterator it=criticalRequests.begin();
@@ -55,7 +59,7 @@ frame()
             DEBUG_OUT(2, "new data\n");
             break;
         }
-        buf->touch(frameNumber);
+        buf->touch();
         
         //process the critical data for that request
 ///\todo currently processes all data
@@ -68,7 +72,6 @@ frame()
     }
 
     criticalRequests.clear();
-    ++frameNumber;
 }
 
 

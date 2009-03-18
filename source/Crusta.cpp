@@ -5,9 +5,17 @@
 #include <Vrui/VisletManager.h>
 #include <Vrui/Vrui.h>
 
+#include <QuadCache.h>
 #include <Spheroid.h>
 
 BEGIN_CRUSTA
+
+/* start the frame counting at 2 because initialization code uses unsigneds that
+   are initialized with 0. Thus if crustaFrameNumber starts at 0, the init code
+   wouldn't be able to retrieve any cache buffers since all the buffers of the
+   current and previous frame are locked */
+uint crustaFrameNumber = 2;
+
 
 //- CrustaFactory --------------------------------------------------------------
 
@@ -72,9 +80,13 @@ getFactory() const
 void Crusta::
 frame()
 {
-    spheroid.frame();
-///\todo only update when something has changed
-    Vrui::requestUpdate();
+    ++crustaFrameNumber;
+
+    DEBUG_OUT(8, "\n\n\n--------------------------------------\n%u\n\n\n",
+              static_cast<unsigned int>(crustaFrameNumber));
+
+    //process the requests from the last frame
+    crustaQuadCache.getMainCache().frame();
 }
 
 void Crusta::

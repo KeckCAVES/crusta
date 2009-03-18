@@ -12,8 +12,6 @@ public:
     Spheroid();
     ~Spheroid();
 
-    /** process an update of the frame */
-    void frame();
     /** process a display update */
     void display(GLContextData& contextData) const;
 

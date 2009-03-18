@@ -33,14 +33,11 @@ public:
     BufferType* findCached(const TreeIndex& index) const;
     /** request a buffer from the cache. A non-NULL buffer is returned as long
         as all the cache slots are not not pinned (either explicitly or because
-        they are in use for the current frame). */
-    BufferType* getBuffer(const TreeIndex& index);
-    /** variant of getBuffer that provides information on if the buffer was
-        already present in the cache or not */
-    BufferType* getBuffer(const TreeIndex& index, bool& existed);
+        they are in use for the current frame). Optionally the location to a
+        boolean can be passed and getBuffer will set if the buffer was already
+        present or not at that location. */
+    BufferType* getBuffer(const TreeIndex& index, bool* existed=NULL);
 
-    /** instruct the cache unit of the begining of a new frame */
-    void frame();
 
 protected:
     typedef std::hash_map<TreeIndex, BufferType*, TreeIndex::hash> BufferPtrMap;
@@ -66,8 +63,6 @@ protected:
     /** keep a LRU prioritized view of the cached buffers */
     IndexedBuffers lruCached;
 
-    /** frame number of the current frame */
-    uint frameNumber;
     /** frame number when the last prioritization of the chached set was
         done */
     uint sortFrameNumber;

@@ -5,7 +5,7 @@ BEGIN_CRUSTA
 template <typename BufferType>
 CacheUnit<BufferType>::
 CacheUnit(uint size) :
-    frameNumber(0), sortFrameNumber(0)
+    sortFrameNumber(0)
 {
     //fill the cache with buffers with no valid content
     for (uint i=0; i<size; ++i)
@@ -37,41 +37,13 @@ findCached(const TreeIndex& index) const
     typename BufferPtrMap::const_iterator it = cached.find(index);
     if (it != cached.end())
     {
-        DEBUG_OUT(7, "Cache::find: found %s\n", index.str().c_str());
+        DEBUG_OUT(10, "Cache%u::find: found %s\n", (unsigned int)cached.size(),
+                  index.str().c_str());
         return it->second;
     }
     else
     {
-        DEBUG_OUT(5, "Cache::find: missed %s\n", index.str().c_str());
-        return NULL;
-    }
-}
-
-template <typename BufferType>
-BufferType* CacheUnit<BufferType>::
-getBuffer(const TreeIndex& index)
-{
-    BufferType* buffer = findCached(index);
-    if (buffer != NULL)
-    {
-        DEBUG_OUT(7, "Cache::get: found %s\n", index.str().c_str());
-        return buffer;
-    }
-
-    refreshLru();
-    if (lruCached.size() > 0)
-    {
-        IndexedBuffer lruBuf = lruCached.back();
-        DEBUG_OUT(5, "Cache::get: swaped %s for %s\n",
-                  lruBuf.index.str().c_str(), index.str().c_str());
-        lruCached.pop_back();
-        cached.erase(lruBuf.index);
-        cached.insert(typename BufferPtrMap::value_type(index, lruBuf.buffer));
-        return lruBuf.buffer;
-    }
-    else
-    {
-        DEBUG_OUT(3, "Cache::get: unable to provide for %s\n",
+        DEBUG_OUT(9, "Cache%u::find: missed %s\n", (unsigned int)cached.size(),
                   index.str().c_str());
         return NULL;
     }
@@ -79,44 +51,54 @@ getBuffer(const TreeIndex& index)
 
 template <typename BufferType>
 BufferType* CacheUnit<BufferType>::
-getBuffer(const TreeIndex& index, bool& existed)
+getBuffer(const TreeIndex& index, bool* existed)
 {
+//- if the buffer already exists just return it
     BufferType* buffer = findCached(index);
     if (buffer != NULL)
     {
-        DEBUG_OUT(7, "Cache::get: found %s\n", index.str().c_str());
-        existed = true;
+        DEBUG_OUT(10, "Cache%u::get: found %s\n", (unsigned int)cached.size(),
+                  index.str().c_str());
+        if (existed != NULL)
+            *existed = true;
         return buffer;
     }
-    existed = false;
-    
+    if (existed != NULL)
+        *existed = false;
+
+//- try to swap from the LRU
     refreshLru();
-    if (lruCached.size() > 0)
+
+    //check the tail of the LRU sequence for valid buffers
+    IndexedBuffer lruBuf(TreeIndex(), NULL);
+    while (lruBuf.buffer==NULL && !lruCached.empty())
     {
-        IndexedBuffer lruBuf = lruCached.back();
-        DEBUG_OUT(5, "Cache::get: swaped %s for %s\n", 
-                  lruBuf.index.str().c_str(), index.str().c_str());
+        //extract the tail
+        lruBuf = lruCached.back();
         lruCached.pop_back();
+        //verify that the buffer hasn't been touch during this frame
+        if (lruBuf.buffer->getFrameNumber() >= crustaFrameNumber)
+            lruBuf.buffer = NULL;
+    }
+
+    //if we found a valid buffer, update the map to reflect the new association
+    if (lruBuf.buffer != NULL)
+    {
+        DEBUG_OUT(5, "Cache%u::get: swaped %s for %s\n",
+                  (unsigned int)cached.size(), lruBuf.index.str().c_str(),
+                  index.str().c_str());
         cached.erase(lruBuf.index);
         cached.insert(typename BufferPtrMap::value_type(index, lruBuf.buffer));
-        return lruBuf.buffer;
     }
     else
     {
-        DEBUG_OUT(3, "Cache::get: unable to provide for %s\n",
-                  index.str().c_str());
-        return NULL;
+        DEBUG_OUT(3, "Cache%u::get: unable to provide for %s\n",
+                  (unsigned int)cached.size(), index.str().c_str());
     }
+
+    return lruBuf.buffer;
 }
 
-
-
-template <typename BufferType>
-void CacheUnit<BufferType>::
-frame()
-{
-    ++frameNumber;
-}
 
 template <typename BufferType>
 CacheUnit<BufferType>::IndexedBuffer::
@@ -138,20 +120,23 @@ void CacheUnit<BufferType>::
 refreshLru()
 {
     //update the LRU view if necessary
-    if (sortFrameNumber != frameNumber)
+    if (sortFrameNumber != crustaFrameNumber)
     {
         lruCached.clear();
         for (typename BufferPtrMap::const_iterator it=cached.begin();
              it!=cached.end(); ++it)
         {
-            //don't add the buffer being used for the current frame
-            if (it->second->getFrameNumber() < frameNumber)
+            /* don't add the buffer used during the last frame, since they will
+               be the data of the starting approximation */
+            if (it->second->getFrameNumber() < (crustaFrameNumber-1))
                 lruCached.push_back(IndexedBuffer(it->first, it->second));
         }
         std::sort(lruCached.begin(), lruCached.end(),
                   std::greater<IndexedBuffer>());
 
-        DEBUG_OUT(6, "RefreshLRU:\n");
+        DEBUG_OUT(6, "RefreshLRU%u: frame %u last sort %u\n",
+                  (unsigned int)cached.size(), (unsigned int)crustaFrameNumber,
+                  (unsigned int)sortFrameNumber);
         for (typename IndexedBuffers::const_iterator it=lruCached.begin();
              it!=lruCached.end(); ++it)
         {
@@ -160,14 +145,7 @@ refreshLru()
         }
         DEBUG_OUT(6, "\n");
 
-        ///\todo debug
-#if 0
-        for (typename IndexedBuffers::const_iterator it=lruCached.begin();
-             it!=lruCached.end(); ++it)
-        {
-        }
-#endif
-        
+///\todo debug
 bool encounteredNonInvalid = false;
 for (typename IndexedBuffers::reverse_iterator it=lruCached.rbegin();
      it!=lruCached.rend(); ++it)
@@ -177,7 +155,7 @@ for (typename IndexedBuffers::reverse_iterator it=lruCached.rbegin();
     else if (encounteredNonInvalid)
         std::cout << "FRAKAMUNDO!";
 }
-        sortFrameNumber = frameNumber;
+        sortFrameNumber = crustaFrameNumber;
     }
 }
 

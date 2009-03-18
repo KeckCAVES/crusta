@@ -79,12 +79,13 @@ centroid(uint oneIndex, uint twoIndex, uint threeIndex, uint fourIndex,
 
 QuadTerrain::
 QuadTerrain(uint8 patch, const Scope& scope) :
-    basePatchId(patch), baseScope(scope), frameNumber(0)
+    basePatchId(patch), baseScope(scope)
 {
     //create root data and pin it in the cache
     TreeIndex rootIndex(patch);
     MainCacheBuffer* rootBuffer =
         crustaQuadCache.getMainCache().getBuffer(rootIndex);
+    assert(rootBuffer!=NULL);
     rootBuffer->pin();
 
     //generate/fetch the data content for the static data
@@ -93,13 +94,6 @@ QuadTerrain(uint8 patch, const Scope& scope) :
     generateHeight(rootData.geometry, rootData.height);
     generateColor(rootData.height, rootData.color);
 ///\todo color data
-}
-
-void QuadTerrain::
-frame()
-{
-    crustaQuadCache.getMainCache().frame();
-    ++frameNumber;
 }
 
 void QuadTerrain::
@@ -137,8 +131,9 @@ display(GLContextData& contextData)
 
     /* traverse the terrain tree, update as necessary and issue drawing commands
        for active nodes */
-checkTree(glData->root);
-    traverse(glData, glData->root, dataRequests, contextData);
+checkTree(glData, glData->root);
+    traverse(glData, glData->root, dataRequests);
+checkTree(glData, glData->root);
 
     glData->shader.disablePrograms();
 
@@ -150,9 +145,6 @@ checkTree(glData->root);
     
     //merge the data requests
     crustaQuadCache.getMainCache().request(dataRequests);
-
-    //notify the video cache that a new frame has been processed
-    crustaQuadCache.getVideoCache(contextData).frame();
 }
 
 void QuadTerrain::
@@ -271,17 +263,28 @@ printTree(Node* node)
         DEBUG_OUT(1, "%s ", node->index.str().c_str());
 }
 void QuadTerrain::
-checkTree(Node* node)
+checkTree(GlData* glData, Node* node)
 {
     if (node->children != NULL)
     {
         for (uint i=0; i<4; ++i)
-            checkTree(&node->children[i]);
+            checkTree(glData, &node->children[i]);
     }
     else
     {
-        if (crustaQuadCache.getMainCache().findCached(node->index)==NULL)
+        MainCacheBuffer* main =
+            crustaQuadCache.getMainCache().findCached(node->index);
+        if (main == NULL)
             std::cout<< "FRAKALICIOUS!";
+        if (main != node->mainBuffer)
+            std::cout<< "FRAKOWNED";
+        if (node->videoBuffer != NULL)
+        {
+            VideoCacheBuffer* video =
+                glData->videoCache.findCached(node->index);
+            if (node->videoBuffer != video)
+                std::cout<< "FRAKORAMA";
+        }
     }
 }
 
@@ -323,7 +326,7 @@ merge(GlData* glData, Node* node, float lod,
 DEBUG_OUT(1, "-Merge: %s:\n", node->parent->index.str().c_str());
     node->parent->discardSubTree(glData);
 printTree(glData->root); DEBUG_OUT(1, "\n\n");
-checkTree(glData->root);
+checkTree(glData, glData->root);
     return true;
 }
 
@@ -407,19 +410,18 @@ split(GlData* glData, Node* node, float lod, MainCacheRequests& requests)
         node->videoBuffer = NULL;
 DEBUG_OUT(1, "+Split: %s:\n", node->index.str().c_str());
 printTree(glData->root); DEBUG_OUT(1, "\n\n");
-checkTree(glData->root);
+checkTree(glData, glData->root);
         return true;
     }
 }
 
 
 void QuadTerrain::
-traverse(GlData* glData, Node* node, MainCacheRequests& requests,
-         GLContextData& contextData)
+traverse(GlData* glData, Node* node, MainCacheRequests& requests)
 {
     //recurse to the active nodes
     for (uint i=0; node->children!=NULL && i<4; ++i)
-        traverse(glData, &(node->children[i]), requests, contextData);
+        traverse(glData, &(node->children[i]), requests);
 
     if (node->children == NULL)
     {
@@ -447,8 +449,7 @@ traverse(GlData* glData, Node* node, MainCacheRequests& requests,
                 //continue traversal in the children
                 for (uint i=0; i<4; ++i)
                 {
-                    traverse(glData, &(node->children[i]), requests,
-                             contextData);
+                    traverse(glData, &(node->children[i]), requests);
                 }
                 return;
             }
@@ -456,33 +457,41 @@ traverse(GlData* glData, Node* node, MainCacheRequests& requests,
         
     //- draw the node
         //confirm current state of the node
-        node->mainBuffer->touch(frameNumber);
+        node->mainBuffer->touch();
         //draw
         if (visible)
-            drawNode(node, glData, contextData);
+            drawNode(glData, node);
+///\todo debug: non-visible video buffers don't get touched, so they are swaped
+else
+node->videoBuffer = NULL;
     }
 }
 
 const QuadNodeVideoData& QuadTerrain::
-prepareGlData(Node* node, GLContextData& contextData)
+prepareGlData(GlData* glData, Node* node)
 {
     //check if we already have the data locally cached
     if (node->videoBuffer != NULL)
     {
-        node->videoBuffer->touch(frameNumber);
+///\todo debug
+VideoCacheBuffer* shouldBeBuf = glData->videoCache.findCached(node->index);
+if (shouldBeBuf != node->videoBuffer)
+    std::cout << "FRAKAWE";
+
+        node->videoBuffer->touch();
         return node->videoBuffer->getData();
     }
 
-    //get a buffer from
-    VideoCache& videoCache = crustaQuadCache.getVideoCache(contextData);
-    
     bool existed;
-    VideoCacheBuffer* videoBuf = videoCache.getBuffer(node->index, existed);
+    VideoCacheBuffer* videoBuf = glData->videoCache.getBuffer(node->index,
+                                                              &existed);
+///\todo debug
+checkTree(glData, glData->root);
     if (existed)
     {
         //if there was already a match in the cache, just use that data
         node->videoBuffer = videoBuf;
-        node->videoBuffer->touch(frameNumber);
+        node->videoBuffer->touch();
         return node->videoBuffer->getData();
     }
     else
@@ -493,13 +502,13 @@ prepareGlData(Node* node, GLContextData& contextData)
         {
             //if we can use a stable buffer, then associate it with the node
             node->videoBuffer = videoBuf;
-            node->videoBuffer->touch(frameNumber);
+            node->videoBuffer->touch();
             xferBuf = videoBuf;
         }
         else
         {
             //the cache couldn't provide a slot, use the streamBuffer
-            xferBuf = videoCache.getStreamBuffer();
+            xferBuf = glData->videoCache.getStreamBuffer();
         }
 
         const QuadNodeMainData&  mainData  = node->mainBuffer->getData();
@@ -528,10 +537,10 @@ prepareGlData(Node* node, GLContextData& contextData)
 }
 
 void QuadTerrain::
-drawNode(Node* node, GlData* glData, GLContextData& contextData)
+drawNode(GlData* glData, Node* node)
 {
 ///\todo accommodate for lazy data fetching
-    const QuadNodeVideoData& data = prepareGlData(node, contextData);
+    const QuadNodeVideoData& data = prepareGlData(glData, node);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, data.geometry);
@@ -550,6 +559,28 @@ drawNode(Node* node, GlData* glData, GLContextData& contextData)
     glDrawRangeElements(GL_TRIANGLE_STRIP, 0,
                         (TILE_RESOLUTION*TILE_RESOLUTION) - 1,
                         NUM_GEOMETRY_INDICES, GL_UNSIGNED_SHORT, 0);
+#endif
+
+#if 0
+glData->shader.disablePrograms();
+    Point* c = node->scope.corners;
+    glDisable(GL_LIGHTING);
+    glActiveTexture(GL_TEXTURE0);
+    glDisable(GL_TEXTURE_2D);
+    glBegin(GL_QUADS);
+        glColor3f(1.0f, 0.0f, 0.0f);
+        glVertex3f(c[0][0], c[0][1], c[0][2]);
+        glColor3f(1.0f, 1.0f, 0.0f);
+        glVertex3f(c[1][0], c[1][1], c[1][2]);
+        glColor3f(0.0f, 1.0f, 0.0f);
+        glVertex3f(c[3][0], c[3][1], c[3][2]);
+        glColor3f(1.0f, 1.0f, 0.0f);
+        glVertex3f(c[2][0], c[2][1], c[2][2]);
+//        glColor3f(0.0f, 0.0f, 1.0f);
+//        glVertex3f(c[0][0], c[0][1], c[0][2]);
+    glEnd();
+    glEnable(GL_TEXTURE_2D);
+glData->shader.useProgram();
 #endif
 
 #if 0
@@ -578,8 +609,9 @@ glData->shader.useProgram();
 
 QuadTerrain::GlData::
 GlData(const TreeIndex& iRootIndex, MainCacheBuffer* iRootBuffer,
-       const Scope& baseScope) :
-vertexAttributeTemplate(0), indexTemplate(0)
+       const Scope& baseScope, VideoCache& iVideoCache) :
+    root(NULL), videoCache(iVideoCache), vertexAttributeTemplate(0),
+    indexTemplate(0)
 {
     //initialize the static gl buffer templates
     generateVertexAttributeTemplate();
@@ -609,7 +641,7 @@ vertexAttributeTemplate(0), indexTemplate(0)
     shader.disablePrograms();
     
 ///\todo debug, remove: makes LOD recommend very coarse
-//    lod.bias = -3.0;
+    lod.bias = -1.0;
 }
 
 QuadTerrain::GlData::
@@ -743,7 +775,8 @@ initContext(GLContextData& contextData) const
     assert(rootBuffer != NULL);
     
     //allocate the context dependent data
-    GlData* glData = new GlData(rootIndex, rootBuffer, baseScope);
+    GlData* glData = new GlData(rootIndex, rootBuffer, baseScope,
+                                crustaQuadCache.getVideoCache(contextData));
     //commit the context data
     contextData.addDataItem(this, glData);
 }
