@@ -11,12 +11,12 @@
 			5CAD94C70F0E887E00927B60 /* malloc_error_break */,
 			5C9901E00F6ECF96003B9A65 /* QuadCache.hpp:46 */,
 			5C99023A0F6F0AD2003B9A65 /* QuadTerrain.cpp:103 */,
-			5C9902450F6F10BB003B9A65 /* QuadTerrain.cpp:511 */,
-			5C9902470F6F112D003B9A65 /* QuadTerrain.cpp:543 */,
+			5C9902450F6F10BB003B9A65 /* QuadTerrain.cpp:537 */,
+			5C9902470F6F112D003B9A65 /* QuadTerrain.cpp:569 */,
 			5C9903EB0F706885003B9A65 /* QuadTerrain.cpp:278 */,
 			5C9903FF0F706F76003B9A65 /* QuadCache.hpp:156 */,
 			5C99051C0F70A4A1003B9A65 /* QuadCache.cpp:58 */,
-			5C9905E20F70DE4B003B9A65 /* QuadTerrain.cpp:479 */,
+			5C9905E20F70DE4B003B9A65 /* QuadTerrain.cpp:505 */,
 			5C9905F70F70EA5B003B9A65 /* QuadTerrain.cpp:280 */,
 			5C9905FF0F70ED46003B9A65 /* QuadTerrain.cpp:286 */,
 		);
@@ -1267,6 +1267,14 @@
 			5C99065F0F71072B003B9A65 /* PBXTextBookmark */ = 5C99065F0F71072B003B9A65 /* PBXTextBookmark */;
 			5C9906600F71072B003B9A65 /* PBXTextBookmark */ = 5C9906600F71072B003B9A65 /* PBXTextBookmark */;
 			5C9906610F71072B003B9A65 /* PBXTextBookmark */ = 5C9906610F71072B003B9A65 /* PBXTextBookmark */;
+			5C9906630F71A4F9003B9A65 /* PBXTextBookmark */ = 5C9906630F71A4F9003B9A65 /* PBXTextBookmark */;
+			5C9906640F71A4F9003B9A65 /* PBXTextBookmark */ = 5C9906640F71A4F9003B9A65 /* PBXTextBookmark */;
+			5C9906650F71A4F9003B9A65 /* PBXTextBookmark */ = 5C9906650F71A4F9003B9A65 /* PBXTextBookmark */;
+			5C9906660F71A4F9003B9A65 /* PBXTextBookmark */ = 5C9906660F71A4F9003B9A65 /* PBXTextBookmark */;
+			5C9906670F71A4F9003B9A65 /* PBXTextBookmark */ = 5C9906670F71A4F9003B9A65 /* PBXTextBookmark */;
+			5C99066C0F71A5DA003B9A65 /* PBXTextBookmark */ = 5C99066C0F71A5DA003B9A65 /* PBXTextBookmark */;
+			5C99066D0F71A5DA003B9A65 /* PBXTextBookmark */ = 5C99066D0F71A5DA003B9A65 /* PBXTextBookmark */;
+			5C99066E0F71A5DA003B9A65 /* PBXTextBookmark */ = 5C99066E0F71A5DA003B9A65 /* PBXTextBookmark */;
 			5CA26C5A0F45473A00EFF83C = 5CA26C5A0F45473A00EFF83C /* PBXTextBookmark */;
 			5CA26C640F4548D300EFF83C = 5CA26C640F4548D300EFF83C /* PBXTextBookmark */;
 			5CA26CA70F455E1F00EFF83C = 5CA26CA70F455E1F00EFF83C /* PBXTextBookmark */;
@@ -1532,7 +1540,7 @@
 		isa = PBXTextBookmark;
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		rLen = 15;
-		rLoc = 24769;
+		rLoc = 25530;
 		rType = 0;
 	};
 	5C3EAA8B0F69C93500672F60 /* PBXTextBookmark */ = {
@@ -1540,7 +1548,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 520";
 		rLen = 0;
-		rLoc = 24800;
+		rLoc = 25561;
 		rType = 0;
 		vrLen = 6771;
 		vrLoc = 11327;
@@ -2446,7 +2454,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 508";
 		rLen = 0;
-		rLoc = 17614;
+		rLoc = 18375;
 		rType = 0;
 		vrLen = 6893;
 		vrLoc = 13473;
@@ -2476,7 +2484,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 108";
 		rLen = 0;
-		rLoc = 4024;
+		rLoc = 4355;
 		rType = 0;
 		vrLen = 3714;
 		vrLoc = 1694;
@@ -2506,7 +2514,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 510";
 		rLen = 0;
-		rLoc = 17761;
+		rLoc = 18522;
 		rType = 0;
 		vrLen = 6910;
 		vrLoc = 13473;
@@ -2526,7 +2534,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 111";
 		rLen = 0;
-		rLoc = 4024;
+		rLoc = 4355;
 		rType = 0;
 		vrLen = 3788;
 		vrLoc = 1694;
@@ -2536,7 +2544,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 508";
 		rLen = 0;
-		rLoc = 17614;
+		rLoc = 18375;
 		rType = 0;
 		vrLen = 6914;
 		vrLoc = 13473;
@@ -2556,7 +2564,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 518";
 		rLen = 0;
-		rLoc = 17972;
+		rLoc = 18733;
 		rType = 0;
 		vrLen = 10314;
 		vrLoc = 8519;
@@ -2586,7 +2594,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 111";
 		rLen = 0;
-		rLoc = 4024;
+		rLoc = 4355;
 		rType = 0;
 		vrLen = 3736;
 		vrLoc = 1746;
@@ -2626,7 +2634,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 111";
 		rLen = 0;
-		rLoc = 4024;
+		rLoc = 4355;
 		rType = 0;
 		vrLen = 3736;
 		vrLoc = 1746;
@@ -2676,7 +2684,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 111";
 		rLen = 0;
-		rLoc = 4024;
+		rLoc = 4355;
 		rType = 0;
 		vrLen = 3760;
 		vrLoc = 1746;
@@ -2686,7 +2694,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 513";
 		rLen = 0;
-		rLoc = 17614;
+		rLoc = 18375;
 		rType = 0;
 		vrLen = 6980;
 		vrLoc = 13667;
@@ -2706,7 +2714,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 530";
 		rLen = 0;
-		rLoc = 18115;
+		rLoc = 18876;
 		rType = 0;
 		vrLen = 8471;
 		vrLoc = 11127;
@@ -2716,7 +2724,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 111";
 		rLen = 0;
-		rLoc = 4024;
+		rLoc = 4355;
 		rType = 0;
 		vrLen = 3821;
 		vrLoc = 3035;
@@ -2736,7 +2744,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 525";
 		rLen = 0;
-		rLoc = 18115;
+		rLoc = 18876;
 		rType = 0;
 		vrLen = 5811;
 		vrLoc = 14705;
@@ -2746,7 +2754,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 111";
 		rLen = 0;
-		rLoc = 4024;
+		rLoc = 4355;
 		rType = 0;
 		vrLen = 3821;
 		vrLoc = 3035;
@@ -2766,7 +2774,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 534";
 		rLen = 0;
-		rLoc = 18136;
+		rLoc = 18897;
 		rType = 0;
 		vrLen = 6011;
 		vrLoc = 13765;
@@ -2776,7 +2784,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 111";
 		rLen = 0;
-		rLoc = 4024;
+		rLoc = 4355;
 		rType = 0;
 		vrLen = 3821;
 		vrLoc = 3035;
@@ -2796,7 +2804,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 534";
 		rLen = 0;
-		rLoc = 18153;
+		rLoc = 18914;
 		rType = 0;
 		vrLen = 6020;
 		vrLoc = 13765;
@@ -2806,7 +2814,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 111";
 		rLen = 0;
-		rLoc = 4024;
+		rLoc = 4355;
 		rType = 0;
 		vrLen = 3821;
 		vrLoc = 3035;
@@ -2826,7 +2834,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 536";
 		rLen = 0;
-		rLoc = 18198;
+		rLoc = 18959;
 		rType = 0;
 		vrLen = 8517;
 		vrLoc = 11242;
@@ -2836,7 +2844,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 111";
 		rLen = 0;
-		rLoc = 4024;
+		rLoc = 4355;
 		rType = 0;
 		vrLen = 3821;
 		vrLoc = 3035;
@@ -2856,7 +2864,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 518";
 		rLen = 0;
-		rLoc = 17556;
+		rLoc = 18317;
 		rType = 0;
 		vrLen = 6021;
 		vrLoc = 15114;
@@ -2866,7 +2874,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 518";
 		rLen = 0;
-		rLoc = 17556;
+		rLoc = 18317;
 		rType = 0;
 		vrLen = 6021;
 		vrLoc = 15114;
@@ -2886,7 +2894,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 112";
 		rLen = 72;
-		rLoc = 3739;
+		rLoc = 4070;
 		rType = 0;
 		vrLen = 3877;
 		vrLoc = 2837;
@@ -2896,7 +2904,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 112";
 		rLen = 72;
-		rLoc = 3739;
+		rLoc = 4070;
 		rType = 0;
 		vrLen = 3877;
 		vrLoc = 2837;
@@ -2936,7 +2944,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 135";
 		rLen = 270;
-		rLoc = 4374;
+		rLoc = 4705;
 		rType = 0;
 		vrLen = 3518;
 		vrLoc = 3751;
@@ -2966,7 +2974,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 135";
 		rLen = 270;
-		rLoc = 4374;
+		rLoc = 4705;
 		rType = 0;
 		vrLen = 3518;
 		vrLoc = 3751;
@@ -3006,7 +3014,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 641";
 		rLen = 0;
-		rLoc = 24800;
+		rLoc = 25561;
 		rType = 0;
 		vrLen = 3610;
 		vrLoc = 18759;
@@ -3040,7 +3048,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 641";
 		rLen = 0;
-		rLoc = 24800;
+		rLoc = 25561;
 		rType = 0;
 		vrLen = 3610;
 		vrLoc = 18759;
@@ -3100,7 +3108,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 524";
 		rLen = 0;
-		rLoc = 17556;
+		rLoc = 18317;
 		rType = 0;
 		vrLen = 1567;
 		vrLoc = 16682;
@@ -3120,7 +3128,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 524";
 		rLen = 0;
-		rLoc = 17556;
+		rLoc = 18317;
 		rType = 0;
 		vrLen = 10097;
 		vrLoc = 9037;
@@ -3150,7 +3158,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 524";
 		rLen = 0;
-		rLoc = 17556;
+		rLoc = 18317;
 		rType = 0;
 		vrLen = 10096;
 		vrLoc = 9038;
@@ -3247,7 +3255,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 524";
 		rLen = 0;
-		rLoc = 17556;
+		rLoc = 18317;
 		rType = 0;
 		vrLen = 10096;
 		vrLoc = 9038;
@@ -3257,7 +3265,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 536";
 		rLen = 0;
-		rLoc = 16131;
+		rLoc = 16892;
 		rType = 0;
 		vrLen = 9872;
 		vrLoc = 9038;
@@ -3297,7 +3305,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 518";
 		rLen = 17;
-		rLoc = 15195;
+		rLoc = 15956;
 		rType = 0;
 		vrLen = 4994;
 		vrLoc = 16335;
@@ -3337,7 +3345,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 113";
 		rLen = 0;
-		rLoc = 3808;
+		rLoc = 4139;
 		rType = 0;
 		vrLen = 4007;
 		vrLoc = 2987;
@@ -3347,7 +3355,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 518";
 		rLen = 17;
-		rLoc = 15195;
+		rLoc = 15956;
 		rType = 0;
 		vrLen = 4994;
 		vrLoc = 16335;
@@ -3367,7 +3375,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 553";
 		rLen = 0;
-		rLoc = 16644;
+		rLoc = 17405;
 		rType = 0;
 		vrLen = 3992;
 		vrLoc = 16335;
@@ -3377,7 +3385,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 113";
 		rLen = 0;
-		rLoc = 3808;
+		rLoc = 4139;
 		rType = 0;
 		vrLen = 4007;
 		vrLoc = 2987;
@@ -3387,7 +3395,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 113";
 		rLen = 0;
-		rLoc = 3808;
+		rLoc = 4139;
 		rType = 0;
 		vrLen = 4007;
 		vrLoc = 2987;
@@ -3417,7 +3425,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 557";
 		rLen = 0;
-		rLoc = 16872;
+		rLoc = 17633;
 		rType = 0;
 		vrLen = 4027;
 		vrLoc = 16335;
@@ -3541,7 +3549,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 562";
 		rLen = 0;
-		rLoc = 17063;
+		rLoc = 17824;
 		rType = 0;
 		vrLen = 4175;
 		vrLoc = 16335;
@@ -3568,7 +3576,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 562";
 		rLen = 0;
-		rLoc = 17063;
+		rLoc = 17824;
 		rType = 0;
 		vrLen = 4175;
 		vrLoc = 16335;
@@ -3908,7 +3916,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 710";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 4864;
 		vrLoc = 19808;
@@ -3938,7 +3946,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 147";
 		rLen = 9;
-		rLoc = 4588;
+		rLoc = 4919;
 		rType = 0;
 		vrLen = 3985;
 		vrLoc = 3098;
@@ -3988,7 +3996,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 716";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 5043;
 		vrLoc = 19629;
@@ -3998,7 +4006,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 172";
 		rLen = 0;
-		rLoc = 6468;
+		rLoc = 6799;
 		rType = 0;
 		vrLen = 3820;
 		vrLoc = 3625;
@@ -4018,7 +4026,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 172";
 		rLen = 0;
-		rLoc = 6468;
+		rLoc = 6799;
 		rType = 0;
 		vrLen = 3636;
 		vrLoc = 3824;
@@ -4038,7 +4046,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 716";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 5043;
 		vrLoc = 19629;
@@ -4048,7 +4056,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 172";
 		rLen = 0;
-		rLoc = 6468;
+		rLoc = 6799;
 		rType = 0;
 		vrLen = 3636;
 		vrLoc = 3824;
@@ -4068,7 +4076,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 716";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 5043;
 		vrLoc = 19629;
@@ -4078,7 +4086,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 172";
 		rLen = 0;
-		rLoc = 6468;
+		rLoc = 6799;
 		rType = 0;
 		vrLen = 3636;
 		vrLoc = 3824;
@@ -4088,7 +4096,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 172";
 		rLen = 0;
-		rLoc = 6468;
+		rLoc = 6799;
 		rType = 0;
 		vrLen = 3636;
 		vrLoc = 3824;
@@ -4118,7 +4126,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 716";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 5043;
 		vrLoc = 19629;
@@ -4148,7 +4156,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 716";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 5043;
 		vrLoc = 19629;
@@ -4178,7 +4186,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 716";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 5043;
 		vrLoc = 19629;
@@ -4268,7 +4276,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 716";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 5043;
 		vrLoc = 19629;
@@ -4338,7 +4346,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 716";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 5043;
 		vrLoc = 19629;
@@ -4758,7 +4766,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 716";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 5043;
 		vrLoc = 19629;
@@ -4788,7 +4796,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 716";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 5043;
 		vrLoc = 19629;
@@ -4798,7 +4806,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 716";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 5043;
 		vrLoc = 19629;
@@ -4838,7 +4846,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 715";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 5049;
 		vrLoc = 19385;
@@ -4928,7 +4936,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 116";
 		rLen = 0;
-		rLoc = 3749;
+		rLoc = 4080;
 		rType = 0;
 		vrLen = 3074;
 		vrLoc = 24;
@@ -4938,7 +4946,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 706";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 2453;
 		vrLoc = 15630;
@@ -4958,7 +4966,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 116";
 		rLen = 0;
-		rLoc = 3749;
+		rLoc = 4080;
 		rType = 0;
 		vrLen = 3074;
 		vrLoc = 24;
@@ -4968,7 +4976,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 706";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 2978;
 		vrLoc = 15902;
@@ -4988,7 +4996,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 116";
 		rLen = 0;
-		rLoc = 3749;
+		rLoc = 4080;
 		rType = 0;
 		vrLen = 3074;
 		vrLoc = 24;
@@ -4998,7 +5006,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 706";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 2462;
 		vrLoc = 16099;
@@ -5028,7 +5036,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 706";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 3001;
 		vrLoc = 16212;
@@ -5085,7 +5093,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 713";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 4084;
 		vrLoc = 12966;
@@ -5115,7 +5123,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 712";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 4115;
 		vrLoc = 12897;
@@ -5185,7 +5193,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 710";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 3235;
 		vrLoc = 13125;
@@ -5215,7 +5223,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 706";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 3352;
 		vrLoc = 13424;
@@ -5245,7 +5253,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 706";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 3352;
 		vrLoc = 13424;
@@ -5255,7 +5263,7 @@
 		comments = "error: no matching function for call to 'crusta::QuadTerrain::ActiveNode::ActiveNode(const crusta::TreeIndex&, crusta::MainCacheBuffer*&, const crusta::Scope&)'";
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		rLen = 0;
-		rLoc = 783;
+		rLoc = 809;
 		rType = 1;
 	};
 	5C3EACAB0F6AE75D00672F60 /* PBXTextBookmark */ = {
@@ -5263,7 +5271,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 709";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 4911;
 		vrLoc = 19400;
@@ -5354,7 +5362,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 712";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 5163;
 		vrLoc = 19500;
@@ -5404,7 +5412,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 700";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 2651;
 		vrLoc = 17686;
@@ -5424,7 +5432,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 700";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 2651;
 		vrLoc = 17686;
@@ -5564,7 +5572,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 700";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 1605;
 		vrLoc = 23063;
@@ -5644,7 +5652,7 @@
 		fRef = 5C3EAA870F69C8A500672F60 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 700";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 1605;
 		vrLoc = 23063;
@@ -5757,18 +5765,18 @@
 	};
 	5C5DB3370F65925A0039615D /* QuadTerrain.h */ = {
 		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {494, 2450}}";
-			sepNavSelRange = "{4354, 11}";
-			sepNavVisRange = "{3136, 2342}";
+			sepNavIntBoundsRect = "{{0, 0}, {494, 2590}}";
+			sepNavSelRange = "{3561, 40}";
+			sepNavVisRange = "{2549, 2267}";
 			sepNavWindowFrame = "{{38, 607}, {555, 545}}";
 		};
 	};
 	5C5DB3380F65D7150039615D /* QuadTerrain.cpp */ = {
 		uiCtxt = {
-			sepNavFolds = "{\n    c =     (\n                {\n            r = \"{523, 166}\";\n            s = 0;\n        },\n                {\n            r = \"{774, 768}\";\n            s = 0;\n        },\n                {\n            r = \"{1674, 1144}\";\n            s = 0;\n        },\n                {\n            r = \"{2926, 525}\";\n            s = 0;\n        },\n                {\n            r = \"{5163, 1833}\";\n            s = 0;\n        },\n                {\n            r = \"{7086, 495}\";\n            s = 0;\n        },\n                {\n            r = \"{7649, 969}\";\n            s = 0;\n        },\n                {\n            r = \"{8722, 1}\";\n            s = 0;\n        },\n                {\n            r = \"{8792, 210}\";\n            s = 0;\n        },\n                {\n            r = \"{9062, 634}\";\n            s = 0;\n        },\n                {\n            r = \"{9757, 323}\";\n            s = 0;\n        },\n                {\n            r = \"{10184, 656}\";\n            s = 0;\n        },\n                {\n            r = \"{10894, 1328}\";\n            s = 0;\n        },\n                {\n            r = \"{12319, 1276}\";\n            s = 0;\n        },\n                {\n            r = \"{13685, 1501}\";\n            s = 0;\n        },\n                {\n            r = \"{15271, 2286}\";\n            s = 0;\n        },\n                {\n            r = \"{20014, 1020}\";\n            s = 0;\n        },\n                {\n            r = \"{21070, 315}\";\n            s = 0;\n        },\n                {\n            r = \"{21446, 167}\";\n            s = 0;\n        },\n                {\n            r = \"{21677, 77}\";\n            s = 0;\n        },\n                {\n            r = \"{21819, 1092}\";\n            s = 0;\n        },\n                {\n            r = \"{22966, 1506}\";\n            s = 0;\n        },\n                {\n            r = \"{24543, 575}\";\n            s = 0;\n        }\n    );\n    r = \"{0, 25133}\";\n    s = 0;\n}";
-			sepNavIntBoundsRect = "{{0, 0}, {495, 3528}}";
-			sepNavSelRange = "{1429, 0}";
-			sepNavVisRange = "{809, 1661}";
+			sepNavFolds = "{\n    c =     (\n                {\n            r = \"{523, 166}\";\n            s = 0;\n        },\n                {\n            r = \"{774, 768}\";\n            s = 0;\n        },\n                {\n            r = \"{1674, 1144}\";\n            s = 0;\n        },\n                {\n            r = \"{2926, 525}\";\n            s = 0;\n        },\n                {\n            r = \"{5163, 1833}\";\n            s = 0;\n        },\n                {\n            r = \"{7086, 495}\";\n            s = 0;\n        },\n                {\n            r = \"{7649, 969}\";\n            s = 0;\n        },\n                {\n            r = \"{8722, 1}\";\n            s = 0;\n        },\n                {\n            r = \"{8792, 210}\";\n            s = 0;\n        },\n                {\n            r = \"{9062, 634}\";\n            s = 0;\n        },\n                {\n            r = \"{9757, 323}\";\n            s = 0;\n        },\n                {\n            r = \"{10184, 656}\";\n            s = 0;\n        },\n                {\n            r = \"{10894, 1328}\";\n            s = 0;\n        },\n                {\n            r = \"{16032, 2286}\";\n            s = 0;\n        },\n                {\n            r = \"{20775, 1020}\";\n            s = 0;\n        },\n                {\n            r = \"{21831, 315}\";\n            s = 0;\n        },\n                {\n            r = \"{22207, 167}\";\n            s = 0;\n        },\n                {\n            r = \"{22438, 77}\";\n            s = 0;\n        },\n                {\n            r = \"{22580, 1092}\";\n            s = 0;\n        },\n                {\n            r = \"{23727, 1506}\";\n            s = 0;\n        },\n                {\n            r = \"{25304, 575}\";\n            s = 0;\n        }\n    );\n    r = \"{0, 25894}\";\n    s = 0;\n}";
+			sepNavIntBoundsRect = "{{0, 0}, {495, 4816}}";
+			sepNavSelRange = "{6700, 0}";
+			sepNavVisRange = "{5286, 1622}";
 			sepNavWindowFrame = "{{61, 586}, {555, 545}}";
 		};
 	};
@@ -5870,7 +5878,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 67";
 		rLen = 0;
-		rLoc = 4273;
+		rLoc = 4604;
 		rType = 0;
 		vrLen = 2507;
 		vrLoc = 0;
@@ -5960,7 +5968,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 67";
 		rLen = 0;
-		rLoc = 4273;
+		rLoc = 4604;
 		rType = 0;
 		vrLen = 2507;
 		vrLoc = 0;
@@ -6040,7 +6048,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 18";
 		rLen = 0;
-		rLoc = 21757;
+		rLoc = 22518;
 		rType = 0;
 		vrLen = 402;
 		vrLoc = 0;
@@ -6100,7 +6108,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 14";
 		rLen = 0;
-		rLoc = 21757;
+		rLoc = 22518;
 		rType = 0;
 		vrLen = 266;
 		vrLoc = 0;
@@ -6120,7 +6128,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 18";
 		rLen = 0;
-		rLoc = 21757;
+		rLoc = 22518;
 		rType = 0;
 		vrLen = 402;
 		vrLoc = 0;
@@ -7026,7 +7034,7 @@
 		ignoreCount = 0;
 		lineNumber = 46;
 		location = libCrusta.bundle;
-		modificationTime = 259065635.263103;
+		modificationTime = 259106257.812846;
 		state = 2;
 	};
 	5C9901E10F6ECF97003B9A65 /* PBXTextBookmark */ = {
@@ -7148,7 +7156,7 @@
 		fRef = 5C9901CE0F6ECBA7003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 665";
 		rLen = 0;
-		rLoc = 18115;
+		rLoc = 18876;
 		rType = 0;
 		vrLen = 14874;
 		vrLoc = 11591;
@@ -7178,7 +7186,7 @@
 		fRef = 5C9901CE0F6ECBA7003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 662";
 		rLen = 0;
-		rLoc = 17972;
+		rLoc = 18733;
 		rType = 0;
 		vrLen = 14874;
 		vrLoc = 11591;
@@ -7208,7 +7216,7 @@
 		comments = "warning: unused variable 'data'";
 		fRef = 5C9901CE0F6ECBA7003B9A65 /* QuadTerrain.cpp */;
 		rLen = 1;
-		rLoc = 542;
+		rLoc = 568;
 		rType = 1;
 	};
 	5C9902060F6EE186003B9A65 /* PBXTextBookmark */ = {
@@ -7216,7 +7224,7 @@
 		fRef = 5C9901CE0F6ECBA7003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 661";
 		rLen = 0;
-		rLoc = 17972;
+		rLoc = 18733;
 		rType = 0;
 		vrLen = 2793;
 		vrLoc = 20941;
@@ -7246,7 +7254,7 @@
 		fRef = 5C9901CE0F6ECBA7003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 662";
 		rLen = 0;
-		rLoc = 17972;
+		rLoc = 18733;
 		rType = 0;
 		vrLen = 2774;
 		vrLoc = 20941;
@@ -7276,7 +7284,7 @@
 		fRef = 5C9901CE0F6ECBA7003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 678";
 		rLen = 0;
-		rLoc = 19217;
+		rLoc = 19978;
 		rType = 0;
 		vrLen = 1784;
 		vrLoc = 21867;
@@ -7306,7 +7314,7 @@
 		fRef = 5C9901CE0F6ECBA7003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 655";
 		rLen = 0;
-		rLoc = 17728;
+		rLoc = 18489;
 		rType = 0;
 		vrLen = 1821;
 		vrLoc = 21867;
@@ -7336,7 +7344,7 @@
 		fRef = 5C9901CE0F6ECBA7003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 670";
 		rLen = 0;
-		rLoc = 18308;
+		rLoc = 19069;
 		rType = 0;
 		vrLen = 1860;
 		vrLoc = 21867;
@@ -7383,7 +7391,7 @@
 		fRef = 5C9901CE0F6ECBA7003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 666";
 		rLen = 0;
-		rLoc = 18183;
+		rLoc = 18944;
 		rType = 0;
 		vrLen = 2722;
 		vrLoc = 22186;
@@ -7433,7 +7441,7 @@
 		fRef = 5C9902290F6F0842003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 623";
 		rLen = 0;
-		rLoc = 16365;
+		rLoc = 17126;
 		rType = 0;
 		vrLen = 1818;
 		vrLoc = 20680;
@@ -7493,7 +7501,7 @@
 		fRef = 5C9902290F6F0842003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 623";
 		rLen = 0;
-		rLoc = 16365;
+		rLoc = 17126;
 		rType = 0;
 		vrLen = 1818;
 		vrLoc = 20680;
@@ -7545,10 +7553,10 @@
 		ignoreCount = 0;
 		lineNumber = 103;
 		location = libCrusta.bundle;
-		modificationTime = 259065635.265108;
+		modificationTime = 259106257.814803;
 		state = 2;
 	};
-	5C9902450F6F10BB003B9A65 /* QuadTerrain.cpp:511 */ = {
+	5C9902450F6F10BB003B9A65 /* QuadTerrain.cpp:537 */ = {
 		isa = PBXFileBreakpoint;
 		actions = (
 		);
@@ -7560,12 +7568,12 @@
 		functionName = "QuadTerrain:: prepareGLData(const ActiveList::iterator it, GLContextData& contextData)";
 		hitCount = 0;
 		ignoreCount = 0;
-		lineNumber = 511;
+		lineNumber = 537;
 		location = libCrusta.bundle;
-		modificationTime = 259065635.267327;
+		modificationTime = 259106257.820651;
 		state = 2;
 	};
-	5C9902470F6F112D003B9A65 /* QuadTerrain.cpp:543 */ = {
+	5C9902470F6F112D003B9A65 /* QuadTerrain.cpp:569 */ = {
 		isa = PBXFileBreakpoint;
 		actions = (
 		);
@@ -7577,9 +7585,9 @@
 		functionName = "QuadTerrain:: drawActive(const ActiveList::iterator& it, GlData* glData, GLContextData& contextData)";
 		hitCount = 0;
 		ignoreCount = 0;
-		lineNumber = 543;
+		lineNumber = 569;
 		location = libCrusta.bundle;
-		modificationTime = 259065635.269756;
+		modificationTime = 259106257.823624;
 		state = 2;
 	};
 	5C99024A0F6F114B003B9A65 /* PBXTextBookmark */ = {
@@ -7597,7 +7605,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 623";
 		rLen = 0;
-		rLoc = 16365;
+		rLoc = 17126;
 		rType = 0;
 		vrLen = 1807;
 		vrLoc = 20680;
@@ -7637,7 +7645,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 623";
 		rLen = 0;
-		rLoc = 16365;
+		rLoc = 17126;
 		rType = 0;
 		vrLen = 1807;
 		vrLoc = 20680;
@@ -7687,7 +7695,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 623";
 		rLen = 0;
-		rLoc = 16365;
+		rLoc = 17126;
 		rType = 0;
 		vrLen = 1807;
 		vrLoc = 20680;
@@ -7764,7 +7772,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 623";
 		rLen = 0;
-		rLoc = 16365;
+		rLoc = 17126;
 		rType = 0;
 		vrLen = 1807;
 		vrLoc = 20680;
@@ -7884,7 +7892,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 808";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 4233;
 		vrLoc = 1600;
@@ -7924,7 +7932,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 808";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 4233;
 		vrLoc = 1600;
@@ -7964,7 +7972,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 647";
 		rLen = 0;
-		rLoc = 16365;
+		rLoc = 17126;
 		rType = 0;
 		vrLen = 6699;
 		vrLoc = 8523;
@@ -7974,7 +7982,7 @@
 		fRef = 5C9902680F6F3244003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 814";
 		rLen = 11;
-		rLoc = 24496;
+		rLoc = 25257;
 		rType = 0;
 		vrLen = 4586;
 		vrLoc = 23878;
@@ -8024,7 +8032,7 @@
 		fRef = 5C9902680F6F3244003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 855";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 4522;
 		vrLoc = 24079;
@@ -8064,7 +8072,7 @@
 		fRef = 5C9902680F6F3244003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 855";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 4522;
 		vrLoc = 24079;
@@ -8104,7 +8112,7 @@
 		fRef = 5C9902680F6F3244003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 855";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 4522;
 		vrLoc = 24079;
@@ -8134,7 +8142,7 @@
 		fRef = 5C9902680F6F3244003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 855";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 4522;
 		vrLoc = 24079;
@@ -8164,7 +8172,7 @@
 		fRef = 5C9902680F6F3244003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 855";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 4522;
 		vrLoc = 24079;
@@ -8194,7 +8202,7 @@
 		fRef = 5C9902680F6F3244003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 855";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 4522;
 		vrLoc = 24079;
@@ -8224,7 +8232,7 @@
 		fRef = 5C9902680F6F3244003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 855";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 4522;
 		vrLoc = 24079;
@@ -8254,7 +8262,7 @@
 		fRef = 5C9902680F6F3244003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 855";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 4522;
 		vrLoc = 24079;
@@ -8284,7 +8292,7 @@
 		fRef = 5C9902680F6F3244003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 855";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 4522;
 		vrLoc = 24077;
@@ -8294,7 +8302,7 @@
 		fRef = 5C9902680F6F3244003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 855";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 1918;
 		vrLoc = 21654;
@@ -8334,7 +8342,7 @@
 		fRef = 5C9902680F6F3244003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 855";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 1918;
 		vrLoc = 21654;
@@ -8354,7 +8362,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 855";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 3344;
 		vrLoc = 310;
@@ -8624,7 +8632,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 610";
 		rLen = 0;
-		rLoc = 21451;
+		rLoc = 22212;
 		rType = 0;
 		vrLen = 7333;
 		vrLoc = 16182;
@@ -8654,7 +8662,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 129";
 		rLen = 179;
-		rLoc = 4743;
+		rLoc = 5074;
 		rType = 0;
 		vrLen = 3247;
 		vrLoc = 1809;
@@ -8673,7 +8681,7 @@
 		isa = PBXTextBookmark;
 		fRef = 5C9903050F6F7DC7003B9A65 /* QuadTerrain.cpp */;
 		rLen = 0;
-		rLoc = 13832;
+		rLoc = 14567;
 		rType = 0;
 	};
 	5C9903050F6F7DC7003B9A65 /* QuadTerrain.cpp */ = {
@@ -8694,7 +8702,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 361";
 		rLen = 0;
-		rLoc = 13832;
+		rLoc = 14567;
 		rType = 0;
 		vrLen = 1207;
 		vrLoc = 14248;
@@ -8704,7 +8712,7 @@
 		comments = "error: 'node' was not declared in this scope";
 		fRef = 5C9903050F6F7DC7003B9A65 /* QuadTerrain.cpp */;
 		rLen = 1;
-		rLoc = 621;
+		rLoc = 647;
 		rType = 1;
 	};
 	5C9903110F6F8352003B9A65 /* PBXTextBookmark */ = {
@@ -8712,7 +8720,7 @@
 		fRef = 5C9903050F6F7DC7003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 529";
 		rLen = 0;
-		rLoc = 20293;
+		rLoc = 21054;
 		rType = 0;
 		vrLen = 2421;
 		vrLoc = 16325;
@@ -8754,7 +8762,7 @@
 		fRef = 5C9903150F6F8386003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 529";
 		rLen = 0;
-		rLoc = 20293;
+		rLoc = 21054;
 		rType = 0;
 		vrLen = 2421;
 		vrLoc = 16325;
@@ -8784,7 +8792,7 @@
 		fRef = 5C9903150F6F8386003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 530";
 		rLen = 0;
-		rLoc = 20293;
+		rLoc = 21054;
 		rType = 0;
 		vrLen = 2455;
 		vrLoc = 16280;
@@ -8833,7 +8841,7 @@
 		isa = PBXTextBookmark;
 		fRef = 5C9903280F702A3D003B9A65 /* QuadTerrain.cpp */;
 		rLen = 0;
-		rLoc = 15033;
+		rLoc = 15795;
 		rType = 0;
 	};
 	5C9903280F702A3D003B9A65 /* QuadTerrain.cpp */ = {
@@ -8854,7 +8862,7 @@
 		fRef = 5C9903150F6F8386003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 367";
 		rLen = 0;
-		rLoc = 13832;
+		rLoc = 14567;
 		rType = 0;
 		vrLen = 961;
 		vrLoc = 13918;
@@ -8894,7 +8902,7 @@
 		fRef = 5C9903280F702A3D003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 531";
 		rLen = 0;
-		rLoc = 20293;
+		rLoc = 21054;
 		rType = 0;
 		vrLen = 1712;
 		vrLoc = 15761;
@@ -8984,7 +8992,7 @@
 		fRef = 5C9903280F702A3D003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 551";
 		rLen = 0;
-		rLoc = 20293;
+		rLoc = 21054;
 		rType = 0;
 		vrLen = 3768;
 		vrLoc = 13745;
@@ -9027,7 +9035,7 @@
 		fRef = 5C99034A0F702EFE003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 551";
 		rLen = 0;
-		rLoc = 20293;
+		rLoc = 21054;
 		rType = 0;
 		vrLen = 3753;
 		vrLoc = 13777;
@@ -9057,7 +9065,7 @@
 		fRef = 5C99034A0F702EFE003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 551";
 		rLen = 0;
-		rLoc = 20293;
+		rLoc = 21054;
 		rType = 0;
 		vrLen = 3753;
 		vrLoc = 13777;
@@ -9087,7 +9095,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 551";
 		rLen = 0;
-		rLoc = 20293;
+		rLoc = 21054;
 		rType = 0;
 		vrLen = 3797;
 		vrLoc = 13736;
@@ -9107,7 +9115,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 524";
 		rLen = 0;
-		rLoc = 19138;
+		rLoc = 19899;
 		rType = 0;
 		vrLen = 3789;
 		vrLoc = 13979;
@@ -9187,7 +9195,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 524";
 		rLen = 0;
-		rLoc = 19138;
+		rLoc = 19899;
 		rType = 0;
 		vrLen = 3789;
 		vrLoc = 13979;
@@ -9217,7 +9225,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 524";
 		rLen = 0;
-		rLoc = 19138;
+		rLoc = 19899;
 		rType = 0;
 		vrLen = 3789;
 		vrLoc = 13979;
@@ -9297,7 +9305,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 97";
 		rLen = 0;
-		rLoc = 3435;
+		rLoc = 3766;
 		rType = 0;
 		vrLen = 1393;
 		vrLoc = 2383;
@@ -9306,7 +9314,7 @@
 		isa = PBXTextBookmark;
 		fRef = 5C9903910F704B18003B9A65 /* QuadTerrain.cpp */;
 		rLen = 8;
-		rLoc = 13781;
+		rLoc = 14516;
 		rType = 0;
 	};
 	5C9903910F704B18003B9A65 /* QuadTerrain.cpp */ = {
@@ -9337,7 +9345,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 97";
 		rLen = 0;
-		rLoc = 3435;
+		rLoc = 3766;
 		rType = 0;
 		vrLen = 1393;
 		vrLoc = 2383;
@@ -9347,7 +9355,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 417";
 		rLen = 0;
-		rLoc = 14779;
+		rLoc = 15514;
 		rType = 0;
 		vrLen = 869;
 		vrLoc = 13136;
@@ -9357,7 +9365,7 @@
 		fRef = 5C9903910F704B18003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 545";
 		rLen = 0;
-		rLoc = 19773;
+		rLoc = 20534;
 		rType = 0;
 		vrLen = 15254;
 		vrLoc = 7044;
@@ -9367,7 +9375,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 109";
 		rLen = 0;
-		rLoc = 4024;
+		rLoc = 4355;
 		rType = 0;
 		vrLen = 3470;
 		vrLoc = 2382;
@@ -9387,7 +9395,7 @@
 		fRef = 5C9903910F704B18003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 523";
 		rLen = 0;
-		rLoc = 19084;
+		rLoc = 19845;
 		rType = 0;
 		vrLen = 5667;
 		vrLoc = 13781;
@@ -9464,7 +9472,7 @@
 		fRef = 5C9903910F704B18003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 523";
 		rLen = 0;
-		rLoc = 19084;
+		rLoc = 19845;
 		rType = 0;
 		vrLen = 6004;
 		vrLoc = 3575;
@@ -9664,7 +9672,7 @@
 		fRef = 5C9903910F704B18003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 444";
 		rLen = 0;
-		rLoc = 15335;
+		rLoc = 16096;
 		rType = 0;
 		vrLen = 2592;
 		vrLoc = 13992;
@@ -9694,7 +9702,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 104";
 		rLen = 0;
-		rLoc = 3777;
+		rLoc = 4108;
 		rType = 0;
 		vrLen = 3311;
 		vrLoc = 1979;
@@ -9714,7 +9722,7 @@
 		fRef = 5C9903910F704B18003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 402";
 		rLen = 0;
-		rLoc = 13870;
+		rLoc = 14605;
 		rType = 0;
 		vrLen = 2686;
 		vrLoc = 11515;
@@ -9724,7 +9732,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 104";
 		rLen = 0;
-		rLoc = 3777;
+		rLoc = 4108;
 		rType = 0;
 		vrLen = 3311;
 		vrLoc = 1979;
@@ -9757,7 +9765,7 @@
 		fRef = 5C9903DB0F70649C003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 404";
 		rLen = 0;
-		rLoc = 13870;
+		rLoc = 14605;
 		rType = 0;
 		vrLen = 2649;
 		vrLoc = 11515;
@@ -9767,7 +9775,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 104";
 		rLen = 0;
-		rLoc = 3777;
+		rLoc = 4108;
 		rType = 0;
 		vrLen = 3311;
 		vrLoc = 1979;
@@ -9787,7 +9795,7 @@
 		fRef = 5C9903DB0F70649C003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 404";
 		rLen = 0;
-		rLoc = 13870;
+		rLoc = 14605;
 		rType = 0;
 		vrLen = 2649;
 		vrLoc = 11515;
@@ -9797,7 +9805,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 104";
 		rLen = 0;
-		rLoc = 3777;
+		rLoc = 4108;
 		rType = 0;
 		vrLen = 3311;
 		vrLoc = 1979;
@@ -9817,7 +9825,7 @@
 		fRef = 5C9903DB0F70649C003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 404";
 		rLen = 0;
-		rLoc = 13870;
+		rLoc = 14605;
 		rType = 0;
 		vrLen = 2649;
 		vrLoc = 11515;
@@ -9827,7 +9835,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 104";
 		rLen = 0;
-		rLoc = 3777;
+		rLoc = 4108;
 		rType = 0;
 		vrLen = 3311;
 		vrLoc = 1979;
@@ -9856,7 +9864,7 @@
 		ignoreCount = 0;
 		lineNumber = 278;
 		location = libCrusta.bundle;
-		modificationTime = 259065640.660448;
+		modificationTime = 259106263.070291;
 		state = 1;
 	};
 	5C9903EF0F70696B003B9A65 /* PBXTextBookmark */ = {
@@ -9864,7 +9872,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 417";
 		rLen = 0;
-		rLoc = 13870;
+		rLoc = 14605;
 		rType = 0;
 		vrLen = 2629;
 		vrLoc = 11838;
@@ -9963,7 +9971,7 @@
 		ignoreCount = 0;
 		lineNumber = 156;
 		location = libCrusta.bundle;
-		modificationTime = 259065640.949216;
+		modificationTime = 259106263.308022;
 		state = 1;
 	};
 	5C9904000F706F97003B9A65 /* PBXTextBookmark */ = {
@@ -9971,7 +9979,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 457";
 		rLen = 0;
-		rLoc = 15180;
+		rLoc = 15941;
 		rType = 0;
 		vrLen = 2419;
 		vrLoc = 12698;
@@ -10081,7 +10089,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 457";
 		rLen = 0;
-		rLoc = 15180;
+		rLoc = 15941;
 		rType = 0;
 		vrLen = 2419;
 		vrLoc = 12698;
@@ -10129,7 +10137,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 457";
 		rLen = 0;
-		rLoc = 15180;
+		rLoc = 15941;
 		rType = 0;
 		vrLen = 2419;
 		vrLoc = 12698;
@@ -10159,7 +10167,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 457";
 		rLen = 0;
-		rLoc = 15180;
+		rLoc = 15941;
 		rType = 0;
 		vrLen = 2419;
 		vrLoc = 12698;
@@ -10189,7 +10197,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 457";
 		rLen = 0;
-		rLoc = 15180;
+		rLoc = 15941;
 		rType = 0;
 		vrLen = 2419;
 		vrLoc = 12698;
@@ -10219,7 +10227,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 457";
 		rLen = 0;
-		rLoc = 15180;
+		rLoc = 15941;
 		rType = 0;
 		vrLen = 2419;
 		vrLoc = 12698;
@@ -10249,7 +10257,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 457";
 		rLen = 0;
-		rLoc = 15180;
+		rLoc = 15941;
 		rType = 0;
 		vrLen = 2419;
 		vrLoc = 12698;
@@ -10269,7 +10277,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 451";
 		rLen = 0;
-		rLoc = 14962;
+		rLoc = 15742;
 		rType = 0;
 		vrLen = 2461;
 		vrLoc = 12698;
@@ -10369,7 +10377,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 451";
 		rLen = 0;
-		rLoc = 14962;
+		rLoc = 15742;
 		rType = 0;
 		vrLen = 2461;
 		vrLoc = 12698;
@@ -10429,7 +10437,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 451";
 		rLen = 0;
-		rLoc = 14962;
+		rLoc = 15742;
 		rType = 0;
 		vrLen = 2461;
 		vrLoc = 12698;
@@ -10479,7 +10487,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 451";
 		rLen = 0;
-		rLoc = 14962;
+		rLoc = 15742;
 		rType = 0;
 		vrLen = 2461;
 		vrLoc = 12698;
@@ -10529,7 +10537,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 451";
 		rLen = 0;
-		rLoc = 14962;
+		rLoc = 15742;
 		rType = 0;
 		vrLen = 2461;
 		vrLoc = 12698;
@@ -10850,7 +10858,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 600";
 		rLen = 0;
-		rLoc = 20867;
+		rLoc = 21628;
 		rType = 0;
 		vrLen = 5214;
 		vrLoc = 18552;
@@ -10890,7 +10898,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 600";
 		rLen = 0;
-		rLoc = 20867;
+		rLoc = 21628;
 		rType = 0;
 		vrLen = 5214;
 		vrLoc = 18552;
@@ -10920,7 +10928,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 600";
 		rLen = 0;
-		rLoc = 20867;
+		rLoc = 21628;
 		rType = 0;
 		vrLen = 5214;
 		vrLoc = 18552;
@@ -10950,7 +10958,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 600";
 		rLen = 0;
-		rLoc = 20867;
+		rLoc = 21628;
 		rType = 0;
 		vrLen = 5214;
 		vrLoc = 18552;
@@ -10980,7 +10988,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 600";
 		rLen = 0;
-		rLoc = 20867;
+		rLoc = 21628;
 		rType = 0;
 		vrLen = 5214;
 		vrLoc = 18552;
@@ -11010,7 +11018,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 600";
 		rLen = 0;
-		rLoc = 20867;
+		rLoc = 21628;
 		rType = 0;
 		vrLen = 5214;
 		vrLoc = 18552;
@@ -11040,7 +11048,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 600";
 		rLen = 0;
-		rLoc = 20867;
+		rLoc = 21628;
 		rType = 0;
 		vrLen = 5214;
 		vrLoc = 18552;
@@ -11070,7 +11078,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 600";
 		rLen = 0;
-		rLoc = 20867;
+		rLoc = 21628;
 		rType = 0;
 		vrLen = 5214;
 		vrLoc = 18552;
@@ -11100,7 +11108,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 600";
 		rLen = 0;
-		rLoc = 20867;
+		rLoc = 21628;
 		rType = 0;
 		vrLen = 5214;
 		vrLoc = 18552;
@@ -11130,7 +11138,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 600";
 		rLen = 0;
-		rLoc = 20867;
+		rLoc = 21628;
 		rType = 0;
 		vrLen = 5214;
 		vrLoc = 18552;
@@ -11160,7 +11168,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 600";
 		rLen = 0;
-		rLoc = 20867;
+		rLoc = 21628;
 		rType = 0;
 		vrLen = 5214;
 		vrLoc = 18552;
@@ -11180,7 +11188,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 600";
 		rLen = 0;
-		rLoc = 20867;
+		rLoc = 21628;
 		rType = 0;
 		vrLen = 5214;
 		vrLoc = 18552;
@@ -11190,7 +11198,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 600";
 		rLen = 0;
-		rLoc = 20867;
+		rLoc = 21628;
 		rType = 0;
 		vrLen = 5214;
 		vrLoc = 18552;
@@ -11638,7 +11646,7 @@
 		ignoreCount = 0;
 		lineNumber = 58;
 		location = libCrusta.bundle;
-		modificationTime = 259065635.27509;
+		modificationTime = 259106257.829613;
 		state = 2;
 	};
 	5C99051E0F70A4B8003B9A65 /* PBXTextBookmark */ = {
@@ -11756,7 +11764,7 @@
 		fRef = 5C9904E10F70982C003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 612";
 		rLen = 0;
-		rLoc = 21013;
+		rLoc = 21774;
 		rType = 0;
 		vrLen = 4201;
 		vrLoc = 15762;
@@ -11965,7 +11973,7 @@
 		fRef = 5C9905390F70A94E003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 496";
 		rLen = 0;
-		rLoc = 16362;
+		rLoc = 17123;
 		rType = 0;
 		vrLen = 963;
 		vrLoc = 15110;
@@ -12024,7 +12032,7 @@
 		fRef = 5C9905390F70A94E003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 496";
 		rLen = 0;
-		rLoc = 16362;
+		rLoc = 17123;
 		rType = 0;
 		vrLen = 963;
 		vrLoc = 15110;
@@ -12074,7 +12082,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 118";
 		rLen = 0;
-		rLoc = 4273;
+		rLoc = 4604;
 		rType = 0;
 		vrLen = 2503;
 		vrLoc = 3104;
@@ -12134,7 +12142,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 118";
 		rLen = 0;
-		rLoc = 4273;
+		rLoc = 4604;
 		rType = 0;
 		vrLen = 2503;
 		vrLoc = 3104;
@@ -12472,7 +12480,7 @@
 		fRef = 5C9905390F70A94E003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 604";
 		rLen = 0;
-		rLoc = 21013;
+		rLoc = 21774;
 		rType = 0;
 		vrLen = 2324;
 		vrLoc = 18615;
@@ -12522,7 +12530,7 @@
 		fRef = 5C9905390F70A94E003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 547";
 		rLen = 0;
-		rLoc = 19084;
+		rLoc = 19845;
 		rType = 0;
 		vrLen = 2538;
 		vrLoc = 13311;
@@ -12539,7 +12547,7 @@
 		fRef = 5C9905390F70A94E003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 547";
 		rLen = 0;
-		rLoc = 19084;
+		rLoc = 19845;
 		rType = 0;
 		vrLen = 2538;
 		vrLoc = 13311;
@@ -12609,7 +12617,7 @@
 		fRef = 5C9905390F70A94E003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 541";
 		rLen = 0;
-		rLoc = 18198;
+		rLoc = 18959;
 		rType = 0;
 		vrLen = 2729;
 		vrLoc = 15919;
@@ -12639,7 +12647,7 @@
 		fRef = 5C9905390F70A94E003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 541";
 		rLen = 0;
-		rLoc = 18198;
+		rLoc = 18959;
 		rType = 0;
 		vrLen = 2729;
 		vrLoc = 15919;
@@ -12699,7 +12707,7 @@
 		fRef = 5C9905390F70A94E003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 548";
 		rLen = 0;
-		rLoc = 18413;
+		rLoc = 19174;
 		rType = 0;
 		vrLen = 2775;
 		vrLoc = 16121;
@@ -12729,7 +12737,7 @@
 		fRef = 5C9905390F70A94E003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 563";
 		rLen = 0;
-		rLoc = 18953;
+		rLoc = 19714;
 		rType = 0;
 		vrLen = 2774;
 		vrLoc = 16121;
@@ -12759,7 +12767,7 @@
 		fRef = 5C9905390F70A94E003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 562";
 		rLen = 0;
-		rLoc = 18914;
+		rLoc = 19675;
 		rType = 0;
 		vrLen = 2758;
 		vrLoc = 16121;
@@ -12789,7 +12797,7 @@
 		fRef = 5C9905390F70A94E003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 553";
 		rLen = 0;
-		rLoc = 18573;
+		rLoc = 19334;
 		rType = 0;
 		vrLen = 2763;
 		vrLoc = 16121;
@@ -12819,7 +12827,7 @@
 		fRef = 5C9905390F70A94E003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 566";
 		rLen = 0;
-		rLoc = 19043;
+		rLoc = 19804;
 		rType = 0;
 		vrLen = 2766;
 		vrLoc = 16121;
@@ -12849,7 +12857,7 @@
 		fRef = 5C9905390F70A94E003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 463";
 		rLen = 0;
-		rLoc = 15335;
+		rLoc = 16096;
 		rType = 0;
 		vrLen = 1603;
 		vrLoc = 13470;
@@ -12886,7 +12894,7 @@
 			sepNavVisRange = "{19466, 958}";
 		};
 	};
-	5C9905E20F70DE4B003B9A65 /* QuadTerrain.cpp:479 */ = {
+	5C9905E20F70DE4B003B9A65 /* QuadTerrain.cpp:505 */ = {
 		isa = PBXFileBreakpoint;
 		actions = (
 		);
@@ -12898,9 +12906,9 @@
 		functionName = "QuadTerrain:: prepareGlData(Node* node, GLContextData& contextData)";
 		hitCount = 0;
 		ignoreCount = 0;
-		lineNumber = 479;
+		lineNumber = 505;
 		location = libCrusta.bundle;
-		modificationTime = 259065641.030236;
+		modificationTime = 259106263.43932;
 		state = 1;
 	};
 	5C9905E80F70E62A003B9A65 /* PBXTextBookmark */ = {
@@ -12938,7 +12946,7 @@
 		fRef = 5C9905E00F70DE4B003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 455";
 		rLen = 0;
-		rLoc = 15148;
+		rLoc = 15889;
 		rType = 0;
 		vrLen = 1571;
 		vrLoc = 14110;
@@ -13027,7 +13035,7 @@
 		ignoreCount = 0;
 		lineNumber = 280;
 		location = libCrusta.bundle;
-		modificationTime = 259065641.129052;
+		modificationTime = 259106263.49732;
 		state = 1;
 	};
 	5C9905FF0F70ED46003B9A65 /* QuadTerrain.cpp:286 */ = {
@@ -13044,7 +13052,7 @@
 		ignoreCount = 0;
 		lineNumber = 286;
 		location = libCrusta.bundle;
-		modificationTime = 259065641.254748;
+		modificationTime = 259106263.637712;
 		state = 1;
 	};
 	5C9906000F70EE0D003B9A65 /* PBXTextBookmark */ = {
@@ -13061,7 +13069,7 @@
 		isa = PBXTextBookmark;
 		fRef = 5C9906020F70EE0D003B9A65 /* QuadTerrain.cpp */;
 		rLen = 10;
-		rLoc = 19909;
+		rLoc = 20670;
 		rType = 0;
 	};
 	5C9906020F70EE0D003B9A65 /* QuadTerrain.cpp */ = {
@@ -13091,7 +13099,7 @@
 		fRef = 5C9905E00F70DE4B003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 612";
 		rLen = 10;
-		rLoc = 19909;
+		rLoc = 20670;
 		rType = 0;
 		vrLen = 958;
 		vrLoc = 19466;
@@ -13101,7 +13109,7 @@
 		comments = "error: no matching function for call to 'crusta::QuadTerrain::drawNode(crusta::QuadTerrain::Node*&, crusta::QuadTerrain::GlData*&)'";
 		fRef = 5C9906020F70EE0D003B9A65 /* QuadTerrain.cpp */;
 		rLen = 1;
-		rLoc = 462;
+		rLoc = 488;
 		rType = 1;
 	};
 	5C99060B0F70EF23003B9A65 /* PBXTextBookmark */ = {
@@ -13109,7 +13117,7 @@
 		fRef = 5C9906020F70EE0D003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 463";
 		rLen = 0;
-		rLoc = 15066;
+		rLoc = 15828;
 		rType = 0;
 		vrLen = 1530;
 		vrLoc = 14280;
@@ -13129,7 +13137,7 @@
 		comments = "error: 'VideoCache' has not been declared";
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		rLen = 1;
-		rLoc = 124;
+		rLoc = 129;
 		rType = 1;
 	};
 	5C99060E0F70EF23003B9A65 /* PBXTextBookmark */ = {
@@ -13147,7 +13155,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 117";
 		rLen = 11;
-		rLoc = 4354;
+		rLoc = 4685;
 		rType = 0;
 		vrLen = 2351;
 		vrLoc = 3136;
@@ -13167,7 +13175,7 @@
 		fRef = 5C9906020F70EE0D003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 463";
 		rLen = 0;
-		rLoc = 15066;
+		rLoc = 15828;
 		rType = 0;
 		vrLen = 1530;
 		vrLoc = 14280;
@@ -13177,7 +13185,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 117";
 		rLen = 11;
-		rLoc = 4354;
+		rLoc = 4685;
 		rType = 0;
 		vrLen = 2351;
 		vrLoc = 3136;
@@ -13197,7 +13205,7 @@
 		fRef = 5C9906020F70EE0D003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 610";
 		rLen = 10;
-		rLoc = 19909;
+		rLoc = 20670;
 		rType = 0;
 		vrLen = 1010;
 		vrLoc = 19234;
@@ -13206,7 +13214,7 @@
 		isa = PBXTextBookmark;
 		fRef = 5C99061A0F70F214003B9A65 /* QuadTerrain.cpp */;
 		rLen = 9;
-		rLoc = 15684;
+		rLoc = 16445;
 		rType = 0;
 	};
 	5C99061A0F70F214003B9A65 /* QuadTerrain.cpp */ = {
@@ -13226,7 +13234,7 @@
 		fRef = 5C9906020F70EE0D003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 488";
 		rLen = 33;
-		rLoc = 15794;
+		rLoc = 16555;
 		rType = 0;
 		vrLen = 967;
 		vrLoc = 15228;
@@ -13236,7 +13244,7 @@
 		fRef = 5C9906020F70EE0D003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 463";
 		rLen = 0;
-		rLoc = 15066;
+		rLoc = 15828;
 		rType = 0;
 		vrLen = 1547;
 		vrLoc = 14280;
@@ -13246,7 +13254,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 117";
 		rLen = 11;
-		rLoc = 4354;
+		rLoc = 4685;
 		rType = 0;
 		vrLen = 2351;
 		vrLoc = 3136;
@@ -13266,7 +13274,7 @@
 		comments = "error: no matching function for call to 'crusta::VideoCache::getBuffer(crusta::TreeIndex&, bool&)'";
 		fRef = 5C99061A0F70F214003B9A65 /* QuadTerrain.cpp */;
 		rLen = 1;
-		rLoc = 486;
+		rLoc = 512;
 		rType = 1;
 	};
 	5C9906260F70FF81003B9A65 /* PBXTextBookmark */ = {
@@ -13274,7 +13282,7 @@
 		fRef = 5C99061A0F70F214003B9A65 /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 487";
 		rLen = 0;
-		rLoc = 15770;
+		rLoc = 16531;
 		rType = 0;
 		vrLen = 1570;
 		vrLoc = 14472;
@@ -13314,7 +13322,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 117";
 		rLen = 11;
-		rLoc = 4354;
+		rLoc = 4685;
 		rType = 0;
 		vrLen = 2342;
 		vrLoc = 3136;
@@ -13324,7 +13332,7 @@
 		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
 		name = "QuadTerrain.h: 117";
 		rLen = 11;
-		rLoc = 4354;
+		rLoc = 4685;
 		rType = 0;
 		vrLen = 2342;
 		vrLoc = 3136;
@@ -13404,7 +13412,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 487";
 		rLen = 0;
-		rLoc = 15770;
+		rLoc = 16531;
 		rType = 0;
 		vrLen = 1570;
 		vrLoc = 14472;
@@ -13454,7 +13462,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 487";
 		rLen = 0;
-		rLoc = 15770;
+		rLoc = 16531;
 		rType = 0;
 		vrLen = 1570;
 		vrLoc = 14472;
@@ -13504,7 +13512,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 487";
 		rLen = 0;
-		rLoc = 15770;
+		rLoc = 16531;
 		rType = 0;
 		vrLen = 1570;
 		vrLoc = 14472;
@@ -13534,7 +13542,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 487";
 		rLen = 0;
-		rLoc = 15770;
+		rLoc = 16531;
 		rType = 0;
 		vrLen = 1570;
 		vrLoc = 14472;
@@ -13574,7 +13582,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 644";
 		rLen = 0;
-		rLoc = 21030;
+		rLoc = 21791;
 		rType = 0;
 		vrLen = 1400;
 		vrLoc = 20214;
@@ -13604,7 +13612,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 644";
 		rLen = 0;
-		rLoc = 21030;
+		rLoc = 21791;
 		rType = 0;
 		vrLen = 1400;
 		vrLoc = 20214;
@@ -13658,6 +13666,86 @@
 		rType = 0;
 		vrLen = 1606;
 		vrLoc = 103;
+	};
+	5C9906630F71A4F9003B9A65 /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
+		name = "QuadTerrain.cpp: 431";
+		rLen = 0;
+		rLoc = 13787;
+		rType = 0;
+		vrLen = 1636;
+		vrLoc = 13396;
+	};
+	5C9906640F71A4F9003B9A65 /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 5CE867E60F6AF23F004782DF /* QuadCache.cpp */;
+		name = "QuadCache.cpp: 11";
+		rLen = 0;
+		rLoc = 153;
+		rType = 0;
+		vrLen = 1460;
+		vrLoc = 0;
+	};
+	5C9906650F71A4F9003B9A65 /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 5CE867E60F6AF23F004782DF /* QuadCache.cpp */;
+		name = "QuadCache.cpp: 11";
+		rLen = 0;
+		rLoc = 153;
+		rType = 0;
+		vrLen = 1460;
+		vrLoc = 0;
+	};
+	5C9906660F71A4F9003B9A65 /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
+		name = "QuadTerrain.h: 98";
+		rLen = 40;
+		rLoc = 3561;
+		rType = 0;
+		vrLen = 2267;
+		vrLoc = 2549;
+	};
+	5C9906670F71A4F9003B9A65 /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 5CE867E60F6AF23F004782DF /* QuadCache.cpp */;
+		name = "QuadCache.cpp: 10";
+		rLen = 0;
+		rLoc = 144;
+		rType = 0;
+		vrLen = 1460;
+		vrLoc = 0;
+	};
+	5C99066C0F71A5DA003B9A65 /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
+		name = "QuadTerrain.cpp: 486";
+		rLen = 0;
+		rLoc = 15739;
+		rType = 0;
+		vrLen = 1622;
+		vrLoc = 14325;
+	};
+	5C99066D0F71A5DA003B9A65 /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 5C5DB3370F65925A0039615D /* QuadTerrain.h */;
+		name = "QuadTerrain.h: 98";
+		rLen = 40;
+		rLoc = 3561;
+		rType = 0;
+		vrLen = 2267;
+		vrLoc = 2549;
+	};
+	5C99066E0F71A5DA003B9A65 /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 5CE867E60F6AF23F004782DF /* QuadCache.cpp */;
+		name = "QuadCache.cpp: 10";
+		rLen = 0;
+		rLoc = 144;
+		rType = 0;
+		vrLen = 1460;
+		vrLoc = 0;
 	};
 	5CA26C5A0F45473A00EFF83C /* PBXTextBookmark */ = {
 		isa = PBXTextBookmark;
@@ -13862,7 +13950,7 @@
 		hitCount = 0;
 		ignoreCount = 0;
 		location = libSystem.B.dylib;
-		modificationTime = 259065635.284007;
+		modificationTime = 259106257.848181;
 		state = 1;
 		symbolName = malloc_error_break;
 	};
@@ -14134,9 +14222,9 @@
 		sourceTree = "<group>";
 		uiCtxt = {
 			sepNavFolds = "{\n    c =     (\n                {\n            r = \"{227, 1}\";\n            s = 0;\n        },\n                {\n            r = \"{2302, 18}\";\n            s = 0;\n        },\n                {\n            r = \"{2431, 1}\";\n            s = 0;\n        },\n                {\n            r = \"{2485, 27}\";\n            s = 0;\n        },\n                {\n            r = \"{2615, 1}\";\n            s = 0;\n        },\n                {\n            r = \"{2655, 23}\";\n            s = 0;\n        },\n                {\n            r = \"{2743, 97}\";\n            s = 0;\n        },\n                {\n            r = \"{2904, 93}\";\n            s = 0;\n        },\n                {\n            r = \"{3058, 1}\";\n            s = 0;\n        }\n    );\n    r = \"{0, 3074}\";\n    s = 0;\n}";
-			sepNavIntBoundsRect = "{{0, 0}, {494, 1512}}";
-			sepNavSelRange = "{153, 0}";
-			sepNavVisRange = "{103, 1606}";
+			sepNavIntBoundsRect = "{{0, 0}, {496, 1512}}";
+			sepNavSelRange = "{144, 0}";
+			sepNavVisRange = "{0, 1460}";
 		};
 	};
 	5CE867EA0F6AF262004782DF /* PBXTextBookmark */ = {
@@ -14234,7 +14322,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 721";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 6947;
 		vrLoc = 17750;
@@ -14271,7 +14359,7 @@
 		fRef = 5C5DB3380F65D7150039615D /* QuadTerrain.cpp */;
 		name = "QuadTerrain.cpp: 721";
 		rLen = 0;
-		rLoc = 25121;
+		rLoc = 25882;
 		rType = 0;
 		vrLen = 6947;
 		vrLoc = 17750;

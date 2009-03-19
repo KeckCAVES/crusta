@@ -91,6 +91,11 @@ protected:
         data required is available */
     bool split(GlData* glData, Node* node, float lod,
                MainCacheRequests& requests);
+    /** confirm the specified node as being part of the current approximation.
+        The parent and parent's parent are also touched/requested to make sure
+        coarsening can be processed in case the cache capacity is reaching its
+        limit */
+    void confirmCurrent(Node* node, float lod, MainCacheRequests& requests);
     /** evaluate the terrain tree starting with the node specified. The terrain
         tree is manipulated to add/remove nodes as necessary. */
     void traverse(GlData* glData, Node* node, MainCacheRequests& requests);

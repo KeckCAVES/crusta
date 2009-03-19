@@ -417,6 +417,32 @@ checkTree(glData, glData->root);
 
 
 void QuadTerrain::
+confirmCurrent(Node* node, float lod, MainCacheRequests& requests)
+{
+    //touch the current node
+    node->mainBuffer->touch();
+    if (node->parent != NULL)
+    {
+        //touch/request parent
+        Node* p = node->parent;
+        if (p->mainBuffer != NULL)
+            p->mainBuffer->touch();
+        else
+            requests.push_back(MainCacheRequest(lod, p->index, p->scope));
+
+        if (node->parent->parent != NULL)
+        {
+            //touch/request parent's parent
+            p = node->parent->parent;
+            if (p->mainBuffer != NULL)
+                p->mainBuffer->touch();
+            else
+                requests.push_back(MainCacheRequest(lod, p->index, p->scope));
+        }
+    }
+}
+
+void QuadTerrain::
 traverse(GlData* glData, Node* node, MainCacheRequests& requests)
 {
     //recurse to the active nodes
@@ -457,13 +483,13 @@ traverse(GlData* glData, Node* node, MainCacheRequests& requests)
         
     //- draw the node
         //confirm current state of the node
-        node->mainBuffer->touch();
-        //draw
+        confirmCurrent(node, lod, requests);
+        //draw only the visible
         if (visible)
             drawNode(glData, node);
-///\todo debug: non-visible video buffers don't get touched, so they are swaped
-else
-node->videoBuffer = NULL;
+        //non-visible lose their hold on cached video data
+        else
+            node->videoBuffer = NULL;
     }
 }
 
