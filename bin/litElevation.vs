@@ -32,6 +32,9 @@ void main()
 //    normal        = normalize(normal);
 //    vec3 lightDir = normalize(gl_LightSource[0].position.xyz);
     vec3 lightDir = vec3(0.0,0.0,1.0);
+//    vec3 lightDir = (gl_LightSource[0].position.xyz * gl_Position.w) -
+                    (gl_Position.xyz * gl_LightSource[0].position.w);
+//    lightDir      = -normalize(lightDir);
 
     float intensity = max(dot(normal, lightDir), 0.0);
 	gl_FrontColor =  color * intensity;
