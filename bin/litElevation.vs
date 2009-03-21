@@ -28,17 +28,12 @@ void main()
     right     *= texture2D(heightTex, coord).r;
 
     vec3 normal   = cross((right - left), (up - down));
-    normal        = normalize(gl_NormalMatrix * normal);
-//    normal        = normalize(normal);
-//    vec3 lightDir = normalize(gl_LightSource[0].position.xyz);
-    vec3 lightDir = vec3(0.0,0.0,1.0);
-//    vec3 lightDir = (gl_LightSource[0].position.xyz * gl_Position.w) -
+    normal        = normalize(gl_NormalMatrix * -normal);
+    normal        = normalize(normal);
+    vec3 lightDir = (gl_LightSource[0].position.xyz * gl_Position.w) -
                     (gl_Position.xyz * gl_LightSource[0].position.w);
-//    lightDir      = -normalize(lightDir);
+    lightDir      = normalize(lightDir);
 
     float intensity = max(dot(normal, lightDir), 0.0);
 	gl_FrontColor =  color * intensity;
-//	gl_FrontColor =  vec4(abs(normal), 1.0);
-//	gl_FrontColor =  vec4(normal, 1.0);
-//	gl_FrontColor =  vec4(abs(lightDir), 1.0);
 }

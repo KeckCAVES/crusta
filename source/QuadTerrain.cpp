@@ -36,15 +36,12 @@ mid(uint oneIndex, uint twoIndex, QuadNodeMainData::Vertex* vertices)
     res.position[1] = (one.position[1]  + two.position[1] ) * 0.5f;
     res.position[2] = (one.position[2]  + two.position[2] ) * 0.5f;
 
-///\todo debug generate a flat surface to debug light direction
-#if 1
     double invLen   = 1.0 / sqrt(res.position[0]*res.position[0] +
                                  res.position[1]*res.position[1] +
                                  res.position[2]*res.position[2]);
     res.position[0] *= invLen;
     res.position[1] *= invLen;
     res.position[2] *= invLen;
-#endif
 }
 static void
 centroid(uint oneIndex, uint twoIndex, uint threeIndex, uint fourIndex,
@@ -64,15 +61,12 @@ centroid(uint oneIndex, uint twoIndex, uint threeIndex, uint fourIndex,
     res.position[2] = (one.position[2]   + two.position[2] +
                        three.position[2] + four.position[2]) * 0.25f;
 
-///\todo debug generate a flat surface to debug light direction
-#if 1
     double invLen   = 1.0 / sqrt(res.position[0]*res.position[0] +
                                  res.position[1]*res.position[1] +
                                  res.position[2]*res.position[2]);
     res.position[0] *= invLen;
     res.position[1] *= invLen;
     res.position[2] *= invLen;
-#endif
 }
 
 
@@ -93,7 +87,6 @@ QuadTerrain(uint8 patch, const Scope& scope) :
     generateGeometry(scope, rootData.geometry);
     generateHeight(rootData.geometry, rootData.height);
     generateColor(rootData.height, rootData.color);
-///\todo color data
 }
 
 void QuadTerrain::
@@ -209,8 +202,6 @@ generateHeight(QuadNodeMainData::Vertex* vertices, float* heights)
         *heights += 1.0f;
         *heights /= 8.0f;
         *heights += 1.0f;
-///\todo debug generate a flat surface to debug light direction
-//*heights = 1.0f;
     }
 }
 
@@ -452,7 +443,7 @@ traverse(GlData* glData, Node* node, MainCacheRequests& requests)
     if (node->children == NULL)
     {
     //- evaluate merge, only if we're not already at the root
-        if (node->index.level != 0)
+        if (false)//node->index.level != 0)
         {
             float parentVisible =
                 glData->visibility.evaluate(node->parent->scope);
@@ -468,7 +459,7 @@ traverse(GlData* glData, Node* node, MainCacheRequests& requests)
         //compute visibility and lod
         float visible = glData->visibility.evaluate(node->scope);
         float lod     = glData->lod.evaluate(node->scope);
-        if (visible && lod>1.0)
+        if (false)//visible && lod>1.0)
         {
             if (split(glData, node, lod, requests))
             {
