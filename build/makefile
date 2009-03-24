@@ -2,8 +2,9 @@
 PROJECT         = Crusta
 
 #project directories (for now I can only support a single source directory)
-SRC_DIRS        = ../source
-INCLUDE_DIRS    = ../include
+SRC_DIR_BASE    = ../source
+SRC_DIRS        = ../source/crusta
+INCLUDE_DIRS    = ../include/crusta
 LIB_DIRS        =
 
 #project preprocessor definitions and dependent libraries
@@ -71,8 +72,8 @@ C_LIBS          = $(patsubst %, -l%, $(LIBS))
 SRC_FILES       = $(shell find $(SRC_DIRS) -type f -name '*.cpp')
 SRC_FILES      += $(shell find $(SRC_DIRS) -type f -name '*.c')
 
-SRC_OBJS        = $(patsubst $(SRC_DIRS)/%, $(TMP_DIR)/%o, $(SRC_FILES))
-SRC_DEPS        = $(patsubst $(SRC_DIRS)/%, $(TMP_DIR)/%d, $(SRC_FILES))
+SRC_OBJS        = $(patsubst $(SRC_DIR_BASE)/%, $(TMP_DIR)/%o, $(SRC_FILES))
+SRC_DEPS        = $(patsubst $(SRC_DIR_BASE)/%, $(TMP_DIR)/%d, $(SRC_FILES))
 
 .PHONY: all debug clean superclean debug-clean debug-superclean\
         release release-clean release-superclean\
@@ -143,10 +144,10 @@ define compile_source
 @$(CC) $(CFLAGS) $(C_PREPROC) $(C_INCLUDE_DIRS) $(VRUI_CFLAGS) -c "$<" -o "$@"
 endef
 
-$(TMP_DIR)/%.cppo: $(SRC_DIRS)/%.cpp
+$(TMP_DIR)/%.cppo: $(SRC_DIR_BASE)/%.cpp
 	$(depend_source)
 	$(compile_source)
-$(TMP_DIR)/%.co: $(SRC_DIRS)/%.c
+$(TMP_DIR)/%.co: $(SRC_DIR_BASE)/%.c
 	$(depend_source)
 	$(compile_source)
 

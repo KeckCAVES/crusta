@@ -7,12 +7,12 @@
 #include <GL/GLObject.h>
 #include <GL/GLShader.h>
 
-#include <basics.h>
-#include <quadCommon.h>
+#include <crusta/basics.h>
+#include <crusta/quadCommon.h>
 
-#include <FrustumVisibility.h>
-#include <FocusViewEvaluator.h>
-#include <Scope.h>
+#include <crusta/FrustumVisibility.h>
+#include <crusta/FocusViewEvaluator.h>
+#include <crusta/Scope.h>
 
 BEGIN_CRUSTA
 

@@ -6,8 +6,8 @@
 #include <GL/gl.h>
 #include <GL/GLVertex.h>
 
-#include <basics.h>
-#include <Scope.h>
+#include <crusta/basics.h>
+#include <crusta/Scope.h>
 
 BEGIN_CRUSTA
 

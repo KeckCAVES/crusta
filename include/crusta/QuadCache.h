@@ -12,7 +12,7 @@
 #include <Threads/Mutex.h>
 #include <Threads/Thread.h>
 
-#include <quadCommon.h>
+#include <crusta/quadCommon.h>
 
 namespace std
 {
@@ -143,6 +143,6 @@ extern Cache crustaQuadCache;
 
 END_CRUSTA
 
-#include <QuadCache.hpp>
+#include <crusta/QuadCache.hpp>
 
 #endif //_QuadCache_H_

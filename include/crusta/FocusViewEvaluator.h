@@ -1,7 +1,7 @@
 #ifndef _FocusViewEvaluator_H_
 #define _FocusViewEvaluator_H_
 
-#include <LodEvaluator.h>
+#include <crusta/LodEvaluator.h>
 
 #include <GL/GLFrustum.h>
 

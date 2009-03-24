@@ -1,9 +1,9 @@
-#ifndef _Crusta_H_
-#define _Crusta_H_
+#ifndef _CrustaVislet_H_
+#define _CrustaVislet_H_
 
 #include <Vrui/Vislet.h>
 
-#include <Spheroid.h>
+#include <crusta/basics.h>
 
 namespace Vrui {
     class VisletManager;
@@ -11,12 +11,12 @@ namespace Vrui {
 
 BEGIN_CRUSTA
 
-class GlobalGrid;
+class Crusta;
 
 ///\todo comment properly
 class CrustaFactory : public Vrui::VisletFactory
 {
-    friend class Crusta;
+    friend class CrustaVislet;
 
 public:
     CrustaFactory(Vrui::VisletManager& visletManager);
@@ -30,19 +30,23 @@ public:
 };
 
 /**
-    The main controlling component of the 'Crusta' application
+    The main controlling component of the 'Crusta' vislet
  
     ///\todo what does it do, etc.
 */
-class Crusta : public Vrui::Vislet
+class CrustaVislet : public Vrui::Vislet
 {
     friend class CrustaFactory;
 
+public:
+    CrustaVislet();
+    ~CrustaVislet();
+    
 private:
     /** handle to the factory object for this class */
     static CrustaFactory* factory;
-
-    Spheroid spheroid;
+    /** handle to the crusta instance for this vislet */
+    Crusta* crusta;
 
 //- inherited from Vislet
 public:
@@ -55,4 +59,4 @@ public:
 
 END_CRUSTA
 
-#endif //_Crusta_H_
+#endif //_CrustaVislet_H_

@@ -1,13 +1,13 @@
-#include <ViewLod.h>
-
-#include <Scope.h>
+#include <crusta/FrustumVisibility.h>
 
 #include <algorithm>
 
+#include <crusta/Scope.h>
+
 BEGIN_CRUSTA
 
-float ViewLod::
-compute(const Scope& scope)
+bool FrustumVisibility::
+evaluate(const Scope& scope)
 {
     Point center;
     for (uint i=0; i<3; ++i)
@@ -17,7 +17,7 @@ compute(const Scope& scope)
             accumulated += scope.corners[j][i];
         center[i] = accumulated * 0.25f;
     }
-    
+
     float radius = 0.0f;
     for (uint i=0; i<4; ++i)
     {
@@ -26,10 +26,7 @@ compute(const Scope& scope)
         radius = std::max(radius, length);
     }
     
-    float lod = frustum.calcProjectedRadius(center, radius);
-    lod /= (TILE_RESOLUTION * 0.55f);
-    lod = log(lod);
-    return lod;
+    return frustum.doesSphereIntersect(center, radius);
 }
 
 END_CRUSTA

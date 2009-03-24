@@ -1,11 +1,11 @@
-#include <QuadTerrain.h>
+#include <crusta/QuadTerrain.h>
 
 #include <algorithm>
 #include <assert.h>
 
-#include <QuadCache.h>
+#include <crusta/QuadCache.h>
 ///\todo remove
-#include <simplexnoise1234.h>
+#include <crusta/simplexnoise1234.h>
 
 BEGIN_CRUSTA
 

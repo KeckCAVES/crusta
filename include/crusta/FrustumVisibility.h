@@ -1,7 +1,7 @@
 #ifndef _FrustumVisibility_H_
 #define _FrustumVisibility_H_
 
-#include <VisibilityEvaluator.h>
+#include <crusta/VisibilityEvaluator.h>
 
 #include <GL/GLFrustum.h>
 

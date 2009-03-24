@@ -1,8 +1,8 @@
 #ifndef _Spheroid_H_
 #define _Spheroid_H_
 
-#include <basics.h>
-#include <QuadTerrain.h>
+#include <crusta/basics.h>
+#include <crusta/QuadTerrain.h>
 
 BEGIN_CRUSTA
 

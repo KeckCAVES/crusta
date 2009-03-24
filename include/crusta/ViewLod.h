@@ -1,7 +1,7 @@
 #ifndef _ViewLod_H_
 #define _ViewLod_H_
 
-#include <LodEvaluator.h>
+#include <crusta/LodEvaluator.h>
 
 #include <GL/GLFrustum.h>
 

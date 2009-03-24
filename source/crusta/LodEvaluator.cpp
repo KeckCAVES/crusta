@@ -1,6 +1,6 @@
-#include <LodEvaluator.h>
+#include <crusta/LodEvaluator.h>
 
-#include <Scope.h>
+#include <crusta/Scope.h>
 
 BEGIN_CRUSTA
 

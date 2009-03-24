@@ -1,7 +1,7 @@
 #ifndef _Scope_H_
 #define _Scope_H_
 
-#include <basics.h>
+#include <crusta/basics.h>
 
 BEGIN_CRUSTA
 

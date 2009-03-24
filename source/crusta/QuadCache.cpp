@@ -1,9 +1,9 @@
-#include <QuadCache.h>
+#include <crusta/QuadCache.h>
 
 #include <GL/GLContextData.h>
 #include <Vrui/Vrui.h>
 
-#include <QuadTerrain.h>
+#include <crusta/QuadTerrain.h>
 
 BEGIN_CRUSTA
 

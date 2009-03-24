@@ -1,8 +1,8 @@
-#include <FocusViewEvaluator.h>
+#include <crusta/FocusViewEvaluator.h>
 
 #include <algorithm>
 
-#include <Scope.h>
+#include <crusta/Scope.h>
 
 BEGIN_CRUSTA
 
