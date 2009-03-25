@@ -75,8 +75,10 @@ endif(APPLE)
 # Crusta installation
 #-------------------
 
-install(TARGETS Crusta CrustaVislet
+install(TARGETS Crusta
         LIBRARY DESTINATION ${VRUI_LIB_DIR})
+install(TARGETS CrustaVislet
+        LIBRARY DESTINATION ${VRUI_LIB_DIR}/VRVislets)
 
 #shader files
 file(GLOB CRUSTA_SHADERS ../share/*.vs ../share/*.fs ../share/*.gs)
