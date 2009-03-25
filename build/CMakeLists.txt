@@ -43,7 +43,6 @@ add_library(Crusta SHARED ../source/crusta/Crusta.cpp
 
 vrui_set_target_properties(Crusta)
 
-
 #-------------------
 # Crusta application wrapping the core components into an executable
 #-------------------
