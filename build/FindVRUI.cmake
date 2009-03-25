@@ -23,8 +23,16 @@
 
 # Confirm the vrui path
 IF(NOT VRUI_PATH)
-  MESSAGE(FATAL_ERROR "Specify the VRUI_PATH")
+  MESSAGE(STATUS "VRUI_PATH not found in the cmake cache... "
+                 "checking the environment.")
+  IF(NOT "$ENV{VRUI_PATH}" STREQUAL "")
+    SET(VRUI_PATH "$ENV{VRUI_PATH}")
+    MESSAGE(STATUS "Set VRUI_PATH from the environment to "${VRUI_PATH})
+  ELSE(NOT "$ENV{VRUI_PATH}" STREQUAL "")
+    MESSAGE(FATAL_ERROR "Specify the VRUI_PATH")
+  ENDIF(NOT "$ENV{VRUI_PATH}" STREQUAL "")
 ENDIF(NOT VRUI_PATH)
+
 IF(NOT EXISTS "${VRUI_PATH}/etc/Vrui.cfg")
   MESSAGE(FATAL_ERROR "Can't Find ${VRUI_PATH}/etc/Vrui.cfg")
 ENDIF(NOT EXISTS "${VRUI_PATH}/etc/Vrui.cfg")

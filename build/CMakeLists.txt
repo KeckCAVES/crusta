@@ -9,7 +9,6 @@ project(CRUSTA)
 # Include VRUI variables and macros
 #-------------------
 
-set(VRUI_PATH /Users/saru/dev/lib/vrui)
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR} )
 #find_package(VRUI)
 include(${CMAKE_SOURCE_DIR}/FindVRUI.cmake)
@@ -25,8 +24,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../lib)
 include_directories(../include)
 
-#list(APPEND CMAKE_CXX_FLAGS_DEBUG -Wall)
-#list(APPEND CMAKE_CXX_FLAGS_RELEASE -Wall)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
 #-------------------
 # Crusta shared dynamic link library containing the core crusta components
