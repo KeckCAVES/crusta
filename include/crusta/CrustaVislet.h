@@ -14,13 +14,13 @@ BEGIN_CRUSTA
 class Crusta;
 
 ///\todo comment properly
-class CrustaFactory : public Vrui::VisletFactory
+class CrustaVisletFactory : public Vrui::VisletFactory
 {
     friend class CrustaVislet;
 
 public:
-    CrustaFactory(Vrui::VisletManager& visletManager);
-    virtual ~CrustaFactory();
+    CrustaVisletFactory(Vrui::VisletManager& visletManager);
+    virtual ~CrustaVisletFactory();
 
 //- inherited from VisletFactory
 public:
@@ -31,20 +31,20 @@ public:
 
 /**
     The main controlling component of the 'Crusta' vislet
- 
+
     ///\todo what does it do, etc.
 */
 class CrustaVislet : public Vrui::Vislet
 {
-    friend class CrustaFactory;
+    friend class CrustaVisletFactory;
 
 public:
     CrustaVislet();
     ~CrustaVislet();
-    
+
 private:
     /** handle to the factory object for this class */
-    static CrustaFactory* factory;
+    static CrustaVisletFactory* factory;
     /** handle to the crusta instance for this vislet */
     Crusta* crusta;
 

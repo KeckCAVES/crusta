@@ -2,9 +2,9 @@
 #define _QuadCache_H_
 
 #ifdef __GNUC__
-#include <ext/hash_map>
+#include <tr1/unordered_map>
 #else
-#include <hash_map>
+#include <unordered_map>
 #endif
 #include <vector>
 
@@ -16,7 +16,7 @@
 
 namespace std
 {
-    using namespace __gnu_cxx;
+    using namespace tr1;
 }
 
 BEGIN_CRUSTA
@@ -40,7 +40,8 @@ public:
 
 
 protected:
-    typedef std::hash_map<TreeIndex, BufferType*, TreeIndex::hash> BufferPtrMap;
+    typedef std::unordered_map<TreeIndex, BufferType*, TreeIndex::hash>
+        BufferPtrMap;
 
     /** combines a tree index with a cache buffer when the buffer is taken
         outside the context of the buffer map */
@@ -57,7 +58,7 @@ protected:
     /** make sure the LRU prioritized sequence of the cached buffers is up to
         date*/
     void refreshLru();
-    
+
     /** keep a record of all the buffers cached by the unit */
     BufferPtrMap cached;
     /** keep a LRU prioritized view of the cached buffers */
@@ -81,17 +82,17 @@ public:
 protected:
     /** lazy thread function: process the non-critical part of data requests */
     void* lazyThreadFunc();
-    
+
     /** keep track of pending critical requests */
     MainCacheRequests criticalRequests;
     /** keep track of lazy-fetch requests (critical data already loaded) */
     MainCacheRequests lazyRequests;
-    
+
     /** used to protect access to the critical request queue */
     Threads::Mutex criticalMutex;
     /** used to protect access to the lazy request queue */
     Threads::Mutex lazyMutex;
-    
+
     /** thread handling lazy request processing */
     Threads::Thread lazyThread;
 };
@@ -118,7 +119,7 @@ public:
     MainCache& getMainCache();
     /** retrieve the video memory cache unit */
     VideoCache& getVideoCache(GLContextData& contextData);
-    
+
 protected:
     /** needed during initContext, specified during construction */
     uint videoCacheSize;
@@ -128,12 +129,12 @@ protected:
 //- inherited from GLObject
 public:
    	virtual void initContext(GLContextData& contextData) const;
-    
+
 protected:
     struct GlData : public GLObject::DataItem
     {
         GlData(uint size);
-        
+
         /** the video memory cache unit for the GL context */
         VideoCache videoCache;
     };

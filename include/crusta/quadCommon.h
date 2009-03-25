@@ -1,6 +1,7 @@
 #ifndef _quadCommon_H_
 #define _quadCommon_H_
 
+#include <assert.h>
 #include <sstream>
 
 #include <GL/gl.h>
@@ -32,7 +33,7 @@ struct TreeIndex
         patch(iPatch), child(iChild), level(iLevel), index(iIndex) {}
     TreeIndex(const TreeIndex& i) :
         patch(i.patch), child(i.child), level(i.level), index(i.index) {}
-    
+
     TreeIndex up() const {
         assert(level>0);
         return level>1 ? TreeIndex(patch, (index>>((level-2)*2)) & 0x3, level-1,
@@ -67,7 +68,7 @@ struct TreeIndex
             os << (index&0x3);
         return os;
     }
-    
+
     uint64 patch :  8; ///< index of the base patch of the global hierarchy
     uint64 child :  8; ///< index within the group of siblings
     uint64 level : 16; ///< level in the global hierarchy (0 is root)
@@ -150,7 +151,7 @@ public:
     void pin(bool wantPinned=true) { frameNumber = wantPinned ? ~0 : 0; }
     /** query the frame number of the buffer */
     uint getFrameNumber() const { return frameNumber; }
-    
+
 protected:
     /** sequence number used to evaluate LRU prioritization */
     uint frameNumber;
@@ -180,7 +181,7 @@ public:
     bool operator <(const MainCacheRequest& other) const {
         return fabs(lod) < fabs(other.lod);
     }
-    
+
 protected:
     /** lod value used for prioritizing the requests */
     float lod;
@@ -188,7 +189,7 @@ protected:
     TreeIndex index;
     /** scope of the node requested */
     Scope scope;
-    
+
     //- flags to manage lazy loading
     bool isHeightLoaded;
     bool isColorLoaded;

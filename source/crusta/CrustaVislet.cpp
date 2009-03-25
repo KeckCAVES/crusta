@@ -6,59 +6,60 @@
 
 BEGIN_CRUSTA
 
-//- CrustaFactory --------------------------------------------------------------
+//- CrustaVisletFactory --------------------------------------------------------
 
-CrustaFactory::
-CrustaFactory(Vrui::VisletManager& visletManager) :
+CrustaVisletFactory::
+CrustaVisletFactory(Vrui::VisletManager& visletManager) :
     VisletFactory("CrustaVislet", visletManager)
 {
     CrustaVislet::factory = this;
 }
 
-CrustaFactory::
-~CrustaFactory()
+CrustaVisletFactory::
+~CrustaVisletFactory()
 {
     CrustaVislet::factory = NULL;
 }
 
 
-Vrui::Vislet* CrustaFactory::
+Vrui::Vislet* CrustaVisletFactory::
 createVislet(int numVisletArguments, const char* const visletArguments[]) const
 {
     return new CrustaVislet;
 }
 
-void CrustaFactory::
+void CrustaVisletFactory::
 destroyVislet(Vrui::Vislet* vislet) const
 {
     delete vislet;
 }
 
 extern "C" void
-resolveCrustaDependencies(
+resolveCrustaVisletDependencies(
     Plugins::FactoryManager<Vrui::VisletFactory>& manager)
 {
 }
 extern "C" Vrui::VisletFactory*
-createCrustaFactory(Plugins::FactoryManager<Vrui::VisletFactory>& manager)
+createCrustaVisletFactory(
+    Plugins::FactoryManager<Vrui::VisletFactory>& manager)
 {
     //get a handle to the vislet manager
     Vrui::VisletManager* visletManager =
         static_cast<Vrui::VisletManager*>(&manager);
     //create factory object and insert it into class hierarchy
-    CrustaFactory* crustaFactory = new CrustaFactory(*visletManager);
+    CrustaVisletFactory* crustaFactory =new CrustaVisletFactory(*visletManager);
     //return factory object
     return crustaFactory;
 }
 extern "C" void
-destroyCrustaFactory(Vrui::VisletFactory* factory)
+destroyCrustaVisletFactory(Vrui::VisletFactory* factory)
 {
     delete factory;
 }
 
 //- CrustaVislet ---------------------------------------------------------------
 
-CrustaFactory* CrustaVislet::factory = NULL;
+CrustaVisletFactory* CrustaVislet::factory = NULL;
 
 CrustaVislet::
 CrustaVislet() :
