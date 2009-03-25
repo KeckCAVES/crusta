@@ -642,8 +642,10 @@ GlData(const TreeIndex& iRootIndex, MainCacheBuffer* iRootBuffer,
     
     //initialize the shader
 //    shader.compileVertexShader("elevation.vs");
-    shader.compileVertexShader("litElevation.vs");
-    shader.compileFragmentShader("elevation.fs");
+    shader.compileVertexShader((std::string(CRUSTA_SHARE_PATH) +
+                                "/litElevation.vs").c_str());
+    shader.compileFragmentShader((std::string(CRUSTA_SHARE_PATH) +
+                                  "/elevation.fs").c_str());
     shader.linkShader();
     shader.useProgram();
     GLint uniform;

@@ -29,6 +29,7 @@ IF(NOT EXISTS "${VRUI_PATH}/etc/Vrui.cfg")
   MESSAGE(FATAL_ERROR "Can't Find ${VRUI_PATH}/etc/Vrui.cfg")
 ENDIF(NOT EXISTS "${VRUI_PATH}/etc/Vrui.cfg")
 
+SET(VRUI_SHARE_DIR "${VRUI_PATH}/share")
 SET(VRUI_INCLUDE_DIR "${VRUI_PATH}/include")
 
 SET(VRUI_BIN_DIR "${VRUI_PATH}/bin")

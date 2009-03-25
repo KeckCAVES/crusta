@@ -18,6 +18,9 @@ include(${CMAKE_SOURCE_DIR}/FindVrui.cmake)
 # Target independent configuration
 #-------------------
 
+set(CRUSTA_SHARE_PATH "${VRUI_SHARE_DIR}/Crusta")
+add_definitions(-DCRUSTA_SHARE_PATH=\"${CRUSTA_SHARE_PATH}\")
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../lib)
 include_directories(../include)
@@ -69,5 +72,13 @@ endif(APPLE)
 
 
 
+#-------------------
+# Crusta installation
+#-------------------
+
 install(TARGETS Crusta CrustaVislet
         LIBRARY DESTINATION ${VRUI_LIB_DIR})
+
+#shader files
+file(GLOB CRUSTA_SHADERS ../share/*.vs ../share/*.fs ../share/*.gs)
+install(FILES ${CRUSTA_SHADERS} DESTINATION ${CRUSTA_SHARE_PATH})
