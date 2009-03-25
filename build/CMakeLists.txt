@@ -12,7 +12,7 @@ project(CRUSTA)
 set(VRUI_PATH /Users/saru/dev/lib/vrui)
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR} )
 #find_package(VRUI)
-include(${CMAKE_SOURCE_DIR}/FindVrui.cmake)
+include(${CMAKE_SOURCE_DIR}/FindVRUI.cmake)
 
 #-------------------
 # Target independent configuration
