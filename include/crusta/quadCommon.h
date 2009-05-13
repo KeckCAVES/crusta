@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <sstream>
+#include <vector>
 
 #include <GL/gl.h>
 #include <GL/GLVertex.h>
@@ -43,6 +44,7 @@ struct TreeIndex
     TreeIndex down(uint8 which) const {
         return TreeIndex(patch, which, level+1, index | (which<<(level*2)));
     }
+
     std::string str() const {
         std::ostringstream os;
         if (level == uint16(~0))
@@ -76,6 +78,29 @@ struct TreeIndex
         of two-bit child-indices. The sequence starts with the least
         significant bits. */
     uint64 index : 32;
+};
+
+/** A traversal helper for following the path from the root to a node specified
+    by the tree index provided during construction. Only a forward traversal is
+    supported */
+struct TreePath
+{
+    static const uint8 END = ~0x0;
+
+    TreePath(TreeIndex i) : level(i.level==0?0:i.level+1), index(i.index) {}
+
+    /** returns the index of the child to go to for continueing the traversal.
+        The end is reached when the returned child index is END */
+    uint8 pop()
+    {
+        if (level==0) return END;
+        uint8 retVal = index & 0x3;
+        index >>= 2;
+        return retVal;
+    }
+
+    uint16 level;
+    uint32 index;
 };
 
 
@@ -194,6 +219,7 @@ protected:
     bool isHeightLoaded;
     bool isColorLoaded;
 };
+
 typedef std::vector<MainCacheRequest> MainCacheRequests;
 
 

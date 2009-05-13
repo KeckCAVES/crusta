@@ -4,9 +4,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include <Geometry/Point.h>
-#include <Geometry/Vector.h>
-
 #define BEGIN_CRUSTA namespace crusta {
 #define END_CRUSTA   } //namespace crusta
 
@@ -37,9 +34,6 @@ typedef int32_t		int32;
 typedef int64_t     int64;
 
 typedef uint        error;
-
-typedef Geometry::Point<float,3> Point;
-typedef Geometry::Vector<float,3> Vector;
 
 
 const uint TILE_RESOLUTION = 33;

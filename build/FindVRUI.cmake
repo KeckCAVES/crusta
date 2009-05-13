@@ -56,12 +56,16 @@ SET(VRUI_LIB_NAMES Misc Plugins Realtime Comm Math Geometry GLWrappers
                    GLSupport GLXSupport GLGeometry GLMotif Images Sound
                    ALSupport Vrui)
 FOREACH(name ${VRUI_LIB_NAMES})
-FIND_LIBRARY(A_VRUI_LIB
-             NAMES ${name} ${name}.g++ ${name}.g++-3 ${name}.g++-4
-             PATHS ${VRUI_LIB_DIR}
-             NO_DEFAULT_PATH)
-SET(VRUI_LIBRARIES ${VRUI_LIBRARIES} ${A_VRUI_LIB})
-UNSET(A_VRUI_LIB CACHE)
+  FIND_LIBRARY(A_VRUI_LIB
+               NAMES ${name} ${name}.g++ ${name}.g++-3 ${name}.g++-4
+               PATHS ${VRUI_LIB_DIR}
+               NO_DEFAULT_PATH)
+  IF(A_VRUI_LIB)
+    SET(VRUI_LIBRARIES ${VRUI_LIBRARIES} ${A_VRUI_LIB})
+    UNSET(A_VRUI_LIB CACHE)
+  ELSE(A_VRUI_LIB)
+    MESSAGE(FATAL_ERROR "Can't find " ${name} " vrui library.")
+  ENDIF(A_VRUI_LIB)
 ENDFOREACH(name)
 
 # Dependencies
@@ -83,7 +87,7 @@ SET(X11_OPENGL_LIBRARIES ${X11_OPENGL_GL_LIBRARIES} ${X11_OPENGL_GLU_LIBRARIES})
 ###############################################################################
 MACRO(VRUI_SET_TARGET_PROPERTIES target)
 
-  TARGET_LINK_LIBRARIES(${target} ${X11_LIBRARIES} ${X11_OPENGL_GL_LIBRARIES}
+  TARGET_LINK_LIBRARIES(${target} ${X11_LIBRARIES} ${X11_OPENGL_LIBRARIES}
                                   ${VRUI_LIBRARIES})
 
   SET_TARGET_PROPERTIES(${target} PROPERTIES

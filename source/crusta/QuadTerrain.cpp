@@ -332,24 +332,24 @@ computeChildScopes(Node* node)
         Scope::UPPER_LEFT,  Scope::UPPER_RIGHT
     };
     
-    const Point* corners = node->scope.corners;
+    const Scope::Vertex* corners = node->scope.corners;
     
-    Point mids[4];
+    Scope::Vertex mids[4];
     for (uint i=0, j=0; i<4; ++i)
     {
-        const Point& c1 = corners[midIndices[j++]];
-        const Point& c2 = corners[midIndices[j++]];
+        const Scope::Vertex& c1 = corners[midIndices[j++]];
+        const Scope::Vertex& c2 = corners[midIndices[j++]];
         mids[i] = Geometry::mid(c1, c2);
         mids[i] = toSphere(mids[i]);
     }
     
-    Point center =
-        Point((corners[0][0]+corners[1][0]+corners[2][0]+corners[3][0])/4.0,
-              (corners[0][1]+corners[1][1]+corners[2][1]+corners[3][1])/4.0,
-              (corners[0][2]+corners[1][2]+corners[2][2]+corners[3][2])/4.0);
+    Scope::Vertex center = Scope::Vertex(
+        (corners[0][0]+corners[1][0]+corners[2][0]+corners[3][0])/4.0,
+        (corners[0][1]+corners[1][1]+corners[2][1]+corners[3][1])/4.0,
+        (corners[0][2]+corners[1][2]+corners[2][2]+corners[3][2])/4.0);
     center = toSphere(center);
     
-    const Point* newCorners[16] = {
+    const Scope::Vertex* newCorners[16] = {
         &corners[Scope::LOWER_LEFT], &mids[0], &mids[1], &center,
         &mids[0], &corners[Scope::LOWER_RIGHT], &center, &mids[2],
         &mids[1], &center, &corners[Scope::UPPER_LEFT], &mids[3],

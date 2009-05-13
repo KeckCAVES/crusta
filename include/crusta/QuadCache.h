@@ -2,9 +2,9 @@
 #define _QuadCache_H_
 
 #ifdef __GNUC__
-#include <tr1/unordered_map>
+#include <ext/hash_map>
 #else
-#include <unordered_map>
+#include <hash_map>
 #endif
 #include <vector>
 
@@ -16,7 +16,11 @@
 
 namespace std
 {
-    using namespace tr1;
+#ifdef __GNUC__
+    using namespace __gnu_cxx;
+#else
+    using namespace stdext;
+#endif
 }
 
 BEGIN_CRUSTA
@@ -40,7 +44,7 @@ public:
 
 
 protected:
-    typedef std::unordered_map<TreeIndex, BufferType*, TreeIndex::hash>
+    typedef std::hash_map<TreeIndex, BufferType*, TreeIndex::hash>
         BufferPtrMap;
 
     /** combines a tree index with a cache buffer when the buffer is taken

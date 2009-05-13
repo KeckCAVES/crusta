@@ -1,6 +1,7 @@
 #ifndef _Scope_H_
 #define _Scope_H_
 
+#include <Geometry/Point.h>
 #include <crusta/basics.h>
 
 BEGIN_CRUSTA
@@ -19,16 +20,21 @@ public:
         UPPER_RIGHT
     };
 
-    Scope() {
-        corners[0] = corners[1] = corners[2] = corners[3] = Point(0);
-    }
-    Scope(const Point& p1, const Point& p2, const Point& p3, const Point& p4) {
-        corners[0] = p1; corners[1] = p2; corners[2] = p3; corners[3] = p4;
-    }
+    typedef Geometry::Point<double, 3> Vertex;
+    typedef Vertex::Scalar             Scalar;
+
+    Scope();
+    Scope(const Vertex& p1,const Vertex& p2,const Vertex& p3,const Vertex& p4);
+
+    /** retrieve the radius of the sphere the scope is associated with */
+    Scalar getRadius();
+    
+    /** generate the next refinement of the scope */
+    void split(Scope scopes[4]);
 
     /** corner points of the scope in cartesian space in order lower-left,
         lower-right, upper-left, upper-right*/
-    Point corners[4];
+    Vertex corners[4];
 };
 
 END_CRUSTA

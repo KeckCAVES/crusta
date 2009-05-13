@@ -9,7 +9,7 @@ BEGIN_CRUSTA
 float ViewLod::
 compute(const Scope& scope)
 {
-    Point center;
+    Scope::Vertex center;
     for (uint i=0; i<3; ++i)
     {
         float accumulated = 0;
@@ -21,7 +21,7 @@ compute(const Scope& scope)
     float radius = 0.0f;
     for (uint i=0; i<4; ++i)
     {
-        Vector toCorner = scope.corners[i] - center;
+        Geometry::Vector<Scope::Scalar, 3> toCorner = scope.corners[i] - center;
         float length = toCorner.mag();
         radius = std::max(radius, length);
     }

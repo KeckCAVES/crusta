@@ -39,6 +39,7 @@ add_library(Crusta SHARED ../source/crusta/Crusta.cpp
                           ../source/crusta/QuadTerrain.cpp
                           ../source/crusta/simplexnoise1234.cpp
                           ../source/crusta/Spheroid.cpp
+                          ../source/crusta/Triacontahedron.cpp
                           ../source/crusta/ViewLod.cpp)
 
 vrui_set_target_properties(Crusta)
@@ -67,6 +68,42 @@ set_target_properties(CrustaVislet PROPERTIES
                       SUFFIX ".bundle")
 endif(APPLE)
 
+
+#-------------------
+# Construo application
+#-------------------
+
+find_package(PNG)
+add_definitions(${PNG_DEFINITIONS})
+include_directories(${PNG_INCLUDE_DIR})
+
+find_package(ImageMagick COMPONENTS Magick++)
+include_directories(${ImageMagick_Magick++_INCLUDE_DIRS})
+
+set(CONSTRUO_SOURCES ../source/construo/ArcInfoBinaryGridImageFile.cpp
+					 ../source/construo/ColorTextureSpecs.cpp
+                     ../source/construo/Construo.cpp
+					 ../source/construo/DemSpecs.cpp
+                     ../source/construo/GeoTransform.cpp
+                     ../source/construo/ImageCoverage.cpp
+                     ../source/construo/ImageTransform.cpp
+                     ../source/construo/ImageTransformReader.cpp
+                     ../source/construo/PngImageFile.cpp
+                     ../source/construo/PpmImageFile.cpp
+                     ../source/construo/SphereCoverage.cpp
+                     ../source/construo/UtmTransform.cpp)
+
+if(${ImageMagick_Magick++_FOUND})
+list(APPEND CONSTRUO_SOURCES ../source/construo/MagickImageFile.cpp)
+add_definitions(-DCONSTRUO_USE_IMAGEMAGICK)
+endif(${ImageMagick_Magick++_FOUND})
+
+add_executable(construo ${CONSTRUO_SOURCES})
+
+vrui_set_target_properties(construo)
+
+target_link_libraries(construo Crusta ${PNG_LIBRARIES}
+                               ${ImageMagick_Magick++_LIBRARIES})
 
 
 
