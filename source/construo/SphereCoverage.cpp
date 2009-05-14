@@ -34,6 +34,12 @@ SphereCoverage() :
     box(Box::empty)
 {}
 
+const Box& SphereCoverage::
+getBoundingBox()
+{
+    return box;
+}
+
 bool SphereCoverage::
 contains(const Point& v) const
 {
@@ -70,7 +76,7 @@ contains(const Point& v) const
     return (numRegionChanges&0x1) != 0x0;
 }
 
-SphereCoverage::Intersection SphereCoverage::
+uint SphereCoverage::
 overlaps(const Box& bBox) const
 {
     //check box against the bounding box first
@@ -180,7 +186,7 @@ overlaps(const Box& bBox) const
     return (numRegionChanges&0x1)!=0x0 ? CONTAINS : SEPARATE;
 }
 
-SphereCoverage::Intersection SphereCoverage::
+uint SphereCoverage::
 overlaps(const SphereCoverage& coverage) const
 {
     //account for periodicity. Make sure the centroids are on the shortest arc

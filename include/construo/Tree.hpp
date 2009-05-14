@@ -9,7 +9,7 @@ TreeNode<PixelParam>::
 TreeNode() :
     parent(NULL), children(NULL), treeState(NULL),
     tileIndex(State::File::INVALID_TILEINDEX),
-    data(NULL), isNew(false), mustBeUpdated(false)
+    data(NULL), mustBeUpdated(false), isExplicitNeighborNode(false)
 {}
 
 template <typename PixelParam>
@@ -44,11 +44,11 @@ getNeighbor(uint neighborId, TreeNode*& neighbor, uint& orientation,
     static const uint INVALID = ~0x0;
     /* which sibling to pick is dependent on which child this node is and the
        requested neighbor */
-    static const uint sibling[4][4] = {
-        {      2, INVALID, INVALID,       1}, //child 0 (lower-left)
-        {      3,       0, INVALID, INVALID}, //child 1 (lower-right)
-        {INVALID, INVALID,       0,       3}, //child 2 (top-left)
-        {INVALID,       2,       1, INVALID}  //child 3 (top-right)
+    static const uint sibling[4][8] = {
+        {      2,INVALID,INVALID,      1,INVALID,INVALID,INVALID,      3},//BL
+        {      3,      0,INVALID,INVALID,      2,INVALID,INVALID,INVALID},//BR
+        {INVALID,INVALID,      0,      3,INVALID,INVALID,      1,INVALID},//TL
+        {INVALID,      2,      1,INVALID,INVALID,      0,INVALID,INVALID} //TR
     };
 
     uint siblingIndex = sibling[treeIndex.child][neighborId];
@@ -60,7 +60,7 @@ getNeighbor(uint neighborId, TreeNode*& neighbor, uint& orientation,
     }
 
 //- recurse to a child of the parent's neighbor to determine the neighbor
-    //get the parent's neighbor on the same side as ours
+    //get the parent's neighbor on the same side as our request
     TreeNode* parentNeighbor = NULL;
     if (!parent->getNeighbor(neighborId, parentNeighbor, orientation,
                              loadMissing))
@@ -205,6 +205,7 @@ template <typename PixelParam>
 ExplicitNeighborNode<PixelParam>::
 ExplicitNeighborNode()
 {
+    isExplicitNeighborNode = true;
     for (uint i=0; i<4; ++i)
     {
         neighbors[i]    = NULL;
@@ -228,11 +229,39 @@ bool ExplicitNeighborNode<PixelParam>::
 getNeighbor(uint neighborId, TreeNode<PixelParam>*& neighbor, uint& orientation,
             bool loadMissing)
 {
-    assert(neighborId>=0 && neighborId<=4 && "neighbor out of bounds");
-    neighbor    = neighbors[neighborId];
-    orientation = orientations[neighborId];
+    assert(neighborId>=TOP && neighborId<=TOP_RIGHT &&"neighbor out of bounds");
 
-    return neighbors[neighborId]!=NULL ? true : false;
+    if (neighborId <= RIGHT)
+    {
+        neighbor    = neighbors[neighborId];
+        orientation = orientations[neighborId];
+        return neighbor!=NULL ? true : false;
+    }
+    else
+    {
+        neighborId -= TOP_LEFT;
+        static const uint diagonals[4][2] = {
+            {TOP, LEFT}, {BOTTOM, LEFT}, {BOTTOM, RIGHT}, {TOP, RIGHT}
+        };
+        for (uint i=0; i<2; ++i)
+        {
+            uint n = diagonals[neighborId][i];
+            if (neighbors[n] != NULL)
+            {
+                uint an = diagonals[neighborId][1-i]  + 4 - orientations[n];
+                if (neighbors[n]->getNeighbor(an, neighbor, orientation,
+                                               loadMissing))
+                {
+                    orientation += 4 - orientations[n];
+                    return true;
+                }
+                else
+                    return false;
+            }
+        }
+        neighbor = NULL;
+        return false;
+    }
 }
 
 
@@ -265,24 +294,9 @@ Spheroid(const std::string& baseName, const uint tileResolution[2])
         //make sure the quadtree file has at least a root
         if (file->getNumTiles() == 0)
         {
-            //prepare a "blank region"
-            uint numPixels = tileResolution[0]*tileResolution[1];
-            node->data = new PixelParam[numPixels];
-            for (PixelParam* cur=node->data; cur<(node->data+numPixels); ++cur)
-                *cur = QuadtreeTileHeader<PixelParam>::defaultPixelValue;
-            //prepare corresponding header
-            QuadtreeTileHeader<PixelParam> tileHeader;
-            tileHeader.reset(node);
-
             //the new root must have index 0
             node->tileIndex = file->appendTile();
             assert(node->tileIndex==0 && file->getNumTiles()==1);
-
-            file->writeTile(node->tileIndex, tileHeader, node->data);
-            
-            //get rid of the temporary data
-            delete[] node->data;
-            node->data = NULL;
         }
     }
     

@@ -38,17 +38,37 @@ protected:
     ///refines a node by adding the children to the build tree
     void refine(Node* node);
 
+    ///flags all the ancestors for an update starting at the given parent
+    void flagAncestorsForUpdate(Node* parent);
     ///sources the data for a node from an image patch and commits it to file
-    void sourceFinest(Node* node, Patch* imgPatch);
-    ///sources new patches to create new finer levels or update existing ones
-    void updateFinestLevels();
+    void sourceFinest(Node* node, Patch* imgPatch, uint overlap);
+    ///traverse the tree to update it for given patch
+    uint updateFiner(Node* node, Patch* imgPatch, Point::Scalar imgResolution);
+    /** sources new patches to create new finer levels or update existing ones.
+        Returns the depth of the update-tree for use during updating of the
+        coarse levels. */
+    uint updateFinestLevels();
+
+    ///read the data of a node into the corresponding domain region
+    void addNodeToDomain(Node* node, PixelParam* at, uint tileSize[2],
+                         uint rowLen);
+    ///read all the finer data required for subsampling into a continuous region
+    PixelParam* prepareSubsamplingDomain(Node* node);
+    /** traverse the tree to resample the next level of nodes that have had
+        finer data modified */
+    void updateCoarser(Node* node, uint level);
     ///regenerate interior hierarchy nodes that have had finer levels updated
-    void updateCoarserLevels();
+    void updateCoarserLevels(uint depth);
 
     ///new or existing database containing the hierarchy to be updated
     Globe* globe;
     ///vector of patches to be added to the hierarchy
     PatchPtrs patches;
+
+    ///temporary buffer to hold scope refinements
+    Scope::Scalar* scopeBuf;
+    ///temporary buffer to hold node data
+    PixelParam* nodeDataBuf;
 
 //- Inherited from BuilderBase
 public:

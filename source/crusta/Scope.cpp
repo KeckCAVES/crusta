@@ -26,7 +26,7 @@ void Scope::
 split(Scope scopes[4])
 {
     //compute the radius of the sphere the scope lies on
-    Scope::Scalar radius = getRadius();
+    Scalar radius = getRadius();
 
     //compute the scope edge mid-points
     Vertex mids[4];
@@ -35,10 +35,10 @@ split(Scope scopes[4])
     {
         Vertex& one = corners[cornerIndices[i]];
         Vertex& two = corners[cornerIndices[i+1]];
-        Scope::Scalar len = Scope::Scalar(0);
+        Scalar len = Scalar(0);
         for (uint j=0; j<3; ++j)
         {
-            mids[i][j] = (one[j] + two[j]) * Scope::Scalar(0.5);
+            mids[i][j] = (one[j] + two[j]) * Scalar(0.5);
             len       += mids[i][j] * mids[i][j];
         }
         len = radius / sqrt(len);
@@ -48,10 +48,10 @@ split(Scope scopes[4])
 
     //compute the centroid point
     Vertex centroid;
-    Scope::Scalar len = Scope::Scalar(0);
+    Scalar len = Scalar(0);
     for (uint i=0; i<3; ++i)
     {
-        centroid[i] = (mids[0][i] + mids[2][i]) * Scope::Scalar(0.5);
+        centroid[i] = (mids[0][i] + mids[2][i]) * Scalar(0.5);
         len        += centroid[i] * centroid[i];
     }
     len = radius / sqrt(len);

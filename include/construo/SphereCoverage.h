@@ -21,7 +21,7 @@ public:
     typedef std::vector<Point> Points;
     typedef Geometry::Vector<Point::Scalar, Point::dimension> Vector;
     
-    enum Intersection
+    enum
     {
         SEPARATE,
         OVERLAPS,
@@ -31,13 +31,16 @@ public:
 
     SphereCoverage();
 
+    /** retrieve the bounding box of the coverage */
+    const Box& getBoundingBox();
+    
     /** checks if a given vertex (in spherical coordinates) is inside the
         coverage region */
     bool contains(const Point& v) const;
     /** checks if a given bounding box overlaps the coverage region */
-    Intersection overlaps(const Box& box) const;
+    uint overlaps(const Box& box) const;
     /** checks if a given spherical coverage overlaps the coverage region */
-    Intersection overlaps(const SphereCoverage& coverage) const;
+    uint overlaps(const SphereCoverage& coverage) const;
 
     /** query the centroid of the coverage */
     const Point& getCentroid();

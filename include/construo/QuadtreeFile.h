@@ -83,6 +83,8 @@ public:
 	const uint* getTileSize() const;
     ///return the number of tiles stored in the hierarchy
     TileIndex getNumTiles() const;
+    ///retrieve the default value filled data buffer
+    const Pixel* getBlank() const;
 
     ///reads the quadtree file header from the file
     void readHeader();
@@ -145,6 +147,10 @@ const TileHeader& getLastTileHeader() const;
     ///last ignored tile header
     TileHeader lastTileHeader;
     ///buffer containing the default
+
+    /** a memory buffer containing the default value for the size of a node's
+        data */
+    Pixel* blank;
 };
 
 END_CRUSTA

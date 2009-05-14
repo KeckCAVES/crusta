@@ -36,7 +36,8 @@ typedef int64_t     int64;
 typedef uint        error;
 
 
-const uint TILE_RESOLUTION = 33;
+const uint TILE_RESOLUTION  = 33;
+//const uint TILE_SUBDIVISION = 5;
 
 
 /** keep track of the number of frames processed. Used, for example, by the

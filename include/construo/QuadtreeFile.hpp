@@ -107,6 +107,12 @@ QuadtreeFile(const char* quadtreeFileName, const uint iTileSize[2]) :
                     Misc::LargeFile::Offset(tileNumPixels);
 	fileTileSize += Misc::LargeFile::Offset(4*sizeof(TileIndex));
 	fileTileSize += Misc::LargeFile::Offset(TileHeader::getSize());
+
+    //prepare a "blank region"
+    uint numPixels = header.tileSize[0]*header.tileSize[1];
+    blank = new Pixel[numPixels];
+    for (Pixel* cur=blank; cur<(blank+numPixels); ++cur)
+        *cur = TileHeader::defaultPixelValue;
 }
 
 template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
@@ -117,8 +123,9 @@ QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
     writeHeader();
 
 	//close the quadtree file
-	if(quadtreeFile != NULL)
-		delete quadtreeFile;
+    delete quadtreeFile;
+    //clean up the default value filled buffer
+    delete blank;
 }
 
 template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
@@ -160,6 +167,14 @@ QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
 getNumTiles() const
 {
     return header.maxTileIndex==INVALID_TILEINDEX ? 0 : header.maxTileIndex+1;
+}
+
+template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
+const typename QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::Pixel*
+QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+getBlank() const
+{
+    return blank;
 }
 
 template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
@@ -221,7 +236,7 @@ appendTile()
     };
 
     ++header.maxTileIndex;
-    writeTile(header.maxTileIndex, invalidChildren, TileHeader());
+    writeTile(header.maxTileIndex, invalidChildren, TileHeader(), blank);
 
     return header.maxTileIndex;
 }

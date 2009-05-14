@@ -28,7 +28,11 @@ public:
         TOP = 0,
         LEFT,
         BOTTOM,
-        RIGHT
+        RIGHT,
+        TOP_LEFT,
+        BOTTOM_LEFT,
+        BOTTOM_RIGHT,
+        TOP_RIGHT
     };
 
     TreeNode();
@@ -71,8 +75,10 @@ public:
 
     PixelParam* data;
 
-    bool isNew;
     bool mustBeUpdated;
+
+protected:
+    bool isExplicitNeighborNode;
 };
 
 template <typename PixelParam>
