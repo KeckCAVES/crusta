@@ -20,6 +20,148 @@ TreeNode<PixelParam>::
     delete[] data;
 }
 
+inline void
+mult(int p[2], int m)
+{
+    p[0] *= m;
+    p[1] *= m;
+}
+inline void
+translate(int p[2], int tx, int ty)
+{
+    p[0] += tx;
+    p[1] += ty;
+}
+inline void
+translate(int p[2], int t[2])
+{
+    p[0] += t[0];
+    p[1] += t[1];
+}
+inline void
+rotate(int p[2], uint o, const int rotations[4][2][2])
+{
+    int r[2];
+    r[0] = p[0]*rotations[o][0][0] + p[1]*rotations[o][0][1];
+    r[1] = p[0]*rotations[o][1][0] + p[1]*rotations[o][1][1];
+    p[0] = r[0];
+    p[1] = r[1];
+}
+
+template <typename PixelParam>
+bool TreeNode<PixelParam>::
+getKin(TreeNode*& kin, int offsets[2], bool loadMissing)
+{
+    kin              = this;
+    int nodeSize     = 1;
+    int nodeCoord[2] = {0, 0};
+    int kinCoord[2]  = {offsets[0], offsets[1]};
+
+//- walk up the tree until a parent node containing the requested location
+    /* the kinCoord are updated to always be relative to the lower-left corner
+       of the current node */
+    while (kinCoord[0]<0 || kinCoord[0]>=nodeSize ||
+           kinCoord[1]<0 || kinCoord[1]>=nodeSize)
+    {
+        //in case we have explicit neighgors we can move sideways directly
+        if (kin->isExplicitNeighborNode)
+        {
+            //neighbor id depending on horizontal/vertical and neg/pos direction
+            static const uint neighborIds[2][2] = { {1, 3}, {2, 0} };
+
+            //determine the most important direction and corresponding neighbor
+            uint horizontal = abs(kinCoord[0])>abs(kinCoord[1]) ? 0 : 1;
+            uint direction  = kinCoord[horizontal]<0 ? 0 : 1;
+            uint neighbor   = neighborIds[horizontal][direction];
+
+            kin = neighbors[neighbor];
+/**\todo I could update the code here to account for a situation that won't
+         occur where the neighbor doesn't exist and potentially the other way
+         (e.g. top then left instead of left then top) might succeed */
+        //- transform the kinCoords into the new neighbor's frame
+            //orientation specific rotation matrices
+            static const int rotations[4][2][2] = {
+                {{ 1, 0}, {0, 1}},   {{0, 1}, {-1, 0}},
+                {{-1, 0}, {0,-1}},   {{0,-1}, { 1, 0}},
+            }
+            //undo the rotation of the kinCoord
+            rotate(kinCoord, orientations[neighbor], rotations);
+
+            //determine the shift of the new origin and apply it
+            //move to node center
+            int shift[2] = {-1, -1};
+            //undo the rotation on the origin
+            rotate(shift, orientations[neighbor], rotations);
+            /* move back to "old" origin (lower-left). Shift is the unrotated
+               origin for the given orientation. */
+            translate(shift, 1, 1);
+            /* we still need to move that origin to the neighbor. Start with
+               a shift upwards */
+            int dir[2] = {0, 1};
+            //unrotate it to the proper direction
+            rotate(dir, orientations[neighbor], rotations);
+            //moving to the neighbor is shifting in dir for 2 cells
+            mult(dir, 2);
+            /* composite the shift to the neighbor with the one due to origin
+               rotation */
+            translate(shift, dir);
+            //finally apply the shift to the kinCoords
+            translate(kinCoord, shift);
+        }
+        //traverse to parent updating the requested location to the parent space
+        else
+        {
+            //if we have reached to root, there's nowhere to go. Fail.
+            if (kin->parent == NULL)
+            {
+                kin = NULL;
+                return false;
+            }
+
+            //adjust the coordinates given the child index inside its parent
+            nodeCoord[0] += kin->treeIndex.child&0x01 ? nodeSize : 0;
+            nodeCoord[1] += kin->treeIndex.child&0x10 ? nodeSize : 0;
+            kinCoord[0]   = nodeCoord[0] + offsets[0];
+            kinCoord[1]   = nodeCoord[1] + offsets[1];
+
+            //move to the parent (space)
+            kin        = kin->parent;
+            nodeSize <<= 1;
+        }
+    }
+
+//- walk down the tree honing in on the requested kin
+    //use offsets to store the kinCoords now so that these can be returned
+    offsets[0] = kinCoord[0];
+    offsets[1] = kinCoord[1];
+    while (nodeSize > 1)
+    {
+        //in case we reach a leaf either load missing nodes or end
+        if (kin->children==NULL && loadMissing)
+            kin->loadMissingChildren();
+        if (kin->children == NULL)
+            return false;
+
+        //switch to the child space
+        nodeSize >>= 1;
+        /* determine the child node to proceed with by comparing the offsets
+           to the node center (nodeSize, nodeSize) */
+        uint childIndex = 0x0;
+        for (uint i=0; i<2; ++i)
+        {
+            if (offsets[1] >= nodeSize)
+            {
+                childIndex |= (1<<i);
+                offsets[i] -= nodeSize;
+            }
+        }
+        //move on to the child node
+        kin = &kin->children[childIndex];
+    }
+
+    return true;
+}
+
 template <typename PixelParam>
 bool TreeNode<PixelParam>::
 getNeighbor(uint neighborId, TreeNode*& neighbor, uint& orientation,

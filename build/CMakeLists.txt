@@ -37,6 +37,7 @@ add_library(Crusta SHARED ../source/crusta/Crusta.cpp
                           ../source/crusta/LodEvaluator.cpp
                           ../source/crusta/QuadCache.cpp
                           ../source/crusta/QuadTerrain.cpp
+						  ../source/crusta/Scope.cpp
                           ../source/crusta/simplexnoise1234.cpp
                           ../source/crusta/Spheroid.cpp
                           ../source/crusta/Triacontahedron.cpp
@@ -84,6 +85,7 @@ set(CONSTRUO_SOURCES ../source/construo/ArcInfoBinaryGridImageFile.cpp
 					 ../source/construo/ColorTextureSpecs.cpp
                      ../source/construo/Construo.cpp
 					 ../source/construo/DemSpecs.cpp
+					 ../source/construo/Filter.cpp
                      ../source/construo/GeoTransform.cpp
                      ../source/construo/ImageCoverage.cpp
                      ../source/construo/ImageTransform.cpp

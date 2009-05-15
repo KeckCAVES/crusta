@@ -22,29 +22,15 @@ class TreeNode
 public:
     typedef TreeState<PixelParam> State;
 
-    ///names for specifying neighbors of a node
-    enum
-    {
-        TOP = 0,
-        LEFT,
-        BOTTOM,
-        RIGHT,
-        TOP_LEFT,
-        BOTTOM_LEFT,
-        BOTTOM_RIGHT,
-        TOP_RIGHT
-    };
-
     TreeNode();
     virtual ~TreeNode();
 
-    /** query a neighbor of the node. Since the trees are created on demand,
+    /** query a kin of the node. Since the trees are created on demand,
         valid parts of the tree may not be represented in memory during neighbor
-        traversal. Thus a callback must be provided to resolve missing nodes.
-        The method returns a flag specifying if the traversal reached the
-        requested neighbor or terminated early. */
-    virtual bool getNeighbor(uint neighborId, TreeNode*& neighbor,
-                             uint& orientation, bool loadMissing=true);
+        traversal. By default such parts will be loaded from file if possible,
+        but the behaviour can be altered through 'loadMissing'. */
+    bool getKin(TreeNode*& kin, int offsets[2], bool loadMissing=true);
+
     /** create in-memory storage for the children nodes with the most basic
         properties (i.e. parent link-up, treeState, treeIndex, scope and
         sphereCoverage) */
@@ -93,11 +79,6 @@ public:
     ExplicitNeighborNode* neighbors[4];
     ///orientations of the neighboring nodes
     uint orientations[4];
-
-//- Inherited from TreeNode
-public:
-    virtual bool getNeighbor(uint neighborId, TreeNode<PixelParam>*& neighbor,
-                             uint& orientation, bool loadMissing=true);
 };
 
 template <typename PixelParam, typename PolyhedronParam>

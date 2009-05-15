@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include <construo/Filter.h>
 #include <construo/ImagePatch.h>
 #include <construo/Tree.h>
 
@@ -38,8 +39,8 @@ protected:
     ///refines a node by adding the children to the build tree
     void refine(Node* node);
 
-    ///flags all the ancestors for an update starting at the given parent
-    void flagAncestorsForUpdate(Node* parent);
+    ///flags all the ancestors for an update
+    void flagAncestorsForUpdate(Node* node);
     ///sources the data for a node from an image patch and commits it to file
     void sourceFinest(Node* node, Patch* imgPatch, uint overlap);
     ///traverse the tree to update it for given patch
@@ -49,11 +50,8 @@ protected:
         coarse levels. */
     uint updateFinestLevels();
 
-    ///read the data of a node into the corresponding domain region
-    void addNodeToDomain(Node* node, PixelParam* at, uint tileSize[2],
-                         uint rowLen);
     ///read all the finer data required for subsampling into a continuous region
-    PixelParam* prepareSubsamplingDomain(Node* node);
+    void prepareSubsamplingDomain(Node* node);
     /** traverse the tree to resample the next level of nodes that have had
         finer data modified */
     void updateCoarser(Node* node, uint level);
@@ -65,10 +63,21 @@ protected:
     ///vector of patches to be added to the hierarchy
     PatchPtrs patches;
 
+    ///filter used for subsampling the coarser levels from finer ones
+    Filter subsamplingFilter;
+    
     ///temporary buffer to hold scope refinements
     Scope::Scalar* scopeBuf;
     ///temporary buffer to hold node data
     PixelParam* nodeDataBuf;
+    ///temporary buffer to hold node data that needs to be sampled before use
+    PixelParam* nodeDataSampleBuf;
+    ///size of the tiles to be generated/updated
+    uint tileSize[2];
+    ///temporary buffer to hold the subsampling domain
+    PixelParam* domainBuf;
+    ///size of the temporary subsampling domain
+    uint domainSize[2];
 
 //- Inherited from BuilderBase
 public:

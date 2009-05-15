@@ -8,11 +8,26 @@ BEGIN_CRUSTA
 
 template <typename PixelParam, typename PolyhedronParam>
 Builder<PixelParam, PolyhedronParam>::
-Builder(const std::string& spheroidName, const uint tileSize[2])
+Builder(const std::string& spheroidName, const uint size[2])
 {
-    globe       = new Globe(spheroidName, tileSize);
-    scopeBuf    = new Scope::Scalar[TILE_RESOLUTION*TILE_RESOLUTION*3];
-    nodeDataBuf = new PixelParam[TILE_RESOLUTION*TILE_RESOLUTION];
+///\todo Frak this is retarded. Reason so far is the getRefinement from scope
+assert(size[0]==size[1]);
+
+    tileSize[0] = size[0];
+    tileSize[1] = size[1];
+
+    globe = new Globe(spheroidName, tileSize);
+
+///\todo for now hardcode the subsampling filter
+    subsamplingFilter = Filter::createPointFilter();
+
+    scopeBuf          = new Scope::Scalar[tileSize[0]*tileSize[1]*3];
+    nodeDataBuf       = new PixelParam[tileSize[0]*tileSize[1]];
+    nodeDataSampleBuf = new PixelParam[tileSize[0]*tileSize[1]];
+    //the -3 takes into account the shared edges of the tiles
+    domainSize[0] = 4*tileSize[0] - 3;
+    domainSize[1] = 4*tileSize[1] - 3;
+    domainBuf     = new PixelParam[domainSize[0]*domainSize[1]];
 }
 
 template <typename PixelParam, typename PolyhedronParam>
@@ -25,8 +40,10 @@ Builder<PixelParam, PolyhedronParam>::
     {
         delete *it;
     }
-    delete scopeBuf;
-    delete nodeDataBuf;
+    delete[] scopeBuf;
+    delete[] nodeDataBuf;
+    delete[] nodeDataSampleBuf;
+    delete[] domainBuf;
 }
 
 template <typename PixelParam, typename PolyhedronParam>
@@ -57,13 +74,14 @@ refine(Node* node)
 
 template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
-flagAncestorsForUpdate(Node* parent)
+flagAncestorsForUpdate(Node* node)
 {
-    do
+    node = node->parent;
+    while (node != NULL)
     {
-        parent->mustBeUpdated = true;
-        parent = parent->parent;
-    } while(parent != NULL);
+        node->mustBeUpdated = true;
+        node = node->parent;
+    }
 }
 
 template <typename PixelParam, typename PolyhedronParam>
@@ -76,25 +94,26 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
     //use the box to load an appropriate rectangle from the image file
     uint rectOrigin[2];
     uint rectSize[2];
-    for (uint =0; <2; ++)
+    for (uint i=0; i<2; i++)
     {
 ///\todo abstract the sampler
         //assume bilinear interpolation here
-        rectOrigin[] = static_cast<uint>(Math::floor(nodeImgBox.getMin()));
-        rectSize[] = static_cast<uint>(Math::ceil(nodeImgBox.getMax())) + 1 -
-                                                   rectOrigin[];
+        rectOrigin[i] = static_cast<uint>(Math::floor(nodeImgBox.getMin(i)));
+        rectSize[i] = static_cast<uint>(Math::ceil(nodeImgBox.getMax(i))) + 1 -
+                                                   rectOrigin[i];
     }
     PixelParam* rectBuffer = new PixelParam[rectSize[0] * rectSize[1]];
     imgPatch->image->readRectangle(rectOrigin, rectSize, rectBuffer);
 
     //determine the sample positions for the scope
-    node->scope.getRefinement<Scope::Scalar>(TILE_RESOLUTION, scopeBuf);
+///\todo enhance get Refinement such that is can produce non-uniform samples
+    node->scope.getRefinement<Scope::Scalar>(tileSize[0], scopeBuf);
     //prepare the node's data buffer
-    node->data = new PixelParam[TILE_RESOLUTION*TILE_RESOLUTION];
+    node->data = nodeDataBuf;
     node->treeState->file->readTile(node->tileIndex, node->data);
     
     //resample pixel values for the node from the read rectangle
-    Scope::Scalar* endPtr = scopeBuf + TILE_RESOLUTION*TILE_RESOLUTION;
+    Scope::Scalar* endPtr = scopeBuf + tileSize[0]*tileSize[1];
     PixelParam* dataPtr   = node->data;
     for (Scope::Scalar* curPtr=scopeBuf; curPtr!=endPtr; curPtr+=3, ++dataPtr)
     {
@@ -112,11 +131,11 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
             /* Sample the point: */
             int ip[2];
             double d[2];
-            for(uint =0; <2; ++)
+            for(uint i=0; i<2; i++)
             {
-                double pFloor = Math::floor(p[]);
-                d[]          = p[] - pFloor;
-                ip[]         = static_cast<int>(pFloor) - rectOrigin[];
+                double pFloor = Math::floor(p[i]);
+                d[i]          = p[i] - pFloor;
+                ip[i]         = static_cast<int>(pFloor) - rectOrigin[i];
             }
             PixelParam* basePtr = rectBuffer + (ip[1]*rectSize[0] + ip[0]);
             PixelParam one = (1.0-d[0])*basePtr[0] + d[0]*basePtr[1];
@@ -134,18 +153,28 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
     header.reset(node);
     node->treeState->file->writeTile(node->tileIndex, header, node->data);
 
-    //clean up the node data
-    delete[] node->data;
     node->data = NULL;
     
     //make sure that the parent dependent on this new data is also updated
-    if (node->parent)
+    flagAncestorsForUpdate(node);
+    //we musn't forget to update all the adjacent non-sibling nodes either
+    int dirs[2];
+    dirs[0] = node->treeIndex.child&0x01 ? 1 : -1;
+    dirs[1] = node->treeIndex.child&0x10 ? 1 : -1;
+
+    int offsets[2];
+    Node* kin;
+    //flag the vertical edge with the corner and the horizontal without it
+    for (int s= 0; s<=1; ++s)
     {
-        flagAncestorsForUpdate(node->parent);
-        //we musn't forget to update all the adjacent non-sibling nodes either
-/**\todo IMPLEMENT SUPPORT FOR UPDATE: notify the proper adjacent non-sibling
-         parents that they need to update. from these neighbors flag all the
-         ancestors */
+        for (int i=s-1; i<=1; ++i)
+        {
+            offsets[s]   = dirs[s];
+            offsets[1-s] = i;
+            node->getKin(kin, offsets)
+            if (kin != NULL)
+                flagAncestorsForUpdate(kin);
+        }
     }
 }
 
@@ -204,40 +233,110 @@ updateFinestLevels()
 
 template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
-addNodeToDomain(Node* node, PixelParam* at, uint tileSize[2], uint rowLen)
-{
-    const PixelParam* data = node->treeState->file->getBlank();
-
-    //read the data from file
-    if (node!=NULL && node->tileIndex!=Node::State::File::INVALID_INDEX)
-    {
-        node->treeState->file->readTile(node->tileIndex, nodeDataBuf);
-        data = nodeDataBuf;
-    }
-
-    //insert the data at the appropriate location
-    for (uint y=0; y<tileSize[1]; ++y)
-        memcpy(at+y*rowLen, data+y*tileSize[0], tileSize[0]*sizeof(PixelParam));    
-}
-
-template <typename PixelParam, typename PolyhedronParam>
-PixelParam* Builder<PixelParam, PolyhedronParam>::
 prepareSubsamplingDomain(Node* node)
 {
-    const uint* tileSize = node->treeState->file->getTileSize();
-    uint domainSize[2] = {4 * tileSize[0], 4 * tileSize[1]};
-    PixelParam* domain = new PixelParam[domainSize[0]*domainSize[1]];
+    Node* kin     = NULL;
+    Node* blChild = &node->children[0];
 
-    Node* neighbor = NULL;
+    PixelParam* domain = domainBuf + (tileSize[1]-1)*domainSize[0] +
+                         tileSize[0]-1;
 
-/**\todo THIS NEEDS TO BE MADE MORE ROBUST: expand neighbor search to make sure
-         corner neighbors are properly resolved. Also same-level neighbors might
-         not exist, but coarser-level ones could and they may contain data. In
-         such a case the coarser data must be sampled in the stead of the non-
-         existing same-level one!! */
+    int domainOff[2];
+    int nodeOff[2];
+    for (domainOff[1]=-1; domainOff[1]<=2; ++domainOff[1])
+    {
+        for (domainOff[0]=-1; domainOff[0]<=2; ++domainOff[0])
+        {
+        //- retrieve the kin
+            nodeOff[0] = domainOff[0];
+            nodeOff[1] = domainOff[1];
+            blChild->getKin(kin, nodeOff);
 
-    //core: direct children
-    if (!node->children[0].getNeighbor());
+        //- retrieve data as appropriate
+            //default to blank data
+            const PixelParam* data = node->treeState->file->getBlank();
+            
+            //read the data from file
+            if (kin!=NULL && kin->tileIndex!=Node::State::File::INVALID_INDEX)
+            {
+                if (nodeOff[0]==0 && nodeOff[1]==0)
+                {
+                    //we're grabbing data from a same leveled kin
+                    kin->treeState->file->readTile(kin->tileIndex, nodeDataBuf);
+                    data = nodeDataBuf;
+                }
+                else
+                {
+                    //need to sample coarser level node as the kin replacement
+                    kin->treeState->file->readTile(kin->tileIndex,
+                                                   nodeDataSampleBuf);
+                    //determine the resample step size
+                    double scale = 1;
+                    for (uint i=blChild.treeIndex.level; i<kin.treeIndex.level;
+                         ++i)
+                    {
+                        scale *= 0.5;
+                    }
+                    double step[2] = {1.0/(tileSize[0]-1), 1.0/(tileSize[1]-1)};
+                    step[0] *= scale;
+                    step[1] *= scale;
+///\todo abstract out the filtering. Currently using bilinear filtering
+                    double d[2];
+                    uint ny=0;
+                    PixelParam* wbase = nodeDataBuf;
+                    for (double y=nodeOff[1]*scale; ny<tileSize[1];
+                         ++ny, y+=step[1])
+                    {
+                        double py = y * (tileSize[1]-1);
+                        double fy = floor(py);
+                        d[1]      = py - fy;
+                        uint iy   = static_cast<uint>(fy);
+                        if (iy == tileSize[1])
+                        {
+                            --iy;
+                            d[1] = 1.0;
+                        }
+                        uint oy = iy * tileSize[0];
+
+                        uint nx=0;
+                        for (double x=nodeOff[0]*scale; nx<tileSize[0];
+                             ++nx, x+=step[0], ++wbase)
+                        {
+                            double px = x * (tileSize[0]-1);
+                            double fx = floor(px);
+                            d[0]      = px - fx;
+                            uint ix   = static_cast<uint>(fx);
+                            if (ix == tileSize[0])
+                            {
+                                --ix;
+                                d[0] = 1.0;
+                            }
+
+                            PixelParam* rbase = nodeDataSampleBuf + oy + ix;
+
+                            PixelParam one = (1.0-d[0]) * rbase[0] +
+                                                   d[0] * rbase[1];
+                            PixelParam two = (1.0-d[0]) * rbase[tileSize[0]] +
+                                                   d[0] * rbase[tileSize[0]+1];
+
+                            *wbase = (1.0-d[1])*one + d[1]*two;
+                        }
+                    }
+                    data = nodeDataBuf;
+                }
+            }
+            
+        //- insert the data at the appropriate location
+            PixelParam* at = domain +
+                             domainOff[1] * (tileSize[1]-1) * domainSize[0] +
+                             domainOff[0] * (tileSize[0]-1);
+            for (uint y=0; y<tileSize[1]; ++y)
+            {
+                memcpy(at + y*domainSize[0], data+y*tileSize[0],
+                       tileSize[0]*sizeof(PixelParam));
+            }
+        }
+    }
 }
 
 template <typename PixelParam, typename PolyhedronParam>
@@ -257,9 +356,28 @@ updateCoarser(Node* node, uint level)
     }
 
 //- we've reached a node that must be updated
-    PixelParam* domain = prepareSubsamplingDomain(node);
+    prepareSubsamplingDomain(node);
 
-    delete[] domain;
+    /* walk the pixels of the node's data and performed filtered look-ups into
+       the domain */
+    PixelParam* data = nodeDataBuf;
+    PixelParam* domain;
+    for (domain = domainBuf + (tileSize[1]-1) * domainSize[0] + (tileSize[0]-1);
+         domain < domainBuf + 2 * (tileSize[1]-1) * domainSize[0] + tileSize[0];
+         domain+= domainSize[0] - tileSize[0])
+    {
+        for (uint i=0; i<tileSize[0]; ++i, ++domain, ++data)
+            *data = subsampleFilter.lookup(domain, domainSize[0]);
+    }
+
+    //commit the data to file
+    node->data = nodeDataBuf;
+
+    QuadtreeTileHeader header;
+    header.reset(node);
+    node->treeState->file->writeTile(node->tileIndex, header, node->data);
+    
+    node->data = NULL;
 }
 
 template <typename PixelParam, typename PolyhedronParam>
