@@ -58,7 +58,9 @@ public:
     public:
         Header();
         void read(Misc::LargeFile* quadtreeFile);
+#if CONSTRUO_BUILD
         void write(Misc::LargeFile* quadtreeFile);
+#endif //CONSTRUO_BUILD
 
         ///size of an individual image tile
         uint tileSize[2];
@@ -75,8 +77,10 @@ public:
     ///returns the file's meta data
 	FileHeader& getCustomFileHeader() const;
 
+#if CONSTRUO_BUILD
     ///sets the default pixel value for out-of-bounds tiles
 	void setDefaultPixelValue(const Pixel& newDefaultPixelValue);
+#endif //CONSTRUO_BUILD
     ///returns the pixel value for out-of-bounds tiles
 	const Pixel& getDefaultPixelValue() const;
     ///returns size of an individual image tile
@@ -88,14 +92,18 @@ public:
 
     ///reads the quadtree file header from the file
     void readHeader();
+#if CONSTRUO_BUILD
     ///writes the quadtree file header to the file again
 	void writeHeader();
+#endif
 
     ///check the existence of a tile (does not create a new one)
     TileIndex checkTile(const TreeIndex& node) const;
     TileIndex checkTile(const TreePath& path, TileIndex start) const;
+#if CONSTRUO_BUILD
     ///appends a new tile to the file (only reserves the space for it)
     TileIndex appendTile();
+#endif //CONSTRUO_BUILD
 
     ///reads the tile of given index into the given buffer
 	bool readTile(TileIndex tileIndex, TileIndex childPointers[4],
@@ -107,6 +115,7 @@ public:
                   Pixel* tileBuffer=NULL);
 
     ///writes the tile in the given buffer to the given index
+#if CONSTRUO_BUILD
 	void writeTile(TileIndex tileIndex, const TileIndex childPointers[4],
                    const TileHeader& tileHeader, const Pixel* tileBuffer=NULL);
 	void writeTile(TileIndex tileIndex, const Pixel* tileBuffer);
@@ -114,6 +123,7 @@ public:
                    const Pixel* tileBuffer=NULL);
 	void writeTile(TileIndex tileIndex, const TileHeader& tileHeader,
                    const Pixel* tileBuffer=NULL);
+#endif //CONSTRUO_BUILD
 
 protected:
 ///returns the last ignored tile child pointers
@@ -149,6 +159,6 @@ const TileHeader& getLastTileHeader() const;
 
 END_CRUSTA
 
-#include <construo/QuadtreeFile.hpp>
+#include <crusta/QuadtreeFile.hpp>
 
 #endif //_QuadTreeFile_H_

@@ -27,8 +27,6 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <iostream>
 #include <Misc/ThrowStdErr.h>
 
-#include <construo/ColorTextureSpecs.h>
-#include <construo/DemSpecs.h>
 #include <construo/GeometryTypes.h>
 #include <construo/PpmImageFile.h>
 #include <construo/PngImageFile.h>
@@ -36,6 +34,8 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <construo/MagickImageFile.h>
 #endif //CONSTRUO_USE_IMAGEMAGICK
 #include <construo/ArcInfoBinaryGridImageFile.h>
+#include <crusta/ColorTextureSpecs.h>
+#include <crusta/DemSpecs.h>
 
 /***********************************************
 Specialized image loading method for DEM images:

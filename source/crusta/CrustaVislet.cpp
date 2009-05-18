@@ -25,7 +25,7 @@ CrustaVisletFactory::
 Vrui::Vislet* CrustaVisletFactory::
 createVislet(int numVisletArguments, const char* const visletArguments[]) const
 {
-    return new CrustaVislet;
+    return new CrustaVislet(numVisletArguments, visletArguments);
 }
 
 void CrustaVisletFactory::
@@ -62,9 +62,17 @@ destroyCrustaVisletFactory(Vrui::VisletFactory* factory)
 CrustaVisletFactory* CrustaVislet::factory = NULL;
 
 CrustaVislet::
-CrustaVislet() :
-    crusta(new Crusta)
-{}
+CrustaVislet(int numArguments, const char* const arguments[]) :
+    crusta(NULL)
+{
+    if (numArguments<1)
+    {
+        Misc::throwStdErr("Crusta requires at least a preprocessed DEM database"
+                          "to be provided as a command line argument");
+    }
+    crusta = new Crusta(arguments[0]);
+}
+
 CrustaVislet::
 ~CrustaVislet()
 {

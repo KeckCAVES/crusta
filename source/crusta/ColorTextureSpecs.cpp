@@ -1,4 +1,4 @@
-#include <construo/colorTextureSpecs.h>
+#include <crusta/ColorTextureSpecs.h>
 
 BEGIN_CRUSTA
 

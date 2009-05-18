@@ -16,9 +16,12 @@ static const float TEXTURE_COORD_START = TEXTURE_COORD_STEP * 0.5;
 static const float TEXTURE_COORD_END   = 1.0 - TEXTURE_COORD_START;
 
 QuadTerrain::
-QuadTerrain(uint8 patch, const Scope& scope) :
-    basePatchId(patch), baseScope(scope)
+QuadTerrain(uint8 patch, const Scope& scope, const std::string& demFileName) :
+    demFile(NULL), basePatchId(patch), baseScope(scope)
 {
+    uint res[2] = { TILE_RESOLUTION, TILE_RESOLUTION };
+    demFile = new File(demFileName.c_str(), res);
+
     //create root data and pin it in the cache
     TreeIndex rootIndex(patch);
     MainCacheBuffer* rootBuffer =
@@ -29,9 +32,15 @@ QuadTerrain(uint8 patch, const Scope& scope) :
     //generate/fetch the data content for the static data
     const QuadNodeMainData& rootData = rootBuffer->getData();
     generateGeometry(scope, rootData.geometry);
-    generateHeight(rootData.geometry, rootData.height);
+    loadElevation(demFile, 0, rootData.height);
     generateColor(rootData.height, rootData.color);
 }
+QuadTerrain::
+~QuadTerrain()
+{
+    delete demFile;
+}
+
 
 void QuadTerrain::
 display(GLContextData& contextData)
@@ -91,6 +100,12 @@ generateGeometry(const Scope& scope, QuadNodeMainData::Vertex* vertices)
 }
 
 void QuadTerrain::
+loadElevation(DemFile* file, DemFile::TileIndex tile, float* heights)
+{
+    
+}
+#if 0
+void QuadTerrain::
 generateHeight(QuadNodeMainData::Vertex* vertices, float* heights)
 {
 float ir = 1.0f / sqrt(vertices[0].position[0]*vertices[0].position[0] +
@@ -108,6 +123,7 @@ float ir = 1.0f / sqrt(vertices[0].position[0]*vertices[0].position[0] +
         *heights += 1.0f;
     }
 }
+#endif
 
 void QuadTerrain::
 generateColor(float* heights, uint8* colors)
@@ -139,7 +155,8 @@ generateColor(float* heights, uint8* colors)
 
 QuadTerrain::Node::
 Node() :
-    mainBuffer(NULL), videoBuffer(NULL), parent(NULL), children(NULL)
+    demTile(File::INVALID_TILEINDEX), mainBuffer(NULL), videoBuffer(NULL),
+    parent(NULL), children(NULL)
 {
 }
 
@@ -506,8 +523,9 @@ glData->shader.useProgram();
 
 
 QuadTerrain::GlData::
-GlData(const TreeIndex& iRootIndex, MainCacheBuffer* iRootBuffer,
-       const Scope& baseScope, VideoCache& iVideoCache) :
+GlData(QuadTerrain* terrain, const TreeIndex& iRootIndex,
+       MainCacheBuffer* iRootBuffer, const Scope& baseScope,
+       VideoCache& iVideoCache) :
     root(NULL), videoCache(iVideoCache), vertexAttributeTemplate(0),
     indexTemplate(0)
 {
@@ -517,6 +535,7 @@ GlData(const TreeIndex& iRootIndex, MainCacheBuffer* iRootBuffer,
     
     //initialize the active front to be just the root node
     root = new Node;
+    root->terrain    = terrain;
     root->index      = iRootIndex;
     root->scope      = baseScope;
     root->mainBuffer = iRootBuffer;

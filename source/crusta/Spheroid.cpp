@@ -1,5 +1,7 @@
 #include <crusta/Spheroid.h>
 
+#include <sstream>
+
 #include <crusta/Triacontahedron.h>
 
 BEGIN_CRUSTA
@@ -30,7 +32,7 @@ centroid(const PointParam& p0,
 }
 
 Spheroid::
-Spheroid()
+Spheroid(const std::string& demBase)
 {
 #if 1
     //Triacontahedron from Mathematica 6-7.
@@ -39,7 +41,12 @@ Spheroid()
     uint numPatches = triacontahedron.getNumPatches();
     basePatches.resize(numPatches);
     for (uint i=0; i<numPatches; ++i)
-        basePatches[i] = new QuadTerrain(i, triacontahedron.getScope(i));
+    {
+        std::ostringstream demName(demBase);
+        demName << "_" << i << ".qtf";
+        basePatches[i] = new QuadTerrain(i, triacontahedron.getScope(i),
+                                         demName.str());
+    }
 #else
 	/****************************************************************
      Create a rhombic dodecahedron by subdividing a tetrahedron with a

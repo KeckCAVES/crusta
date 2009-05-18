@@ -5,9 +5,12 @@
 
 #include <Geometry/Vector.h>
 
-#include <construo/QuadtreeFile.h>
-#include <construo/QuadtreeFileHeaders.h>
+#include <crusta/QuadtreeFile.h>
+#include <crusta/QuadtreeFileHeaders.h>
+
+#if CONSTRUO_BUILD
 #include <construo/Tree.h>
+#endif //CONSTRUO_BUILD
 
 BEGIN_CRUSTA
 
@@ -23,6 +26,7 @@ TextureColor operator*(double d, const TextureColor& tc) {
     return d * tc;
 }
 
+#if CONSTRUO_BUILD
 template<>
 class TreeState<TextureColor>
 {
@@ -32,6 +36,7 @@ public:
 
     File* file;
 };
+#endif //CONSTRUO_BUILD
 
 template <>
 struct QuadtreeTileHeader<TextureColor> :

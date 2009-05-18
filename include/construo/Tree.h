@@ -1,9 +1,9 @@
 #ifndef _ConstruoTree_H_
 #define _ConstruoTree_H_
 
-#include <construo/QuadtreeFile.h>
 #include <construo/SphereCoverage.h>
 
+#include <crusta/QuadtreeFile.h>
 #include <crusta/Scope.h>
 ///\todo extract TreeIndex from quadCommon.h
 #include <crusta/quadCommon.h>

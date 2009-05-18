@@ -15,6 +15,11 @@ BEGIN_CRUSTA
    current and previous frame are locked */
 uint crustaFrameNumber = 2;
 
+Crusta::
+Crusta(const std::string& demFileBase) :
+    spheroid(demFileBase)
+{}
+
 void Crusta::
 frame()
 {

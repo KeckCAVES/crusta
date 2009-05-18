@@ -9,6 +9,7 @@
 
 #include <crusta/basics.h>
 #include <crusta/quadCommon.h>
+#include <crusta/QuadtreeFileSpecs.h>
 
 #include <crusta/FrustumVisibility.h>
 #include <crusta/FocusViewEvaluator.h>
@@ -31,7 +32,9 @@ class VideoCache;
 class QuadTerrain : public GLObject
 {
 public:
-    QuadTerrain(uint8 patch, const Scope& scope);
+    QuadTerrain(uint8 patch, const Scope& scope,
+                const std::string& demFileName);
+    ~QuadTerrain();
 
     /** diplay has several functions:
         1. evaluate the current active set (as it is view-dependent)
@@ -41,9 +44,8 @@ public:
     
     /** produce the flat sphere cartesian space coordinates for a node */
     static void generateGeometry(const Scope& scope,
-                          QuadNodeMainData::Vertex* vertices);
+                                 QuadNodeMainData::Vertex* vertices);
 ///\todo remove
-static void generateHeight(QuadNodeMainData::Vertex* vertices, float* heights);
 static void generateColor(float* heights, uint8* colors);
     
 protected:
@@ -58,12 +60,18 @@ protected:
         /** discard the nodes of the subtree */
         void discardSubTree(GlData* glData);
 
+        /** pointer to the tree containing the node (to access shared data) */
+        QuadTerrain* terrain;
+
         /** uniquely characterize this node's "position" in the tree. The tree
             index must correlate with the global hierarchy of the data
             sources */
         TreeIndex index;
         /** caches this node's scope for visibility and lod evaluation */
         Scope scope;
+
+        /** index of the DEM tile in the database */
+        DemFile::TileIndex demTile;
 
         /** cache buffer containing the data related to this node */
         MainCacheBuffer* mainBuffer;
@@ -109,7 +117,10 @@ protected:
         operations to stream data from the main cache are performed at this
         point. */
     void drawNode(GlData* glData, Node* node);
-    
+
+    /** quadtree file from which to source data for the elevation */
+    DemFile* demFile;
+
     /** spheroid base patch ID (specified at construction but needed during
         initContext) */
     uint8 basePatchId;
@@ -126,8 +137,9 @@ protected:
     {
         typedef std::vector<Node*> NodeBlocks;
 
-        GlData(const TreeIndex& iRootIndex, MainCacheBuffer* iRootBuffer,
-               const Scope& baseScope, VideoCache& iVideoCache);
+        GlData(QuadTerrain* terrain, const TreeIndex& iRootIndex,
+               MainCacheBuffer* iRootBuffer, const Scope& baseScope,
+               VideoCache& iVideoCache);
         ~GlData();
 
         /** grab a set of four nodes from the node pool. Used during split

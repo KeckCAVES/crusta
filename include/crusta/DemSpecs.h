@@ -3,14 +3,20 @@
 #ifndef _DemSpecs_H_
 #define _DemSpecs_H_
 
-#include <construo/QuadtreeFileHeaders.h>
+#include <Misc/LargeFile.h>
+
+#include <crusta/QuadtreeFileHeaders.h>
+
+#if CONSTRUO_BUILD
 #include <construo/Tree.h>
+#endif //CONSTRUO_BUILD
 
 BEGIN_CRUSTA
 
 /// data type for values of a DEM stored in the preprocessed hierarchies
 typedef float DemHeight;
 
+#if CONSTRUO_BUILD
 template <>
 class TreeState<DemHeight>
 {
@@ -20,6 +26,7 @@ public:
 
     File* file;
 };
+#endif //CONSTRUO_BUILD
 
 template <>
 struct QuadtreeTileHeader<DemHeight> : public QuadtreeTileHeaderBase<DemHeight>
@@ -27,18 +34,21 @@ struct QuadtreeTileHeader<DemHeight> : public QuadtreeTileHeaderBase<DemHeight>
 public:
     QuadtreeTileHeader()
     {
-        reset();
+        range[0] = range[1] = defaultPixelValue;
     }
+#if CONSTRUO_BUILD
     QuadtreeTileHeader(TreeNode<DemHeight>* node)
     {
         reset(node);
     }
+#endif //CONSTRUO_BUILD
 
 	static size_t getSize()
     {
 		return 2 * sizeof(DemHeight);
     }
-    
+
+#if CONSTRUO_BUILD
 	void reset(TreeNode<DemHeight>* node=NULL)
     {
         if (node==NULL || node->data==NULL)
@@ -61,15 +71,18 @@ public:
 			}
         }
     }
+#endif //CONSTRUO_BUILD
     
 	void read(Misc::LargeFile* file)
     {
 		file->read(range, 2);
     }
+#if CONSTRUO_BUILD
 	void write(Misc::LargeFile* file) const
     {
 		file->write(range, 2);
     }
+#endif //CONSTRUO_BUILD
 
     static const DemHeight defaultPixelValue;
 

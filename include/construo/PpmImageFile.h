@@ -26,8 +26,8 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <Misc/LargeFile.h>
 #include <Threads/Mutex.h>
 
-#include <construo/ColorTextureSpecs.h>
 #include <construo/ImageFile.h>
+#include <crusta/ColorTextureSpecs.h>
 
 BEGIN_CRUSTA
 

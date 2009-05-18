@@ -21,14 +21,18 @@
  02111-1307 USA
  ***********************************************************************/
 
+///\todo fix FRAK'ing cmake !@#!@
+#define CONSTRUO_BUILD 1
+
 #include <cstdlib>
 #include <cstring>
 #include <stdexcept>
 #include <iostream>
 
 #include <construo/Builder.h>
-#include <construo/ColorTextureSpecs.h>
-#include <construo/DemSpecs.h>
+
+#include <crusta/ColorTextureSpecs.h>
+#include <crusta/DemSpecs.h>
 #include <crusta/Triacontahedron.h>
 
 ///\todo remove

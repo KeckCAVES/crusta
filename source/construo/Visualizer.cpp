@@ -1,3 +1,6 @@
+///\todo fix FRAK'ing cmake !@#!@
+#define CONSTRUO_BUILD 1
+
 #include <construo/Visualizer.h>
 
 #include <Geometry/OrthogonalTransformation.h>

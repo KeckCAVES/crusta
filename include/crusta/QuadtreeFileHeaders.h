@@ -40,9 +40,11 @@ class QuadtreeFileHeaderBase
 {
 public:
 	void read(Misc::LargeFile* file)         {}
+#if CONSTRUO_BUILD
 	void write(Misc::LargeFile* file) const  {}
 
 	static size_t getSize()                  {return 0;}
+#endif //CONSTRUO_BUILD
 };
 
 template <typename PixelParam>
@@ -54,13 +56,16 @@ template <typename PixelParam>
 class QuadtreeTileHeaderBase
 {
 public:
+	void read(Misc::LargeFile* file)        {}
+
+#if CONSTRUO_BUILD
     template <typename NodeParam>
     void reset(NodeParam* node=NULL)        {}
 
-	void read(Misc::LargeFile* file)        {}
 	void write(Misc::LargeFile* file) const {}
 
 	static size_t getSize()                 {return 0;}
+#endif //CONSTRUO_BUILD
 };
 
 template <typename PixelParam>

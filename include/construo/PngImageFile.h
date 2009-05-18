@@ -25,8 +25,8 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #ifndef _PngImageFile_H_
 #define _PngImageFile_H_
 
-#include <construo/ColorTextureSpecs.h>
 #include <construo/ImageFile.h>
+#include <crusta/ColorTextureSpecs.h>
 
 BEGIN_CRUSTA
 

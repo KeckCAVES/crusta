@@ -39,7 +39,7 @@ class CrustaVislet : public Vrui::Vislet
     friend class CrustaVisletFactory;
 
 public:
-    CrustaVislet();
+    CrustaVislet(int numArguments, const char* const arguments[]);
     ~CrustaVislet();
 
 private:

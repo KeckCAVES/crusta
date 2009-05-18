@@ -12,8 +12,15 @@ BEGIN_CRUSTA
 
 CrustaApp::
 CrustaApp(int& argc, char**& argv, char**& appDefaults) :
-    Vrui::Application(argc, argv, appDefaults), crusta(new Crusta)
+    Vrui::Application(argc, argv, appDefaults), crusta(NULL)
 {
+    if (argc<1)
+    {
+        Misc::throwStdErr("Crusta requires at least a preprocessed DEM database"
+                          "to be provided as a command line argument");
+    }
+    crusta = new Crusta(argv[0]);
+
     produceMainMenu();
     resetNavigationCallback(NULL);
 }

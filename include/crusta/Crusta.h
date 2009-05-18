@@ -14,6 +14,8 @@ protected:
     Spheroid spheroid;
 
 public:
+    Crusta(const std::string& demFileBase);
+
     void frame();
     void display(GLContextData& contextData) const;
 };

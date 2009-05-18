@@ -31,15 +31,20 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 # Crusta shared dynamic link library containing the core crusta components
 #-------------------
 
-add_library(Crusta SHARED ../source/crusta/Crusta.cpp
+add_library(Crusta SHARED ../source/crusta/CacheRequest.cpp
+                          ../source/crusta/ColorTextureSpecs.cpp
+                          ../source/crusta/Crusta.cpp
+                          ../source/crusta/DemSpecs.cpp
                           ../source/crusta/FocusViewEvaluator.cpp
                           ../source/crusta/FrustumVisibility.cpp
                           ../source/crusta/LodEvaluator.cpp
                           ../source/crusta/QuadCache.cpp
+                          ../source/crusta/QuadNodeData.cpp
                           ../source/crusta/QuadTerrain.cpp
 						  ../source/crusta/Scope.cpp
                           ../source/crusta/simplexnoise1234.cpp
                           ../source/crusta/Spheroid.cpp
+                          ../source/crusta/TreeIndex.cpp
                           ../source/crusta/Triacontahedron.cpp
                           ../source/crusta/ViewLod.cpp)
 
@@ -82,9 +87,7 @@ find_package(ImageMagick COMPONENTS Magick++)
 include_directories(${ImageMagick_Magick++_INCLUDE_DIRS})
 
 set(CONSTRUO_SOURCES ../source/construo/ArcInfoBinaryGridImageFile.cpp
-					 ../source/construo/ColorTextureSpecs.cpp
                      ../source/construo/Construo.cpp
-					 ../source/construo/DemSpecs.cpp
 					 ../source/construo/Filter.cpp
                      ../source/construo/GeoTransform.cpp
                      ../source/construo/ImageCoverage.cpp
@@ -102,6 +105,10 @@ add_definitions(-DCONSTRUO_USE_IMAGEMAGICK)
 endif(${ImageMagick_Magick++_FOUND})
 
 add_executable(construo ${CONSTRUO_SOURCES})
+
+#cmake fraking sucks if you don't follow their directory structure!!!!
+#set_target_properties(construo PROPERTIES
+#                               COMPILE_DEFINITIONS "CONSTRUO_BUILD")
 
 vrui_set_target_properties(construo)
 

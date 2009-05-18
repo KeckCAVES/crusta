@@ -65,7 +65,7 @@ frame()
 ///\todo currently processes all data
         const QuadNodeMainData& data = buf->getData();
         QuadTerrain::generateGeometry(it->scope, data.geometry);
-        QuadTerrain::generateHeight(data.geometry, data.height);
+        it->demFile->readTile(it->demTile, data.height);
         QuadTerrain::generateColor(data.height, data.color);
         DEBUG_OUT(5, "MainCache::frame: request for Index %s processed\n",
                   it->index.str().c_str());
