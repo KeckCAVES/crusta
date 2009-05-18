@@ -17,9 +17,10 @@ static void shortestArc(const Point& ancor,
     }
 }
 
-static SphereCoverage::Vector shortestArcShift(const Point& c0, const Point& c1)
+static SphereCoverage::Vector
+shortestArcShift(const Point& c0, const Point& c1)
 {
-    SphereCoverage vec;
+    SphereCoverage::Vector vec;
     static const Point::Scalar twopi = 2.0 * M_PI;
     for (uint i=0; i<2; ++i)
     {
@@ -27,6 +28,8 @@ static SphereCoverage::Vector shortestArcShift(const Point& c0, const Point& c1)
         vec[i] = dist> M_PI ? -twopi : 0;
         vec[i] = dist<-M_PI ?  twopi : 0;
     }
+
+    return vec;
 }
 
 SphereCoverage::
@@ -34,10 +37,22 @@ SphereCoverage() :
     box(Box::empty)
 {}
 
+const SphereCoverage::Points& SphereCoverage::
+getVertices() const
+{
+    return vertices;
+}
+
 const Box& SphereCoverage::
-getBoundingBox()
+getBoundingBox() const
 {
     return box;
+}
+
+const Point& SphereCoverage::
+getCentroid() const
+{
+    return centroid;
 }
 
 bool SphereCoverage::
@@ -226,13 +241,7 @@ overlaps(const SphereCoverage& coverage) const
     if (testContained)
         return CONTAINS;
     else
-        return ISCONTAINED;
-}
-
-const Point& SphereCoverage::
-getCentroid()
-{
-    return centroid;
+        return coverageContained ? ISCONTAINED : SEPARATE;
 }
 
 void SphereCoverage::
@@ -254,17 +263,19 @@ StaticSphereCoverage(uint subdivisions, const Scope& scope)
     uint numSamples = pow(2, subdivisions) + 1;
     uint lastSample = numSamples - 1;
     Scope::Vertex* samples = new Scope::Vertex[numSamples];
-    uint numVertices = 4 * numSamples;
+    uint numVertices = 4 * numSamples - 4;
     vertices.reserve(numVertices);
 
     /* go through all the side-segments of the scope in order and produce
        samples on each segment through 'subdivisions' number of subdivisions.
        Each sample corresponsing to a vertex of the coverage */
+    Scope::Scalar radius = scope.getRadius();
+    static const uint remap[4] = {0, 1, 3, 2};
     for (uint start=0; start<4; ++start)
     {
         uint end            = (start+1) % 4;
-        samples[0]          = scope.corners[start];
-        samples[lastSample] = scope.corners[end];
+        samples[0]          = scope.corners[remap[start]];
+        samples[lastSample] = scope.corners[remap[end]];
 
         //iterate over block sizes to generate each subdivision level
         for (uint blockSize=lastSample; blockSize>1; blockSize>>=1)
@@ -284,18 +295,20 @@ StaticSphereCoverage(uint subdivisions, const Scope& scope)
                     norm += mid[i]*mid[i];
                 }
                 //normalize
-                norm = 1.0/sqrt(norm);
+                norm = radius / sqrt(norm);
                 for (uint i=0; i<3; ++i)
                     mid[i] *= norm;
             }
         }
 
         //append the new samples as spherical vertices to the set
-        for (uint i=0; i<numSamples; ++i)
+        for (uint i=0; i<numSamples-1; ++i)
         {
-            Point newVertex;
-            newVertex[0] = atan2(samples[i][1], samples[i][0]);
-            newVertex[1] = acos(samples[i][2]);
+            double norm = sqrt(samples[i][0]*samples[i][0] +
+                               samples[i][1]*samples[i][1] +
+                               samples[i][2]*samples[i][2]);
+            Point newVertex(atan2(samples[i][1], samples[i][0]),
+                            acos(samples[i][2] / norm));
             vertices.push_back(newVertex);
         }
     }
@@ -304,16 +317,25 @@ StaticSphereCoverage(uint subdivisions, const Scope& scope)
     delete[] samples;
 
     //take care of periodicity of spherical space
-    centroid = Point(0,0);
-    box.addPoint(vertices[0]);
-    centroid[0] += vertices[0][0];
-    centroid[1] += vertices[0][1];
     for (uint i=1; i<numVertices; ++i)
+        shortestArc(vertices[i-1], vertices[i]);
+///\todo this is bad fix for the exact pole points of the triacontahedron
+    for (uint i=0; i<numVertices; ++i)
     {
-        Point& prev = vertices[i-1];
-        Point& cur  = vertices[i];
+        if (vertices[i][0]==0 && (vertices[i][1]==0 ||
+             (Math::Constants<Point::Scalar>::pi - vertices[i][1])<1e-5))
+        {
+            Point& prev = vertices[(i-1)%numVertices];
+            Point& next = vertices[(i+1)%numVertices];
+            vertices[i][0] = (prev[0] + next[0]) * 0.5;
+        }
+    }
 
-        shortestArc(prev, cur);
+    //compute box and centroid
+    centroid = Point(0,0);
+    for (uint i=0; i<numVertices; ++i)
+    {
+        Point& cur = vertices[i];
         box.addPoint(cur);
         centroid[0] += cur[0];
         centroid[1] += cur[1];
@@ -330,15 +352,15 @@ StaticSphereCoverage(uint subdivisions, const ImageCoverage* coverage,
 {
     assert(coverage!=NULL && transform!=NULL);
 
-    uint numSamples   = pow(2, subdivisions) + 1;
-    double sampleStep = 1.0/(numSamples-1);
-    //default estimate 4 sides to the coverage polygon
-    vertices.reserve(4 * numSamples);
+    uint numSamples     = pow(2, subdivisions) + 1;
+    double sampleStep   = 1.0/(numSamples-1);
+    uint numImgVertices = coverage->getNumVertices();
+    uint numVertices    = numImgVertices*numSamples - numImgVertices;
+    vertices.reserve(numVertices);
     
     /* go through all the side-segments of the image in order and produce
      samples on each segment through 'subdivisions' number of subdivisions.
      Each sample corresponsing to a vertex of the coverage */
-    uint numImgVertices = coverage->getNumVertices();
     for (uint start=0; start<numImgVertices; ++start)
     {
         uint end           = (start+1) % numImgVertices;
@@ -347,10 +369,10 @@ StaticSphereCoverage(uint subdivisions, const ImageCoverage* coverage,
 
         //generate all the samples along that segment
         double alpha = 0.0;
-        for (uint i=0; i<numSamples; ++i, alpha+=sampleStep)
+        for (uint i=0; i<numSamples-1; ++i, alpha+=sampleStep)
         {
             Point imgPoint((1.0-alpha)*lower[0] + alpha*upper[0],
-                           (1.0-alpha)*lower[0] + alpha*upper[0]);
+                           (1.0-alpha)*lower[1] + alpha*upper[1]);
             Point newVertex = transform->imageToWorld(imgPoint);
             vertices.push_back(newVertex);
         }
@@ -361,7 +383,6 @@ StaticSphereCoverage(uint subdivisions, const ImageCoverage* coverage,
     box.addPoint(vertices[0]);
     centroid[0] += vertices[0][0];
     centroid[1] += vertices[0][1];
-    uint numVertices = static_cast<uint>(vertices.size());
     for (uint i=1; i<numVertices; ++i)
     {
         Point& prev = vertices[i-1];

@@ -93,7 +93,8 @@ set(CONSTRUO_SOURCES ../source/construo/ArcInfoBinaryGridImageFile.cpp
                      ../source/construo/PngImageFile.cpp
                      ../source/construo/PpmImageFile.cpp
                      ../source/construo/SphereCoverage.cpp
-                     ../source/construo/UtmTransform.cpp)
+                     ../source/construo/UtmTransform.cpp
+                     ../source/construo/Visualizer.cpp)
 
 if(${ImageMagick_Magick++_FOUND})
 list(APPEND CONSTRUO_SOURCES ../source/construo/MagickImageFile.cpp)

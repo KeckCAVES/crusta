@@ -39,24 +39,20 @@ template <class PixelParam, class FileHeaderParam, class TileHeaderParam>
 void QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::Header::
 read(Misc::LargeFile* quadtreeFile)
 {
-    Misc::LargeFile::Offset curLocation = quadtreeFile->tell();
     quadtreeFile->rewind();
     quadtreeFile->read(tileSize, 2);
     quadtreeFile->read(defaultPixelValue);
     quadtreeFile->read(maxTileIndex);
-    quadtreeFile->seekSet(curLocation);
 }
 
 template <class PixelParam, class FileHeaderParam, class TileHeaderParam>
 void QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::Header::
 write(Misc::LargeFile* quadtreeFile)
 {
-    Misc::LargeFile::Offset curLocation = quadtreeFile->tell();
     quadtreeFile->rewind();
     quadtreeFile->write(tileSize, 2);
     quadtreeFile->write(defaultPixelValue);
     quadtreeFile->write(maxTileIndex);
-    quadtreeFile->seekSet(curLocation);    
 }
 
 /*****************************
@@ -66,8 +62,7 @@ Methods of class QuadtreeFile:
 template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
 QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
 QuadtreeFile(const char* quadtreeFileName, const uint iTileSize[2]) :
-    quadtreeFile(NULL), currentReadIndex(INVALID_TILEINDEX),
-    currentWriteIndex(INVALID_TILEINDEX)
+    quadtreeFile(NULL)
 {
 	//open existing quadtree file or create a new one
     try
@@ -250,21 +245,16 @@ readTile(TileIndex tileIndex, TileIndex childPointers[4],
          typename QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
          Pixel* tileBuffer)
 {
-	if(tileIndex==INVALID_TILEINDEX || tileIndex>header.maxTileIndex ||
-       quadtreeFile==NULL)
+	if(tileIndex>header.maxTileIndex || quadtreeFile==NULL)
     {
         return false;
     }
 
-    if(tileIndex != currentReadIndex)
-    {
-        Misc::LargeFile::Offset offset = Misc::LargeFile::Offset(tileIndex);
-        offset *= fileTileSize;
-        offset += firstTileOffset;
-        quadtreeFile->seekSet(offset);
-    }
-    currentReadIndex  = tileIndex + 1;
-    currentWriteIndex = INVALID_TILEINDEX;
+    /* Set the file pointer to the beginning of the tile: */
+    Misc::LargeFile::Offset offset = Misc::LargeFile::Offset(tileIndex);
+    offset *= fileTileSize;
+    offset += firstTileOffset;
+    quadtreeFile->seekSet(offset);
     
     //read the child pointers
     quadtreeFile->read(childPointers, 4);
@@ -310,24 +300,28 @@ writeTile(TileIndex tileIndex, const TileIndex childPointers[4],
 	const typename QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
     Pixel* tileBuffer)
 {
-	if (quadtreeFile==NULL || tileIndex==INVALID_TILEINDEX)
+	if (tileIndex>header.maxTileIndex || quadtreeFile==NULL)
         return;
 	
     /* Set the file pointer to the beginning of the tile: */
-    if (tileIndex != currentWriteIndex)
-    {
-        Misc::LargeFile::Offset offset = Misc::LargeFile::Offset(tileIndex);
-        offset *= fileTileSize;
-        offset += firstTileOffset;
-        quadtreeFile->seekSet(offset);
-    }
-    currentWriteIndex = tileIndex+1;
-    currentReadIndex  = INVALID_TILEINDEX;
+    Misc::LargeFile::Offset offset = Misc::LargeFile::Offset(tileIndex);
+    offset *= fileTileSize;
+    offset += firstTileOffset;
+    quadtreeFile->seekSet(offset);
     
     /* Write the child pointers: */
-    quadtreeFile->write(childPointers, 4);
+    if (childPointers != lastTileChildPointers)
+        quadtreeFile->write(childPointers, 4);
+    else
+        quadtreeFile->seekCurrent(Misc::LargeFile::Offset(4*sizeof(TileIndex)));
     /* Write the tile's header: */
-    tileHeader.write(quadtreeFile);
+    if (&tileHeader != &lastTileHeader)
+        tileHeader.write(quadtreeFile);
+    else
+    {
+        quadtreeFile->seekCurrent(
+            Misc::LargeFile::Offset(TileHeader::getSize()));
+    }
     
     /* Write the tile's image data: */
     if (tileBuffer != NULL)

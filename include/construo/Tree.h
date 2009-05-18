@@ -25,11 +25,13 @@ public:
     TreeNode();
     virtual ~TreeNode();
 
+///\todo generalize this so that requests can be made for arbitrary levels
     /** query a kin of the node. Since the trees are created on demand,
         valid parts of the tree may not be represented in memory during neighbor
         traversal. By default such parts will be loaded from file if possible,
         but the behaviour can be altered through 'loadMissing'. */
-    bool getKin(TreeNode*& kin, int offsets[2], bool loadMissing=true);
+    bool getKin(TreeNode*& kin, int offsets[2], bool loadMissing=true,
+                int down=0);
 
     /** create in-memory storage for the children nodes with the most basic
         properties (i.e. parent link-up, treeState, treeIndex, scope and
@@ -65,6 +67,10 @@ public:
 
 protected:
     bool isExplicitNeighborNode;
+
+///\todo remove
+public:
+static bool debugGetKin;
 };
 
 template <typename PixelParam>

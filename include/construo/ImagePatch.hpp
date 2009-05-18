@@ -24,7 +24,7 @@ ImagePatch(const std::string patchName) :
 	
 	//read the image's projection file
 	std::string projName(baseName);
-	projName.append("proj");
+	projName.append(".proj");
 	transform = ImageTransformReader::open(projName.c_str());
 	
 	try
@@ -50,7 +50,7 @@ ImagePatch(const std::string patchName) :
 	imageCoverage->flip(imgSize[1]);
 	
 	//compute the image's coverage on the spheroid:
-    sphereCoverage = new StaticSphereCoverage(8, imageCoverage, transform);
+    sphereCoverage = new StaticSphereCoverage(3, imageCoverage, transform);
 }
 
 template <typename PixelParam>

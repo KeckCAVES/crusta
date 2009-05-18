@@ -10,7 +10,7 @@ Filter() :
 Filter::
 ~Filter()
 {
-    delete[] (weights - filter.width);
+    delete[] (weights - width);
 }
 
 uint Filter::
@@ -25,7 +25,7 @@ createPointFilter()
     Filter filter;
 
     filter.width      = 0;
-    filter.weights    = new Scalar[filter.weight*2 + 1];
+    filter.weights    = new Scalar[filter.width*2 + 1];
     filter.weights[0] = Scalar(1);
 
     return filter;
@@ -37,7 +37,7 @@ createTriangleFilter()
     Filter filter;
 
     filter.width       = 1;
-    filter.weights     = new Scalar[filter.weight*2 + 1] + filter.width;
+    filter.weights     = new Scalar[filter.width*2 + 1] + filter.width;
     filter.weights[-1] = Scalar(0.25);
     filter.weights[0]  = Scalar(0.5);
     filter.weights[1]  = Scalar(0.25);
@@ -51,7 +51,7 @@ createFiveLobeLanczosFilter()
     Filter filter;
 
     filter.width      = 10;
-    filter.weights    = new Scalar[filter.weight*2 + 1] + filter.width;
+    filter.weights    = new Scalar[filter.width*2 + 1] + filter.width;
     filter.weights[0] = Scalar(1);
     Scalar filterNorm = filter.weights[0];
     for(int i=1; i<=static_cast<int>(filter.width); ++i)
@@ -64,7 +64,7 @@ createFiveLobeLanczosFilter()
         filterNorm        += Scalar(2) * value;
     }
     filterNorm = Scalar(1) / filterNorm;
-    for(int i=-filter.width; i<=filter.width; ++i)
+    for(int i=-filter.width; i<=static_cast<int>(filter.width); ++i)
         filter.weights[i] *= filterNorm;
 
     return filter;

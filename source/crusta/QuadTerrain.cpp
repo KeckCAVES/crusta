@@ -15,62 +15,6 @@ static const float TEXTURE_COORD_STEP  = 1.0 / TILE_RESOLUTION;
 static const float TEXTURE_COORD_START = TEXTURE_COORD_STEP * 0.5;
 static const float TEXTURE_COORD_END   = 1.0 - TEXTURE_COORD_START;
 
-template <class PointParam>
-inline
-PointParam
-toSphere(const PointParam& p)
-{
-    typedef typename PointParam::Scalar Scalar;
-    
-    double len = Geometry::mag(p);
-    return PointParam(Scalar(p[0]/len), Scalar(p[1]/len), Scalar(p[2]/len));
-}
-static void
-mid(uint oneIndex, uint twoIndex, QuadNodeMainData::Vertex* vertices)
-{
-    QuadNodeMainData::Vertex& one = vertices[oneIndex];
-    QuadNodeMainData::Vertex& two = vertices[twoIndex];
-    QuadNodeMainData::Vertex& res = vertices[(oneIndex + twoIndex) >> 1];
-    
-    res.position[0] = (one.position[0]  + two.position[0] ) * 0.5f;
-    res.position[1] = (one.position[1]  + two.position[1] ) * 0.5f;
-    res.position[2] = (one.position[2]  + two.position[2] ) * 0.5f;
-
-    double invLen   = 1.0 / sqrt(res.position[0]*res.position[0] +
-                                 res.position[1]*res.position[1] +
-                                 res.position[2]*res.position[2]);
-    res.position[0] *= invLen;
-    res.position[1] *= invLen;
-    res.position[2] *= invLen;
-}
-static void
-centroid(uint oneIndex, uint twoIndex, uint threeIndex, uint fourIndex,
-         QuadNodeMainData::Vertex* vertices)
-{
-    QuadNodeMainData::Vertex& one   = vertices[oneIndex];
-    QuadNodeMainData::Vertex& two   = vertices[twoIndex];
-    QuadNodeMainData::Vertex& three = vertices[threeIndex];
-    QuadNodeMainData::Vertex& four  = vertices[fourIndex];
-    QuadNodeMainData::Vertex& res   = vertices[(oneIndex + twoIndex +
-                                       threeIndex+fourIndex) >> 2];
-    
-    res.position[0] = (one.position[0]   + two.position[0] +
-                       three.position[0] + four.position[0]) * 0.25f;
-    res.position[1] = (one.position[1]   + two.position[1] +
-                       three.position[1] + four.position[1]) * 0.25f;
-    res.position[2] = (one.position[2]   + two.position[2] +
-                       three.position[2] + four.position[2]) * 0.25f;
-
-    double invLen   = 1.0 / sqrt(res.position[0]*res.position[0] +
-                                 res.position[1]*res.position[1] +
-                                 res.position[2]*res.position[2]);
-    res.position[0] *= invLen;
-    res.position[1] *= invLen;
-    res.position[2] *= invLen;
-}
-
-
-
 QuadTerrain::
 QuadTerrain(uint8 patch, const Scope& scope) :
     basePatchId(patch), baseScope(scope)
@@ -143,60 +87,20 @@ checkTree(glData, glData->root);
 void QuadTerrain::
 generateGeometry(const Scope& scope, QuadNodeMainData::Vertex* vertices)
 {
-    //set the initial four corners from the scope
-    static const uint cornerIndices[] = {
-        0,
-        TILE_RESOLUTION-1,
-        (TILE_RESOLUTION-1)*TILE_RESOLUTION,
-        (TILE_RESOLUTION-1)*TILE_RESOLUTION + (TILE_RESOLUTION-1)
-    };
-    for (uint i=0; i<4; ++i)
-    {
-        vertices[cornerIndices[i]] = QuadNodeMainData::Vertex(
-            QuadNodeMainData::Vertex::Position(scope.corners[i][0],
-                                               scope.corners[i][1],
-                                               scope.corners[i][2]));
-    }
-    
-    //refine the rest
-    static const uint endIndex  = TILE_RESOLUTION * TILE_RESOLUTION;
-    for (uint blockSize=TILE_RESOLUTION-1; blockSize>1; blockSize>>=1)
-    {
-        uint blockSizeY = blockSize * TILE_RESOLUTION;
-        for (uint startY=0, endY=blockSizeY; endY<endIndex;
-             startY+=blockSizeY, endY+=blockSizeY)
-        {
-            for (uint startX=0, endX=blockSize; endX<TILE_RESOLUTION;
-                 startX+=blockSize, endX+=blockSize)
-            {
-                //left mid point (only if on the edge where it has not already
-                //been computed by the neighbor)
-                if (startX == 0)
-                    mid(startY, endY, vertices);                    
-                //bottom mid point
-                mid(endY+startX, endY+endX, vertices);
-                //right mid point
-                mid(endY+endX, startY+endX, vertices);
-                //top mid point (only if on the edge where it has not already
-                //been computed by the neighbor)
-                if (startY == 0)
-                    mid(endX, startX, vertices);
-                //centroid
-                centroid(startY+startX, endY+startX, endY+endX, startY+endX,
-                         vertices);
-            }
-        }
-    }
+    scope.getRefinement(TILE_RESOLUTION, reinterpret_cast<float*>(vertices));
 }
 
 void QuadTerrain::
 generateHeight(QuadNodeMainData::Vertex* vertices, float* heights)
 {
+float ir = 1.0f / sqrt(vertices[0].position[0]*vertices[0].position[0] +
+                       vertices[0].position[1]*vertices[0].position[1] +
+                       vertices[0].position[2]*vertices[0].position[2]);
     uint numHeights = TILE_RESOLUTION*TILE_RESOLUTION;
     float* end = heights + numHeights;
     for (; heights<end; ++heights, ++vertices)
     {
-        float theta = acos(vertices->position[2]);
+        float theta = acos(vertices->position[2]*ir);
         float phi = atan2(vertices->position[1], vertices->position[0]);
         *heights = SimplexNoise1234::noise(theta, phi);
         *heights += 1.0f;
@@ -325,41 +229,11 @@ void QuadTerrain::
 computeChildScopes(Node* node)
 {
     assert(node->children!=NULL);
-    static const uint midIndices[8] = {
-        Scope::LOWER_LEFT,  Scope::LOWER_RIGHT,
-        Scope::UPPER_LEFT,  Scope::LOWER_LEFT,
-        Scope::UPPER_RIGHT, Scope::LOWER_RIGHT,
-        Scope::UPPER_LEFT,  Scope::UPPER_RIGHT
-    };
-    
-    const Scope::Vertex* corners = node->scope.corners;
-    
-    Scope::Vertex mids[4];
-    for (uint i=0, j=0; i<4; ++i)
-    {
-        const Scope::Vertex& c1 = corners[midIndices[j++]];
-        const Scope::Vertex& c2 = corners[midIndices[j++]];
-        mids[i] = Geometry::mid(c1, c2);
-        mids[i] = toSphere(mids[i]);
-    }
-    
-    Scope::Vertex center = Scope::Vertex(
-        (corners[0][0]+corners[1][0]+corners[2][0]+corners[3][0])/4.0,
-        (corners[0][1]+corners[1][1]+corners[2][1]+corners[3][1])/4.0,
-        (corners[0][2]+corners[1][2]+corners[2][2]+corners[3][2])/4.0);
-    center = toSphere(center);
-    
-    const Scope::Vertex* newCorners[16] = {
-        &corners[Scope::LOWER_LEFT], &mids[0], &mids[1], &center,
-        &mids[0], &corners[Scope::LOWER_RIGHT], &center, &mids[2],
-        &mids[1], &center, &corners[Scope::UPPER_LEFT], &mids[3],
-        &center, &mids[2], &mids[3], &corners[Scope::UPPER_RIGHT]
-    };
-    for (uint i=0, j=0; i<4; ++i)
-    {
-        for (uint k=0; k<4; ++k, ++j)
-            node->children[i].scope.corners[k] = (*newCorners[j]);
-    }
+    Scope childScopes[4];
+    node->scope.split(childScopes);
+
+    for (uint i=0; i<4; ++i)
+        node->children[i].scope = childScopes[i];
 }
 
 bool QuadTerrain::
@@ -579,8 +453,15 @@ drawNode(GlData* glData, Node* node)
 #endif
 
 #if 0
+glBindBuffer(GL_ARRAY_BUFFER, 0);
+glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+glVertexPointer(3, GL_FLOAT, 0, node->mainBuffer->getData().geometry);
+glDrawArrays(GL_POINTS, 0, TILE_RESOLUTION*TILE_RESOLUTION);
+#endif
+    
+#if 0
 glData->shader.disablePrograms();
-    Point* c = node->scope.corners;
+    Scope::Vertex* c = node->scope.corners;
     glDisable(GL_LIGHTING);
     glActiveTexture(GL_TEXTURE0);
     glDisable(GL_TEXTURE_2D);
@@ -600,9 +481,9 @@ glData->shader.disablePrograms();
 glData->shader.useProgram();
 #endif
 
-#if 0
+#if 1
 glData->shader.disablePrograms();
-    Point* c = node->scope.corners;
+    Scope::Vertex* c = node->scope.corners;
     glDisable(GL_LIGHTING);
     glActiveTexture(GL_TEXTURE0);
     glDisable(GL_TEXTURE_2D);

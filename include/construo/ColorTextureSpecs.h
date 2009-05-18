@@ -14,6 +14,15 @@ BEGIN_CRUSTA
 /// data type for values of a color texture stored in the preproccessed database
 typedef Geometry::Vector<uint8, 3> TextureColor;
 
+inline
+TextureColor operator*(const TextureColor& tc, double d) {
+    return TextureColor(tc[0]*d, tc[1]*d, tc[2]*d);
+}
+inline
+TextureColor operator*(double d, const TextureColor& tc) {
+    return d * tc;
+}
+
 template<>
 class TreeState<TextureColor>
 {

@@ -2,6 +2,10 @@
 
 #include <construo/QuadtreeFileHeaders.h>
 
+///\todo remove
+#include <construo/Visualizer.h>
+#include <iostream>
+
 BEGIN_CRUSTA
 
 template <typename PixelParam>
@@ -50,12 +54,37 @@ rotate(int p[2], uint o, const int rotations[4][2][2])
 
 template <typename PixelParam>
 bool TreeNode<PixelParam>::
-getKin(TreeNode*& kin, int offsets[2], bool loadMissing)
+getKin(TreeNode*& kin, int offsets[2], bool loadMissing, int down)
 {
     kin              = this;
-    int nodeSize     = 1;
+    int nodeSize     = pow(2, down);
     int nodeCoord[2] = {0, 0};
     int kinCoord[2]  = {offsets[0], offsets[1]};
+
+if (debugGetKin) {
+Visualizer::show();
+Visualizer::clear();
+Visualizer::Floats target;
+target.resize(3);
+Scope::Vertex v0(kin->scope.corners[1][0] - kin->scope.corners[0][0],
+                 kin->scope.corners[1][1] - kin->scope.corners[0][1],
+                 kin->scope.corners[1][2] - kin->scope.corners[0][2]);
+Scope::Vertex v1(kin->scope.corners[2][0] - kin->scope.corners[0][0],
+                 kin->scope.corners[2][1] - kin->scope.corners[0][1],
+                 kin->scope.corners[2][2] - kin->scope.corners[0][2]);
+double s = 1.0 / nodeSize;
+Scope::Vertex t(
+kin->scope.corners[0][0] + s*(0.5+offsets[0])*v0[0] + s*(0.5+offsets[1])*v1[0],
+kin->scope.corners[0][1] + s*(0.5+offsets[0])*v0[1] + s*(0.5+offsets[1])*v1[1],
+kin->scope.corners[0][2] + s*(0.5+offsets[0])*v0[2] + s*(0.5+offsets[1])*v1[2]);
+double norm = 1.0 / sqrt(t[0]*t[0] + t[1]*t[1] + t[2]*t[2]);
+t[0] *= norm; t[1] *= norm; t[2] *= norm;
+Point tt(atan2(t[1], t[0]), acos(t[2]));
+target[0] = tt[0];
+target[1] = 0.0;
+target[2] = tt[1];
+Visualizer::addPrimitive(GL_POINTS, target);
+} //DEBUG_GETKIN
 
 //- walk up the tree until a parent node containing the requested location
     /* the kinCoord are updated to always be relative to the lower-left corner
@@ -63,18 +92,27 @@ getKin(TreeNode*& kin, int offsets[2], bool loadMissing)
     while (kinCoord[0]<0 || kinCoord[0]>=nodeSize ||
            kinCoord[1]<0 || kinCoord[1]>=nodeSize)
     {
+if (debugGetKin) {
+Visualizer::addPrimitive(GL_LINES, kin->coverage);
+Visualizer::show();
+} //DEBUG_GETKIN
         //in case we have explicit neighgors we can move sideways directly
         if (kin->isExplicitNeighborNode)
         {
+            ExplicitNeighborNode<PixelParam>* self =
+                reinterpret_cast<ExplicitNeighborNode<PixelParam>*>(kin);
             //neighbor id depending on horizontal/vertical and neg/pos direction
             static const uint neighborIds[2][2] = { {1, 3}, {2, 0} };
 
             //determine the most important direction and corresponding neighbor
             uint horizontal = abs(kinCoord[0])>abs(kinCoord[1]) ? 0 : 1;
+            if (kinCoord[horizontal]>=0 && kinCoord[horizontal]<nodeSize)
+                horizontal = 1 - horizontal;
             uint direction  = kinCoord[horizontal]<0 ? 0 : 1;
             uint neighbor   = neighborIds[horizontal][direction];
 
-            kin = neighbors[neighbor];
+            kin = self->neighbors[neighbor];
+            assert(kin != NULL);
 /**\todo I could update the code here to account for a situation that won't
          occur where the neighbor doesn't exist and potentially the other way
          (e.g. top then left instead of left then top) might succeed */
@@ -83,28 +121,32 @@ getKin(TreeNode*& kin, int offsets[2], bool loadMissing)
             static const int rotations[4][2][2] = {
                 {{ 1, 0}, {0, 1}},   {{0, 1}, {-1, 0}},
                 {{-1, 0}, {0,-1}},   {{0,-1}, { 1, 0}},
-            }
+            };
+
+            uint orientation = self->orientations[neighbor];
             //undo the rotation of the kinCoord
-            rotate(kinCoord, orientations[neighbor], rotations);
+            rotate(kinCoord, orientation, rotations);
 
             //determine the shift of the new origin and apply it
-            //move to node center
-            int shift[2] = {-1, -1};
-            //undo the rotation on the origin
-            rotate(shift, orientations[neighbor], rotations);
-            /* move back to "old" origin (lower-left). Shift is the unrotated
-               origin for the given orientation. */
-            translate(shift, 1, 1);
-            /* we still need to move that origin to the neighbor. Start with
-               a shift upwards */
-            int dir[2] = {0, 1};
-            //unrotate it to the proper direction
-            rotate(dir, orientations[neighbor], rotations);
+            int originShifts[4][2] = {
+                {0,0}, {nodeSize-1,0}, {nodeSize-1,nodeSize-1}, {0,nodeSize-1}
+            };
+            int shift[2] = {-originShifts[orientation][0],
+                            -originShifts[orientation][1] };
+
+            //determine the shift for moving into the neighbor
+            int neighborShifts[4][2] = {
+                {0,nodeSize}, {-nodeSize,0}, {0,-nodeSize}, {nodeSize,0}
+            };
             //moving to the neighbor is shifting in dir for 2 cells
-            mult(dir, 2);
+            int dir[2] = {-neighborShifts[neighbor][0],
+                          -neighborShifts[neighbor][1] };
             /* composite the shift to the neighbor with the one due to origin
                rotation */
             translate(shift, dir);
+            //unrotate the shift to the orientated neighbor
+            rotate(shift, orientation, rotations);
+
             //finally apply the shift to the kinCoords
             translate(kinCoord, shift);
         }
@@ -119,8 +161,8 @@ getKin(TreeNode*& kin, int offsets[2], bool loadMissing)
             }
 
             //adjust the coordinates given the child index inside its parent
-            nodeCoord[0] += kin->treeIndex.child&0x01 ? nodeSize : 0;
-            nodeCoord[1] += kin->treeIndex.child&0x10 ? nodeSize : 0;
+            nodeCoord[0] += kin->treeIndex.child&0x1 ? nodeSize : 0;
+            nodeCoord[1] += kin->treeIndex.child&0x2 ? nodeSize : 0;
             kinCoord[0]   = nodeCoord[0] + offsets[0];
             kinCoord[1]   = nodeCoord[1] + offsets[1];
 
@@ -131,6 +173,10 @@ getKin(TreeNode*& kin, int offsets[2], bool loadMissing)
     }
 
 //- walk down the tree honing in on the requested kin
+if (debugGetKin) {
+Visualizer::addPrimitive(GL_LINES, kin->coverage);
+Visualizer::show();
+} //DEBUG_GETKIN
     //use offsets to store the kinCoords now so that these can be returned
     offsets[0] = kinCoord[0];
     offsets[1] = kinCoord[1];
@@ -149,7 +195,7 @@ getKin(TreeNode*& kin, int offsets[2], bool loadMissing)
         uint childIndex = 0x0;
         for (uint i=0; i<2; ++i)
         {
-            if (offsets[1] >= nodeSize)
+            if (offsets[i] >= nodeSize)
             {
                 childIndex |= (1<<i);
                 offsets[i] -= nodeSize;
@@ -157,113 +203,13 @@ getKin(TreeNode*& kin, int offsets[2], bool loadMissing)
         }
         //move on to the child node
         kin = &kin->children[childIndex];
+if (debugGetKin) {
+Visualizer::addPrimitive(GL_LINES, kin->coverage);
+Visualizer::show();
+} //DEBUG_GETKIN
     }
 
     return true;
-}
-
-template <typename PixelParam>
-bool TreeNode<PixelParam>::
-getNeighbor(uint neighborId, TreeNode*& neighbor, uint& orientation,
-            bool loadMissing)
-{
-    /* initialize the orientation to TOP since we might not call getNeighbor
-       recursively. This is ok because the orientation can only be changed if
-       we move between the base patches, which is possible once. No further
-       recursive calls are made at that point, such that we've already passed
-       this assignment in all recursive calls */
-    orientation = TOP;
-
-    /* if we are root and we're not an ExplicitNeighborNode then we can't have
-       a neighbor */
-    if (parent == NULL)
-    {
-        neighbor = NULL;
-        return false;
-    }
-
-//- siblings are the easy case as we can get them directly from the parent
-    static const uint INVALID = ~0x0;
-    /* which sibling to pick is dependent on which child this node is and the
-       requested neighbor */
-    static const uint sibling[4][8] = {
-        {      2,INVALID,INVALID,      1,INVALID,INVALID,INVALID,      3},//BL
-        {      3,      0,INVALID,INVALID,      2,INVALID,INVALID,INVALID},//BR
-        {INVALID,INVALID,      0,      3,INVALID,INVALID,      1,INVALID},//TL
-        {INVALID,      2,      1,INVALID,INVALID,      0,INVALID,INVALID} //TR
-    };
-
-    uint siblingIndex = sibling[treeIndex.child][neighborId];
-    if (siblingIndex != INVALID)
-    {
-        assert(parent->children!=NULL && "parent node not linked to child");
-        neighbor = parent->children[siblingIndex];
-        return neighbor!=NULL ? true : false;
-    }
-
-//- recurse to a child of the parent's neighbor to determine the neighbor
-    //get the parent's neighbor on the same side as our request
-    TreeNode* parentNeighbor = NULL;
-    if (!parent->getNeighbor(neighborId, parentNeighbor, orientation,
-                             loadMissing))
-    {
-        neighbor = parentNeighbor;
-        return false;
-    }
-    //make sure the children we want to access have been loaded from file
-    if (parentNeighbor->children==NULL && loadMissing)
-        parentNeighbor->loadMissingChildren();
-    //if children still aren't available then we are done here
-    if (parentNeighbor->children == NULL)
-    {
-        neighbor = parentNeighbor;
-        return false;
-    }
-
-    /* which child to pick is dependent on which child this node is, the
-       requested neighbor and the orientation of the parent's neighbor.
-       INVALID denotes cases that shouldn't occur as they would be sibling
-       nodes and processed already above */
-    static const uint neighborChild[4][4][4] = {
-        //child 0 (lower-left)
-        {
-            //TOP      LEFT    BOTTOM    RIGHT    //orientation
-            {INVALID, INVALID, INVALID, INVALID}, //request TOP
-            {      1,       0,       2,       3}, //request LEFT
-            {      2,       3,       1,       0}, //request BOTTOM
-            {INVALID, INVALID, INVALID, INVALID}  //request RIGHT
-        },
-        //child 1 (lower-right)
-        {
-            //TOP      LEFT    BOTTOM    RIGHT    //orientation
-            {INVALID, INVALID, INVALID, INVALID}, //request TOP
-            {INVALID, INVALID, INVALID, INVALID}, //request LEFT
-            {      3,       1,       0,       2}, //request BOTTOM
-            {      0,       2,       3,       1}  //request RIGHT
-        },
-        //child 2 (uppper-left)
-        {
-            //TOP      LEFT    BOTTOM    RIGHT    //orientation
-            {      0,       2,       3,       1}, //request TOP
-            {      3,       1,       0,       2}, //request LEFT
-            {INVALID, INVALID, INVALID, INVALID}, //request BOTTOM
-            {INVALID, INVALID, INVALID, INVALID}  //request RIGHT
-        },
-        //child 3 (upper-right)
-        {
-            //TOP      LEFT    BOTTOM    RIGHT    //orientation
-            {      1,       0,       2,       3}, //request TOP
-            {INVALID, INVALID, INVALID, INVALID}, //request LEFT
-            {INVALID, INVALID, INVALID, INVALID}, //request BOTTOM
-            {      2,       3,       1,       0}  //request RIGHT
-        }
-    };
-
-    //determine the proper child that is the requested neighbor and return
-    uint childIndex = neighborChild[treeIndex.child][neighborId][orientation];
-    assert(childIndex != INVALID && "sibling request not caught");
-    neighbor = parentNeighbor->children[childIndex];
-    return neighbor!=NULL ? true : false;
 }
 
 template <typename PixelParam>
@@ -283,7 +229,8 @@ createChildren()
         child.treeState = treeState;
         child.treeIndex = treeIndex.down(i);
         child.scope     = childScopes[i];
-        coverage        = SphereCoverage(child.scope);
+///\todo parametrize the TreeNode by the coverage type?
+        child.coverage  = StaticSphereCoverage(2, child.scope);
 
         child.computeResolution();
     }
@@ -293,10 +240,13 @@ template <typename PixelParam>
 void TreeNode<PixelParam>::
 loadMissingChildren()
 {
-    //read the children's tile indices from the file
+    /* read the children's tile indices from the file. Only allocate the
+       children if valid counterparts exist in the file */
     assert(treeState!=NULL && treeState->file!=NULL && "uninitialized state");
-    State::File::TileIndex childIndices[4];
-    if (!readTile(tileIndex, childIndices))
+    typename State::File::TileIndex childIndices[4];
+    if (!treeState->file->readTile(tileIndex, childIndices))
+        return;
+    if (childIndices[0] == State::File::INVALID_TILEINDEX)
         return;
 
     //create the new in-memory representations
@@ -347,11 +297,11 @@ template <typename PixelParam>
 ExplicitNeighborNode<PixelParam>::
 ExplicitNeighborNode()
 {
-    isExplicitNeighborNode = true;
+    TreeNode<PixelParam>::isExplicitNeighborNode = true;
     for (uint i=0; i<4; ++i)
     {
         neighbors[i]    = NULL;
-        orientations[i] = TreeNode<PixelParam>::TOP;
+        orientations[i] = 0; //corresponds to facing up
     }
 }
 
@@ -366,52 +316,11 @@ setNeighbors(ExplicitNeighborNode* nodes[4], const uint orients[4])
     }
 }
 
-template <typename PixelParam>
-bool ExplicitNeighborNode<PixelParam>::
-getNeighbor(uint neighborId, TreeNode<PixelParam>*& neighbor, uint& orientation,
-            bool loadMissing)
-{
-    assert(neighborId>=TOP && neighborId<=TOP_RIGHT &&"neighbor out of bounds");
-
-    if (neighborId <= RIGHT)
-    {
-        neighbor    = neighbors[neighborId];
-        orientation = orientations[neighborId];
-        return neighbor!=NULL ? true : false;
-    }
-    else
-    {
-        neighborId -= TOP_LEFT;
-        static const uint diagonals[4][2] = {
-            {TOP, LEFT}, {BOTTOM, LEFT}, {BOTTOM, RIGHT}, {TOP, RIGHT}
-        };
-        for (uint i=0; i<2; ++i)
-        {
-            uint n = diagonals[neighborId][i];
-            if (neighbors[n] != NULL)
-            {
-                uint an = diagonals[neighborId][1-i]  + 4 - orientations[n];
-                if (neighbors[n]->getNeighbor(an, neighbor, orientation,
-                                               loadMissing))
-                {
-                    orientation += 4 - orientations[n];
-                    return true;
-                }
-                else
-                    return false;
-            }
-        }
-        neighbor = NULL;
-        return false;
-    }
-}
-
-
 template <typename PixelParam, typename PolyhedronParam>
 Spheroid<PixelParam, PolyhedronParam>::
 Spheroid(const std::string& baseName, const uint tileResolution[2])
 {
-    PolyhedronParam polyhedron;
+    PolyhedronParam polyhedron(SPHEROID_RADIUS);
     uint numPatches = polyhedron.getNumPatches();
 
     baseNodes.resize(numPatches);
@@ -450,7 +359,8 @@ Spheroid(const std::string& baseName, const uint tileResolution[2])
     {
         BaseNode* node = &baseNodes[i];
         node->scope    = polyhedron.getScope(i);
-        node->coverage = SphereCoverage(node->scope);
+///\todo parametrize the Spheroid by the sphere coverage. use Static for now.
+        node->coverage = StaticSphereCoverage(2, node->scope);
         node->computeResolution();
         
         polyhedron.getConnectivity(i, connectivity);
@@ -461,6 +371,51 @@ Spheroid(const std::string& baseName, const uint tileResolution[2])
             node->setNeighbors(neighbors, orientations);
         }
     }
+
+///\todo remove
+#if 0
+int numVerts = numPatches*16*2*3;
+float* verts = new float[numVerts];
+float* curVert = verts;
+#if 1
+    for (uint i=0; i<numPatches; ++i)
+    {
+        const SphereCoverage::Points& scv = baseNodes[i].coverage.getVertices();
+        uint num = (uint)scv.size();
+        for (uint j=0; j<num; ++j)
+        {
+            for (uint k=0; k<2; ++k)
+            {
+                *curVert = scv[(j+k)%num][0]; ++curVert;
+                *curVert =               0.0; ++curVert;
+                *curVert = scv[(j+k)%num][1]; ++curVert;
+            }
+        }
+        Visualizer::show(GL_POINTS, (i+1)*16*2*3, verts);
+    }
+#else
+for (uint i=0; i<numPatches; ++i)
+{
+    for (uint k=0; k<3; ++k, ++curVert)
+        *curVert = baseNodes[i].scope.corners[0][k];
+    for (uint k=0; k<3; ++k, ++curVert)
+        *curVert = baseNodes[i].scope.corners[1][k];
+    for (uint k=0; k<3; ++k, ++curVert)
+        *curVert = baseNodes[i].scope.corners[1][k];
+    for (uint k=0; k<3; ++k, ++curVert)
+        *curVert = baseNodes[i].scope.corners[3][k];
+    for (uint k=0; k<3; ++k, ++curVert)
+        *curVert = baseNodes[i].scope.corners[3][k];
+    for (uint k=0; k<3; ++k, ++curVert)
+        *curVert = baseNodes[i].scope.corners[2][k];
+    for (uint k=0; k<3; ++k, ++curVert)
+        *curVert = baseNodes[i].scope.corners[2][k];
+    for (uint k=0; k<3; ++k, ++curVert)
+        *curVert = baseNodes[i].scope.corners[0][k];
+}
+#endif
+Visualizer::show(GL_LINES, numVerts, verts);
+#endif
 }
 
 template <typename PixelParam, typename PolyhedronParam>

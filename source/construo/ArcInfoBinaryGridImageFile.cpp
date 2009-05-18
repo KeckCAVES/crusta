@@ -46,7 +46,7 @@ std::string getImageFileName(const char* directoryName)
 ArcInfoBinaryGridImageFile::
 ArcInfoBinaryGridImageFile(const char* directoryName) :
 	file(getImageFileName(directoryName).c_str(), "rb",
-         Misc::LargeFile::BigEndian), tileOffsets(0), tileSizes(0)
+         Misc::LargeFile::LittleEndian), tileOffsets(0), tileSizes(0)
 {
 	int pixelType;
 	double pixelSize[2];
@@ -57,7 +57,7 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
 	/* Read the image's header file: */
 	std::string headerFileName(directoryName);
 	headerFileName.append("/hdr.adf");
-	Misc::File headerFile(headerFileName.c_str(),"rb",Misc::File::BigEndian);
+	Misc::File headerFile(headerFileName.c_str(),"rb",Misc::File::LittleEndian);
 	
 	unsigned int magic[2];
 	headerFile.read(magic,2);
@@ -94,7 +94,7 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
 	std::string boundaryFileName(directoryName);
 	boundaryFileName.append("/dblbnd.adf");
 	Misc::File boundaryFile(boundaryFileName.c_str(), "rb",
-                            Misc::File::BigEndian);
+                            Misc::File::LittleEndian);
 	boundaryFile.read(boundary,4);
 	std::cout << std::endl << std::setprecision(8) << pixelSize[0] << ", "
               << std::setprecision(8) << pixelSize[1] << std::endl;
@@ -180,7 +180,7 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
 	/* Read the tile directory file: */
 	std::string tileDirectoryFileName(directoryName);
 	tileDirectoryFileName.append("/w001001x.adf");
-	Misc::File tileDirectoryFile(tileDirectoryFileName.c_str(),"rb",Misc::File::BigEndian);
+	Misc::File tileDirectoryFile(tileDirectoryFileName.c_str(),"rb",Misc::File::LittleEndian);
 	
 	unsigned int magic[2];
 	tileDirectoryFile.read(magic,2);
@@ -222,6 +222,28 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
                           "contain a valid Arc/Info binary grid file",
                           directoryName);
     }
+///\todo remove
+#if 0
+Pixel* all = new Pixel[size[0]*size[1]];
+uint allOrig[2] = { 0, 0 };
+readRectangle(allOrig, size, all);
+
+Pixel minVal = HUGE_VAL;
+Pixel maxVal = -HUGE_VAL;
+for (Pixel* p=all; p<all+size[0]*size[1]; ++p)
+{
+    minVal = std::min(minVal, *p);
+    maxVal = std::max(maxVal, *p);
+}
+Misc::File f((directoryName+std::string(".raw")).c_str(), "wb",
+             Misc::File::LittleEndian);
+for (Pixel* p=all; p<all+size[0]*size[1]; ++p)
+{
+    uint16 out = (uint16)(((*p-minVal)/(maxVal-minVal)) * 65535);
+    f.write(out);
+}
+#endif //0
+
 }
 
 ArcInfoBinaryGridImageFile::

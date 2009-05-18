@@ -4,6 +4,9 @@
 #include <construo/ImageFileLoader.h>
 #include <construo/ImagePatch.h>
 
+///\todo remove
+#include <construo/Visualizer.h>
+
 BEGIN_CRUSTA
 
 template <typename PixelParam, typename PolyhedronParam>
@@ -35,8 +38,8 @@ Builder<PixelParam, PolyhedronParam>::
 ~Builder()
 {
     delete globe;
-    for (/*typename Builder<PixelParam, PolyhedronParam>::*/
-         PatchPtrs::iterator it=patches.begin(); it!=patches.end(); ++it)
+    for (typename PatchPtrs::iterator it=patches.begin(); it!=patches.end();
+         ++it)
     {
         delete *it;
     }
@@ -58,17 +61,19 @@ refine(Node* node)
     if (node->children == NULL)
     {
         node->createChildren();
-        Node::State::File::TileIndex childIndices[4];
-        for (uint =0; <4; ++)
+        typename Node::State::File::TileIndex childIndices[4];
+        for (uint i=0; i<4; ++i)
         {
-            Node* child      = &node->children[];
+            Node* child      = &node->children[i];
             child->tileIndex = child->treeState->file->appendTile();
             assert(child->tileIndex!=Node::State::File::INVALID_TILEINDEX);
 ///\todo should I dump default-value-initialized to file here?
-            childIndices[]  = child->tileIndex;
+            childIndices[i]  = child->tileIndex;
         }
         //link the parent with the new children in the file
         node->treeState->file->writeTile(node->tileIndex, childIndices);
+///\todo this is debugging code to check tree consistency
+//verifyQuadtreeFile(node);
     }
 }
 
@@ -76,7 +81,6 @@ template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
 flagAncestorsForUpdate(Node* node)
 {
-    node = node->parent;
     while (node != NULL)
     {
         node->mustBeUpdated = true;
@@ -90,7 +94,7 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
 {
     //convert the node's bounding box to the image space
     Box nodeImgBox = imgPatch->transform->worldToImage(
-        node->coverage->getBoundingBox());
+        node->coverage.getBoundingBox());
     //use the box to load an appropriate rectangle from the image file
     uint rectOrigin[2];
     uint rectSize[2];
@@ -98,16 +102,35 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
     {
 ///\todo abstract the sampler
         //assume bilinear interpolation here
-        rectOrigin[i] = static_cast<uint>(Math::floor(nodeImgBox.getMin(i)));
-        rectSize[i] = static_cast<uint>(Math::ceil(nodeImgBox.getMax(i))) + 1 -
-                                                   rectOrigin[i];
+        rectOrigin[i] = static_cast<uint>(Math::floor(nodeImgBox.min[i]));
+        rectSize[i]   = static_cast<uint>(Math::ceil(nodeImgBox.max[i])) + 1 -
+                                                     rectOrigin[i];
     }
     PixelParam* rectBuffer = new PixelParam[rectSize[0] * rectSize[1]];
     imgPatch->image->readRectangle(rectOrigin, rectSize, rectBuffer);
 
     //determine the sample positions for the scope
 ///\todo enhance get Refinement such that is can produce non-uniform samples
-    node->scope.getRefinement<Scope::Scalar>(tileSize[0], scopeBuf);
+    node->scope.getRefinement(tileSize[0], scopeBuf);
+///\todo remove
+#if 0
+{
+    Visualizer::Floats scopeRef;
+    uint numScopeSamples = tileSize[0]*tileSize[1]*3;
+    scopeRef.resize(numScopeSamples);
+    float* out = &scopeRef[0];
+    for (double* in=&scopeBuf[0]; in<&scopeBuf[0]+numScopeSamples; in+=3,out+=3)
+    {
+        Scope::Scalar len = sqrt(in[0]*in[0] + in[1]*in[1] + in[2]*in[2]);
+        Point p(atan2(in[1], in[0]), acos(in[2]/len));
+        out[0] = p[0];
+        out[1] =  0.0;
+        out[2] = p[1];
+    }
+    Visualizer::addPrimitive(GL_POINTS, scopeRef);
+    Visualizer::show();
+}
+#endif
     //prepare the node's data buffer
     node->data = nodeDataBuf;
     node->treeState->file->readTile(node->tileIndex, node->data);
@@ -122,7 +145,7 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
         Scope::Scalar len =
             sqrt(curPtr[0]*curPtr[0]+curPtr[1]*curPtr[1]+curPtr[2]*curPtr[2]);
         Point p(atan2(curPtr[1], curPtr[0]), acos(curPtr[2]/len));
-        Point p = imgPatch->transform->worldToImage(p);
+        p = imgPatch->transform->worldToImage(p);
         
         /* Check if the point is inside the image patch's coverage region: */
         if(overlap==SphereCoverage::ISCONTAINED ||
@@ -138,7 +161,7 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
                 ip[i]         = static_cast<int>(pFloor) - rectOrigin[i];
             }
             PixelParam* basePtr = rectBuffer + (ip[1]*rectSize[0] + ip[0]);
-            PixelParam one = (1.0-d[0])*basePtr[0] + d[0]*basePtr[1];
+            PixelParam one = (1.0-d[0])*basePtr[0] + d[0]*(basePtr[1]);
             PixelParam two = (1.0-d[0])*basePtr[rectSize[0]] +
                              d[0]*basePtr[rectSize[0]+1];
             *dataPtr = (1.0-d[1])*one + d[1]*two;
@@ -149,82 +172,100 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
     delete[] rectBuffer;
 
     //commit the data to file
-    QuadtreeTileHeader header;
+    QuadtreeTileHeader<PixelParam> header;
     header.reset(node);
     node->treeState->file->writeTile(node->tileIndex, header, node->data);
 
     node->data = NULL;
     
-    //make sure that the parent dependent on this new data is also updated
-    flagAncestorsForUpdate(node);
-    //we musn't forget to update all the adjacent non-sibling nodes either
-    int dirs[2];
-    dirs[0] = node->treeIndex.child&0x01 ? 1 : -1;
-    dirs[1] = node->treeIndex.child&0x10 ? 1 : -1;
-
-    int offsets[2];
-    Node* kin;
-    //flag the vertical edge with the corner and the horizontal without it
-    for (int s= 0; s<=1; ++s)
+    static const int offsets[4][3][2] = {
+        { {-1, 0}, {-1,-1}, { 0,-1} }, { { 0,-1}, { 1,-1}, { 1, 0} },
+        { {-1, 0}, {-1, 1}, { 0, 1} }, { { 0, 1}, { 1, 1}, { 1, 0} }
+    };
+    if (node->parent != NULL)
     {
-        for (int i=s-1; i<=1; ++i)
+        //make sure that the parent dependent on this new data is also updated
+        flagAncestorsForUpdate(node->parent);
+        
+        //we musn't forget to update all the adjacent non-sibling nodes either
+        int off[2];
+        Node* kin;
+        for (uint i=0; i<3; ++i)
         {
-            offsets[s]   = dirs[s];
-            offsets[1-s] = i;
-            node->getKin(kin, offsets)
+            off[0] = offsets[node->treeIndex.child][i][0];
+            off[1] = offsets[node->treeIndex.child][i][1];
+            node->parent->getKin(kin, off);
             if (kin != NULL)
                 flagAncestorsForUpdate(kin);
         }
     }
+///\todo this is debugging code to check tree consistency
+//verifyQuadtreeFile(node);
 }
 
 template <typename PixelParam, typename PolyhedronParam>
-uint Builder<PixelParam, PolyhedronParam>::
+int Builder<PixelParam, PolyhedronParam>::
 updateFiner(Node* node, Patch* imgPatch, Point::Scalar imgResolution)
 {
+///\todo remove
+//Visualizer::addPrimitive(GL_LINES, node->coverage);
+//Visualizer::peek();
+
     //check for an overlap
-    uint overlap = node->coverage.overlaps(imgPatch->sphereCoverage);
+    uint overlap = node->coverage.overlaps(*(imgPatch->sphereCoverage));
     if (overlap == SphereCoverage::SEPARATE)
         return 0;
 
     //recurse to children if the resolution of the node is too coarse
     if (node->resolution > imgResolution)
     {
-        uint depth = 0;
+        int depth = 0;
         refine(node);
-        for (uint =0; <4; ++)
+        for (uint i=0; i<4; ++i)
         {
-            depth = std::max(updateFiner(&node->children[], imgPatch,
+            depth = std::max(updateFiner(&node->children[i], imgPatch,
                                          imgResolution), depth);
         }
         return depth;
     }
 
     //this node has the appropriate resolution
+//Visualizer::show();
     sourceFinest(node, imgPatch, overlap);
     return node->treeIndex.level;
 }
     
 template <typename PixelParam, typename PolyhedronParam>
-uint Builder<PixelParam, PolyhedronParam>::
+int Builder<PixelParam, PolyhedronParam>::
 updateFinestLevels()
 {
-    uint depth = 0;
+    int depth = 0;
     //iterate over all the image patches to source
-    for (PatchPtrs::iterator pIt=patch.begin(); pIt!=patches.end(); ++pIt)
+    for (typename PatchPtrs::iterator pIt=patches.begin(); pIt!=patches.end();
+         ++pIt)
     {
+///\todo remove
+//Visualizer::clear();
+//Visualizer::addPrimitive(GL_LINES, *((*pIt)->sphereCoverage));
+
         //grab the smallest resolution from the image
         Point::Scalar imgResolution;
         {
-            Point::Scalar* resolutions = (*pIt)->transform->getScale();
-            imgResolution = std::min(resolutions[0], resolutions[1]);
+            const Point::Scalar* resolutions = (*pIt)->transform->getScale();
+/**\todo the scales are used in the transform to flip/flop the image so they may
+         be negative. Need to have a proper image sample resolution and not
+         misuse the transform scale */
+            imgResolution = std::min(fabs(resolutions[0]),fabs(resolutions[1]));
         }
 
         //iterate over all the spheroid's base patches to determine overlap
-        for (Globe::BaseNodes::iterator bIt=baseNodes.begin();
-             bIt!=baseNodes.end(); ++bIt)
+        for (typename Globe::BaseNodes::iterator bIt=globe->baseNodes.begin();
+             bIt!=globe->baseNodes.end(); ++bIt)
         {
-            depth = std::max(updateFiner(*bIt, *pIt, imgResolution), depth);
+            depth = std::max(updateFiner(&(*bIt), *pIt, imgResolution), depth);
+///\todo this is debugging code to check tree consistency
+//verifyQuadtreeFile(&(*bIt));
+//Visualizer::show();
         }
     }
 
@@ -236,7 +277,6 @@ void Builder<PixelParam, PolyhedronParam>::
 prepareSubsamplingDomain(Node* node)
 {
     Node* kin     = NULL;
-    Node* blChild = &node->children[0];
 
     PixelParam* domain = domainBuf + (tileSize[1]-1)*domainSize[0] +
                          tileSize[0]-1;
@@ -250,15 +290,16 @@ prepareSubsamplingDomain(Node* node)
         //- retrieve the kin
             nodeOff[0] = domainOff[0];
             nodeOff[1] = domainOff[1];
-            blChild->getKin(kin, nodeOff);
+            node->getKin(kin, nodeOff, true, 1);
 
         //- retrieve data as appropriate
             //default to blank data
             const PixelParam* data = node->treeState->file->getBlank();
             
             //read the data from file
-            if (kin!=NULL && kin->tileIndex!=Node::State::File::INVALID_INDEX)
+            if (kin != NULL)
             {
+                assert(kin->tileIndex!=Node::State::File::INVALID_TILEINDEX);
                 if (nodeOff[0]==0 && nodeOff[1]==0)
                 {
                     //we're grabbing data from a same leveled kin
@@ -272,8 +313,8 @@ prepareSubsamplingDomain(Node* node)
                                                    nodeDataSampleBuf);
                     //determine the resample step size
                     double scale = 1;
-                    for (uint i=blChild.treeIndex.level; i<kin.treeIndex.level;
-                         ++i)
+                    for (uint i=node->treeIndex.level-1;
+                         i<kin->treeIndex.level; ++i)
                     {
                         scale *= 0.5;
                     }
@@ -341,17 +382,19 @@ prepareSubsamplingDomain(Node* node)
 
 template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
-updateCoarser(Node* node, uint level)
+updateCoarser(Node* node, int level)
 {
+//Visualizer::addPrimitive(GL_LINES, node->coverage);
+//Visualizer::peek();
     //the nodes on the way must be flagged for update
     if (!node->mustBeUpdated)
         return;
 
 //- recurse until we've hit the requested level
-    if (node->treeIndex.level!=level && node->children!=NULL)
+    if (node->treeIndex.level!=static_cast<uint>(level) && node->children!=NULL)
     {
         for (uint i=0; i<4; ++i)
-            updateCoarser(node->children[i], level);
+            updateCoarser(&(node->children[i]), level);
         return;
     }
 
@@ -362,35 +405,44 @@ updateCoarser(Node* node, uint level)
        the domain */
     PixelParam* data = nodeDataBuf;
     PixelParam* domain;
-    for (domain = domainBuf + (tileSize[1]-1) * domainSize[0] + (tileSize[0]-1);
-         domain < domainBuf + 2 * (tileSize[1]-1) * domainSize[0] + tileSize[0];
-         domain+= domainSize[0] - tileSize[0])
+    for (domain = domainBuf +   (tileSize[1]-1)*domainSize[0]+  (tileSize[0]-1);
+         domain<= domainBuf + 3*(tileSize[1]-1)*domainSize[0]+3*(tileSize[0]-1);
+         domain+= 2*domainSize[0] - (2*(tileSize[0]-1) + 1))
     {
-        for (uint i=0; i<tileSize[0]; ++i, ++domain, ++data)
-            *data = subsampleFilter.lookup(domain, domainSize[0]);
+        for (uint i=0; i<tileSize[0]; ++i, domain+=2, ++data)
+            *data = subsamplingFilter.lookup(domain, domainSize[0]);
     }
 
     //commit the data to file
     node->data = nodeDataBuf;
 
-    QuadtreeTileHeader header;
+    QuadtreeTileHeader<PixelParam> header;
     header.reset(node);
     node->treeState->file->writeTile(node->tileIndex, header, node->data);
     
     node->data = NULL;
+///\todo this is debugging code to check tree consistency
+//verifyQuadtreeFile(node);
 }
 
 template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
-updateCoarserLevels(uint depth)
+updateCoarserLevels(int depth)
 {
-    for (uint level=depth-1; level>=0; --level)
+    if (depth==0)
+        return;
+
+    for (int level=depth-1; level>=0; --level)
     {
-        for (Globe::BaseNodes::iterator it=baseNodes.begin();
-             it!=baseNodes.end(); ++it)
+        for (typename Globe::BaseNodes::iterator it=globe->baseNodes.begin();
+             it!=globe->baseNodes.end(); ++it)
         {
+//Visualizer::clear();
+//Visualizer::addPrimitive(GL_LINES, it->coverage);
+//Visualizer::show();
             //traverse the tree and update the next level
-            updateCoarser(*it, level);
+            updateCoarser(&(*it), level);
+//verifyQuadtreeFile(&(*it));
         }
     }
 }
@@ -409,8 +461,41 @@ template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
 update()
 {
-    updateFinestLevels();
-    updateCoarserLevels();
+    int depth = updateFinestLevels();
+    updateCoarserLevels(depth);
+}
+
+///\todo remove
+#define VERIFYQUADTREEFILE 1
+template <typename PixelParam, typename PolyhedronParam>
+void Builder<PixelParam, PolyhedronParam>::
+verifyQuadtreeNode(Node* node)
+{
+    typename Node::State::File::TileIndex childIndices[4];
+    assert(node->treeState->file->readTile(node->tileIndex, childIndices));
+
+    if (node->children == NULL)
+    {
+        for (uint i=0; i<4; ++i)
+            assert(childIndices[i] == Node::State::File::INVALID_TILEINDEX);
+        return;
+    }
+    for (uint i=0; i<4; ++i)
+        assert(childIndices[i] == node->children[i].tileIndex);
+    for (uint i=0; i<4; ++i)
+        verifyQuadtreeNode(&node->children[i]);
+}
+template <typename PixelParam, typename PolyhedronParam>
+void Builder<PixelParam, PolyhedronParam>::
+verifyQuadtreeFile(Node* node)
+{
+#if VERIFYQUADTREEFILE
+    //go up to parent
+    while (node->parent != NULL)
+        node = node->parent;
+    
+    return verifyQuadtreeNode(node);
+#endif //VERIFYQUADTREEFILE
 }
 
 END_CRUSTA

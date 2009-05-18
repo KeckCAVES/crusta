@@ -1,6 +1,8 @@
 #ifndef _Scope_H_
 #define _Scope_H_
 
+#include <vector>
+
 #include <Geometry/Point.h>
 #include <crusta/basics.h>
 
@@ -28,13 +30,13 @@ public:
     Scope(const Vertex& p1,const Vertex& p2,const Vertex& p3,const Vertex& p4);
 
     /** retrieve the radius of the sphere the scope is associated with */
-    Scalar getRadius();
+    Scalar getRadius() const;
     /** retrieve a refinement of the scope for given edge resolution */
     template <typename ScalarParam>
-    void getRefinement(uint resolution, ScalarParam* vertices);
+    void getRefinement(uint resolution, ScalarParam* vertices) const;
     
     /** generate the next refinement of the scope */
-    void split(Scope scopes[4]);
+    void split(Scope scopes[4]) const;
 
     /** corner points of the scope in cartesian space in order lower-left,
         lower-right, upper-left, upper-right*/
@@ -43,10 +45,10 @@ public:
 protected:
     template <typename ScalarParam>
     void mid(uint oneIndex, uint twoIndex, ScalarParam* vertices,
-             ScalarParam radius);
+             ScalarParam radius) const;
     template <typename ScalarParam>
-    centroid(uint oneIndex, uint twoIndex, uint threeIndex, uint fourIndex,
-             ScalarParam* vertices, ScalarParam radius);
+    void centroid(uint oneIndex, uint twoIndex, uint threeIndex, uint fourIndex,
+             ScalarParam* vertices, ScalarParam radius) const;
 };
 
 END_CRUSTA

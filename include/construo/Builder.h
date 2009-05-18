@@ -44,19 +44,19 @@ protected:
     ///sources the data for a node from an image patch and commits it to file
     void sourceFinest(Node* node, Patch* imgPatch, uint overlap);
     ///traverse the tree to update it for given patch
-    uint updateFiner(Node* node, Patch* imgPatch, Point::Scalar imgResolution);
+    int updateFiner(Node* node, Patch* imgPatch, Point::Scalar imgResolution);
     /** sources new patches to create new finer levels or update existing ones.
         Returns the depth of the update-tree for use during updating of the
         coarse levels. */
-    uint updateFinestLevels();
+    int updateFinestLevels();
 
     ///read all the finer data required for subsampling into a continuous region
     void prepareSubsamplingDomain(Node* node);
     /** traverse the tree to resample the next level of nodes that have had
         finer data modified */
-    void updateCoarser(Node* node, uint level);
+    void updateCoarser(Node* node, int level);
     ///regenerate interior hierarchy nodes that have had finer levels updated
-    void updateCoarserLevels(uint depth);
+    void updateCoarserLevels(int depth);
 
     ///new or existing database containing the hierarchy to be updated
     Globe* globe;
@@ -83,6 +83,10 @@ protected:
 public:
     virtual void addImagePatch(const std::string& patchName);
     virtual void update();    
+
+///\todo remove
+void verifyQuadtreeNode(Node* node);
+void verifyQuadtreeFile(Node* node);
 };
 
 END_CRUSTA

@@ -1,13 +1,13 @@
 BEGIN_CRUSTA
 
-template <typename ScalarPararm>
+template <typename ScalarParam>
 void Scope::
 mid(uint oneIndex, uint twoIndex, ScalarParam* vertices,
-    ScalarParam radius)
+    ScalarParam radius) const
 {
-    ScalarParam* one = vertices[oneIndex * 3];
-    ScalarParam* two = vertices[twoIndex * 3];
-    ScalarParam* res = vertices[((oneIndex + twoIndex) >> 1) * 3];
+    ScalarParam* one = &vertices[oneIndex * 3];
+    ScalarParam* two = &vertices[twoIndex * 3];
+    ScalarParam* res = &vertices[((oneIndex + twoIndex) >> 1) * 3];
     
     res[0] = (one[0] + two[0]) * ScalarParam(0.5);
     res[1] = (one[1] + two[1]) * ScalarParam(0.5);
@@ -20,17 +20,17 @@ mid(uint oneIndex, uint twoIndex, ScalarParam* vertices,
     res[2] *= invLen;
 }
 
-template <typename ScalarPararm>
+template <typename ScalarParam>
 void Scope::
 centroid(uint oneIndex, uint twoIndex, uint threeIndex, uint fourIndex,
-         ScalarParam* vertices, ScalarParam radius)
+         ScalarParam* vertices, ScalarParam radius) const
 {
     mid((oneIndex+twoIndex)>>1, (threeIndex+fourIndex)>>1, vertices, radius);
 }
 
-template <typename ScalarPararm>
+template <typename ScalarParam>
 void Scope::
-getRefinement(uint resolution, ScalarParam* vertices)
+getRefinement(uint resolution, ScalarParam* vertices) const
 {
     //set the initial four corners from the scope
     uint cornerIndices[] = {

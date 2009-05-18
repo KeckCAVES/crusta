@@ -98,6 +98,11 @@ static const Triacontahedron::Connectivity baseConnectivity[30][4] = {
     { {28, 0},    {11, 3},    {15, 0},    { 3, 0} }
 };
 
+Triacontahedron::
+Triacontahedron(Scope::Scalar sphereRadius) :
+    radius(sphereRadius)
+{}
+
 uint Triacontahedron::
 getNumPatches()
 {
@@ -111,7 +116,18 @@ getScope(uint patchId)
     const uint* index = &baseIndices[patchId*4];
     Scope scope;
     for (uint i=0; i<4; ++i)
-        scope.corners[i] = baseVertices[index[i]];
+    {
+        Scope::Vertex sv = baseVertices[index[i]];
+
+        Scope::Scalar len = 0;
+        for (uint j=0; j<3; ++j)
+            len += sv[j]*sv[j];
+        len = radius / sqrt(len);
+        for (uint j=0; j<3; ++j)
+            sv[j] *= len;
+
+        scope.corners[i] = sv;
+    }
     return scope;
 }
 

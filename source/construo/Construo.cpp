@@ -31,6 +31,14 @@
 #include <construo/DemSpecs.h>
 #include <crusta/Triacontahedron.h>
 
+///\todo remove
+BEGIN_CRUSTA
+template <>
+bool TreeNode<TextureColor>::debugGetKin = false;
+template <>
+bool TreeNode<DemHeight>::debugGetKin    = false;
+END_CRUSTA
+
 using namespace crusta;
 
 int main(int argc, char* argv[])
@@ -66,7 +74,7 @@ int main(int argc, char* argv[])
 				//create/update a color texture spheroid
 				buildType = COLORTEXTURE_BUILD;
             }
-			else if (strcasecmp(argv[i]+1, "spheroid") == 0)
+			else if (strcasecmp(argv[i]+1, "o") == 0)
             {
 				//read the spheroid filename
 				++i;

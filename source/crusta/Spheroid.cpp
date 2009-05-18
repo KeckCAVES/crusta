@@ -34,7 +34,7 @@ Spheroid()
 {
 #if 1
     //Triacontahedron from Mathematica 6-7.
-    Triacontahedron triacontahedron;
+    Triacontahedron triacontahedron(SPHEROID_RADIUS);
 
     uint numPatches = triacontahedron.getNumPatches();
     basePatches.resize(numPatches);

@@ -109,14 +109,14 @@ public:
     ///writes the tile in the given buffer to the given index
 	void writeTile(TileIndex tileIndex, const TileIndex childPointers[4],
                    const TileHeader& tileHeader, const Pixel* tileBuffer=NULL);
-	void writeTile(TileIndex tileIndex, const Pixel* tileBuffer=NULL);
+	void writeTile(TileIndex tileIndex, const Pixel* tileBuffer);
 	void writeTile(TileIndex tileIndex, const TileIndex childPointers[4],
                    const Pixel* tileBuffer=NULL);
 	void writeTile(TileIndex tileIndex, const TileHeader& tileHeader,
                    const Pixel* tileBuffer=NULL);
 
 protected:
-///returns the last ignored tile 7child pointers
+///returns the last ignored tile child pointers
 const TileIndex* getLastChildPointers() const;
 ///returns one of the last ignored tile child pointers
 TileIndex getLastChildPointer(int childIndex) const;
@@ -137,16 +137,10 @@ const TileHeader& getLastTileHeader() const;
     ///size of an image tile in the file
 	Misc::LargeFile::Offset fileTileSize;
 
-    ///index of tile at current read position
-	TileIndex currentReadIndex;
-    ///index of tile at current write position
-	TileIndex currentWriteIndex;
-
     ///last ignored child pointers
     TileIndex lastTileChildPointers[4];
     ///last ignored tile header
     TileHeader lastTileHeader;
-    ///buffer containing the default
 
     /** a memory buffer containing the default value for the size of a node's
         data */

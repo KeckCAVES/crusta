@@ -31,8 +31,12 @@ public:
 
     SphereCoverage();
 
+    /** retrieve the vertices of the coverate */
+    const Points& getVertices() const;
     /** retrieve the bounding box of the coverage */
-    const Box& getBoundingBox();
+    const Box& getBoundingBox() const;
+    /** query the centroid of the coverage */
+    const Point& getCentroid() const;
     
     /** checks if a given vertex (in spherical coordinates) is inside the
         coverage region */
@@ -42,8 +46,6 @@ public:
     /** checks if a given spherical coverage overlaps the coverage region */
     uint overlaps(const SphereCoverage& coverage) const;
 
-    /** query the centroid of the coverage */
-    const Point& getCentroid();
     /** shift the coverage */
     void shift(const Vector& vec);
 

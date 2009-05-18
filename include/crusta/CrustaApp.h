@@ -1,6 +1,7 @@
 #ifndef _CrustaApp_H_
 #define _CrustaApp_H_
 
+#include <GLMotif/PopupMenu.h>
 #include <Vrui/Application.h>
 
 #include <crusta/basics.h>
@@ -18,8 +19,13 @@ public:
     ~CrustaApp();
 
 private:
+	void produceMainMenu();
+	void resetNavigationCallback(Misc::CallbackData* cbData);
+
     /** handle to the core crusta instance */
     Crusta* crusta;
+
+    GLMotif::PopupMenu*   popMenu;
 
 //- inherited from Vrui::Application
 public:

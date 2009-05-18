@@ -6,10 +6,10 @@ lookup(PixelParam* at, uint rowLen)
 {
     PixelParam res(0);
 
-    for (int y=-width; y<=width; ++y)
+    for (int y=-width; y<=static_cast<int>(width); ++y)
     {
         PixelParam* atY = at + y*rowLen;
-        for (int x=-width; x<=width; ++x)
+        for (int x=-width; x<=static_cast<int>(width); ++x)
         {
             PixelParam* atYX = atY + x;
             res += (*atYX) * weights[y]*weights[x];
