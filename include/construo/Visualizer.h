@@ -35,6 +35,7 @@
 #include <Vrui/Vrui.h>
 
 #include <crusta/basics.h>
+#include <crusta/Scope.h>
 
 BEGIN_CRUSTA
 
@@ -66,8 +67,12 @@ public:
     static void stop();
 
     static void clear();
-    static void addPrimitive(GLenum drawMode, const Floats& verts);
-    static void addPrimitive(GLenum drawMode, const SphereCoverage& cov);
+    static void addPrimitive(GLenum drawMode, const Floats& verts,
+                             const float* color=NULL);
+    static void addPrimitive(GLenum drawMode, const SphereCoverage& cov,
+                             const float* color=NULL);
+    static void addScopeRefinement(uint resolution, const Scope::Scalar* s,
+                                   const float* color=NULL);
     static void peek();
     static void show();
 	

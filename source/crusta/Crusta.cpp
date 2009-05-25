@@ -38,9 +38,6 @@ display(GLContextData& contextData) const
 ///\todo remove. Debug
 
 //push everything to navigational coordinates for vislet
-glPushMatrix();
-glMultMatrix(Vrui::getNavigationTransformation());
-
 glDisable(GL_LIGHTING);
 glEnable(GL_COLOR_MATERIAL);
 glColor3f(1.0, 1.0, 1.0);
@@ -71,8 +68,6 @@ glEnable(GL_LIGHTING);
 glDisable(GL_COLOR_MATERIAL);
 
     spheroid.display(contextData);
-
-glPopMatrix();
 }
 
 END_CRUSTA

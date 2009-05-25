@@ -31,9 +31,25 @@ public:
 
     /** retrieve the radius of the sphere the scope is associated with */
     Scalar getRadius() const;
+    /** retrieve the centroid of the scope */
+    Vertex getCentroid() const;
     /** retrieve a refinement of the scope for given edge resolution */
     template <typename ScalarParam>
     void getRefinement(uint resolution, ScalarParam* vertices) const;
+    /** retrieve a refinement of the scope where the coordiantes are relative
+        to the centroid for given edge resolution */
+    template <typename ScalarParam>
+    void getCentroidRefinement(uint resolution, ScalarParam* vertices) const;
+    /** retrieve a refinement of the scope for given edge resolution on a sphere
+        of given radius */
+    template <typename ScalarParam>
+    void getRefinement(ScalarParam radius, uint resolution,
+                       ScalarParam* vertices) const;
+    /** retrieve a refinement of the scope where the coordiantes are relative
+        to the centroid for given edge resolution on a sphere of given radius */
+    template <typename ScalarParam>
+    void getCentroidRefinement(ScalarParam radius, uint resolution,
+                               ScalarParam* vertices) const;
     
     /** generate the next refinement of the scope */
     void split(Scope scopes[4]) const;

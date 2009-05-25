@@ -1,5 +1,3 @@
-///\todo make compliant with rest (e.g. int to uint?)
-
 /***********************************************************************
 ImageTransform - Base class for transformations from image pixel
 coordinates [0, size) to geographical coordinates.
@@ -43,6 +41,8 @@ public:
     /** flips the image transformation vertically according to the given image
         height */
 	void flip(int imageHeight);
+    ///returns the size in meters of the shortest side of the smallest pixel
+    virtual Point::Scalar getFinestResolution(const int size[2]) const = 0;
     ///returns scaling factors as array
 	const Point::Scalar* getScale() const;
     ///returns offset values as array

@@ -33,7 +33,7 @@ ImageFileBase<PixelParam>::
 
 template <class PixelParam>
 inline
-const uint* ImageFileBase<PixelParam>::
+const int* ImageFileBase<PixelParam>::
 getSize() const
 {
     return size;

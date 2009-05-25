@@ -14,12 +14,12 @@ CrustaApp::
 CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     Vrui::Application(argc, argv, appDefaults), crusta(NULL)
 {
-    if (argc<1)
+    if (argc<2)
     {
         Misc::throwStdErr("Crusta requires at least a preprocessed DEM database"
                           "to be provided as a command line argument");
     }
-    crusta = new Crusta(argv[0]);
+    crusta = new Crusta(argv[1]);
 
     produceMainMenu();
     resetNavigationCallback(NULL);
@@ -61,11 +61,7 @@ void CrustaApp::
 resetNavigationCallback(Misc::CallbackData* cbData)
 {
     /* Reset the Vrui navigation transformation: */
-    Vrui::NavTransform t=Vrui::NavTransform::identity;
-    t*=Vrui::NavTransform::translateFromOriginTo(Vrui::getDisplayCenter());
-    t*=Vrui::NavTransform::scale(/*(1.0/(SPHEROID_RADIUS * 39.3700787)) */
-                                 0.1*Vrui::getInchFactor());
-    Vrui::setNavigationTransformation(t);
+    Vrui::setNavigationTransformation(Vrui::Point(0,0,0), 1.5*SPHEROID_RADIUS);
 }
 
 

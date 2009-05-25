@@ -3,6 +3,7 @@
 
 #include <construo/SphereCoverage.h>
 
+#include <construo/Converters.h>
 #include <construo/ImageCoverage.h>
 #include <construo/ImageTransform.h>
 
@@ -11,12 +12,14 @@ BEGIN_CRUSTA
 static void shortestArc(const Point& ancor,
                         Point& vertex)
 {
-    static const Point::Scalar twopi = 2.0 * M_PI;
+    static const Point::Scalar twopi = 2.0 * Math::Constants<Point::Scalar>::pi;
     for (uint i=0; i<2; ++i)
     {
         Point::Scalar dist = vertex[i] - ancor[i];
-        vertex[i] = dist> M_PI ? vertex[i]-twopi : vertex[i];
-        vertex[i] = dist<-M_PI ? vertex[i]+twopi : vertex[i];
+        vertex[i] = dist > Math::Constants<Point::Scalar>::pi ?
+                    vertex[i]-twopi : vertex[i];
+        vertex[i] = dist < -Math::Constants<Point::Scalar>::pi ?
+                    vertex[i]+twopi : vertex[i];
     }
 }
 
@@ -24,12 +27,12 @@ static SphereCoverage::Vector
 shortestArcShift(const Point& c0, const Point& c1)
 {
     SphereCoverage::Vector vec;
-    static const Point::Scalar twopi = 2.0 * M_PI;
+    static const Point::Scalar twopi = 2.0 * Math::Constants<Point::Scalar>::pi;
     for (uint i=0; i<2; ++i)
     {
         Point::Scalar dist = c1[0] - c0[0];
-        vec[i] = dist> M_PI ? -twopi : 0;
-        vec[i] = dist<-M_PI ?  twopi : 0;
+        vec[i] = dist> Math::Constants<Point::Scalar>::pi ? -twopi : 0;
+        vec[i] = dist<-Math::Constants<Point::Scalar>::pi ?  twopi : 0;
     }
 
     return vec;
@@ -306,14 +309,7 @@ StaticSphereCoverage(uint subdivisions, const Scope& scope)
 
         //append the new samples as spherical vertices to the set
         for (uint i=0; i<numSamples-1; ++i)
-        {
-            double norm = sqrt(samples[i][0]*samples[i][0] +
-                               samples[i][1]*samples[i][1] +
-                               samples[i][2]*samples[i][2]);
-            Point newVertex(atan2(samples[i][1], samples[i][0]),
-                            acos(samples[i][2] / norm));
-            vertices.push_back(newVertex);
-        }
+            vertices.push_back(Converter::cartesianToSpherical(samples[i]));
     }
 
     //clean-up temporary memory used to store the samples
@@ -323,6 +319,7 @@ StaticSphereCoverage(uint subdivisions, const Scope& scope)
     for (uint i=1; i<numVertices; ++i)
         shortestArc(vertices[i-1], vertices[i]);
 ///\todo this is bad fix for the exact pole points of the triacontahedron
+#if 0
     for (uint i=0; i<numVertices; ++i)
     {
         if (vertices[i][0]==0 && (vertices[i][1]==0 ||
@@ -333,6 +330,7 @@ StaticSphereCoverage(uint subdivisions, const Scope& scope)
             vertices[i][0] = (prev[0] + next[0]) * 0.5;
         }
     }
+#endif
 
     //compute box and centroid
     centroid = Point(0,0);

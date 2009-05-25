@@ -22,36 +22,32 @@ getFilterWidth()
     return width;
 }
 
-Filter Filter::
-createPointFilter()
+void Filter::
+makePointFilter(Filter& filter)
 {
-    Filter filter;
+    filter.~Filter();
 
     filter.width      = 0;
     filter.weights    = new Scalar[filter.width*2 + 1];
     filter.weights[0] = Scalar(1);
-
-    return filter;
 }
 
-Filter Filter::
-createTriangleFilter()
+void Filter::
+makeTriangleFilter(Filter& filter)
 {
-    Filter filter;
-
+    filter.~Filter();
+    
     filter.width       = 1;
     filter.weights     = new Scalar[filter.width*2 + 1] + filter.width;
     filter.weights[-1] = Scalar(0.25);
     filter.weights[0]  = Scalar(0.5);
     filter.weights[1]  = Scalar(0.25);
-
-    return filter;
 }
 
-Filter Filter::
-createFiveLobeLanczosFilter()
+void Filter::
+makeFiveLobeLanczosFilter(Filter& filter)
 {
-    Filter filter;
+    filter.~Filter();
 
     filter.width      = 10;
     filter.weights    = new Scalar[filter.width*2 + 1] + filter.width;
@@ -69,8 +65,6 @@ createFiveLobeLanczosFilter()
     filterNorm = Scalar(1) / filterNorm;
     for(int i=-filter.width; i<=static_cast<int>(filter.width); ++i)
         filter.weights[i] *= filterNorm;
-
-    return filter;
 }
 
 

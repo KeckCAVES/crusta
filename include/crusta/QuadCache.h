@@ -12,7 +12,9 @@
 #include <Threads/Mutex.h>
 #include <Threads/Thread.h>
 
-#include <crusta/quadCommon.h>
+#include <crusta/CacheRequest.h>
+#include <crusta/QuadNodeData.h>
+#include <crusta/TreeIndex.h>
 
 namespace std
 {
@@ -81,16 +83,16 @@ public:
     /** process requests */
     void frame();
     /** request data fetch/generation for a set of tree indices */
-    void request(const MainCacheRequests& reqs);
+    void request(const CacheRequests& reqs);
 
 protected:
     /** lazy thread function: process the non-critical part of data requests */
     void* lazyThreadFunc();
 
     /** keep track of pending critical requests */
-    MainCacheRequests criticalRequests;
+    CacheRequests criticalRequests;
     /** keep track of lazy-fetch requests (critical data already loaded) */
-    MainCacheRequests lazyRequests;
+    CacheRequests lazyRequests;
 
     /** used to protect access to the critical request queue */
     Threads::Mutex criticalMutex;

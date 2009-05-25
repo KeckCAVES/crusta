@@ -49,7 +49,7 @@ std::string getImageFileName(const char* directoryName)
 ArcInfoBinaryGridImageFile::
 ArcInfoBinaryGridImageFile(const char* directoryName) :
 	file(getImageFileName(directoryName).c_str(), "rb",
-         Misc::LargeFile::LittleEndian), tileOffsets(0), tileSizes(0)
+         Misc::LargeFile::BigEndian), tileOffsets(0), tileSizes(0)
 {
 	int pixelType;
 	double pixelSize[2];
@@ -60,7 +60,7 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
 	/* Read the image's header file: */
 	std::string headerFileName(directoryName);
 	headerFileName.append("/hdr.adf");
-	Misc::File headerFile(headerFileName.c_str(),"rb",Misc::File::LittleEndian);
+	Misc::File headerFile(headerFileName.c_str(),"rb",Misc::File::BigEndian);
 	
 	unsigned int magic[2];
 	headerFile.read(magic,2);
@@ -97,7 +97,7 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
 	std::string boundaryFileName(directoryName);
 	boundaryFileName.append("/dblbnd.adf");
 	Misc::File boundaryFile(boundaryFileName.c_str(), "rb",
-                            Misc::File::LittleEndian);
+                            Misc::File::BigEndian);
 	boundaryFile.read(boundary,4);
 	std::cout << std::endl << std::setprecision(8) << pixelSize[0] << ", "
               << std::setprecision(8) << pixelSize[1] << std::endl;
@@ -106,8 +106,8 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
 	}
 	
 	/* Calculate the image's size in pixels: */
-	size[0] = uint(Math::floor((boundary[2]-boundary[0])/pixelSize[0]+0.5));
-	size[1] = uint(Math::floor((boundary[3]-boundary[1])/pixelSize[1]+0.5));
+	size[0] = int(Math::floor((boundary[2]-boundary[0])/pixelSize[0]+0.5));
+	size[1] = int(Math::floor((boundary[3]-boundary[1])/pixelSize[1]+0.5));
 	std::cout << "Arc/Info binary grid image size: " << size[0] << " x "
               << size[1] << std::endl;
 	std::cout<<"Tile size: "<<tileSize[0]<<" x "<<tileSize[1]<<std::endl;
@@ -183,7 +183,8 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
 	/* Read the tile directory file: */
 	std::string tileDirectoryFileName(directoryName);
 	tileDirectoryFileName.append("/w001001x.adf");
-	Misc::File tileDirectoryFile(tileDirectoryFileName.c_str(),"rb",Misc::File::LittleEndian);
+	Misc::File tileDirectoryFile(tileDirectoryFileName.c_str(),"rb",
+                                 Misc::File::BigEndian);
 	
 	unsigned int magic[2];
 	tileDirectoryFile.read(magic,2);
@@ -228,7 +229,7 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
 ///\todo remove
 #if 0
 Pixel* all = new Pixel[size[0]*size[1]];
-uint allOrig[2] = { 0, 0 };
+int allOrig[2] = { 0, 0 };
 readRectangle(allOrig, size, all);
 
 Pixel minVal = HUGE_VAL;
@@ -239,14 +240,14 @@ for (Pixel* p=all; p<all+size[0]*size[1]; ++p)
     maxVal = std::max(maxVal, *p);
 }
 Misc::File f((directoryName+std::string(".raw")).c_str(), "wb",
-             Misc::File::LittleEndian);
+             Misc::File::BigEndian);
 for (Pixel* p=all; p<all+size[0]*size[1]; ++p)
 {
-    uint16 out = (uint16)(((*p-minVal)/(maxVal-minVal)) * 65535);
+    uint8 out = (uint8)(((*p-minVal)/(maxVal-minVal)) * 255.0);
     f.write(out);
 }
+exit(0);
 #endif //0
-
 }
 
 ArcInfoBinaryGridImageFile::
@@ -282,7 +283,7 @@ getNumTiles(int dimension) const
 
 
 void ArcInfoBinaryGridImageFile::
-readRectangle(const uint rectOrigin[2], const uint rectSize[2],
+readRectangle(const int rectOrigin[2], const int rectSize[2],
               ArcInfoBinaryGridImageFile::Pixel* rectBuffer) const
 {
 	/* Calculate the range of image tiles covering the pixel rectangle: */
@@ -320,8 +321,8 @@ readRectangle(const uint rectOrigin[2], const uint rectSize[2],
 				
 				/* Calculate the overlap region between the tile and the pixel
                    rectangle: */
-				uint tileOrigin[2],min[2],max[2];
-				for(uint i=0;i<2;++i)
+				int tileOrigin[2],min[2],max[2];
+				for(int i=0;i<2;++i)
                 {
 					tileOrigin[i]=tileIndex[i]*tileSize[i];
 					min[i]=tileOrigin[i];
@@ -338,10 +339,10 @@ readRectangle(const uint rectOrigin[2], const uint rectSize[2],
                                   rectOrigin[0] );
 				const float* sourceRowPtr = tile +
                     ((min[1]-tileOrigin[1])*tileSize[0] - tileOrigin[0]);
-				for(uint y=min[1];y<max[1];++y)
+				for(int y=min[1];y<max[1];++y)
                 {
 					/* Copy the span of pixels: */
-					for(uint x=min[0];x<max[0];++x)
+					for(int x=min[0];x<max[0];++x)
                     {
 						float val=sourceRowPtr[x];
 						if(val<=-32768.0f)

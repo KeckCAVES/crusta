@@ -7,6 +7,7 @@
 #include <GLMotif/Button.h>
 #include <GLMotif/Menu.h>
 
+#include <construo/Converters.h>
 #include <construo/SphereCoverage.h>
 
 BEGIN_CRUSTA
@@ -71,6 +72,7 @@ void Visualizer::
 stop()
 {
     delete vis;
+    vis = NULL;
 }
 
 void Visualizer::
@@ -87,7 +89,7 @@ clear()
 }
 
 void Visualizer::
-addPrimitive(GLenum drawMode, const Floats& verts)
+addPrimitive(GLenum drawMode, const Floats& verts, const float* color)
 {
     init();
 
@@ -95,34 +97,24 @@ addPrimitive(GLenum drawMode, const Floats& verts)
     Primitive& newPrim  = vis->primitives[1-vis->shownSlot].back();
 
     newPrim.mode        = drawMode;
+    if (color != NULL)
+    {
+        newPrim.color[0] = color[0];
+        newPrim.color[1] = color[1];
+        newPrim.color[2] = color[2];
+    }
     newPrim.vertices    = verts;
 }
 
 void Visualizer::
-addPrimitive(GLenum drawMode, const SphereCoverage& coverage)
+addPrimitive(GLenum drawMode, const SphereCoverage& coverage,
+             const float* color)
 {
     init();
 
-    vis->primitives[1-vis->shownSlot].push_back(Primitive());
-    Primitive& cov = vis->primitives[1-vis->shownSlot].back();
-    
-    const SphereCoverage::Points& scv = coverage.getVertices();
-    
-    uint num          = (uint)scv.size();
-    cov.mode          = drawMode;
-    uint numVertices  = num*2*3;
-    cov.vertices.resize(numVertices);
-    float* curVert    = &cov.vertices[0];
-    for (uint j=0; j<num; ++j)
-    {
-        for (uint k=0; k<2; ++k)
-        {
-            *curVert = scv[(j+k)%num][0]; ++curVert;
-            *curVert =               0.0; ++curVert;
-            *curVert = scv[(j+k)%num][1]; ++curVert;
-        }
-    }
-
+    uint num;
+    uint numVertices;
+    float* curVert;
 #if 0
     vis->primitives[1-vis->shownSlot].push_back(Primitive());
     Primitive& box  = vis->primitives[1-vis->shownSlot].back();
@@ -147,7 +139,8 @@ addPrimitive(GLenum drawMode, const SphereCoverage& coverage)
         }
     }
 #endif
-
+    
+#if 0
     vis->primitives[1-vis->shownSlot].push_back(Primitive());
     Primitive& cen  = vis->primitives[1-vis->shownSlot].back();
     
@@ -160,8 +153,52 @@ addPrimitive(GLenum drawMode, const SphereCoverage& coverage)
     cen.vertices[0] = scc[0];
     cen.vertices[1] =    0.0;
     cen.vertices[2] = scc[1];
+#endif
+
+    vis->primitives[1-vis->shownSlot].push_back(Primitive());
+    Primitive& cov = vis->primitives[1-vis->shownSlot].back();
+    
+    const SphereCoverage::Points& scv = coverage.getVertices();
+    
+    num          = (uint)scv.size();
+    cov.mode     = drawMode;
+    if (color != NULL)
+    {
+        cov.color[0] = color[0];
+        cov.color[1] = color[1];
+        cov.color[2] = color[2];
+    }
+    numVertices  = num*2*3;
+    cov.vertices.resize(numVertices);
+    curVert      = &cov.vertices[0];
+    for (uint j=0; j<num; ++j)
+    {
+        for (uint k=0; k<2; ++k)
+        {
+            *curVert = scv[(j+k)%num][0]; ++curVert;
+            *curVert =               0.0; ++curVert;
+            *curVert = scv[(j+k)%num][1]; ++curVert;
+        }
+    }
 }
 
+void Visualizer::
+addScopeRefinement(uint resolution, const Scope::Scalar* s, const float* color)
+{
+    Visualizer::Floats scopeRef;
+    uint numScopeSamples = resolution*resolution*3;
+    scopeRef.resize(numScopeSamples);
+    float* out = &scopeRef[0];
+    for (const Scope::Scalar* in=s; in<s+numScopeSamples; in+=3,out+=3)
+    {
+        Point p =
+            Converter::cartesianToSpherical(Scope::Vertex(in[0], in[1], in[2]));
+        out[0] = p[0];
+        out[1] =  0.0;
+        out[2] = p[1];
+    }
+    Visualizer::addPrimitive(GL_POINTS, scopeRef, color);
+}
 
 void Visualizer::
 peek()
@@ -193,6 +230,7 @@ display(GLContextData& contextData) const
 
     glPushAttrib(GL_ENABLE_BIT);
     glDisable(GL_LIGHTING);
+    glPointSize(5.0f);
 
     for (Primitives::const_iterator it=primitives[shownSlot].begin();
          it!=primitives[shownSlot].end(); ++it)

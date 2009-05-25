@@ -1,6 +1,8 @@
 #ifndef _TreeIndex_H_
 #define _TreeIndex_H_
 
+#include <string>
+
 #include <crusta/basics.h>
 
 BEGIN_CRUSTA
@@ -18,13 +20,10 @@ struct TreeIndex
     TreeIndex up() const;
     TreeIndex down(uint8 which) const;
 
-    bool operator==(const TreeIndex& other) const
-    {
-        return *(reinterpret_cast<const uint64*>(this)) ==
-        *(reinterpret_cast<const uint64*>(&other));
-    }
+    bool operator==(const TreeIndex& other) const;
 
     std::string str() const;
+    std::string med_str() const;
     friend std::ostream& operator<<(std::ostream& os, const TreeIndex& i);
     
     uint64 patch :  8; ///< index of the base patch of the global hierarchy

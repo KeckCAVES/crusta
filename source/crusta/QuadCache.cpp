@@ -16,17 +16,17 @@ MainCache(uint size) :
 }
 
 void MainCache::
-request(const MainCacheRequests& reqs)
+request(const CacheRequests& reqs)
 {
     //make sure merging of the requests is done one at a time
     Threads::Mutex::Lock lock(criticalMutex);
 
     //add in all the requests without duplicating them
-    for (MainCacheRequests::const_iterator it=reqs.begin();it!=reqs.end();++it)
+    for (CacheRequests::const_iterator it=reqs.begin();it!=reqs.end();++it)
     {
-        MainCacheRequests::iterator searched =
+        CacheRequests::iterator searched =
             std::find(criticalRequests.begin(), criticalRequests.end(),
-                      MainCacheRequest(0, it->index, Scope()));
+                      CacheRequest(0, it->index, Scope(), NULL, 0));
         if (searched != criticalRequests.end())
             searched->lod = std::max(searched->lod, it->lod);
         else
@@ -48,7 +48,7 @@ frame()
     double endTime = Vrui::getApplicationTime() + 0.08e-3;
 
     //update as much as possible
-    for (MainCacheRequests::iterator it=criticalRequests.begin();
+    for (CacheRequests::iterator it=criticalRequests.begin();
          it!=criticalRequests.end() && Vrui::getApplicationTime()<endTime; ++it)
     {
         MainCacheBuffer* buf =
@@ -68,7 +68,14 @@ frame()
         it->demFile->readTile(it->demTile, data.height);
         QuadTerrain::generateColor(data.height, data.color);
         DEBUG_OUT(5, "MainCache::frame: request for Index %s processed\n",
-                  it->index.str().c_str());
+                  it->index.med_str().c_str());
+
+///\todo remove debug. We must be able to retrieve what we've just processed
+        MainCache& mc = crustaQuadCache.getMainCache();
+        TreeIndex ti = it->index;
+        buf = mc.findCached(ti);
+        if (buf == NULL)
+            mc.findCached(ti);
     }
 
     criticalRequests.clear();

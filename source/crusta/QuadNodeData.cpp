@@ -38,37 +38,13 @@ createTexture(GLuint& texture, GLint internalFormat, uint size)
     glGenTextures(1, &texture); glBindTexture(GL_TEXTURE_2D, texture);
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, size, size, 0,
                  GL_RGB, GL_UNSIGNED_INT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+///\todo debug set filtering back to bilinear
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
-
-template <typename NodeDataType>
-class CacheBuffer
-{
-public:
-    CacheBuffer(uint size);
-
-    /** retrieve the main memory node data from the buffer */
-    const NodeDataType& getData() const;
-    /** confirm use of the buffer for the current frame */
-    void touch();
-    /** pin the element in the cache such that it cannot be swaped out */
-    void pin(bool wantPinned=true);
-    /** query the frame number of the buffer */
-    uint getFrameNumber() const;
-    
-protected:
-    /** sequence number used to evaluate LRU prioritization */
-    uint frameNumber;
-    /** the actual node data */
-    NodeDataType data;
-};
-
-typedef CacheBuffer<QuadNodeMainData>  MainCacheBuffer;
-typedef CacheBuffer<QuadNodeVideoData> VideoCacheBuffer;
 
 END_CRUSTA
 

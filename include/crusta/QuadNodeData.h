@@ -43,6 +43,38 @@ struct QuadNodeVideoData
 
 
 
+
+template <typename NodeDataType>
+class CacheBuffer
+{
+public:
+    CacheBuffer(uint size);
+    
+    /** retrieve the main memory node data from the buffer */
+    const NodeDataType& getData() const;
+    /** confirm use of the buffer for the current frame */
+    void touch();
+    /** pin the element in the cache such that it cannot be swaped out */
+    void pin(bool wantPinned=true);
+    /** query the frame number of the buffer */
+    uint getFrameNumber() const;
+    
+protected:
+    /** sequence number used to evaluate LRU prioritization */
+    uint frameNumber;
+    /** the actual node data */
+    NodeDataType data;
+};
+
+END_CRUSTA
+
+#include <crusta/QuadNodeData.hpp>
+
+BEGIN_CRUSTA
+
+typedef CacheBuffer<QuadNodeMainData>  MainCacheBuffer;
+typedef CacheBuffer<QuadNodeVideoData> VideoCacheBuffer;
+
 END_CRUSTA
 
 #endif //_QuadNodeData_H_

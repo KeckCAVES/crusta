@@ -8,8 +8,9 @@
 #include <GL/GLShader.h>
 
 #include <crusta/basics.h>
-#include <crusta/quadCommon.h>
 #include <crusta/QuadtreeFileSpecs.h>
+#include <crusta/QuadNodeData.h>
+#include <crusta/CacheRequest.h>
 
 #include <crusta/FrustumVisibility.h>
 #include <crusta/FocusViewEvaluator.h>
@@ -72,6 +73,9 @@ protected:
 
         /** index of the DEM tile in the database */
         DemFile::TileIndex demTile;
+        /** index of the DEM tiles of the children. This is to avoid having to
+            read the indices from file everytime a child needs to be fetched */
+        DemFile::TileIndex childDemTiles[4];
 
         /** cache buffer containing the data related to this node */
         MainCacheBuffer* mainBuffer;
@@ -91,22 +95,20 @@ protected:
 
     /** check for the possibility of a merge and perform it if the critical
         data required is available */
-    bool merge(GlData* glData, Node* node, float lod,
-               MainCacheRequests& requests);
+    bool merge(GlData* glData, Node* node, float lod, CacheRequests& requests);
     /** compute the scopes of the children of specified node */
     void computeChildScopes(Node* node);
     /** check for the possibility of a split and perform it if the critical
         data required is available */
-    bool split(GlData* glData, Node* node, float lod,
-               MainCacheRequests& requests);
+    bool split(GlData* glData, Node* node, float lod, CacheRequests& requests);
     /** confirm the specified node as being part of the current approximation.
         The parent and parent's parent are also touched/requested to make sure
         coarsening can be processed in case the cache capacity is reaching its
         limit */
-    void confirmCurrent(Node* node, float lod, MainCacheRequests& requests);
+    void confirmCurrent(Node* node, float lod, CacheRequests& requests);
     /** evaluate the terrain tree starting with the node specified. The terrain
         tree is manipulated to add/remove nodes as necessary. */
-    void traverse(GlData* glData, Node* node, MainCacheRequests& requests);
+    void traverse(GlData* glData, Node* node, CacheRequests& requests);
 
     /** make sure the required GL data for drawing is available. In case a
         buffer cannot be associated with the specified node (cache is full),

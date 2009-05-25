@@ -36,8 +36,9 @@ typedef int64_t     int64;
 typedef uint        error;
 
 
-const uint   TILE_RESOLUTION  = 33;
-const double SPHEROID_RADIUS = 6371000.0;
+const uint   TILE_RESOLUTION     = 65;
+const double SPHEROID_RADIUS     = 6371000.0;
+const double INV_SPHEROID_RADIUS = 1.0 / 6371000.0;
 
 
 /** keep track of the number of frames processed. Used, for example, by the

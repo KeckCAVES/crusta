@@ -19,9 +19,9 @@ public:
     template <typename PixelParam>
     PixelParam lookup(PixelParam* at, uint rowLen);
 
-    static Filter createPointFilter();
-    static Filter createTriangleFilter();
-    static Filter createFiveLobeLanczosFilter();
+    static void makePointFilter(Filter& filter);
+    static void makeTriangleFilter(Filter& filter);
+    static void makeFiveLobeLanczosFilter(Filter& filter);
 
 protected:
     ///the width of the filter

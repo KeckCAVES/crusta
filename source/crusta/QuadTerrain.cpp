@@ -3,6 +3,11 @@
 #include <algorithm>
 #include <assert.h>
 
+#include <Geometry/OrthogonalTransformation.h>
+#include <GL/GLTransformationWrappers.h>
+#include <Vrui/Vrui.h>
+
+#include <crusta/CacheRequest.h>
 #include <crusta/QuadCache.h>
 ///\todo remove
 #include <crusta/simplexnoise1234.h>
@@ -20,7 +25,7 @@ QuadTerrain(uint8 patch, const Scope& scope, const std::string& demFileName) :
     demFile(NULL), basePatchId(patch), baseScope(scope)
 {
     uint res[2] = { TILE_RESOLUTION, TILE_RESOLUTION };
-    demFile = new File(demFileName.c_str(), res);
+    demFile = new DemFile(demFileName.c_str(), res);
 
     //create root data and pin it in the cache
     TreeIndex rootIndex(patch);
@@ -32,7 +37,11 @@ QuadTerrain(uint8 patch, const Scope& scope, const std::string& demFileName) :
     //generate/fetch the data content for the static data
     const QuadNodeMainData& rootData = rootBuffer->getData();
     generateGeometry(scope, rootData.geometry);
-    loadElevation(demFile, 0, rootData.height);
+    if (!demFile->readTile(0, rootData.height))
+    {
+        Misc::throwStdErr("QuadTerrain::QuadTerrain: Invalid DEM file: could "
+                          "not read root data");
+    }
     generateColor(rootData.height, rootData.color);
 }
 QuadTerrain::
@@ -73,13 +82,21 @@ display(GLContextData& contextData)
 
     /* display could be multi-threaded. Buffer all the node data requests and
        merge them into the request list en block */
-    MainCacheRequests dataRequests;
+    CacheRequests dataRequests;
 
+    /* save the current openGL transform. We are going to replace it during
+       traversal with a scope centroid centered one to alleviate floating point
+       issues with rotating vertices far off the origin */
+    glPushMatrix();
+    
     /* traverse the terrain tree, update as necessary and issue drawing commands
        for active nodes */
 checkTree(glData, glData->root);
     traverse(glData, glData->root, dataRequests);
 checkTree(glData, glData->root);
+
+    //restore the GL transform as it was before
+    glPopMatrix();
 
     glData->shader.disablePrograms();
 
@@ -96,14 +113,10 @@ checkTree(glData, glData->root);
 void QuadTerrain::
 generateGeometry(const Scope& scope, QuadNodeMainData::Vertex* vertices)
 {
-    scope.getRefinement(TILE_RESOLUTION, reinterpret_cast<float*>(vertices));
+    scope.getCentroidRefinement(1.0f, TILE_RESOLUTION,
+                                reinterpret_cast<float*>(vertices));
 }
 
-void QuadTerrain::
-loadElevation(DemFile* file, DemFile::TileIndex tile, float* heights)
-{
-    
-}
 #if 0
 void QuadTerrain::
 generateHeight(QuadNodeMainData::Vertex* vertices, float* heights)
@@ -128,18 +141,25 @@ float ir = 1.0f / sqrt(vertices[0].position[0]*vertices[0].position[0] +
 void QuadTerrain::
 generateColor(float* heights, uint8* colors)
 {
+#if 0
     static const uint  PALETTE_SIZE = 3;
     static const float PALETTE_BUCKET_SIZE = 1.0f / (PALETTE_SIZE-1);
     static const float heightPalette[PALETTE_SIZE][3] = {
         {0.85f, 0.83f, 0.66f}, {0.80f, 0.21f, 0.28f}, {0.29f, 0.37f, 0.50f} };
+#endif
 
     uint numHeights = TILE_RESOLUTION*TILE_RESOLUTION;
     float* end = heights + numHeights;
     for (; heights<end; ++heights, colors+=3)
     {
-        float alpha = (*heights - 1.0f) * 4.0f;
+        colors[0] = 255;
+        colors[1] = 255;
+        colors[2] = 255;
+#if 0
+        float alpha = *heights / 4000.0;//(*heights - 1.0f) * 4.0f;
+        alpha = std::max(alpha, 1.0f);
         alpha /= PALETTE_BUCKET_SIZE;
-        uint low  = (uint)(alpha);
+        uint low  = (uint)(Math::floor(alpha+0.5f));
         uint high = low==(PALETTE_SIZE-1) ? (PALETTE_SIZE-1) : low+1;
         alpha -= low;
         
@@ -149,15 +169,18 @@ generateColor(float* heights, uint8* colors)
                     alpha*heightPalette[high][1]) * 255;
         colors[2] = ((1.0f-alpha)*heightPalette[low][2] +
                     alpha*heightPalette[high][2]) * 255;
+#endif
     }
 }
 
 
 QuadTerrain::Node::
 Node() :
-    demTile(File::INVALID_TILEINDEX), mainBuffer(NULL), videoBuffer(NULL),
+    demTile(DemFile::INVALID_TILEINDEX), mainBuffer(NULL), videoBuffer(NULL),
     parent(NULL), children(NULL)
 {
+    childDemTiles[0] = childDemTiles[1] = DemFile::INVALID_TILEINDEX;
+    childDemTiles[2] = childDemTiles[4] = DemFile::INVALID_TILEINDEX;
 }
 
 
@@ -221,15 +244,17 @@ discardSubTree(GlData* glData)
 
 bool QuadTerrain::
 merge(GlData* glData, Node* node, float lod,
-      MainCacheRequests& requests)
+      CacheRequests& requests)
 {
     //if we don't have the parent's data then we must request it
     node->parent->mainBuffer =
         crustaQuadCache.getMainCache().findCached(node->parent->index);
     if (node->parent->mainBuffer == NULL)
     {
-        requests.push_back(MainCacheRequest(lod, node->parent->index,
-                                            node->parent->scope));
+        requests.push_back(CacheRequest(lod, node->parent->index,
+                                        node->parent->scope,
+                                        node->terrain->demFile,
+                                        node->parent->demTile));
         return false;
     }
 
@@ -254,8 +279,17 @@ computeChildScopes(Node* node)
 }
 
 bool QuadTerrain::
-split(GlData* glData, Node* node, float lod, MainCacheRequests& requests)
+split(GlData* glData, Node* node, float lod, CacheRequests& requests)
 {
+/**\todo Fix it: Need to disconnect the representation from the data as the
+         different data might not be available at the same resolution. For now
+         only split if there is data to support it */
+    for (uint i=0; i<4; ++i)
+    {
+        if (node->childDemTiles[i] == DemFile::INVALID_TILEINDEX)
+            return false;
+    }
+
     //tentatively assemble the children
     node->children = glData->grabNodeBlock();
     computeChildScopes(node);
@@ -265,16 +299,20 @@ split(GlData* glData, Node* node, float lod, MainCacheRequests& requests)
     for (uint i=0; i<4; ++i)
     {
         Node& child = node->children[i];
-        child.index = node->index.down(i);
+        child.terrain    = node->terrain;
+        child.parent     = node;
+        child.index      = node->index.down(i);
+        child.demTile    = node->childDemTiles[i];
         child.mainBuffer =
             crustaQuadCache.getMainCache().findCached(child.index);
         if (child.mainBuffer == NULL)
         {
-            requests.push_back(MainCacheRequest(lod, child.index, child.scope));
+            requests.push_back(CacheRequest(lod, child.index, child.scope,
+                                            child.terrain->demFile,
+                                            child.demTile));
             allChildrenCached = false;
         }
         child.videoBuffer = NULL;
-        child.parent = node;
     }
 
     if (!allChildrenCached)
@@ -286,8 +324,26 @@ split(GlData* glData, Node* node, float lod, MainCacheRequests& requests)
     }
     else
     {
-        /* split was successful, invalidate the buffers of the current node,
-           since they might be reused for another node */
+        /* split was successful, read in the indices of the dem tiles for the
+           children */
+        for (uint i=0; i<4; ++i)
+        {
+            Node& child = node->children[i];
+            if (!child.terrain->demFile->readTile(child.demTile,
+                                                  child.childDemTiles))
+            {
+                Misc::throwStdErr("QuadTerrain::Split: couldn't retrieve the "
+                                  "dem tile indices for the children");
+            }
+        }
+/** \todo wait... since the buffer can dissappear under the node between any
+frame with no prior notice one can never assume these things are there and must
+always ask the cache!! so this is pointless here.
+
+At the same time why ask the cache all the time while nothing changes. Need a
+better solution here in general */
+        /* invalidate the buffers of the current node, since they might be
+           reused for another node */
         node->mainBuffer  = NULL;
         node->videoBuffer = NULL;
 DEBUG_OUT(1, "+Split: %s:\n", node->index.str().c_str());
@@ -299,7 +355,7 @@ checkTree(glData, glData->root);
 
 
 void QuadTerrain::
-confirmCurrent(Node* node, float lod, MainCacheRequests& requests)
+confirmCurrent(Node* node, float lod, CacheRequests& requests)
 {
     //touch the current node
     node->mainBuffer->touch();
@@ -310,7 +366,15 @@ confirmCurrent(Node* node, float lod, MainCacheRequests& requests)
         if (p->mainBuffer != NULL)
             p->mainBuffer->touch();
         else
-            requests.push_back(MainCacheRequest(lod, p->index, p->scope));
+        {
+            p->mainBuffer = crustaQuadCache.getMainCache().findCached(p->index);
+            if (p->mainBuffer == NULL)
+            {
+                requests.push_back(CacheRequest(lod, p->index, p->scope,
+                                                p->terrain->demFile,
+                                                p->demTile));
+            }
+        }
 
         if (node->parent->parent != NULL)
         {
@@ -319,13 +383,22 @@ confirmCurrent(Node* node, float lod, MainCacheRequests& requests)
             if (p->mainBuffer != NULL)
                 p->mainBuffer->touch();
             else
-                requests.push_back(MainCacheRequest(lod, p->index, p->scope));
+            {
+                p->mainBuffer =
+                    crustaQuadCache.getMainCache().findCached(p->index);
+                if (p->mainBuffer == NULL)
+                {
+                    requests.push_back(CacheRequest(lod, p->index, p->scope,
+                                                    p->terrain->demFile,
+                                                    p->demTile));
+                }
+            }
         }
     }
 }
 
 void QuadTerrain::
-traverse(GlData* glData, Node* node, MainCacheRequests& requests)
+traverse(GlData* glData, Node* node, CacheRequests& requests)
 {
     //recurse to the active nodes
     for (uint i=0; node->children!=NULL && i<4; ++i)
@@ -334,7 +407,7 @@ traverse(GlData* glData, Node* node, MainCacheRequests& requests)
     if (node->children == NULL)
     {
     //- evaluate merge, only if we're not already at the root
-        if (false)//node->index.level != 0)
+        if (node->index.level != 0)
         {
             float parentVisible =
                 glData->visibility.evaluate(node->parent->scope);
@@ -350,7 +423,7 @@ traverse(GlData* glData, Node* node, MainCacheRequests& requests)
         //compute visibility and lod
         float visible = glData->visibility.evaluate(node->scope);
         float lod     = glData->lod.evaluate(node->scope);
-        if (false)//visible && lod>1.0)
+        if (visible && lod>1.0)
         {
             if (split(glData, node, lod, requests))
             {
@@ -463,10 +536,27 @@ drawNode(GlData* glData, Node* node)
     glVertexPointer(2, GL_FLOAT, 0, 0);
     glIndexPointer(GL_SHORT, 0, 0);
 
+    //load the centroid relative translated navigation transformation
 #if 1
+    glPushMatrix();
+    Scope::Vertex centroid = node->scope.getCentroid();
+    glTranslatef(centroid[0], centroid[1], centroid[2]);
+#else
+    Scope::Vertex centroid = node->scope.getCentroid();
+    Vrui::Vector centroidTranslation(centroid[0], centroid[1], centroid[2]);
+    Vrui::NavTransform nav = Vrui::getNavigationTransformation();
+    nav.leftMultiply(Vrui::NavTransform::translate(centroidTranslation));
+    glLoadMatrix(nav);
+#endif
+
+#if 1
+//    glPointSize(1.0);
+//    glDrawRangeElements(GL_POINTS, 0,
     glDrawRangeElements(GL_TRIANGLE_STRIP, 0,
                         (TILE_RESOLUTION*TILE_RESOLUTION) - 1,
                         NUM_GEOMETRY_INDICES, GL_UNSIGNED_SHORT, 0);
+///\todo remove
+glPopMatrix();
 #endif
 
 #if 0
@@ -502,6 +592,7 @@ glData->shader.useProgram();
 glData->shader.disablePrograms();
     Scope::Vertex* c = node->scope.corners;
     glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
     glActiveTexture(GL_TEXTURE0);
     glDisable(GL_TEXTURE_2D);
     glBegin(GL_LINE_STRIP);
@@ -516,6 +607,7 @@ glData->shader.disablePrograms();
         glColor3f(0.0f, 0.0f, 1.0f);
         glVertex3f(c[0][0], c[0][1], c[0][2]);
     glEnd();
+    glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
 glData->shader.useProgram();
 #endif
@@ -539,6 +631,13 @@ GlData(QuadTerrain* terrain, const TreeIndex& iRootIndex,
     root->index      = iRootIndex;
     root->scope      = baseScope;
     root->mainBuffer = iRootBuffer;
+
+    root->demTile    = 0;
+    if (!terrain->demFile->readTile(root->demTile, root->childDemTiles))
+    {
+        Misc::throwStdErr("QuadTerrain::GlData: could not retrieve the indices "
+                          "of the root node's children");
+    }
     
     //initialize the shader
 //    shader.compileVertexShader("elevation.vs");
@@ -560,7 +659,7 @@ GlData(QuadTerrain* terrain, const TreeIndex& iRootIndex,
     shader.disablePrograms();
     
 ///\todo debug, remove: makes LOD recommend very coarse
-    lod.bias = -1.0;
+//    lod.bias = -1.0;
 }
 
 QuadTerrain::GlData::
@@ -694,7 +793,8 @@ initContext(GLContextData& contextData) const
     assert(rootBuffer != NULL);
     
     //allocate the context dependent data
-    GlData* glData = new GlData(rootIndex, rootBuffer, baseScope,
+    GlData* glData = new GlData(const_cast<QuadTerrain*>(this), rootIndex,
+                                rootBuffer, baseScope,
                                 crustaQuadCache.getVideoCache(contextData));
     //commit the context data
     contextData.addDataItem(this, glData);

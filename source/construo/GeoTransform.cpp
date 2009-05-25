@@ -25,9 +25,33 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 ///\todo fix FRAK'ing cmake !@#!@
 #define CONSTRUO_BUILD 1
 
+#include <algorithm>
+
+#include <construo/Converters.h>
 #include <construo/GeoTransform.h>
 
 BEGIN_CRUSTA
+
+Point::Scalar GeoTransform::
+getFinestResolution(const int size[2]) const
+{
+/**\todo compute this properly, for now approximate by just taking a pixel
+         closest to the pole */
+    Point br = imageToWorld(0, 0);
+    Point tl = imageToWorld(size[0]-1, size[1]-1);
+    Point start;
+    start[0] = (br[0]+tl[0])*0.5;
+    start[1] = (Math::Constants<Point::Scalar>::pi-Math::abs(br[1])) <
+        (Math::Constants<Point::Scalar>::pi-Math::abs(tl[1])) ? br[1] : tl[1];
+
+    Point end(start[0]+Math::rad(scale[0]), start[1]);
+    Point::Scalar lx = Converter::haversineDist(start, end, SPHEROID_RADIUS);
+    end[0] = start[0];
+    end[1] = start[1] + Math::rad(scale[1]);
+    Point::Scalar ly = Converter::haversineDist(start, end, SPHEROID_RADIUS);
+    
+    return std::min(lx, ly);
+}
 
 Point GeoTransform::
 systemToWorld(const Point& systemPoint) const

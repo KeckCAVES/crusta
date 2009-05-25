@@ -25,6 +25,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 ///\todo fix FRAK'ing cmake !@#!@
 #define CONSTRUO_BUILD 1
 
+#include <algorithm>
 #include <construo/UtmTransform.h>
 
 /*****************************
@@ -102,6 +103,13 @@ UtmTransform::Hemisphere UtmTransform::
 getHemisphere() const
 {
     return hemisphere;
+}
+
+Point::Scalar UtmTransform::
+getFinestResolution(const int size[2]) const
+{
+///\todo consider distortion in UTM zone, for now just return the scale
+    return std::min(Math::abs(scale[0]), Math::abs(scale[1]));
 }
 
 Point UtmTransform::

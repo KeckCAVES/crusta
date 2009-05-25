@@ -1,12 +1,12 @@
 #ifndef _CacheRequest_H_
 #define _CacheRequest_H_
 
-BEGIN_CRUSTA
-
 #include <vector>
 
 #include <crusta/QuadtreeFileSpecs.h>
 #include <crusta/Scope.h>
+
+BEGIN_CRUSTA
 
 /** information required to process the fetch/generation of data */
 class CacheRequest

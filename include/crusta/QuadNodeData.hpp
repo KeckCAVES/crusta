@@ -1,3 +1,8 @@
+#ifndef _QuaDnodeData_IMPLEMENTATION
+#define _QuaDnodeData_IMPLEMENTATION
+
+#include <algorithm>
+
 BEGIN_CRUSTA
 
 template <typename NodeDataType>
@@ -22,7 +27,7 @@ touch()
 
 template <typename NodeDataType>
 void CacheBuffer<NodeDataType>::
-pin(bool wantPinned=true)
+pin(bool wantPinned)
 {
     frameNumber = wantPinned ? ~0 : 0;
 }
@@ -35,3 +40,5 @@ getFrameNumber() const
 }
 
 END_CRUSTA
+
+#endif //_QuaDnodeData_IMPLEMENTATION

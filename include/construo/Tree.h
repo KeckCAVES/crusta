@@ -5,8 +5,7 @@
 
 #include <crusta/QuadtreeFile.h>
 #include <crusta/Scope.h>
-///\todo extract TreeIndex from quadCommon.h
-#include <crusta/quadCommon.h>
+#include <crusta/TreeIndex.h>
 
 BEGIN_CRUSTA
 
@@ -31,7 +30,7 @@ public:
         traversal. By default such parts will be loaded from file if possible,
         but the behaviour can be altered through 'loadMissing'. */
     bool getKin(TreeNode*& kin, int offsets[2], bool loadMissing=true,
-                int down=0);
+                int down=0, uint* orientation=NULL);
 
     /** create in-memory storage for the children nodes with the most basic
         properties (i.e. parent link-up, treeState, treeIndex, scope and

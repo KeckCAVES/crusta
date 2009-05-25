@@ -42,8 +42,8 @@ Spheroid(const std::string& demBase)
     basePatches.resize(numPatches);
     for (uint i=0; i<numPatches; ++i)
     {
-        std::ostringstream demName(demBase);
-        demName << "_" << i << ".qtf";
+        std::ostringstream demName;
+        demName << demBase << "_" << i << ".qtf";
         basePatches[i] = new QuadTerrain(i, triacontahedron.getScope(i),
                                          demName.str());
     }

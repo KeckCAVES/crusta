@@ -77,15 +77,15 @@ PpmImageFile::
 {}
 
 void PpmImageFile::
-readRectangle(const uint rectOrigin[2], const uint rectSize[2],
+readRectangle(const int rectOrigin[2], const int rectSize[2],
               PpmImageFile::Pixel* rectBuffer) const
 {
 	/* Lock the image file (no sense in multithreading at this point): */
 	Threads::Mutex::Lock imageFileLock(imageFileMutex);
 	
 	/* Clip the rectangle against the image's valid region: */
-	uint min[2],max[2];
-	for(uint i=0;i<2;++i)
+	int min[2],max[2];
+	for(int i=0;i<2;++i)
     {
 		min[i]=0;
 		max[i]=size[i];
@@ -102,7 +102,7 @@ readRectangle(const uint rectOrigin[2], const uint rectSize[2],
 	Misc::LargeFile::Offset sourceRowPtr = 
         firstRow - Misc::LargeFile::Offset(min[1])*rowLength;
 	sourceRowPtr += Misc::LargeFile::Offset(min[1]*sizeof(Pixel));
-	for(uint row=min[1];row<max[1];++row)
+	for(int row=min[1];row<max[1];++row)
     {
 		/* Read the pixel row straight from disk; no application-level caching
            for now: */

@@ -5,6 +5,11 @@
 #include <construo/ImagePatch.h>
 
 ///\todo remove
+#define DEBUG_PREPARESUBSAMPLINGDOMAIN 0
+#define DEBUG_FLAGANCESTORSFORUPDATE 0
+#if DEBUG_FLAGANCESTORSFORUPDATE
+static float flagAncestorsForUpdateColor[3];
+#endif //DEBUG_FLAGANCESTORSFORUPDATE
 #include <construo/Visualizer.h>
 
 BEGIN_CRUSTA
@@ -22,7 +27,9 @@ assert(size[0]==size[1]);
     globe = new Globe(spheroidName, tileSize);
 
 ///\todo for now hardcode the subsampling filter
-    subsamplingFilter = Filter::createPointFilter();
+//    Filter::makePointFilter(subsamplingFilter);
+    Filter::makeTriangleFilter(subsamplingFilter);
+//    Filter::makeFiveLobeLanczosFilter(subsamplingFilter);
 
     scopeBuf          = new Scope::Scalar[tileSize[0]*tileSize[1]*3];
     nodeDataBuf       = new PixelParam[tileSize[0]*tileSize[1]];
@@ -81,13 +88,18 @@ template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
 flagAncestorsForUpdate(Node* node)
 {
-    while (node != NULL)
+    while (node!=NULL && !node->mustBeUpdated)
     {
+#if DEBUG_FLAGANCESTORSFORUPDATE
+Visualizer::addPrimitive(GL_LINES, node->coverage, flagAncestorsForUpdateColor);
+Visualizer::show();
+#endif //DEBUG_FLAGANCESTORSFORUPDATE
         node->mustBeUpdated = true;
         node = node->parent;
     }
 }
 
+#define DEBUG_SOURCEFINEST 0
 template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
 sourceFinest(Node* node, Patch* imgPatch, uint overlap)
@@ -96,15 +108,15 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
     Box nodeImgBox = imgPatch->transform->worldToImage(
         node->coverage.getBoundingBox());
     //use the box to load an appropriate rectangle from the image file
-    uint rectOrigin[2];
-    uint rectSize[2];
-    for (uint i=0; i<2; i++)
+    int rectOrigin[2];
+    int rectSize[2];
+    for (int i=0; i<2; i++)
     {
 ///\todo abstract the sampler
         //assume bilinear interpolation here
-        rectOrigin[i] = static_cast<uint>(Math::floor(nodeImgBox.min[i]));
-        rectSize[i]   = static_cast<uint>(Math::ceil(nodeImgBox.max[i])) + 1 -
-                                                     rectOrigin[i];
+        rectOrigin[i] = static_cast<int>(Math::floor(nodeImgBox.min[i]));
+        rectSize[i]   = static_cast<int>(Math::ceil(nodeImgBox.max[i])) + 1 -
+                                                    rectOrigin[i];
     }
     PixelParam* rectBuffer = new PixelParam[rectSize[0] * rectSize[1]];
     imgPatch->image->readRectangle(rectOrigin, rectSize, rectBuffer);
@@ -113,44 +125,46 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
 ///\todo enhance get Refinement such that is can produce non-uniform samples
     node->scope.getRefinement(tileSize[0], scopeBuf);
 ///\todo remove
-#if 0
-{
-    Visualizer::Floats scopeRef;
-    uint numScopeSamples = tileSize[0]*tileSize[1]*3;
-    scopeRef.resize(numScopeSamples);
-    float* out = &scopeRef[0];
-    for (double* in=&scopeBuf[0]; in<&scopeBuf[0]+numScopeSamples; in+=3,out+=3)
-    {
-        Scope::Scalar len = sqrt(in[0]*in[0] + in[1]*in[1] + in[2]*in[2]);
-        Point p(atan2(in[1], in[0]), acos(in[2]/len));
-        out[0] = p[0];
-        out[1] =  0.0;
-        out[2] = p[1];
-    }
-    Visualizer::addPrimitive(GL_POINTS, scopeRef);
-    Visualizer::show();
-}
-#endif
     //prepare the node's data buffer
     node->data = nodeDataBuf;
     node->treeState->file->readTile(node->tileIndex, node->data);
     
     //resample pixel values for the node from the read rectangle
-    Scope::Scalar* endPtr = scopeBuf + tileSize[0]*tileSize[1];
+    Scope::Scalar* endPtr = scopeBuf + tileSize[0]*tileSize[1]*3;
     PixelParam* dataPtr   = node->data;
     for (Scope::Scalar* curPtr=scopeBuf; curPtr!=endPtr; curPtr+=3, ++dataPtr)
     {
         /* transform the sample position into spherical space and then to the
            image patch's image coordinates: */
-        Scope::Scalar len =
-            sqrt(curPtr[0]*curPtr[0]+curPtr[1]*curPtr[1]+curPtr[2]*curPtr[2]);
-        Point p(atan2(curPtr[1], curPtr[0]), acos(curPtr[2]/len));
+        Point p = Converter::cartesianToSpherical(
+            Scope::Vertex(curPtr[0], curPtr[1], curPtr[2]));
+#if DEBUG_SOURCEFINEST
+Visualizer::Floats scopeSample;
+scopeSample.resize(3);
+scopeSample[0] = p[0];
+scopeSample[1] =  0.0;
+scopeSample[2] = p[1];
+static const float scopeSampleColor[3] = { 0.2f, 1.0f, 0.1f };
+Visualizer::addPrimitive(GL_POINTS, scopeSample, scopeSampleColor);
+Visualizer::show();
+#endif //DEBUG_SOURCEFINEST
         p = imgPatch->transform->worldToImage(p);
         
         /* Check if the point is inside the image patch's coverage region: */
         if(overlap==SphereCoverage::ISCONTAINED ||
            imgPatch->imageCoverage->contains(p))
         {
+#if 0
+            /* nearest neighbor sampling */
+            int ip[2];
+            for (uint i=0; i<2; ++i)
+            {
+                double pFloor = Math::floor(p[i] + 0.5f);
+                ip[i]         = static_cast<int>(pFloor) - rectOrigin[i];
+            }
+            *dataPtr  = rectBuffer[ip[1]*rectSize[0] + ip[0]];
+            *dataPtr *= INV_SPHEROID_RADIUS;
+#else
             /* Sample the point: */
             int ip[2];
             double d[2];
@@ -164,7 +178,22 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
             PixelParam one = (1.0-d[0])*basePtr[0] + d[0]*(basePtr[1]);
             PixelParam two = (1.0-d[0])*basePtr[rectSize[0]] +
                              d[0]*basePtr[rectSize[0]+1];
-            *dataPtr = (1.0-d[1])*one + d[1]*two;
+            *dataPtr  = (1.0-d[1])*one + d[1]*two;
+            *dataPtr *= INV_SPHEROID_RADIUS;
+#endif
+#if DEBUG_SOURCEFINEST
+Point pp = imgPatch->transform->imageToWorld(
+    ip[0]+rectOrigin[0], (ip[1]+rectOrigin[1]));
+Visualizer::Floats imgSample;
+imgSample.resize(3);
+imgSample[0] = pp[0];
+imgSample[1] =   0.0;
+imgSample[2] = pp[1];
+float imgSampleColor[3] = {
+    (float)rand()/RAND_MAX, (float)rand()/RAND_MAX, (float)rand()/RAND_MAX };
+Visualizer::addPrimitive(GL_POINTS, imgSample, imgSampleColor);
+Visualizer::show();
+#endif //DEBUG_SOURCEFINEST
         }
     }
 
@@ -176,18 +205,33 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
     header.reset(node);
     node->treeState->file->writeTile(node->tileIndex, header, node->data);
 
+#if 0
+{
+static const float color[3] = { 0.2f, 1.0f, 0.1f };
+Visualizer::addScopeRefinement(tileSize[0], scopeBuf, color);
+Visualizer::show();
+}
+#endif
     node->data = NULL;
     
-    static const int offsets[4][3][2] = {
-        { {-1, 0}, {-1,-1}, { 0,-1} }, { { 0,-1}, { 1,-1}, { 1, 0} },
-        { {-1, 0}, {-1, 1}, { 0, 1} }, { { 0, 1}, { 1, 1}, { 1, 0} }
-    };
     if (node->parent != NULL)
     {
+#if DEBUG_FLAGANCESTORSFORUPDATE
+flagAncestorsForUpdateColor[0] = (float)rand() / RAND_MAX;
+flagAncestorsForUpdateColor[1] = (float)rand() / RAND_MAX;
+flagAncestorsForUpdateColor[2] = (float)rand() / RAND_MAX;
+#endif //DEBUG_FLAGANCESTORSFORUPDATE
         //make sure that the parent dependent on this new data is also updated
         flagAncestorsForUpdate(node->parent);
         
         //we musn't forget to update all the adjacent non-sibling nodes either
+/**\todo DANGER: there exist valence 5 corners. Need to account for reaching 2
+different nodes on corners depending on which neighbor we traverse first. Need
+to adjust getKin and its API to allow this */
+        static const int offsets[4][3][2] = {
+            { {-1, 0}, {-1,-1}, { 0,-1} }, { { 0,-1}, { 1,-1}, { 1, 0} },
+            { {-1, 0}, {-1, 1}, { 0, 1} }, { { 0, 1}, { 1, 1}, { 1, 0} }
+        };
         int off[2];
         Node* kin;
         for (uint i=0; i<3; ++i)
@@ -208,7 +252,8 @@ int Builder<PixelParam, PolyhedronParam>::
 updateFiner(Node* node, Patch* imgPatch, Point::Scalar imgResolution)
 {
 ///\todo remove
-//Visualizer::addPrimitive(GL_LINES, node->coverage);
+//static const float covColor[3] = { 0.1f, 0.4f, 0.6f };
+//Visualizer::addPrimitive(GL_LINES, node->coverage, covColor);
 //Visualizer::peek();
 
     //check for an overlap
@@ -217,7 +262,8 @@ updateFiner(Node* node, Patch* imgPatch, Point::Scalar imgResolution)
         return 0;
 
     //recurse to children if the resolution of the node is too coarse
-    if (node->resolution > imgResolution)
+///\todo remove the forced recursion of at least a level
+    if (node->resolution > imgResolution || node->treeIndex.level<1)
     {
         int depth = 0;
         refine(node);
@@ -247,16 +293,54 @@ updateFinestLevels()
 ///\todo remove
 //Visualizer::clear();
 //Visualizer::addPrimitive(GL_LINES, *((*pIt)->sphereCoverage));
+//Visualizer::show();
+
+#if 0
+const int* size = (*pIt)->image->getSize();
+Visualizer::Floats edges;
+edges.resize(size[0]*size[1]*4*2*3);
+float* e = &edges[0];
+Visualizer::Floats centers;
+centers.resize(size[0]*size[1]*3);
+float* c = &centers[0];
+
+Point corners[4];
+for (int y=0; y<size[1]; ++y)
+{
+    for (int x=0; x<size[0]; ++x, c+=3)
+    {
+        corners[0] = (*pIt)->transform->imageToWorld(Point(x-0.5, y-0.5));
+        corners[1] = (*pIt)->transform->imageToWorld(Point(x+0.5, y-0.5));
+        corners[2] = (*pIt)->transform->imageToWorld(Point(x+0.5, y+0.5));
+        corners[3] = (*pIt)->transform->imageToWorld(Point(x-0.5, y+0.5));
+        Point origin = (*pIt)->transform->imageToWorld(Point(x, y));
+
+        for (uint i=0; i<4; ++i, e+=6)
+        {
+            int end = (i+1)%4;
+            e[0] = corners[i][0];   e[1] = 0.0; e[2] = corners[i][1];
+            e[3] = corners[end][0]; e[4] = 0.0; e[5] = corners[end][1];
+        }
+
+        c[0] = origin[0];
+        c[1] = 0.0;
+        c[2] = origin[1];
+    }
+}
+
+static const float edgeColor[3] = { 0.9f, 0.6f, 0.2f };
+Visualizer::addPrimitive(GL_LINES, edges, edgeColor);
+static const float centerColor[3] = { 0.2f, 0.6f, 0.9f };
+Visualizer::addPrimitive(GL_POINTS, centers, centerColor);
+Visualizer::show();
+#endif //show image pixels
 
         //grab the smallest resolution from the image
-        Point::Scalar imgResolution;
-        {
-            const Point::Scalar* resolutions = (*pIt)->transform->getScale();
-/**\todo the scales are used in the transform to flip/flop the image so they may
-         be negative. Need to have a proper image sample resolution and not
-         misuse the transform scale */
-            imgResolution = std::min(fabs(resolutions[0]),fabs(resolutions[1]));
-        }
+        Point::Scalar imgResolution = (*pIt)->transform->getFinestResolution(
+            (*pIt)->image->getSize());
+        /* exaggerate the image's resolution because our sampling is not aligned
+           with the image axis */
+        imgResolution *= Point::Scalar(0.5);
 
         //iterate over all the spheroid's base patches to determine overlap
         for (typename Globe::BaseNodes::iterator bIt=globe->baseNodes.begin();
@@ -276,8 +360,16 @@ template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
 prepareSubsamplingDomain(Node* node)
 {
+#if DEBUG_PREPARESUBSAMPLINGDOMAIN
+Visualizer::addPrimitive(GL_LINES, node->coverage);
+Visualizer::show();
+#endif //DEBUG_PREPARESUBSAMPLINGDOMAIN
     Node* kin     = NULL;
 
+///\todo remove
+for (uint i=0; i<domainSize[0]*domainSize[1]; ++i)
+domainBuf[i] = PixelParam(33.0f);
+    
     PixelParam* domain = domainBuf + (tileSize[1]-1)*domainSize[0] +
                          tileSize[0]-1;
 
@@ -290,7 +382,14 @@ prepareSubsamplingDomain(Node* node)
         //- retrieve the kin
             nodeOff[0] = domainOff[0];
             nodeOff[1] = domainOff[1];
-            node->getKin(kin, nodeOff, true, 1);
+            uint kinO;
+            node->getKin(kin, nodeOff, true, 1, &kinO);
+#if DEBUG_PREPARESUBSAMPLINGDOMAIN
+const static float scopeRefColor[3] = { 0.3f, 0.8f, 0.3f };
+kin->scope.getRefinement(tileSize[0], scopeBuf);
+Visualizer::addScopeRefinement(tileSize[0], scopeBuf, scopeRefColor);
+Visualizer::show();
+#endif //DEBUG_PREPARESUBSAMPLINGDOMAIN
 
         //- retrieve data as appropriate
             //default to blank data
@@ -368,13 +467,20 @@ prepareSubsamplingDomain(Node* node)
             }
             
         //- insert the data at the appropriate location
-            PixelParam* at = domain +
-                             domainOff[1] * (tileSize[1]-1) * domainSize[0] +
-                             domainOff[0] * (tileSize[0]-1);
+            PixelParam* base = domain +
+                               domainOff[1] * (tileSize[1]-1) * domainSize[0] +
+                               domainOff[0] * (tileSize[0]-1);
+            int startY[4] = { 0, tileSize[1]-1, tileSize[1]-1, 0 };
+            int stepY[4]  = { tileSize[0], 1,  -tileSize[0], -1 };
+            int startX[4] = { 0, 0, tileSize[0]-1, tileSize[0]-1 };
+            int stepX[4]  = { 1,  -tileSize[1], -1, tileSize[0]};
             for (uint y=0; y<tileSize[1]; ++y)
             {
-                memcpy(at + y*domainSize[0], data+y*tileSize[0],
-                       tileSize[0]*sizeof(PixelParam));
+                PixelParam* to         = base + y*domainSize[0];
+                const PixelParam* from = data + startY[kinO] + y*stepY[kinO] +
+                                         startX[kinO];
+                for (uint x=0; x<tileSize[1]; ++x, ++to, from+=stepX[kinO])
+                    *to = *from;
             }
         }
     }
@@ -407,10 +513,13 @@ updateCoarser(Node* node, int level)
     PixelParam* domain;
     for (domain = domainBuf +   (tileSize[1]-1)*domainSize[0]+  (tileSize[0]-1);
          domain<= domainBuf + 3*(tileSize[1]-1)*domainSize[0]+3*(tileSize[0]-1);
-         domain+= 2*domainSize[0] - (2*(tileSize[0]-1) + 1))
+         domain+= 2*domainSize[0] - 2*tileSize[0])
     {
         for (uint i=0; i<tileSize[0]; ++i, domain+=2, ++data)
-            *data = subsamplingFilter.lookup(domain, domainSize[0]);
+        {
+            *data  = subsamplingFilter.lookup(domain, domainSize[0]);
+            *data *= INV_SPHEROID_RADIUS;
+        }
     }
 
     //commit the data to file

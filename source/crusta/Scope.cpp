@@ -17,9 +17,29 @@ Scope::Scalar Scope::
 getRadius() const
 {
     //compute the radius of the sphere the scope lies on
-    return sqrt(corners[0][0]*corners[0][0] +
-                corners[0][1]*corners[0][1] +
-                corners[0][2]*corners[0][2]);    
+    return Math::sqrt(corners[0][0]*corners[0][0] +
+                      corners[0][1]*corners[0][1] +
+                      corners[0][2]*corners[0][2]);    
+}
+
+Scope::Vertex Scope::
+getCentroid() const
+{
+    Vertex centroid(0,0,0);
+    for (uint i=0; i<4; ++i)
+    {
+        centroid[0] += corners[i][0];
+        centroid[1] += corners[i][1];
+        centroid[2] += corners[i][2];
+    }
+    Scalar norm = getRadius() / Math::sqrt(centroid[0]*centroid[0] +
+                                           centroid[1]*centroid[1] +
+                                           centroid[2]*centroid[2]);
+    centroid[0] *= norm;
+    centroid[1] *= norm;
+    centroid[2] *= norm;
+
+    return centroid;
 }
 
 void Scope::

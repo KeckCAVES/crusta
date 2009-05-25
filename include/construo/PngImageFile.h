@@ -48,7 +48,7 @@ private:
 
 //- inherited from ImageFileBase
 public:
-	virtual void readRectangle(const uint rectOrigin[2], const uint rectSize[2],
+	virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
                                Pixel* rectBuffer) const;
 };
 

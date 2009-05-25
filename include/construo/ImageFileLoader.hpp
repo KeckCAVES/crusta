@@ -30,6 +30,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <construo/GeometryTypes.h>
 #include <construo/PpmImageFile.h>
 #include <construo/PngImageFile.h>
+#include <construo/ReiImageFile.h>
 #if CONSTRUO_USE_IMAGEMAGICK
 #include <construo/MagickImageFile.h>
 #endif //CONSTRUO_USE_IMAGEMAGICK
@@ -62,6 +63,13 @@ loadImageFile(const char* fileName)
 		/* Create and return an Arc/Info binary grid image file: */
 		std::cout<<"Loading DEM image file "<<fileName<<"..."<<std::flush;
 		result=new ArcInfoBinaryGridImageFile(fileName);
+		std::cout<<" done"<<std::endl;
+    }
+    else if (strcasecmp(extPtr, ".rei")==0)
+    {
+        /* Create and return a REI image file: */
+        std::cout<<"Loading REI image file "<<fileName<<"..."<<std::flush;
+        result=new ReiImageFile(fileName);
 		std::cout<<" done"<<std::endl;
     }
 	else

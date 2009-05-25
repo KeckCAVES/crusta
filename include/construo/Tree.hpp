@@ -1,6 +1,7 @@
 #include <sstream>
 
 #include <crusta/QuadtreeFileHeaders.h>
+#include <construo/Converters.h>
 
 ///\todo remove
 #include <construo/Visualizer.h>
@@ -54,12 +55,14 @@ rotate(int p[2], uint o, const int rotations[4][2][2])
 
 template <typename PixelParam>
 bool TreeNode<PixelParam>::
-getKin(TreeNode*& kin, int offsets[2], bool loadMissing, int down)
+getKin(TreeNode*& kin, int offsets[2], bool loadMissing, int down, uint* kinO)
 {
     kin              = this;
     int nodeSize     = pow(2, down);
     int nodeCoord[2] = {0, 0};
     int kinCoord[2]  = {offsets[0], offsets[1]};
+    if (kinO != NULL)
+        *kinO = 0;
 
 if (debugGetKin) {
 Visualizer::show();
@@ -77,9 +80,7 @@ Scope::Vertex t(
 kin->scope.corners[0][0] + s*(0.5+offsets[0])*v0[0] + s*(0.5+offsets[1])*v1[0],
 kin->scope.corners[0][1] + s*(0.5+offsets[0])*v0[1] + s*(0.5+offsets[1])*v1[1],
 kin->scope.corners[0][2] + s*(0.5+offsets[0])*v0[2] + s*(0.5+offsets[1])*v1[2]);
-double norm = 1.0 / sqrt(t[0]*t[0] + t[1]*t[1] + t[2]*t[2]);
-t[0] *= norm; t[1] *= norm; t[2] *= norm;
-Point tt(atan2(t[1], t[0]), acos(t[2]));
+Point tt = Converter::cartesianToSpherical(t);
 target[0] = tt[0];
 target[1] = 0.0;
 target[2] = tt[1];
@@ -105,7 +106,8 @@ Visualizer::show();
             static const uint neighborIds[2][2] = { {1, 3}, {2, 0} };
 
             //determine the most important direction and corresponding neighbor
-            uint horizontal = abs(kinCoord[0])>abs(kinCoord[1]) ? 0 : 1;
+            uint horizontal = Math::abs(kinCoord[0])>Math::abs(kinCoord[1]) ?
+                              0 : 1;
             if (kinCoord[horizontal]>=0 && kinCoord[horizontal]<nodeSize)
                 horizontal = 1 - horizontal;
             uint direction  = kinCoord[horizontal]<0 ? 0 : 1;
@@ -123,7 +125,9 @@ Visualizer::show();
                 {{-1, 0}, {0,-1}},   {{0,-1}, { 1, 0}},
             };
 
-            uint orientation = self->orientations[neighbor];
+            int orientation = self->orientations[neighbor];
+            if (kinO != NULL)
+                *kinO = (*kinO + orientation) % 4;
             //undo the rotation of the kinCoord
             rotate(kinCoord, orientation, rotations);
 
@@ -284,13 +288,10 @@ computeResolution()
     for (uint i=2; i+1<TILE_RESOLUTION; i<<=1)
         one = mid(one, two, radius);
 
-    Scope::Scalar len = Scope::Scalar(0);
-    for (uint i=0; i<3; ++i)
-    {
-        Scope::Scalar diff = two[i] - one[i];
-        len += diff * diff;
-    }
-    resolution = sqrt(len);
+    //convert points to spherical coords
+    Point a    = Converter::cartesianToSpherical(one);
+    Point b    = Converter::cartesianToSpherical(two);
+    resolution = Converter::haversineDist(a, b, radius);
 }
 
 template <typename PixelParam>

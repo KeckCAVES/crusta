@@ -1,5 +1,7 @@
 #include <crusta/TreeIndex.h>
 
+#include <sstream>
+
 BEGIN_CRUSTA
 
 size_t TreeIndex::hash::
@@ -20,7 +22,7 @@ operator() (const TreeIndex& i) const
 
 
 TreeIndex::
-TreeIndex(uint8 iPatch=0, uint8 iChild=0, uint16 iLevel=0, uint32 iIndex=0) :
+TreeIndex(uint8 iPatch, uint8 iChild, uint16 iLevel, uint32 iIndex) :
     patch(iPatch), child(iChild), level(iLevel), index(iIndex)
 {}
 TreeIndex::
@@ -69,7 +71,28 @@ str() const
     return os.str();
 }
 
-std::ostream& TreeIndex::
+std::string TreeIndex::
+med_str() const
+{
+    std::ostringstream os;
+    os << patch << ".";
+    
+    if (level == uint16(~0))
+        return "i";
+    if (level == 0)
+    {
+        os << "r";
+        return os.str();
+    }
+
+    uint32 i = index;
+    for (uint j=0; j<level; ++j, i>>=2)
+        os << (i&0x3);
+    
+    return os.str();    
+}
+
+std::ostream&
 operator<<(std::ostream& os, const TreeIndex& i)
 {
     if (i.level == uint16(~0))

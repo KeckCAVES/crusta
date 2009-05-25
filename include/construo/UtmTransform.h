@@ -57,6 +57,7 @@ public:
     ///returns the UTM hemisphere
 	Hemisphere getHemisphere() const;
 
+    virtual Point::Scalar getFinestResolution(const int size[2]) const;
 	virtual Point systemToWorld(const Point& systemPoint) const;
 	virtual Point worldToSystem(const Point& worldPoint) const;
 	virtual Box systemToWorld(const Box& systemBox) const;

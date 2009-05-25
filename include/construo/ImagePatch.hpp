@@ -16,7 +16,7 @@ ImagePatch(const std::string patchName) :
 {
 	//load the image file
 	image = ImageFileLoader<PixelParam>::loadImageFile(patchName.c_str());
-    const uint* imgSize = image->getSize();
+    const int* imgSize = image->getSize();
 	
 	//remove the extension from the image file name
     size_t dotPos = patchName.rfind('.');

@@ -40,14 +40,14 @@ public:
 	virtual ~ImageFileBase();
 
     ///returns image size
-	const uint* getSize() const;
+	const int* getSize() const;
     ///reads a rectangle of pixel data into the given buffer
-	virtual void readRectangle(const uint rectOrigin[2], const uint rectSize[2],
+	virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
                                Pixel* rectBuffer) const = 0;
 
 protected:
     ///size of the image in pixels (width x height)
-	uint size[2];
+	int size[2];
 };
 
 template <class PixelParam>

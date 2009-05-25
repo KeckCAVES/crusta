@@ -32,6 +32,21 @@ template <typename ScalarParam>
 void Scope::
 getRefinement(uint resolution, ScalarParam* vertices) const
 {
+    getRefinement(static_cast<ScalarParam>(getRadius()), resolution, vertices);
+}
+
+template <typename ScalarParam>
+void Scope::
+getCentroidRefinement(uint resolution, ScalarParam* vertices) const
+{
+    getCentroidRefinement(static_cast<ScalarParam>(getRadius()), resolution,
+                          vertices);
+}
+
+template <typename ScalarParam>
+void Scope::
+getRefinement(ScalarParam radius, uint resolution, ScalarParam* vertices) const
+{
     //set the initial four corners from the scope
     uint cornerIndices[] = {
         0, (resolution-1)*3, (resolution-1)*resolution*3,
@@ -39,13 +54,20 @@ getRefinement(uint resolution, ScalarParam* vertices) const
     };
     for (uint i=0; i<4; ++i)
     {
+        ScalarParam norm = ScalarParam(0);
         uint ci = cornerIndices[i];
         for (uint j=0; j<3; ++j)
-            vertices[ci+j] = corners[i][j];
+        {
+            ScalarParam val = corners[i][j];
+            vertices[ci+j]  = val;
+            norm           += val*val;
+        }
+        norm = radius / sqrt(norm);
+        for (uint j=0; j<3; ++j)
+            vertices[ci+j] *= norm;
     }
     
     //refine the rest
-    ScalarParam radius = static_cast<ScalarParam>(getRadius());
     uint endIndex  = resolution * resolution;
     for (uint blockSize=resolution-1; blockSize>1; blockSize>>=1)
     {
@@ -73,6 +95,39 @@ getRefinement(uint resolution, ScalarParam* vertices) const
                          vertices, radius);
             }
         }
+    }
+}
+
+template <typename ScalarParam>
+void Scope::
+getCentroidRefinement(ScalarParam radius, uint resolution,
+                      ScalarParam* vertices) const
+{
+    getRefinement(radius, resolution, vertices);
+    
+    //compute the centroid
+    uint cornerIndices[] = {
+        0, (resolution-1)*3, (resolution-1)*resolution*3,
+        ((resolution-1)*resolution + (resolution-1))*3
+    };
+    Scalar centroid[3] = { 0, 0 ,0 };
+    for (uint i=0; i<4; ++i)
+    {
+        ScalarParam* corner = &vertices[cornerIndices[i]];
+        for (uint j=0; j<3; ++j)
+            centroid[j] += corner[j];
+    }
+    Scalar norm = radius / Math::sqrt(centroid[0]*centroid[0] +
+                                      centroid[1]*centroid[1] +
+                                      centroid[2]*centroid[2]);
+    for (uint i=0; i<3; ++i)
+        centroid[i] *= norm;
+    
+    for (ScalarParam* v=vertices; v<vertices + resolution*resolution*3; v+=3)
+    {
+        v[0] -= centroid[0];
+        v[1] -= centroid[1];
+        v[2] -= centroid[2];
     }
 }
 
