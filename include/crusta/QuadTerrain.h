@@ -8,13 +8,11 @@
 #include <GL/GLShader.h>
 
 #include <crusta/basics.h>
-#include <crusta/QuadtreeFileSpecs.h>
-#include <crusta/QuadNodeData.h>
 #include <crusta/CacheRequest.h>
 
 #include <crusta/FrustumVisibility.h>
 #include <crusta/FocusViewEvaluator.h>
-#include <crusta/Scope.h>
+#include <crusta/Node.h>
 
 BEGIN_CRUSTA
 
@@ -44,50 +42,18 @@ public:
     void display(GLContextData& contextData);
     
     /** produce the flat sphere cartesian space coordinates for a node */
-    static void generateGeometry(const Scope& scope,
-                                 QuadNodeMainData::Vertex* vertices);
+    void generateGeometry(Node* node, QuadNodeMainData::Vertex* vertices);
 ///\todo remove
 static void generateColor(float* heights, uint8* colors);
+
+///\todo proper access restrictions
+    /** quadtree file from which to source data for the elevation */
+    DemFile* demFile;
+    /** quadtree file from which to source data for the color */
+    ColorFile* colorFile;
     
 protected:
     struct GlData;
-
-    /** stores aspects of the terrain required for approximation management */
-    struct Node
-    {
-        typedef std::vector<Node*> ChildBlocks;
-
-        Node();
-        /** discard the nodes of the subtree */
-        void discardSubTree(GlData* glData);
-
-        /** pointer to the tree containing the node (to access shared data) */
-        QuadTerrain* terrain;
-
-        /** uniquely characterize this node's "position" in the tree. The tree
-            index must correlate with the global hierarchy of the data
-            sources */
-        TreeIndex index;
-        /** caches this node's scope for visibility and lod evaluation */
-        Scope scope;
-
-        /** index of the DEM tile in the database */
-        DemFile::TileIndex demTile;
-        /** index of the DEM tiles of the children. This is to avoid having to
-            read the indices from file everytime a child needs to be fetched */
-        DemFile::TileIndex childDemTiles[4];
-
-        /** cache buffer containing the data related to this node */
-        MainCacheBuffer* mainBuffer;
-        /** cache buffer containing the GL data related to this node (can be
-            stored here, since an ActiveNode exists only in a GL context) */
-        VideoCacheBuffer* videoBuffer;
-
-        /** pointer to the parent node in the tree */
-        Node* parent;
-        /** pointer to the children nodes in the tree */
-        Node* children;
-    };
 
 ///\todo remove, debug
     void printTree(Node* node);
@@ -106,6 +72,8 @@ protected:
         coarsening can be processed in case the cache capacity is reaching its
         limit */
     void confirmCurrent(Node* node, float lod, CacheRequests& requests);
+    /** discard the nodes of the subtree */
+    static void discardSubTree(GlData* glData, Node* node);
     /** evaluate the terrain tree starting with the node specified. The terrain
         tree is manipulated to add/remove nodes as necessary. */
     void traverse(GlData* glData, Node* node, CacheRequests& requests);
@@ -120,15 +88,15 @@ protected:
         point. */
     void drawNode(GlData* glData, Node* node);
 
-    /** quadtree file from which to source data for the elevation */
-    DemFile* demFile;
-
     /** spheroid base patch ID (specified at construction but needed during
         initContext) */
     uint8 basePatchId;
     /** spheroid base scope (specified at construction but needed during
         initContext) */
     Scope baseScope;
+
+    /** temporary storage for computing the high-precision surface geometry */
+    double* geometryBuf;
 
 //- inherited from GLObject
 public:
@@ -183,6 +151,9 @@ protected:
         /** defines a triangle-string triangulation of the vertices */
         GLuint indexTemplate;
 
+        /** uniform relating the centroid vector to the shader for elevation
+            extrusion */
+        GLint centroidUniform;
         /** GL shader generating textured terrain */
         GLShader shader;
     };    

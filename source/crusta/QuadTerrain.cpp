@@ -12,6 +12,8 @@
 ///\todo remove
 #include <crusta/simplexnoise1234.h>
 
+#define USING_AVERAGE_HEIGHT 0
+
 BEGIN_CRUSTA
 
 static const uint NUM_GEOMETRY_INDICES =
@@ -34,19 +36,12 @@ QuadTerrain(uint8 patch, const Scope& scope, const std::string& demFileName) :
     assert(rootBuffer!=NULL);
     rootBuffer->pin();
 
-    //generate/fetch the data content for the static data
-    const QuadNodeMainData& rootData = rootBuffer->getData();
-    generateGeometry(scope, rootData.geometry);
-    if (!demFile->readTile(0, rootData.height))
-    {
-        Misc::throwStdErr("QuadTerrain::QuadTerrain: Invalid DEM file: could "
-                          "not read root data");
-    }
-    generateColor(rootData.height, rootData.color);
+    geometryBuf = new double[TILE_RESOLUTION*TILE_RESOLUTION*3];
 }
 QuadTerrain::
 ~QuadTerrain()
 {
+    delete geometryBuf;
     delete demFile;
 }
 
@@ -111,10 +106,33 @@ checkTree(glData, glData->root);
 }
 
 void QuadTerrain::
-generateGeometry(const Scope& scope, QuadNodeMainData::Vertex* vertices)
+generateGeometry(Node* node, QuadNodeMainData::Vertex* vertices)
 {
-    scope.getCentroidRefinement(1.0f, TILE_RESOLUTION,
-                                reinterpret_cast<float*>(vertices));
+    //compute the average height and shell radius from the elevation range
+#if USING_AVERAGE_HEIGHT
+    DemHeight avgElevation = (node->elevationRange[0]+node->elevationRange[1]) *
+                             DemHeight(0.5);
+    double shellRadius = SPHEROID_RADIUS + avgElevation;
+#else
+    double shellRadius = SPHEROID_RADIUS;
+#endif //USING_AVERAGE_HEIGHT
+    node->scope.getRefinement(shellRadius, TILE_RESOLUTION, geometryBuf);
+
+    /* compute and store the centroid here, since node-creation level generation
+       of these values only happens after the data load step */
+    Scope::Vertex scopeCentroid = node->scope.getCentroid(shellRadius);
+    node->centroid[0] = scopeCentroid[0];
+    node->centroid[1] = scopeCentroid[1];
+    node->centroid[2] = scopeCentroid[2];
+
+    QuadNodeMainData::Vertex* v = vertices;
+    for (double* g=geometryBuf; g<geometryBuf+TILE_RESOLUTION*TILE_RESOLUTION*3;
+         g+=3, ++v)
+    {
+        v->position[0] = DemHeight(g[0] - node->centroid[0]);
+        v->position[1] = DemHeight(g[1] - node->centroid[1]);
+        v->position[2] = DemHeight(g[2] - node->centroid[2]);
+    }
 }
 
 #if 0
@@ -174,16 +192,6 @@ generateColor(float* heights, uint8* colors)
 }
 
 
-QuadTerrain::Node::
-Node() :
-    demTile(DemFile::INVALID_TILEINDEX), mainBuffer(NULL), videoBuffer(NULL),
-    parent(NULL), children(NULL)
-{
-    childDemTiles[0] = childDemTiles[1] = DemFile::INVALID_TILEINDEX;
-    childDemTiles[2] = childDemTiles[4] = DemFile::INVALID_TILEINDEX;
-}
-
-
 ///\todo debug, remove
 void QuadTerrain::
 printTree(Node* node)
@@ -224,24 +232,6 @@ checkTree(GlData* glData, Node* node)
 }
 
 
-void QuadTerrain::Node::
-discardSubTree(GlData* glData)
-{
-    if (children==NULL)
-        return;
-
-    //recurse down the children that have subtrees
-    for (uint i=0; i<4; ++i)
-    {
-        if (children[i].children != NULL)
-            children[i].discardSubTree(glData);
-    }
-    //return the children to the pool
-    glData->releaseNodeBlock(children);
-    children = NULL;
-}
-
-
 bool QuadTerrain::
 merge(GlData* glData, Node* node, float lod,
       CacheRequests& requests)
@@ -251,17 +241,14 @@ merge(GlData* glData, Node* node, float lod,
         crustaQuadCache.getMainCache().findCached(node->parent->index);
     if (node->parent->mainBuffer == NULL)
     {
-        requests.push_back(CacheRequest(lod, node->parent->index,
-                                        node->parent->scope,
-                                        node->terrain->demFile,
-                                        node->parent->demTile));
+        requests.push_back(CacheRequest(lod, node->parent));
         return false;
     }
 
     //make the parent current
     node->parent->videoBuffer = NULL;
 DEBUG_OUT(1, "-Merge: %s:\n", node->parent->index.str().c_str());
-    node->parent->discardSubTree(glData);
+    discardSubTree(glData, node->parent);
 printTree(glData->root); DEBUG_OUT(1, "\n\n");
 checkTree(glData, glData->root);
     return true;
@@ -307,9 +294,7 @@ split(GlData* glData, Node* node, float lod, CacheRequests& requests)
             crustaQuadCache.getMainCache().findCached(child.index);
         if (child.mainBuffer == NULL)
         {
-            requests.push_back(CacheRequest(lod, child.index, child.scope,
-                                            child.terrain->demFile,
-                                            child.demTile));
+            requests.push_back(CacheRequest(lod, &child));
             allChildrenCached = false;
         }
         child.videoBuffer = NULL;
@@ -325,16 +310,36 @@ split(GlData* glData, Node* node, float lod, CacheRequests& requests)
     else
     {
         /* split was successful, read in the indices of the dem tiles for the
-           children */
+           children as well as compute the average elevation */
+        DemTileHeader header;
         for (uint i=0; i<4; ++i)
         {
             Node& child = node->children[i];
-            if (!child.terrain->demFile->readTile(child.demTile,
-                                                  child.childDemTiles))
+            if (!child.terrain->demFile->readTile(
+                    child.demTile, child.childDemTiles, header))
             {
                 Misc::throwStdErr("QuadTerrain::Split: couldn't retrieve the "
                                   "dem tile indices for the children");
             }
+            child.elevationRange[0] = header.range[0];
+            child.elevationRange[1] = header.range[1];
+
+            /* compute the centroid (can't be done in generateGeometry because
+               those are cached, so a newly created node might use a cached
+               copy of the geometry and not call the method. We must compute
+               the centroid whenever a node is created */
+#if USING_AVERAGE_HEIGHT
+            DemHeight avgElevation = (child.elevationRange[0] +
+                                      child.elevationRange[1]) * DemHeight(0.5);
+            Scope::Vertex scopeCentroid = child.scope.getCentroid(
+                SPHEROID_RADIUS + avgElevation);
+#else
+            Scope::Vertex scopeCentroid = child.scope.getCentroid(
+                SPHEROID_RADIUS);
+#endif //USING_AVERAGE_HEIGHT
+            child.centroid[0] = scopeCentroid[0];
+            child.centroid[1] = scopeCentroid[1];
+            child.centroid[2] = scopeCentroid[2];
         }
 /** \todo wait... since the buffer can dissappear under the node between any
 frame with no prior notice one can never assume these things are there and must
@@ -370,9 +375,7 @@ confirmCurrent(Node* node, float lod, CacheRequests& requests)
             p->mainBuffer = crustaQuadCache.getMainCache().findCached(p->index);
             if (p->mainBuffer == NULL)
             {
-                requests.push_back(CacheRequest(lod, p->index, p->scope,
-                                                p->terrain->demFile,
-                                                p->demTile));
+                requests.push_back(CacheRequest(lod, p));
             }
         }
 
@@ -388,13 +391,28 @@ confirmCurrent(Node* node, float lod, CacheRequests& requests)
                     crustaQuadCache.getMainCache().findCached(p->index);
                 if (p->mainBuffer == NULL)
                 {
-                    requests.push_back(CacheRequest(lod, p->index, p->scope,
-                                                    p->terrain->demFile,
-                                                    p->demTile));
+                    requests.push_back(CacheRequest(lod, p));
                 }
             }
         }
     }
+}
+
+void QuadTerrain::
+discardSubTree(GlData* glData, Node* node)
+{
+    if (node->children==NULL)
+        return;
+    
+    //recurse down the children that have subtrees
+    for (uint i=0; i<4; ++i)
+    {
+        if (node->children[i].children != NULL)
+            discardSubTree(glData, &node->children[i]);
+    }
+    //return the children to the pool
+    glData->releaseNodeBlock(node->children);
+    node->children = NULL;
 }
 
 void QuadTerrain::
@@ -412,7 +430,7 @@ traverse(GlData* glData, Node* node, CacheRequests& requests)
             float parentVisible =
                 glData->visibility.evaluate(node->parent->scope);
             float parentLod    = glData->lod.evaluate(node->parent->scope);
-            if (!parentVisible || parentLod<-1.0)
+            if (!parentVisible || parentLod<1.0)
             {
                 if (merge(glData, node, parentLod, requests))
                     return;
@@ -539,19 +557,21 @@ drawNode(GlData* glData, Node* node)
     //load the centroid relative translated navigation transformation
 #if 1
     glPushMatrix();
-    Scope::Vertex centroid = node->scope.getCentroid();
-    glTranslatef(centroid[0], centroid[1], centroid[2]);
+    glTranslatef(node->centroid[0], node->centroid[1], node->centroid[2]);
 #else
-    Scope::Vertex centroid = node->scope.getCentroid();
-    Vrui::Vector centroidTranslation(centroid[0], centroid[1], centroid[2]);
+    glPushMatrix();
+    Vrui::Vector centroidTranslation(
+        node->centroid[0], node->centroid[1], node->centroid[2]);
     Vrui::NavTransform nav = Vrui::getNavigationTransformation();
-    nav.leftMultiply(Vrui::NavTransform::translate(centroidTranslation));
+    nav *= Vrui::NavTransform::translate(centroidTranslation);
     glLoadMatrix(nav);
 #endif
 
 #if 1
 //    glPointSize(1.0);
 //    glDrawRangeElements(GL_POINTS, 0,
+    glUniform3f(glData->centroidUniform,
+                node->centroid[0], node->centroid[1], node->centroid[2]);
     glDrawRangeElements(GL_TRIANGLE_STRIP, 0,
                         (TILE_RESOLUTION*TILE_RESOLUTION) - 1,
                         NUM_GEOMETRY_INDICES, GL_UNSIGNED_SHORT, 0);
@@ -631,12 +651,50 @@ GlData(QuadTerrain* terrain, const TreeIndex& iRootIndex,
     root->index      = iRootIndex;
     root->scope      = baseScope;
     root->mainBuffer = iRootBuffer;
-
     root->demTile    = 0;
-    if (!terrain->demFile->readTile(root->demTile, root->childDemTiles))
+
+    //generate/fetch the data content for the static data
+    const QuadNodeMainData& rootData = root->mainBuffer->getData();
+
+    DemTileHeader header;
+    if (!root->terrain->demFile->readTile(root->demTile, root->childDemTiles,
+                                          header,rootData.height))
     {
-        Misc::throwStdErr("QuadTerrain::GlData: could not retrieve the indices "
-                          "of the root node's children");
+        Misc::throwStdErr("QuadTerrain::QuadTerrain: Invalid DEM file: could "
+                          "not read root data");
+    }
+
+    root->elevationRange[0] = header.range[0];
+    root->elevationRange[1] = header.range[1];
+    //compute the centroid on the average elevation (see split)
+#if USING_AVERAGE_HEIGHT
+    DemHeight avgElevation = (root->elevationRange[0] +
+                              root->elevationRange[1]) * DemHeight(0.5);
+    Scope::Vertex scopeCentroid = root->scope.getCentroid(
+        SPHEROID_RADIUS + avgElevation);
+#else
+    Scope::Vertex scopeCentroid = root->scope.getCentroid(
+        SPHEROID_RADIUS);
+#endif //USING_AVERAGE_HEIGHT
+    root->centroid[0] = scopeCentroid[0];
+    root->centroid[1] = scopeCentroid[1];
+    root->centroid[2] = scopeCentroid[2];
+
+/**\todo the geometry generation is now dependent on the data!! Need to load it
+in before the geometry can be generated. So long as the data is not loaded yet
+use the values of the node from which the data is being sampled */
+    root->terrain->generateGeometry(root, rootData.geometry);
+
+    if (root->terrain->colorFile != NULL)
+    {
+        root->colorTile = 0;
+        if (!root->terrain->colorFile->readTile(root->colorTile,
+                                                root->childColorTiles,
+                                                (TextureColor*)rootData.color))
+        {
+            Misc::throwStdErr("QuadTerrain::QuadTerrain: Invalid color texture "
+                              "file: could not read root data");
+        }
     }
     
     //initialize the shader
@@ -647,6 +705,7 @@ GlData(QuadTerrain* terrain, const TreeIndex& iRootIndex,
                                   "/elevation.fs").c_str());
     shader.linkShader();
     shader.useProgram();
+    centroidUniform = shader.getUniformLocation("centroid");
     GLint uniform;
     uniform = shader.getUniformLocation("geometryTex");
     glUniform1i(uniform, 0);
@@ -665,7 +724,7 @@ GlData(QuadTerrain* terrain, const TreeIndex& iRootIndex,
 QuadTerrain::GlData::
 ~GlData()
 {
-    root->discardSubTree(this);
+    QuadTerrain::discardSubTree(this, root);
     delete root;
 
     for (NodeBlocks::iterator it=nodePool.begin(); it!=nodePool.end(); ++it)
@@ -677,7 +736,7 @@ QuadTerrain::GlData::
         glDeleteBuffers(1, &indexTemplate);
 }
 
-QuadTerrain::Node* QuadTerrain::GlData::
+Node* QuadTerrain::GlData::
 grabNodeBlock()
 {
     if (!nodePool.empty())

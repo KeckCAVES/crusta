@@ -26,7 +26,7 @@ request(const CacheRequests& reqs)
     {
         CacheRequests::iterator searched =
             std::find(criticalRequests.begin(), criticalRequests.end(),
-                      CacheRequest(0, it->index, Scope(), NULL, 0));
+                      CacheRequest(0, it->node));
         if (searched != criticalRequests.end())
             searched->lod = std::max(searched->lod, it->lod);
         else
@@ -51,8 +51,10 @@ frame()
     for (CacheRequests::iterator it=criticalRequests.begin();
          it!=criticalRequests.end() && Vrui::getApplicationTime()<endTime; ++it)
     {
+        Node* n = it->node;
+
         MainCacheBuffer* buf =
-            crustaQuadCache.getMainCache().getBuffer(it->index);
+            crustaQuadCache.getMainCache().getBuffer(n->index);
         if (buf == NULL)
         {
             DEBUG_OUT(2, "MainCache::frame: no more room in the cache for ");
@@ -64,18 +66,15 @@ frame()
         //process the critical data for that request
 ///\todo currently processes all data
         const QuadNodeMainData& data = buf->getData();
-        QuadTerrain::generateGeometry(it->scope, data.geometry);
-        it->demFile->readTile(it->demTile, data.height);
-        QuadTerrain::generateColor(data.height, data.color);
-        DEBUG_OUT(5, "MainCache::frame: request for Index %s processed\n",
-                  it->index.med_str().c_str());
+        if (n->demTile != DemFile::INVALID_TILEINDEX)
+            n->terrain->demFile->readTile(n->demTile, data.height);
+        if (n->colorTile != ColorFile::INVALID_TILEINDEX)
+            n->terrain->colorFile->readTile(n->colorTile,
+                                            (TextureColor*)data.color);
 
-///\todo remove debug. We must be able to retrieve what we've just processed
-        MainCache& mc = crustaQuadCache.getMainCache();
-        TreeIndex ti = it->index;
-        buf = mc.findCached(ti);
-        if (buf == NULL)
-            mc.findCached(ti);
+        n->terrain->generateGeometry(n, data.geometry);
+        DEBUG_OUT(5, "MainCache::frame: request for Index %s processed\n",
+                  n->index.med_str().c_str());
     }
 
     criticalRequests.clear();

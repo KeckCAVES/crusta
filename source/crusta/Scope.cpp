@@ -23,8 +23,10 @@ getRadius() const
 }
 
 Scope::Vertex Scope::
-getCentroid() const
+getCentroid(Scalar radius) const
 {
+    radius = radius==0.0 ? getRadius() : radius;
+
     Vertex centroid(0,0,0);
     for (uint i=0; i<4; ++i)
     {
@@ -32,9 +34,9 @@ getCentroid() const
         centroid[1] += corners[i][1];
         centroid[2] += corners[i][2];
     }
-    Scalar norm = getRadius() / Math::sqrt(centroid[0]*centroid[0] +
-                                           centroid[1]*centroid[1] +
-                                           centroid[2]*centroid[2]);
+    Scalar norm = radius / Math::sqrt(centroid[0]*centroid[0] +
+                                      centroid[1]*centroid[1] +
+                                      centroid[2]*centroid[2]);
     centroid[0] *= norm;
     centroid[1] *= norm;
     centroid[2] *= norm;

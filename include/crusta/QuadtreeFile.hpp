@@ -79,9 +79,9 @@ QuadtreeFile(const char* quadtreeFileName, const uint iTileSize[2]) :
         {
             if (header.tileSize[i] != iTileSize[i])
             {
-                Misc::throwStdErr("QuadtreeFile: incompatible size of tiles\
-                                   in dimension %d. Requested is %d whereas\
-                                   the existing file provides %d", i,
+                Misc::throwStdErr("QuadtreeFile: incompatible size of tiles "
+                                  "in dimension %d. Requested is %d whereas "
+                                  "the existing file provides %d", i,
                                   iTileSize[i], header.tileSize[i]);
             }
         }

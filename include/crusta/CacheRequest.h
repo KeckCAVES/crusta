@@ -8,6 +8,8 @@
 
 BEGIN_CRUSTA
 
+class Node;
+
 /** information required to process the fetch/generation of data */
 class CacheRequest
 {
@@ -15,8 +17,7 @@ class CacheRequest
     
 public:
     CacheRequest();
-    CacheRequest(float iLod, const TreeIndex& iIndex, const Scope& iScope,
-                 DemFile* fileDem, DemFile::TileIndex tileDem);
+    CacheRequest(float iLod, Node* iNode);
 
     bool operator ==(const CacheRequest& other) const;
     bool operator <(const CacheRequest& other) const;
@@ -24,19 +25,8 @@ public:
 protected:
     /** lod value used for prioritizing the requests */
     float lod;
-    /** index of the node */
-    TreeIndex index;
-    /** scope of the node requested */
-    Scope scope;
-    
-    /** quadtree file from which to source the elevation data */
-    DemFile* demFile;
-    /** index of the tile that contains the elevation data to load */
-    DemFile::TileIndex demTile;
-    
-    //- flags to manage lazy loading
-    bool isHeightLoaded;
-    bool isColorLoaded;
+    /** pointer to the node for which the request was made */
+    Node* node;
 };
 
 typedef std::vector<CacheRequest> CacheRequests;

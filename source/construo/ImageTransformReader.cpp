@@ -31,6 +31,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <Misc/File.h>
 #include <Misc/ThrowStdErr.h>
 
+#include <construo/GdalTransform.h>
 #include <construo/GeoTransform.h>
 #include <construo/ImageTransform.h>
 #include <construo/GeometryTypes.h>
@@ -45,6 +46,9 @@ BEGIN_CRUSTA
 ImageTransform* ImageTransformReader::
 open(const char* fileName)
 {
+#if 1
+    return new GdalTransform(fileName);
+#else
 	/* Open the input file: */
 	Misc::File file(fileName,"rt");
 	char line[256];
@@ -117,6 +121,7 @@ open(const char* fileName)
     result->setImageTransformation(scales, offsets);
 
 	return result;
+#endif
 }
 
 END_CRUSTA

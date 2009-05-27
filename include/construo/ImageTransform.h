@@ -40,23 +40,25 @@ public:
                                 const Point::Scalar newOffset[2]);
     /** flips the image transformation vertically according to the given image
         height */
-	void flip(int imageHeight);
+	virtual void flip(int imageHeight);
     ///returns the size in meters of the shortest side of the smallest pixel
     virtual Point::Scalar getFinestResolution(const int size[2]) const = 0;
     ///returns scaling factors as array
 	const Point::Scalar* getScale() const;
     ///returns offset values as array
 	const Point::Scalar* getOffset() const;
+
     ///converts a point in image coordinates to system coordinates
-	Point imageToSystem(const Point& imagePoint) const;
+	virtual Point imageToSystem(const Point& imagePoint) const;
     ///ditto, with integer image coordinate
-	Point imageToSystem(int imageX, int imageY) const;
+	virtual Point imageToSystem(int imageX, int imageY) const;
     ///converts a point in system coordinates to image coordinates
-	Point systemToImage(const Point& systemPoint) const;
+	virtual Point systemToImage(const Point& systemPoint) const;
     ///converts a box in image coordinates to system coordinates
-	Box imageToSystem(const Box& imageBox) const;
+	virtual Box imageToSystem(const Box& imageBox) const;
     ///converts a box in system coordinates to image coordinates
-	Box systemToImage(const Box& systemBox) const;
+	virtual Box systemToImage(const Box& systemBox) const;
+
     ///converts a point from system coordinates to world coordinates
 	virtual Point systemToWorld(const Point& systemPoint) const =0;
     ///converts a point from world coordinates to system coordinates
@@ -65,6 +67,7 @@ public:
 	virtual Box systemToWorld(const Box& systemBox) const =0;
     ///converts a box from world coordinates to system coordinates
 	virtual Box worldToSystem(const Box& worldBox) const =0;
+
     ///directly converts a point from image to world coordinates
 	virtual Point imageToWorld(const Point& imagePoint) const;
     ///ditto, with integer image coordinate
@@ -75,6 +78,7 @@ public:
 	virtual Box imageToWorld(const Box& imageBox) const;
     ///directly converts a box from world to image coordinates
 	virtual Box worldToImage(const Box& worldBox) const;
+
     ///checks if two image transformations are pixel-to-pixel compatible
 	virtual bool isCompatible(const ImageTransform& other) const = 0;
     ///returns the size of the transformation when written to a binary file

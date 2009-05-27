@@ -27,6 +27,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <iostream>
 #include <Misc/ThrowStdErr.h>
 
+#include <construo/GdalImageFile.h>
 #include <construo/GeometryTypes.h>
 #include <construo/PpmImageFile.h>
 #include <construo/PngImageFile.h>
@@ -48,6 +49,9 @@ template <>
 ImageFile<DemHeight>* ImageFileLoader<DemHeight>::
 loadImageFile(const char* fileName)
 {
+#if 1
+    return new GdalDemImageFile(fileName);
+#else
 	/* Find the file name's extension: */
 	const char* extPtr=0;
 	for(const char* ifnPtr=fileName;*ifnPtr!='\0';++ifnPtr)
@@ -79,6 +83,7 @@ loadImageFile(const char* fileName)
     }
 	
 	return result;
+#endif
 }
 
 /*************************************************

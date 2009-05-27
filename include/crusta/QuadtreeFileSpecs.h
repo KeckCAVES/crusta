@@ -9,11 +9,13 @@
 
 BEGIN_CRUSTA
 
+typedef QuadtreeTileHeader<DemHeight> DemTileHeader;
 typedef QuadtreeFile< DemHeight, QuadtreeFileHeader<DemHeight>,
-                      QuadtreeTileHeader<DemHeight> > DemFile;
+                      DemTileHeader > DemFile;
 
+typedef QuadtreeTileHeader<TextureColor> ColorTileHeader;
 typedef QuadtreeFile< TextureColor, QuadtreeFileHeader<TextureColor>,
-                      QuadtreeTileHeader<TextureColor> > ColorFile;
+                      ColorTileHeader > ColorFile;
 
 END_CRUSTA
 

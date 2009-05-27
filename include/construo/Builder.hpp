@@ -4,8 +4,11 @@
 #include <construo/ImageFileLoader.h>
 #include <construo/ImagePatch.h>
 
+#include <construo/PixelHelpers.h>
+
 ///\todo remove
 #define DEBUG_PREPARESUBSAMPLINGDOMAIN 0
+#define DEBUG_SOURCEFINEST 0
 #define DEBUG_FLAGANCESTORSFORUPDATE 0
 #if DEBUG_FLAGANCESTORSFORUPDATE
 static float flagAncestorsForUpdateColor[3];
@@ -27,8 +30,8 @@ assert(size[0]==size[1]);
     globe = new Globe(spheroidName, tileSize);
 
 ///\todo for now hardcode the subsampling filter
-//    Filter::makePointFilter(subsamplingFilter);
-    Filter::makeTriangleFilter(subsamplingFilter);
+    Filter::makePointFilter(subsamplingFilter);
+//    Filter::makeTriangleFilter(subsamplingFilter);
 //    Filter::makeFiveLobeLanczosFilter(subsamplingFilter);
 
     scopeBuf          = new Scope::Scalar[tileSize[0]*tileSize[1]*3];
@@ -99,7 +102,6 @@ Visualizer::show();
     }
 }
 
-#define DEBUG_SOURCEFINEST 0
 template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
 sourceFinest(Node* node, Patch* imgPatch, uint overlap)
@@ -112,11 +114,14 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
     int rectSize[2];
     for (int i=0; i<2; i++)
     {
+/**\todo find a more robust solution to using the bounding box to grab an image
+region for the sampling. For now just arbitrarily widen the region */
+        static const int border = 5;
 ///\todo abstract the sampler
         //assume bilinear interpolation here
-        rectOrigin[i] = static_cast<int>(Math::floor(nodeImgBox.min[i]));
+        rectOrigin[i] = static_cast<int>(Math::floor(nodeImgBox.min[i]))-border;
         rectSize[i]   = static_cast<int>(Math::ceil(nodeImgBox.max[i])) + 1 -
-                                                    rectOrigin[i];
+                                                    rectOrigin[i] + border;
     }
     PixelParam* rectBuffer = new PixelParam[rectSize[0] * rectSize[1]];
     imgPatch->image->readRectangle(rectOrigin, rectSize, rectBuffer);
@@ -163,7 +168,6 @@ Visualizer::show();
                 ip[i]         = static_cast<int>(pFloor) - rectOrigin[i];
             }
             *dataPtr  = rectBuffer[ip[1]*rectSize[0] + ip[0]];
-            *dataPtr *= INV_SPHEROID_RADIUS;
 #else
             /* Sample the point: */
             int ip[2];
@@ -179,7 +183,6 @@ Visualizer::show();
             PixelParam two = (1.0-d[0])*basePtr[rectSize[0]] +
                              d[0]*basePtr[rectSize[0]+1];
             *dataPtr  = (1.0-d[1])*one + d[1]*two;
-            *dataPtr *= INV_SPHEROID_RADIUS;
 #endif
 #if DEBUG_SOURCEFINEST
 Point pp = imgPatch->transform->imageToWorld(
@@ -200,9 +203,14 @@ Visualizer::show();
     //clean up the temporary image uffer
     delete[] rectBuffer;
 
-    //commit the data to file
+    //prepare the header
     QuadtreeTileHeader<PixelParam> header;
     header.reset(node);
+
+    //we store elevations as deviations from the average
+//    pixel::relativeToAverageElevation(node, header);
+
+    //commit the data to file
     node->treeState->file->writeTile(node->tileIndex, header, node->data);
 
 #if 0
@@ -252,9 +260,11 @@ int Builder<PixelParam, PolyhedronParam>::
 updateFiner(Node* node, Patch* imgPatch, Point::Scalar imgResolution)
 {
 ///\todo remove
-//static const float covColor[3] = { 0.1f, 0.4f, 0.6f };
-//Visualizer::addPrimitive(GL_LINES, node->coverage, covColor);
-//Visualizer::peek();
+#if DEBUG_SOURCEFINEST || 0
+static const float covColor[3] = { 0.1f, 0.4f, 0.6f };
+Visualizer::addPrimitive(GL_LINES, node->coverage, covColor);
+Visualizer::peek();
+#endif
 
     //check for an overlap
     uint overlap = node->coverage.overlaps(*(imgPatch->sphereCoverage));
@@ -287,16 +297,18 @@ updateFinestLevels()
 {
     int depth = 0;
     //iterate over all the image patches to source
-    for (typename PatchPtrs::iterator pIt=patches.begin(); pIt!=patches.end();
-         ++pIt)
+    int numPatches = static_cast<int>(patches.size());
+    for (int i=0; i<numPatches; ++i)
     {
 ///\todo remove
-//Visualizer::clear();
-//Visualizer::addPrimitive(GL_LINES, *((*pIt)->sphereCoverage));
-//Visualizer::show();
+#if 0
+Visualizer::clear();
+Visualizer::addPrimitive(GL_LINES, *(patches[i]->sphereCoverage));
+Visualizer::show();
+#endif
 
 #if 0
-const int* size = (*pIt)->image->getSize();
+const int* size = patches[i]->image->getSize();
 Visualizer::Floats edges;
 edges.resize(size[0]*size[1]*4*2*3);
 float* e = &edges[0];
@@ -309,11 +321,11 @@ for (int y=0; y<size[1]; ++y)
 {
     for (int x=0; x<size[0]; ++x, c+=3)
     {
-        corners[0] = (*pIt)->transform->imageToWorld(Point(x-0.5, y-0.5));
-        corners[1] = (*pIt)->transform->imageToWorld(Point(x+0.5, y-0.5));
-        corners[2] = (*pIt)->transform->imageToWorld(Point(x+0.5, y+0.5));
-        corners[3] = (*pIt)->transform->imageToWorld(Point(x-0.5, y+0.5));
-        Point origin = (*pIt)->transform->imageToWorld(Point(x, y));
+        corners[0] = patches[i]->transform->imageToWorld(Point(x-0.5, y-0.5));
+        corners[1] = patches[i]->transform->imageToWorld(Point(x+0.5, y-0.5));
+        corners[2] = patches[i]->transform->imageToWorld(Point(x+0.5, y+0.5));
+        corners[3] = patches[i]->transform->imageToWorld(Point(x-0.5, y+0.5));
+        Point origin = patches[i]->transform->imageToWorld(Point(x, y));
 
         for (uint i=0; i<4; ++i, e+=6)
         {
@@ -335,9 +347,11 @@ Visualizer::addPrimitive(GL_POINTS, centers, centerColor);
 Visualizer::show();
 #endif //show image pixels
 
+        std::cout << "Adding source image " << i << " out of " << numPatches;
+
         //grab the smallest resolution from the image
-        Point::Scalar imgResolution = (*pIt)->transform->getFinestResolution(
-            (*pIt)->image->getSize());
+        Point::Scalar imgResolution=patches[i]->transform->getFinestResolution(
+            patches[i]->image->getSize());
         /* exaggerate the image's resolution because our sampling is not aligned
            with the image axis */
         imgResolution *= Point::Scalar(0.5);
@@ -346,12 +360,17 @@ Visualizer::show();
         for (typename Globe::BaseNodes::iterator bIt=globe->baseNodes.begin();
              bIt!=globe->baseNodes.end(); ++bIt)
         {
-            depth = std::max(updateFiner(&(*bIt), *pIt, imgResolution), depth);
+            depth = std::max(updateFiner(&(*bIt), patches[i], imgResolution),
+                             depth);
+
+            std::cout << ".";
 ///\todo this is debugging code to check tree consistency
 //verifyQuadtreeFile(&(*bIt));
 //Visualizer::show();
         }
+        std::cout << " done" << std::endl;
     }
+    std::cout << std::endl;
 
     return depth;
 }
@@ -516,10 +535,7 @@ updateCoarser(Node* node, int level)
          domain+= 2*domainSize[0] - 2*tileSize[0])
     {
         for (uint i=0; i<tileSize[0]; ++i, domain+=2, ++data)
-        {
             *data  = subsamplingFilter.lookup(domain, domainSize[0]);
-            *data *= INV_SPHEROID_RADIUS;
-        }
     }
 
     //commit the data to file
@@ -543,6 +559,7 @@ updateCoarserLevels(int depth)
 
     for (int level=depth-1; level>=0; --level)
     {
+        std::cout << "Upsampling level " << level;
         for (typename Globe::BaseNodes::iterator it=globe->baseNodes.begin();
              it!=globe->baseNodes.end(); ++it)
         {
@@ -552,8 +569,11 @@ updateCoarserLevels(int depth)
             //traverse the tree and update the next level
             updateCoarser(&(*it), level);
 //verifyQuadtreeFile(&(*it));
+            std::cout << ".";
         }
+        std::cout << " done" << std::endl;
     }
+    std::cout << std::endl;
 }
 
 template <typename PixelParam, typename PolyhedronParam>

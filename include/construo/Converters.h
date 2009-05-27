@@ -60,7 +60,8 @@ haversineDist(const Geometry::Point<ScalarParam, 2>& one,
 
     return radius * c;
 }
-    
+
+
 } //namespace Converter
 
 END_CRUSTA

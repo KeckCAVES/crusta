@@ -89,9 +89,16 @@ include_directories(${PNG_INCLUDE_DIR})
 find_package(ImageMagick COMPONENTS Magick++)
 include_directories(${ImageMagick_Magick++_INCLUDE_DIRS})
 
+#GDAL
+IF(APPLE)
+   FIND_LIBRARY(GDAL_LIBRARY GDAL)
+ENDIF (APPLE)
+
 set(CONSTRUO_SOURCES ../source/construo/ArcInfoBinaryGridImageFile.cpp
                      ../source/construo/Construo.cpp
 					 ../source/construo/Filter.cpp
+                     ../source/construo/GdalTransform.cpp
+                     ../source/construo/GdalImageFile.cpp
                      ../source/construo/GeoTransform.cpp
                      ../source/construo/ImageCoverage.cpp
                      ../source/construo/ImageTransform.cpp
@@ -116,7 +123,8 @@ add_executable(construo ${CONSTRUO_SOURCES})
 vrui_set_target_properties(construo)
 
 target_link_libraries(construo Crusta ${PNG_LIBRARIES}
-                               ${ImageMagick_Magick++_LIBRARIES})
+                               ${ImageMagick_Magick++_LIBRARIES}
+                               ${GDAL_LIBRARY})
 
 
 
