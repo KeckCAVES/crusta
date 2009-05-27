@@ -19,7 +19,7 @@ public:
     
 //- inherited from VisibilityEvaluator
 public:
-    virtual bool evaluate(const Scope& scope);
+    virtual bool evaluate(const Node* scope);
 };
 
 END_CRUSTA

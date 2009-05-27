@@ -21,7 +21,7 @@ public:
 
 //- inherited from LodEvaluator
 public:
-    virtual float compute(const Scope& scope);
+    virtual float compute(const Node* scope);
 };
 
 END_CRUSTA

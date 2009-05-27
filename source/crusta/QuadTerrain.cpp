@@ -12,8 +12,6 @@
 ///\todo remove
 #include <crusta/simplexnoise1234.h>
 
-#define USING_AVERAGE_HEIGHT 0
-
 BEGIN_CRUSTA
 
 static const uint NUM_GEOMETRY_INDICES =
@@ -321,25 +319,7 @@ split(GlData* glData, Node* node, float lod, CacheRequests& requests)
                 Misc::throwStdErr("QuadTerrain::Split: couldn't retrieve the "
                                   "dem tile indices for the children");
             }
-            child.elevationRange[0] = header.range[0];
-            child.elevationRange[1] = header.range[1];
-
-            /* compute the centroid (can't be done in generateGeometry because
-               those are cached, so a newly created node might use a cached
-               copy of the geometry and not call the method. We must compute
-               the centroid whenever a node is created */
-#if USING_AVERAGE_HEIGHT
-            DemHeight avgElevation = (child.elevationRange[0] +
-                                      child.elevationRange[1]) * DemHeight(0.5);
-            Scope::Vertex scopeCentroid = child.scope.getCentroid(
-                SPHEROID_RADIUS + avgElevation);
-#else
-            Scope::Vertex scopeCentroid = child.scope.getCentroid(
-                SPHEROID_RADIUS);
-#endif //USING_AVERAGE_HEIGHT
-            child.centroid[0] = scopeCentroid[0];
-            child.centroid[1] = scopeCentroid[1];
-            child.centroid[2] = scopeCentroid[2];
+            child.init(header.range);
         }
 /** \todo wait... since the buffer can dissappear under the node between any
 frame with no prior notice one can never assume these things are there and must
@@ -428,8 +408,8 @@ traverse(GlData* glData, Node* node, CacheRequests& requests)
         if (node->index.level != 0)
         {
             float parentVisible =
-                glData->visibility.evaluate(node->parent->scope);
-            float parentLod    = glData->lod.evaluate(node->parent->scope);
+                glData->visibility.evaluate(node->parent);
+            float parentLod    = glData->lod.evaluate(node->parent);
             if (!parentVisible || parentLod<1.0)
             {
                 if (merge(glData, node, parentLod, requests))
@@ -439,8 +419,8 @@ traverse(GlData* glData, Node* node, CacheRequests& requests)
 
     //- evaluate node for splitting
         //compute visibility and lod
-        float visible = glData->visibility.evaluate(node->scope);
-        float lod     = glData->lod.evaluate(node->scope);
+        float visible = glData->visibility.evaluate(node);
+        float lod     = glData->lod.evaluate(node);
         if (visible && lod>1.0)
         {
             if (split(glData, node, lod, requests))
@@ -663,22 +643,7 @@ GlData(QuadTerrain* terrain, const TreeIndex& iRootIndex,
         Misc::throwStdErr("QuadTerrain::QuadTerrain: Invalid DEM file: could "
                           "not read root data");
     }
-
-    root->elevationRange[0] = header.range[0];
-    root->elevationRange[1] = header.range[1];
-    //compute the centroid on the average elevation (see split)
-#if USING_AVERAGE_HEIGHT
-    DemHeight avgElevation = (root->elevationRange[0] +
-                              root->elevationRange[1]) * DemHeight(0.5);
-    Scope::Vertex scopeCentroid = root->scope.getCentroid(
-        SPHEROID_RADIUS + avgElevation);
-#else
-    Scope::Vertex scopeCentroid = root->scope.getCentroid(
-        SPHEROID_RADIUS);
-#endif //USING_AVERAGE_HEIGHT
-    root->centroid[0] = scopeCentroid[0];
-    root->centroid[1] = scopeCentroid[1];
-    root->centroid[2] = scopeCentroid[2];
+    root->init(header.range);
 
 /**\todo the geometry generation is now dependent on the data!! Need to load it
 in before the geometry can be generated. So long as the data is not loaded yet

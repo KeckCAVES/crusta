@@ -1,6 +1,6 @@
 #include <crusta/LodEvaluator.h>
 
-#include <crusta/Scope.h>
+#include <crusta/Node.h>
 
 BEGIN_CRUSTA
 
@@ -14,9 +14,9 @@ LodEvaluator::
 {}
 
 float LodEvaluator::
-evaluate(const Scope& scope)
+evaluate(const Node* node)
 {
-    return (scale * compute(scope)) + bias;
+    return (scale * compute(node)) + bias;
 }
 
 END_CRUSTA

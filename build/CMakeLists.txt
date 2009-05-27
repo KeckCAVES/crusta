@@ -41,6 +41,7 @@ add_library(Crusta SHARED ../source/crusta/CacheRequest.cpp
                           ../source/crusta/FocusViewEvaluator.cpp
                           ../source/crusta/FrustumVisibility.cpp
                           ../source/crusta/LodEvaluator.cpp
+                          ../source/crusta/Node.cpp
                           ../source/crusta/QuadCache.cpp
                           ../source/crusta/QuadNodeData.cpp
                           ../source/crusta/QuadTerrain.cpp

@@ -8,6 +8,10 @@
 #include <crusta/TreeIndex.h>
 #include <crusta/Scope.h>
 
+/**\todo remove fix preprocessor to eliminate outliers that break average height
+centroid */
+#define USING_AVERAGE_HEIGHT 0
+
 BEGIN_CRUSTA
 
 class QuadTerrain;
@@ -17,19 +21,12 @@ class Node
 {
 public:
     typedef std::vector<Node*> ChildBlocks;
-    
-    Node() :
-        demTile(DemFile::INVALID_TILEINDEX),
-        colorTile(ColorFile::INVALID_TILEINDEX), mainBuffer(NULL),
-        videoBuffer(NULL), parent(NULL), children(NULL)
-    {
-        elevationRange[0] = elevationRange[1] = DemHeight(0);
-        childDemTiles[0] = childDemTiles[1] = DemFile::INVALID_TILEINDEX;
-        childDemTiles[2] = childDemTiles[4] = DemFile::INVALID_TILEINDEX;
-        childColorTiles[0] = childColorTiles[1] = ColorFile::INVALID_TILEINDEX;
-        childColorTiles[2] = childColorTiles[4] = ColorFile::INVALID_TILEINDEX;
-    }
 
+    Node();
+
+    /** compute the various "cached values" (e.g. bounding sphere, centroid,
+        etc.) */
+    void init(const DemHeight range[2]);
 
     /** pointer to the tree containing the node (to access shared data) */
     QuadTerrain* terrain;
@@ -41,6 +38,10 @@ public:
     /** caches this node's scope for visibility and lod evaluation */
     Scope scope;
 
+///\todo remove use centroid once average height works
+    Scope::Vertex boundingCenter;
+    /** radius of a sphere containing the node */
+    Scope::Scalar boundingRadius;
     /** centroid of the node geometry on the average elevation shell */
     DemHeight centroid[3];
     /** the range of the elevation values */

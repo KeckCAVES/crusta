@@ -5,14 +5,14 @@
 
 BEGIN_CRUSTA
 
-class Scope;
+class Node;
 
 class VisibilityEvaluator
 {
 public:
     virtual ~VisibilityEvaluator() {}
     
-    virtual bool evaluate(const Scope& scope) = 0;
+    virtual bool evaluate(const Node* scope) = 0;
 };
 
 END_CRUSTA
