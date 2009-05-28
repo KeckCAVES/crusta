@@ -22,11 +22,14 @@ static const float TEXTURE_COORD_START = TEXTURE_COORD_STEP * 0.5;
 static const float TEXTURE_COORD_END   = 1.0 - TEXTURE_COORD_START;
 
 QuadTerrain::
-QuadTerrain(uint8 patch, const Scope& scope, const std::string& demFileName) :
-    demFile(NULL), basePatchId(patch), baseScope(scope)
+QuadTerrain(uint8 patch, const Scope& scope, const std::string& demFileName,
+            const std::string& colorFileName) :
+    demFile(NULL), colorFile(NULL), basePatchId(patch), baseScope(scope)
 {
     uint res[2] = { TILE_RESOLUTION, TILE_RESOLUTION };
     demFile = new DemFile(demFileName.c_str(), res);
+    if (!colorFileName.empty())
+        colorFile = new ColorFile(colorFileName.c_str(), res);
 
     //create root data and pin it in the cache
     TreeIndex rootIndex(patch);
@@ -268,11 +271,13 @@ bool QuadTerrain::
 split(GlData* glData, Node* node, float lod, CacheRequests& requests)
 {
 /**\todo Fix it: Need to disconnect the representation from the data as the
-         different data might not be available at the same resolution. For now
-         only split if there is data to support it */
+different data might not be available at the same resolution. For now only split
+if there is data to support it */
     for (uint i=0; i<4; ++i)
     {
-        if (node->childDemTiles[i] == DemFile::INVALID_TILEINDEX)
+        //if there is no finer detail data, then there's no point refining
+        if (node->childDemTiles[i]   ==   DemFile::INVALID_TILEINDEX &&
+            node->childColorTiles[i] == ColorFile::INVALID_TILEINDEX)
             return false;
     }
 
@@ -308,8 +313,9 @@ split(GlData* glData, Node* node, float lod, CacheRequests& requests)
     }
     else
     {
-        /* split was successful, read in the indices of the dem tiles for the
-           children as well as compute the average elevation */
+    //- split was successful
+        /* read in the indices of the dem tiles for the children as well as
+           compute the average elevation */
         DemTileHeader header;
         for (uint i=0; i<4; ++i)
         {
@@ -667,7 +673,14 @@ use the values of the node from which the data is being sampled */
                                   "/elevation.fs").c_str());
     shader.linkShader();
     shader.useProgram();
-    centroidUniform = shader.getUniformLocation("centroid");
+
+    centroidUniform    = shader.getUniformLocation("centroid");
+
+    demScaleUniform    = shader.getUniformLocation("demScale");
+    demOffsetUniform   = shader.getUniformLocation("demOffset");
+    colorScaleUniform  = shader.getUniformLocation("colorScale");
+    colorOffsetUniform = shader.getUniformLocation("colorOffset");
+
     GLint uniform;
     uniform = shader.getUniformLocation("geometryTex");
     glUniform1i(uniform, 0);
@@ -677,6 +690,7 @@ use the values of the node from which the data is being sampled */
     glUniform1i(uniform, 2);
     uniform = shader.getUniformLocation("texStep");
     glUniform1f(uniform, TEXTURE_COORD_STEP);
+
     shader.disablePrograms();
     
 ///\todo debug, remove: makes LOD recommend very coarse

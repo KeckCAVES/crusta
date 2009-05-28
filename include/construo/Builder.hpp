@@ -35,6 +35,7 @@ assert(size[0]==size[1]);
 //    Filter::makeFiveLobeLanczosFilter(subsamplingFilter);
 
     scopeBuf          = new Scope::Scalar[tileSize[0]*tileSize[1]*3];
+    sampleBuf         = new Point[tileSize[0]*tileSize[1]];
     nodeDataBuf       = new PixelParam[tileSize[0]*tileSize[1]];
     nodeDataSampleBuf = new PixelParam[tileSize[0]*tileSize[1]];
     //the -3 takes into account the shared edges of the tiles
@@ -54,6 +55,7 @@ Builder<PixelParam, PolyhedronParam>::
         delete *it;
     }
     delete[] scopeBuf;
+    delete[] sampleBuf;
     delete[] nodeDataBuf;
     delete[] nodeDataSampleBuf;
     delete[] domainBuf;
@@ -102,10 +104,171 @@ Visualizer::show();
     }
 }
 
+struct ImgBox
+{
+    typedef std::vector<int> Indices;
+
+    ImgBox()
+    {
+        min[0] = min[1] =  HUGE_VAL;
+        max[0] = max[1] = -HUGE_VAL;
+    }
+    bool add(int index, const Point& p, const Point::Scalar allowed[2])
+    {
+        //tentatively expand the box to accommodate the new point
+        Point newMin, newMax;
+        newMin[0] = std::min(min[0], p[0]);
+        newMin[1] = std::min(min[1], p[1]);
+        newMax[0] = std::max(max[0], p[0]);
+        newMax[1] = std::max(max[1], p[1]);
+
+        //check that the box doesn't get too bloated
+        if ((newMax[0] - newMin[0]) > allowed[0] ||
+            (newMax[1] - newMin[1]) > allowed[1])
+        {
+            return false;
+        }
+
+        //add the new point if all is okay
+        indices.push_back(index);
+        min = newMin;
+        max = newMax;
+        return true;
+    }
+
+    Indices indices;
+    Point min;
+    Point max;
+};
+typedef std::vector<ImgBox> ImgBoxes;
+
 template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
 sourceFinest(Node* node, Patch* imgPatch, uint overlap)
 {
+#if 1
+    ImgBoxes imgBoxes;
+    const int* imgSize = imgPatch->image->getSize();
+    Point::Scalar allowedBoxSize[2] = { imgSize[0]>>1, imgSize[1]>>1 };
+
+    //transform all the sample points into the image space
+    node->scope.getRefinement(tileSize[0], scopeBuf);
+    Scope::Scalar* curScope = scopeBuf;
+
+    for (int i=0; i<int(tileSize[0]*tileSize[1]); ++i, curScope+=3)
+    {
+        Point& p = sampleBuf[i];
+
+        //convert the scope sample to a spherical one
+        p = Converter::cartesianToSpherical(
+            Scope::Vertex(curScope[0], curScope[1], curScope[2]));
+        //transform the sample into the image space
+        p = imgPatch->transform->worldToImage(p);
+
+        //make sure the sample is valid
+        if (overlap!=SphereCoverage::ISCONTAINED &&
+            !imgPatch->imageCoverage->contains(p))
+        {
+            continue;
+        }
+
+        //insert the sample into an image box
+        bool wasInserted = false;
+        for (ImgBoxes::iterator it=imgBoxes.begin(); it!=imgBoxes.end(); ++it)
+        {
+            if (it->add(i, p, allowedBoxSize))
+            {
+                wasInserted = true;
+                break;
+            }
+        }
+        //add the sample to a new box if not already inserted
+        if (!wasInserted)
+        {
+            imgBoxes.push_back(ImgBox());
+            imgBoxes.back().add(i, p, allowedBoxSize);
+        }
+    }
+
+    //prepare the node's data buffer
+    node->data = nodeDataBuf;
+    node->treeState->file->readTile(node->tileIndex, node->data);
+
+#if 1
+    //go through all the image boxes and sample them
+    for (ImgBoxes::iterator bIt=imgBoxes.begin(); bIt!=imgBoxes.end(); ++bIt)
+    {
+        //read the corresponding image piece
+        int rectOrigin[2];
+        int rectSize[2];
+        for (int i=0; i<2; i++)
+        {
+///\todo abstract the sampler assume bilinear interpolation here
+            rectOrigin[i] = static_cast<int>(Math::floor(bIt->min[i]));
+            rectSize[i]   = static_cast<int>(Math::ceil (bIt->max[i])) + 1 -
+                            rectOrigin[i];
+        }
+        PixelParam* rectBuffer = new PixelParam[rectSize[0] * rectSize[1]];
+        imgPatch->image->readRectangle(rectOrigin, rectSize, rectBuffer);
+        
+        //sample the points
+        for (ImgBox::Indices::iterator sIt=bIt->indices.begin();
+             sIt!=bIt->indices.end(); ++sIt)
+        {
+            Point& p = sampleBuf[*sIt];
+#if 1
+            /* nearest neighbor sampling */
+            int ip[2];
+            for (uint i=0; i<2; ++i)
+            {
+                double pFloor = Math::floor(p[i] + 0.5f);
+                ip[i]         = static_cast<int>(pFloor) - rectOrigin[i];
+            }
+if (!(ip[0]>=0 && ip[0]<imgSize[0] && ip[0]<rectSize[0] &&
+      ip[1]>=0 && ip[1]<imgSize[1] && ip[1]<rectSize[1]))
+    std::cout << "frak";
+            node->data[*sIt]  = rectBuffer[ip[1]*rectSize[0] + ip[0]];
+if (!(*((float*)&node->data[*sIt])>=0.0 &&
+      *((float*)&node->data[*sIt])<=9000.0))
+    std::cout << "frakawe";
+#else
+            int ip[2];
+            double d[2];
+            for(uint i=0; i<2; i++)
+            {
+                double pFloor = Math::floor(p[i]);
+                d[i]          = p[i] - pFloor;
+                ip[i]         = static_cast<int>(pFloor) - rectOrigin[i];
+            }
+            PixelParam* base = rectBuffer + (ip[1]*rectSize[0] + ip[0]);
+            PixelParam  one  = (1.0-d[0])*base[0] + d[0]*(base[1]);
+            PixelParam  two  = (1.0-d[0])*base[rectSize[0]] +
+                               d[0]*base[rectSize[0]+1];
+            node->data[*sIt] = (1.0-d[1])*one + d[1]*two;
+#endif
+#if DEBUG_SOURCEFINEST
+Visualizer::Floats scopeSample;
+scopeSample.resize(3);
+Point wp = imgPatch->transform->imageToWorld(p);
+scopeSample[0] = wp[0];
+scopeSample[1] =   0.0;
+scopeSample[2] = wp[1];
+//static const float scopeSampleColor[3] = { 0.2f, 1.0f, 0.1f };
+float scopeSampleColor[3] = {
+    (float)rand()/RAND_MAX, (float)rand()/RAND_MAX, (float)rand()/RAND_MAX };
+Visualizer::addPrimitive(GL_POINTS, scopeSample, scopeSampleColor);
+Visualizer::show();
+#endif //DEBUG_SOURCEFINEST
+        }
+        //clean up the temporary image uffer
+        delete[] rectBuffer;
+    }
+#endif
+
+
+#else
+
+
     //convert the node's bounding box to the image space
     Box nodeImgBox = imgPatch->transform->worldToImage(
         node->coverage.getBoundingBox());
@@ -159,7 +322,7 @@ Visualizer::show();
         if(overlap==SphereCoverage::ISCONTAINED ||
            imgPatch->imageCoverage->contains(p))
         {
-#if 0
+#if 1
             /* nearest neighbor sampling */
             int ip[2];
             for (uint i=0; i<2; ++i)
@@ -202,6 +365,7 @@ Visualizer::show();
 
     //clean up the temporary image uffer
     delete[] rectBuffer;
+#endif
 
     //prepare the header
     QuadtreeTileHeader<PixelParam> header;
@@ -307,7 +471,7 @@ Visualizer::addPrimitive(GL_LINES, *(patches[i]->sphereCoverage));
 Visualizer::show();
 #endif
 
-#if 0
+#if DEBUG_SOURCEFINEST
 const int* size = patches[i]->image->getSize();
 Visualizer::Floats edges;
 edges.resize(size[0]*size[1]*4*2*3);
@@ -392,17 +556,23 @@ domainBuf[i] = PixelParam(33.0f);
     PixelParam* domain = domainBuf + (tileSize[1]-1)*domainSize[0] +
                          tileSize[0]-1;
 
+    /* specify the order of lower-level nodes manually such that the inner nodes
+       are added last and overwrite the edge value (e.g. if one of the
+       neighboring nodes does not exist or has no valid values, we want to use
+       the inner node ones instead */
+    static const int offsets[16][2] = {
+        {-1,-1}, { 0,-1}, { 1,-1}, { 2,-1}, {-1, 2}, { 0, 2}, { 1, 2}, { 2, 2},
+        {-1, 1}, {-1, 0}, { 2, 1}, { 2, 0}, { 0, 0}, { 1, 0}, { 0, 1}, { 1, 1}
+    };
     int domainOff[2];
     int nodeOff[2];
-    for (domainOff[1]=-1; domainOff[1]<=2; ++domainOff[1])
+    for (int i=0; i<16; ++i)
     {
-        for (domainOff[0]=-1; domainOff[0]<=2; ++domainOff[0])
-        {
-        //- retrieve the kin
-            nodeOff[0] = domainOff[0];
-            nodeOff[1] = domainOff[1];
-            uint kinO;
-            node->getKin(kin, nodeOff, true, 1, &kinO);
+    //- retrieve the kin
+        nodeOff[0] = domainOff[0] = offsets[i][0];
+        nodeOff[1] = domainOff[1] = offsets[i][1];
+        uint kinO;
+        node->getKin(kin, nodeOff, true, 1, &kinO);
 #if DEBUG_PREPARESUBSAMPLINGDOMAIN
 const static float scopeRefColor[3] = { 0.3f, 0.8f, 0.3f };
 kin->scope.getRefinement(tileSize[0], scopeBuf);
@@ -410,97 +580,99 @@ Visualizer::addScopeRefinement(tileSize[0], scopeBuf, scopeRefColor);
 Visualizer::show();
 #endif //DEBUG_PREPARESUBSAMPLINGDOMAIN
 
-        //- retrieve data as appropriate
-            //default to blank data
-            const PixelParam* data = node->treeState->file->getBlank();
-            
-            //read the data from file
-            if (kin != NULL)
+    //- retrieve data as appropriate
+        //default to blank data
+        const PixelParam* data = node->treeState->file->getBlank();
+        
+        //read the data from file
+/**\todo disabled reading from neighbors that don't have the same orientation
+reading of neighbor data with differring orientation is currently absolutely
+broken, overwrites random memory regions and breaks fraking everything */
+        if (kin != NULL && kinO==0)
+        {
+            assert(kin->tileIndex!=Node::State::File::INVALID_TILEINDEX);
+            if (nodeOff[0]==0 && nodeOff[1]==0)
             {
-                assert(kin->tileIndex!=Node::State::File::INVALID_TILEINDEX);
-                if (nodeOff[0]==0 && nodeOff[1]==0)
+                //we're grabbing data from a same leveled kin
+                kin->treeState->file->readTile(kin->tileIndex, nodeDataBuf);
+                data = nodeDataBuf;
+            }
+            else
+            {
+                //need to sample coarser level node as the kin replacement
+                kin->treeState->file->readTile(kin->tileIndex,
+                                               nodeDataSampleBuf);
+                //determine the resample step size
+                double scale = 1;
+                for (uint i=node->treeIndex.level-1;
+                     i<kin->treeIndex.level; ++i)
                 {
-                    //we're grabbing data from a same leveled kin
-                    kin->treeState->file->readTile(kin->tileIndex, nodeDataBuf);
-                    data = nodeDataBuf;
+                    scale *= 0.5;
                 }
-                else
-                {
-                    //need to sample coarser level node as the kin replacement
-                    kin->treeState->file->readTile(kin->tileIndex,
-                                                   nodeDataSampleBuf);
-                    //determine the resample step size
-                    double scale = 1;
-                    for (uint i=node->treeIndex.level-1;
-                         i<kin->treeIndex.level; ++i)
-                    {
-                        scale *= 0.5;
-                    }
-                    double step[2] = {1.0/(tileSize[0]-1), 1.0/(tileSize[1]-1)};
-                    step[0] *= scale;
-                    step[1] *= scale;
+                double step[2] = {1.0/(tileSize[0]-1), 1.0/(tileSize[1]-1)};
+                step[0] *= scale;
+                step[1] *= scale;
 ///\todo abstract out the filtering. Currently using bilinear filtering
-                    double d[2];
-                    uint ny=0;
-                    PixelParam* wbase = nodeDataBuf;
-                    for (double y=nodeOff[1]*scale; ny<tileSize[1];
-                         ++ny, y+=step[1])
+                double d[2];
+                uint ny=0;
+                PixelParam* wbase = nodeDataBuf;
+                for (double y=nodeOff[1]*scale; ny<tileSize[1];
+                     ++ny, y+=step[1])
+                {
+                    double py = y * (tileSize[1]-1);
+                    double fy = floor(py);
+                    d[1]      = py - fy;
+                    uint iy   = static_cast<uint>(fy);
+                    if (iy == tileSize[1])
                     {
-                        double py = y * (tileSize[1]-1);
-                        double fy = floor(py);
-                        d[1]      = py - fy;
-                        uint iy   = static_cast<uint>(fy);
-                        if (iy == tileSize[1])
-                        {
-                            --iy;
-                            d[1] = 1.0;
-                        }
-                        uint oy = iy * tileSize[0];
-
-                        uint nx=0;
-                        for (double x=nodeOff[0]*scale; nx<tileSize[0];
-                             ++nx, x+=step[0], ++wbase)
-                        {
-                            double px = x * (tileSize[0]-1);
-                            double fx = floor(px);
-                            d[0]      = px - fx;
-                            uint ix   = static_cast<uint>(fx);
-                            if (ix == tileSize[0])
-                            {
-                                --ix;
-                                d[0] = 1.0;
-                            }
-
-                            PixelParam* rbase = nodeDataSampleBuf + oy + ix;
-
-                            PixelParam one = (1.0-d[0]) * rbase[0] +
-                                                   d[0] * rbase[1];
-                            PixelParam two = (1.0-d[0]) * rbase[tileSize[0]] +
-                                                   d[0] * rbase[tileSize[0]+1];
-
-                            *wbase = (1.0-d[1])*one + d[1]*two;
-                        }
+                        --iy;
+                        d[1] = 1.0;
                     }
-                    data = nodeDataBuf;
+                    uint oy = iy * tileSize[0];
+
+                    uint nx=0;
+                    for (double x=nodeOff[0]*scale; nx<tileSize[0];
+                         ++nx, x+=step[0], ++wbase)
+                    {
+                        double px = x * (tileSize[0]-1);
+                        double fx = floor(px);
+                        d[0]      = px - fx;
+                        uint ix   = static_cast<uint>(fx);
+                        if (ix == tileSize[0])
+                        {
+                            --ix;
+                            d[0] = 1.0;
+                        }
+
+                        PixelParam* rbase = nodeDataSampleBuf + oy + ix;
+
+                        PixelParam one = (1.0-d[0]) * rbase[0] +
+                                               d[0] * rbase[1];
+                        PixelParam two = (1.0-d[0]) * rbase[tileSize[0]] +
+                                               d[0] * rbase[tileSize[0]+1];
+
+                        *wbase = (1.0-d[1])*one + d[1]*two;
+                    }
                 }
+                data = nodeDataBuf;
             }
-            
-        //- insert the data at the appropriate location
-            PixelParam* base = domain +
-                               domainOff[1] * (tileSize[1]-1) * domainSize[0] +
-                               domainOff[0] * (tileSize[0]-1);
-            int startY[4] = { 0, tileSize[1]-1, tileSize[1]-1, 0 };
-            int stepY[4]  = { tileSize[0], 1,  -tileSize[0], -1 };
-            int startX[4] = { 0, 0, tileSize[0]-1, tileSize[0]-1 };
-            int stepX[4]  = { 1,  -tileSize[1], -1, tileSize[0]};
-            for (uint y=0; y<tileSize[1]; ++y)
-            {
-                PixelParam* to         = base + y*domainSize[0];
-                const PixelParam* from = data + startY[kinO] + y*stepY[kinO] +
-                                         startX[kinO];
-                for (uint x=0; x<tileSize[1]; ++x, ++to, from+=stepX[kinO])
-                    *to = *from;
-            }
+        }
+        
+    //- insert the data at the appropriate location
+        PixelParam* base = domain +
+                           domainOff[1] * (tileSize[1]-1) * domainSize[0] +
+                           domainOff[0] * (tileSize[0]-1);
+        int startY[4] = { 0, tileSize[1]-1, tileSize[1]-1, 0 };
+        int stepY[4]  = { tileSize[0], 1,  -tileSize[0], -1 };
+        int startX[4] = { 0, 0, tileSize[0]-1, tileSize[0]-1 };
+        int stepX[4]  = { 1,  -tileSize[1], -1, tileSize[0]};
+        for (uint y=0; y<tileSize[1]; ++y)
+        {
+            PixelParam* to         = base + y*domainSize[0];
+            const PixelParam* from = data + startY[kinO] + y*stepY[kinO] +
+                                     startX[kinO];
+            for (uint x=0; x<tileSize[1]; ++x, ++to, from+=stepX[kinO])
+                *to = *from;
         }
     }
 }

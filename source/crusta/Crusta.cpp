@@ -16,8 +16,8 @@ BEGIN_CRUSTA
 uint crustaFrameNumber = 2;
 
 Crusta::
-Crusta(const std::string& demFileBase) :
-    spheroid(demFileBase)
+Crusta(const std::string& demFileBase, const std::string& colorFileBase) :
+    spheroid(demFileBase, colorFileBase)
 {}
 
 void Crusta::

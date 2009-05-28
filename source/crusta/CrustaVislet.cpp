@@ -70,7 +70,10 @@ CrustaVislet(int numArguments, const char* const arguments[]) :
         Misc::throwStdErr("Crusta requires at least a preprocessed DEM database"
                           "to be provided as a command line argument");
     }
-    crusta = new Crusta(arguments[0]);
+    if (numArguments<2)
+        crusta = new Crusta(arguments[0]);
+    else
+        crusta = new Crusta(arguments[0], arguments[1]);
 }
 
 CrustaVislet::

@@ -32,7 +32,8 @@ class QuadTerrain : public GLObject
 {
 public:
     QuadTerrain(uint8 patch, const Scope& scope,
-                const std::string& demFileName);
+                const std::string& demFileName,
+                const std::string& colorFileName="");
     ~QuadTerrain();
 
     /** diplay has several functions:

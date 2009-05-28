@@ -11,7 +11,8 @@ vec3 surfacePoint(in vec2 coords)
     vec3 dir     = normalize(centroid + res);
     float height = texture2D(heightTex, coords).r;
 ///\todo removeZ once the preprocessor is cleaned-up then this can eliminated
-    height       = height>9000.0 ? 0.0 : height;
+//height       = height>9000.0 ? 0.0 : height;
+height *= 2000.0;
     res         += height * dir;
     return res;
 }
@@ -40,7 +41,7 @@ void main()
 
     float single;
     single = intensity;
-//    single = texture2D(heightTex, gl_Vertex.xy).r;// / 255.0;
+//    single = texture2D(heightTex, gl_Vertex.xy).r / 1000.0;
 
 	gl_FrontColor =  vec4(single, single, single, 1.0);
 }

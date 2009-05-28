@@ -68,6 +68,8 @@ protected:
     
     ///temporary buffer to hold scope refinements
     Scope::Scalar* scopeBuf;
+    ///temporary buffer to hold sample positions for sourcing data
+    Point* sampleBuf;
     ///temporary buffer to hold node data
     PixelParam* nodeDataBuf;
     ///temporary buffer to hold node data that needs to be sampled before use

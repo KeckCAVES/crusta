@@ -42,9 +42,9 @@ public:
 	void read(Misc::LargeFile* file)         {}
 #if CONSTRUO_BUILD
 	void write(Misc::LargeFile* file) const  {}
+#endif //CONSTRUO_BUILD
 
 	static size_t getSize()                  {return 0;}
-#endif //CONSTRUO_BUILD
 };
 
 template <typename PixelParam>
@@ -63,9 +63,9 @@ public:
     void reset(NodeParam* node=NULL)        {}
 
 	void write(Misc::LargeFile* file) const {}
+#endif //CONSTRUO_BUILD
 
 	static size_t getSize()                 {return 0;}
-#endif //CONSTRUO_BUILD
 };
 
 template <typename PixelParam>

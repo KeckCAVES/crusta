@@ -32,7 +32,7 @@ centroid(const PointParam& p0,
 }
 
 Spheroid::
-Spheroid(const std::string& demBase)
+Spheroid(const std::string& demBase, const std::string& colorBase)
 {
 #if 1
     //Triacontahedron from Mathematica 6-7.
@@ -44,8 +44,18 @@ Spheroid(const std::string& demBase)
     {
         std::ostringstream demName;
         demName << demBase << "_" << i << ".qtf";
-        basePatches[i] = new QuadTerrain(i, triacontahedron.getScope(i),
-                                         demName.str());
+        if (colorBase.empty())
+        {
+            basePatches[i] = new QuadTerrain(i, triacontahedron.getScope(i),
+                                             demName.str());
+        }
+        else
+        {
+            std::ostringstream colorName;
+            colorName << colorBase << "_" << i << ".qtf";
+            basePatches[i] = new QuadTerrain(i, triacontahedron.getScope(i),
+                                             demName.str(), colorName.str());
+        }
     }
 #else
 	/****************************************************************

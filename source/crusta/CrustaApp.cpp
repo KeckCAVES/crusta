@@ -19,7 +19,10 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
         Misc::throwStdErr("Crusta requires at least a preprocessed DEM database"
                           "to be provided as a command line argument");
     }
-    crusta = new Crusta(argv[1]);
+    if (argc<3)
+        crusta = new Crusta(argv[1]);
+    else
+        crusta = new Crusta(argv[1], argv[2]);
 
     produceMainMenu();
     resetNavigationCallback(NULL);
