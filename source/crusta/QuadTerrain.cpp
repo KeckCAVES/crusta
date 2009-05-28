@@ -298,6 +298,7 @@ if there is data to support it */
         child.parent     = node;
         child.index      = node->index.down(i);
         child.demTile    = node->childDemTiles[i];
+        child.colorTile  = node->childColorTiles[i];
         child.mainBuffer =
             crustaQuadCache.getMainCache().findCached(child.index);
         if (child.mainBuffer == NULL)

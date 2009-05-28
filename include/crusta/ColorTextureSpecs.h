@@ -23,7 +23,7 @@ TextureColor operator*(const TextureColor& tc, double d) {
 }
 inline
 TextureColor operator*(double d, const TextureColor& tc) {
-    return d * tc;
+    return tc * d;
 }
 
 #if CONSTRUO_BUILD

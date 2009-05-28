@@ -37,11 +37,13 @@ void main()
     float intensity = max(dot(normal, lightDir), 0.0);
 
     vec4  color   = texture2D(colorTex, gl_Vertex.xy);
-//	gl_FrontColor =  color * intensity;
-
+#if 1
+	gl_FrontColor =  color * intensity;
+#else
     float single;
     single = intensity;
 //    single = texture2D(heightTex, gl_Vertex.xy).r / 1000.0;
 
 	gl_FrontColor =  vec4(single, single, single, 1.0);
+#endif
 }
