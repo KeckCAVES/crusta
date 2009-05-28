@@ -5,6 +5,7 @@
 
 #include <Geometry/OrthogonalTransformation.h>
 #include <GL/GLTransformationWrappers.h>
+#include <Vrui/DisplayState.h>
 #include <Vrui/Vrui.h>
 
 #include <crusta/CacheRequest.h>
@@ -85,7 +86,7 @@ display(GLContextData& contextData)
     /* traverse the terrain tree, update as necessary and issue drawing commands
        for active nodes */
 checkTree(glData, glData->root);
-    traverse(glData, glData->root, dataRequests);
+    traverse(contextData, glData, glData->root, dataRequests);
 checkTree(glData, glData->root);
 
     //restore the GL transform as it was before
@@ -396,11 +397,12 @@ discardSubTree(GlData* glData, Node* node)
 }
 
 void QuadTerrain::
-traverse(GlData* glData, Node* node, CacheRequests& requests)
+traverse(GLContextData& contextData, GlData* glData, Node* node,
+         CacheRequests& requests)
 {
     //recurse to the active nodes
     for (uint i=0; node->children!=NULL && i<4; ++i)
-        traverse(glData, &(node->children[i]), requests);
+        traverse(contextData, glData, &(node->children[i]), requests);
 
     if (node->children == NULL)
     {
@@ -428,7 +430,7 @@ traverse(GlData* glData, Node* node, CacheRequests& requests)
                 //continue traversal in the children
                 for (uint i=0; i<4; ++i)
                 {
-                    traverse(glData, &(node->children[i]), requests);
+                    traverse(contextData,glData,&(node->children[i]),requests);
                 }
                 return;
             }
@@ -439,7 +441,7 @@ traverse(GlData* glData, Node* node, CacheRequests& requests)
         confirmCurrent(node, lod, requests);
         //draw only the visible
         if (visible)
-            drawNode(glData, node);
+            drawNode(contextData, glData, node);
         //non-visible lose their hold on cached video data
         else
             node->videoBuffer = NULL;
@@ -516,7 +518,7 @@ checkTree(glData, glData->root);
 }
 
 void QuadTerrain::
-drawNode(GlData* glData, Node* node)
+drawNode(GLContextData& contextData, GlData* glData, Node* node)
 {
 ///\todo accommodate for lazy data fetching
     const QuadNodeVideoData& data = prepareGlData(glData, node);
@@ -534,20 +536,16 @@ drawNode(GlData* glData, Node* node)
     glVertexPointer(2, GL_FLOAT, 0, 0);
     glIndexPointer(GL_SHORT, 0, 0);
 
-    //load the centroid relative translated navigation transformation
 #if 1
-    glPushMatrix();
-    glTranslatef(node->centroid[0], node->centroid[1], node->centroid[2]);
-#else
+    //load the centroid relative translated navigation transformation
     glPushMatrix();
     Vrui::Vector centroidTranslation(
         node->centroid[0], node->centroid[1], node->centroid[2]);
-    Vrui::NavTransform nav = Vrui::getNavigationTransformation();
+    Vrui::NavTransform nav =
+    Vrui::getDisplayState(contextData).modelviewNavigational;
     nav *= Vrui::NavTransform::translate(centroidTranslation);
     glLoadMatrix(nav);
-#endif
-
-#if 1
+    
 //    glPointSize(1.0);
 //    glDrawRangeElements(GL_POINTS, 0,
     glUniform3f(glData->centroidUniform,
@@ -555,8 +553,7 @@ drawNode(GlData* glData, Node* node)
     glDrawRangeElements(GL_TRIANGLE_STRIP, 0,
                         (TILE_RESOLUTION*TILE_RESOLUTION) - 1,
                         NUM_GEOMETRY_INDICES, GL_UNSIGNED_SHORT, 0);
-///\todo remove
-glPopMatrix();
+    glPopMatrix();
 #endif
 
 #if 0

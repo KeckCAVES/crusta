@@ -76,7 +76,8 @@ protected:
     static void discardSubTree(GlData* glData, Node* node);
     /** evaluate the terrain tree starting with the node specified. The terrain
         tree is manipulated to add/remove nodes as necessary. */
-    void traverse(GlData* glData, Node* node, CacheRequests& requests);
+    void traverse(GLContextData& contextData, GlData* glData, Node* node,
+                  CacheRequests& requests);
 
     /** make sure the required GL data for drawing is available. In case a
         buffer cannot be associated with the specified node (cache is full),
@@ -86,7 +87,7 @@ protected:
     /** issue the drawing commands for displaying a node. The video cache 
         operations to stream data from the main cache are performed at this
         point. */
-    void drawNode(GlData* glData, Node* node);
+    void drawNode(GLContextData& contextData, GlData* glData, Node* node);
 
     /** spheroid base patch ID (specified at construction but needed during
         initContext) */
@@ -154,6 +155,20 @@ protected:
         /** uniform relating the centroid vector to the shader for elevation
             extrusion */
         GLint centroidUniform;
+
+        /** uniform relating to the scale for sampling corser nodes'
+            elevations */
+        GLint demScaleUniform;
+        /** uniform relating to the offset for sampling corser nodes'
+            elevations */
+        GLint demOffsetUniform;
+        /** uniform relating to the scale for sampling corser nodes'
+            colors */
+        GLint colorScaleUniform;
+        /** uniform relating to the offset for sampling corser nodes'
+            colors */
+        GLint colorOffsetUniform;
+
         /** GL shader generating textured terrain */
         GLShader shader;
     };    
