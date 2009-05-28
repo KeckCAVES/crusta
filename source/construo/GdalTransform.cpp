@@ -105,10 +105,11 @@ flip(int imageHeight)
 Point::Scalar GdalTransform::
 getFinestResolution(const int size[2]) const
 {
-///\todo consider distortion in projection? for now just return the scale
-    Point origin = imageToWorld(0, 0);
-    Point left   = imageToWorld(1, 0);
-    Point up     = imageToWorld(0, 1);
+///\todo consider distortion in projection?
+    int half[2] = { size[0]>>1, size[1]>>1 };
+    Point origin = imageToWorld(half[0],   half[1]);
+    Point left   = imageToWorld(half[0]+1, half[1]);
+    Point up     = imageToWorld(half[0],   half[1]+1);
 
     Point::Scalar lx = Converter::haversineDist(origin, left, SPHEROID_RADIUS);
     Point::Scalar ly = Converter::haversineDist(origin,   up, SPHEROID_RADIUS);
