@@ -42,6 +42,14 @@ struct QuadNodeVideoData
     GLuint color;
 };
 
+///\todo remove when split of data implemented properly
+struct QuadNodeVideoDataRef
+{
+    GLuint geometry;
+    GLuint height;
+    GLuint color;
+};
+
 
 
 

@@ -277,7 +277,6 @@ if there is data to support it */
     for (uint i=0; i<4; ++i)
     {
         //if there is no finer detail data, then there's no point refining
-///\todo allow split if only one type of data is available (so && instead of ||)
         if (node->childDemTiles[i]   ==   DemFile::INVALID_TILEINDEX &&
             node->childColorTiles[i] == ColorFile::INVALID_TILEINDEX)
         {
@@ -452,9 +451,142 @@ traverse(GLContextData& contextData, GlData* glData, Node* node,
     }
 }
 
-const QuadNodeVideoData& QuadTerrain::
-prepareGlData(GlData* glData, Node* node)
+void QuadTerrain::
+findNodeData(Node* node, Node*& dem, Node*& color, DataCropOut& crop)
 {
+    //find dem data
+    crop.demScale     = 1.0f;
+    crop.demOffset[0] = crop.demOffset[1] = 0.0f;
+    dem = node;
+    while (dem->demTile==DemFile::INVALID_TILEINDEX || dem->mainBuffer==NULL)
+    {
+        //update the crop region
+        crop.demScale *= 0.5f;
+        crop.demOffset[0] += dem->index.child&0x1 ? crop.demScale : 0;
+        crop.demOffset[1] += dem->index.child&0x2 ? crop.demScale : 0;
+        //move up to the parent
+        dem = dem->parent;
+    }
+
+    //find color data
+    crop.colorScale     = 1.0f;
+    crop.colorOffset[0] = crop.colorOffset[1] = 0.0f;
+    color = node;
+    while (color->colorTile==ColorFile::INVALID_TILEINDEX ||
+           color->mainBuffer==NULL)
+    {
+        //update the crop region
+        crop.colorScale *= 0.5f;
+        crop.colorOffset[0] += color->index.child&0x1 ? crop.colorScale : 0;
+        crop.colorOffset[1] += color->index.child&0x2 ? crop.colorScale : 0;
+        //move up to the parent
+        color = color->parent;
+    }
+}
+
+QuadNodeVideoDataRef QuadTerrain::
+prepareGlData(GlData* glData, Node* node, DataCropOut& crop)
+{
+///\todo HACK OF DOOM! scavenge for data to use!!
+#if 1
+    QuadNodeVideoDataRef res;
+
+    //find out which data we want to use and stream it
+    Node* demNode;
+    Node* colorNode;
+    findNodeData(node, demNode, colorNode, crop);
+
+    //we need our own buffer, at the very least for the unique geometry
+    bool existed;
+    VideoCacheBuffer* videoBuf = glData->videoCache.getBuffer(node->index,
+                                                              &existed);
+    if (videoBuf == NULL)
+        videoBuf = glData->videoCache.getStreamBuffer();
+    else
+        videoBuf->touch();
+    const QuadNodeVideoData& videoData = videoBuf->getData();
+
+    const QuadNodeMainData&  mainData = node->mainBuffer->getData();
+    //geometry
+    res.geometry = videoData.geometry;
+    if (!existed)
+    {
+        glBindTexture(GL_TEXTURE_2D, res.geometry);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+                        TILE_RESOLUTION, TILE_RESOLUTION, GL_RGB, GL_FLOAT,
+                        mainData.geometry);
+    }
+
+    //elevation
+    if (demNode==node)
+    {
+        res.height = videoData.height;
+        if (!existed)
+        {
+            glBindTexture(GL_TEXTURE_2D, res.height);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+                            TILE_RESOLUTION, TILE_RESOLUTION, GL_RED, GL_FLOAT,
+                            mainData.height);
+        }
+    }
+    else
+    {
+        //try to find a video cached source
+        VideoCacheBuffer* demVideoBuf =
+            glData->videoCache.findCached(demNode->index);
+        if (demVideoBuf != NULL)
+        {
+            res.height = demVideoBuf->getData().height;
+            demVideoBuf->touch();
+        }
+        else
+        {
+            demNode->mainBuffer->touch();
+            const QuadNodeMainData&  demMainData =
+                demNode->mainBuffer->getData();
+            glBindTexture(GL_TEXTURE_2D, res.height);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+                            TILE_RESOLUTION, TILE_RESOLUTION, GL_RED, GL_FLOAT,
+                            demMainData.height);
+        }
+    }
+    
+    //color
+    if (colorNode==node)
+    {
+        res.color = videoData.color;
+        if (!existed)
+        {
+            glBindTexture(GL_TEXTURE_2D, res.color);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+                            TILE_RESOLUTION, TILE_RESOLUTION, GL_RGB,
+                            GL_UNSIGNED_BYTE, mainData.color);
+        }
+    }
+    else
+    {
+        //try to find a video cached source
+        VideoCacheBuffer* colorVideoBuf =
+            glData->videoCache.findCached(colorNode->index);
+        if (colorVideoBuf != NULL)
+        {
+            res.color = colorVideoBuf->getData().color;
+            colorVideoBuf->touch();
+        }
+        else
+        {
+            colorNode->mainBuffer->touch();
+            const QuadNodeMainData&  colorMainData =
+                colorNode->mainBuffer->getData();
+            glBindTexture(GL_TEXTURE_2D, res.color);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+                            TILE_RESOLUTION, TILE_RESOLUTION, GL_RGB,
+                            GL_UNSIGNED_BYTE, colorMainData.color);
+        }
+    }
+    
+    return res;
+#else
     //check if we already have the data locally cached
     if (node->videoBuffer != NULL)
     {
@@ -519,13 +651,15 @@ checkTree(glData, glData->root);
         //return the data
         return videoData;
     }
+#endif
 }
 
 void QuadTerrain::
 drawNode(GLContextData& contextData, GlData* glData, Node* node)
 {
 ///\todo accommodate for lazy data fetching
-    const QuadNodeVideoData& data = prepareGlData(glData, node);
+    DataCropOut crop;
+    QuadNodeVideoDataRef data = prepareGlData(glData, node, crop);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, data.geometry);
@@ -554,6 +688,14 @@ drawNode(GLContextData& contextData, GlData* glData, Node* node)
 //    glDrawRangeElements(GL_POINTS, 0,
     glUniform3f(glData->centroidUniform,
                 node->centroid[0], node->centroid[1], node->centroid[2]);
+
+    glUniform1f(glData->demScaleUniform,  crop.demScale);
+    glUniform2f(glData->demOffsetUniform, crop.demOffset[0], crop.demOffset[1]);
+
+    glUniform1f(glData->colorScaleUniform, crop.colorScale);
+    glUniform2f(glData->colorOffsetUniform,
+                crop.colorOffset[0], crop.colorOffset[1]);
+
     glDrawRangeElements(GL_TRIANGLE_STRIP, 0,
                         (TILE_RESOLUTION*TILE_RESOLUTION) - 1,
                         NUM_GEOMETRY_INDICES, GL_UNSIGNED_SHORT, 0);

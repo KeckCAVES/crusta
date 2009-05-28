@@ -57,6 +57,13 @@ public:
     
 protected:
     struct GlData;
+    struct DataCropOut
+    {
+        float demScale;
+        float demOffset[2];
+        float colorScale;
+        float colorOffset[2];
+    };
 
 ///\todo remove, debug
     void printTree(Node* node);
@@ -82,11 +89,16 @@ protected:
     void traverse(GLContextData& contextData, GlData* glData, Node* node,
                   CacheRequests& requests);
 
+    /** find the closest ancestors that can provide data for given node. During
+        the traversal the offset and scale for the crop-out are computed and
+        stored in the given node */
+    void findNodeData(Node* node, Node*& dem, Node*& color, DataCropOut& crop);
     /** make sure the required GL data for drawing is available. In case a
         buffer cannot be associated with the specified node (cache is full),
         then a temporary buffer is provided that has had the data streamed to
         it */
-    const QuadNodeVideoData& prepareGlData(GlData* glData, Node* node);
+    QuadNodeVideoDataRef prepareGlData(GlData* glData, Node* node,
+                                       DataCropOut& crop);
     /** issue the drawing commands for displaying a node. The video cache 
         operations to stream data from the main cache are performed at this
         point. */

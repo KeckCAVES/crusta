@@ -46,11 +46,13 @@ public:
     DemHeight centroid[3];
     /** the range of the elevation values */
     DemHeight elevationRange[2];
+
     /** index of the DEM tile in the database */
     DemFile::TileIndex demTile;
     /** index of the DEM tiles of the children. This is to avoid having to
      read the indices from file everytime a child needs to be fetched */
     DemFile::TileIndex childDemTiles[4];
+
     /** index of the color texture tile in the database */
     ColorFile::TileIndex colorTile;
     /** index of the color tiles of the children. This is to avoid having to
