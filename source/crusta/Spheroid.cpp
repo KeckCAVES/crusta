@@ -43,19 +43,16 @@ Spheroid(const std::string& demBase, const std::string& colorBase)
     for (uint i=0; i<numPatches; ++i)
     {
         std::ostringstream demName;
-        demName << demBase << "_" << i << ".qtf";
-        if (colorBase.empty())
-        {
-            basePatches[i] = new QuadTerrain(i, triacontahedron.getScope(i),
-                                             demName.str());
-        }
-        else
-        {
-            std::ostringstream colorName;
-            colorName << colorBase << "_" << i << ".qtf";
-            basePatches[i] = new QuadTerrain(i, triacontahedron.getScope(i),
-                                             demName.str(), colorName.str());
-        }
+        demName << demBase;
+        if (!demBase.empty())
+            demName << "_" << i << ".qtf";
+        std::ostringstream colorName;
+        colorName << colorBase;
+        if (!colorBase.empty())
+            colorName << "_" << i << ".qtf";
+
+        basePatches[i] = new QuadTerrain(i, triacontahedron.getScope(i),
+                                         demName.str(), colorName.str());
     }
 #else
 	/****************************************************************

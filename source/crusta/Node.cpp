@@ -10,9 +10,9 @@ Node() :
 {
     elevationRange[0] = elevationRange[1] = DemHeight(0);
     childDemTiles[0] = childDemTiles[1] = DemFile::INVALID_TILEINDEX;
-    childDemTiles[2] = childDemTiles[4] = DemFile::INVALID_TILEINDEX;
+    childDemTiles[2] = childDemTiles[3] = DemFile::INVALID_TILEINDEX;
     childColorTiles[0] = childColorTiles[1] = ColorFile::INVALID_TILEINDEX;
-    childColorTiles[2] = childColorTiles[4] = ColorFile::INVALID_TILEINDEX;
+    childColorTiles[2] = childColorTiles[3] = ColorFile::INVALID_TILEINDEX;
 }
 
 void Node::

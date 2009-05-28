@@ -14,15 +14,16 @@ CrustaApp::
 CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     Vrui::Application(argc, argv, appDefaults), crusta(NULL)
 {
-    if (argc<2)
+    char* demName   = "";
+    char* colorName = "";
+    for (int i=0; i<argc; ++i)
     {
-        Misc::throwStdErr("Crusta requires at least a preprocessed DEM database"
-                          "to be provided as a command line argument");
+        if (strcmp(argv[i], "-dem")==0)
+            demName   = argv[++i];
+        if (strcmp(argv[i], "-color")==0)
+            colorName = argv[++i];
     }
-    if (argc<3)
-        crusta = new Crusta(argv[1]);
-    else
-        crusta = new Crusta(argv[1], argv[2]);
+    crusta = new Crusta(demName, colorName);
 
     produceMainMenu();
     resetNavigationCallback(NULL);

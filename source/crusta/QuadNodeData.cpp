@@ -6,8 +6,8 @@ QuadNodeMainData::
 QuadNodeMainData(uint size)
 {
     geometry = new Vertex[size*size];
-    height   = new float[size*size];
-    color    = new uint8[size*size*3];
+    height   = new DemHeight[size*size];
+    color    = new TextureColor[size*size];
 }
 QuadNodeMainData::
 ~QuadNodeMainData()

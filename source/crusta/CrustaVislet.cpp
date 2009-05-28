@@ -65,15 +65,16 @@ CrustaVislet::
 CrustaVislet(int numArguments, const char* const arguments[]) :
     crusta(NULL)
 {
-    if (numArguments<1)
+    const char* demName   = "";
+    const char* colorName = "";
+    for (int i=0; i<numArguments; ++i)
     {
-        Misc::throwStdErr("Crusta requires at least a preprocessed DEM database"
-                          "to be provided as a command line argument");
+        if (strcmp(arguments[i], "-dem")==0)
+            demName   = arguments[++i];
+        if (strcmp(arguments[i], "-color")==0)
+            colorName = arguments[++i];
     }
-    if (numArguments<2)
-        crusta = new Crusta(arguments[0]);
-    else
-        crusta = new Crusta(arguments[0], arguments[1]);
+    crusta = new Crusta(demName, colorName);
 }
 
 CrustaVislet::

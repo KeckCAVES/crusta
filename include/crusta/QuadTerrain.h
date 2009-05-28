@@ -44,8 +44,10 @@ public:
     
     /** produce the flat sphere cartesian space coordinates for a node */
     void generateGeometry(Node* node, QuadNodeMainData::Vertex* vertices);
-///\todo remove
-static void generateColor(float* heights, uint8* colors);
+    /** source the elevation meta-data and optionally data for a node */
+    void sourceDem(Node* node, DemHeight* elevations=NULL);
+    /** source the color meta-data and optionally data for a node */
+    void sourceColor(Node* node, TextureColor* colors=NULL);
 
 ///\todo proper access restrictions
     /** quadtree file from which to source data for the elevation */
@@ -97,6 +99,10 @@ protected:
         initContext) */
     Scope baseScope;
 
+    /** value for "no-data" elevations */
+    DemHeight demNodata;
+    /** value for "no-data" colors */
+    TextureColor colorNodata;
     /** temporary storage for computing the high-precision surface geometry */
     double* geometryBuf;
 

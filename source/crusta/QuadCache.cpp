@@ -66,11 +66,8 @@ frame()
         //process the critical data for that request
 ///\todo currently processes all data
         const QuadNodeMainData& data = buf->getData();
-        if (n->demTile != DemFile::INVALID_TILEINDEX)
-            n->terrain->demFile->readTile(n->demTile, data.height);
-        if (n->colorTile != ColorFile::INVALID_TILEINDEX)
-            n->terrain->colorFile->readTile(n->colorTile,
-                                            (TextureColor*)data.color);
+        n->terrain->sourceDem(n, data.height);
+        n->terrain->sourceColor(n, data.color);
 
         n->terrain->generateGeometry(n, data.geometry);
         DEBUG_OUT(5, "MainCache::frame: request for Index %s processed\n",

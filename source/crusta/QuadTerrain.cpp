@@ -27,7 +27,8 @@ QuadTerrain(uint8 patch, const Scope& scope, const std::string& demFileName,
     demFile(NULL), colorFile(NULL), basePatchId(patch), baseScope(scope)
 {
     uint res[2] = { TILE_RESOLUTION, TILE_RESOLUTION };
-    demFile = new DemFile(demFileName.c_str(), res);
+    if (!demFileName.empty())
+        demFile   = new DemFile(demFileName.c_str(), res);
     if (!colorFileName.empty())
         colorFile = new ColorFile(colorFileName.c_str(), res);
 
@@ -137,59 +138,59 @@ generateGeometry(Node* node, QuadNodeMainData::Vertex* vertices)
     }
 }
 
-#if 0
 void QuadTerrain::
-generateHeight(QuadNodeMainData::Vertex* vertices, float* heights)
+sourceDem(Node* node, DemHeight* elevations)
 {
-float ir = 1.0f / sqrt(vertices[0].position[0]*vertices[0].position[0] +
-                       vertices[0].position[1]*vertices[0].position[1] +
-                       vertices[0].position[2]*vertices[0].position[2]);
-    uint numHeights = TILE_RESOLUTION*TILE_RESOLUTION;
-    float* end = heights + numHeights;
-    for (; heights<end; ++heights, ++vertices)
+    if (node->terrain->demFile != NULL)
     {
-        float theta = acos(vertices->position[2]*ir);
-        float phi = atan2(vertices->position[1], vertices->position[0]);
-        *heights = SimplexNoise1234::noise(theta, phi);
-        *heights += 1.0f;
-        *heights /= 8.0f;
-        *heights += 1.0f;
+        if (node->demTile!=DemFile::INVALID_TILEINDEX)
+        {
+            DemTileHeader header;
+            if (!node->terrain->demFile->readTile(
+                node->demTile, node->childDemTiles, header, elevations))
+            {
+                Misc::throwStdErr("QuadTerrain::QuadTerrain: Invalid DEM file: "
+                                  "could not read node %s's data",
+                                  node->index.med_str().c_str());
+            }
+            node->init(header.range);
+        }
+    }
+    else
+    {
+        if (elevations != NULL)
+        {
+            for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
+                elevations[i] = demNodata;
+        }
+        DemHeight range[2] = {demNodata, demNodata};
+        node->init(range);
     }
 }
-#endif
 
 void QuadTerrain::
-generateColor(float* heights, uint8* colors)
+sourceColor(Node* node, TextureColor* colors)
 {
-#if 0
-    static const uint  PALETTE_SIZE = 3;
-    static const float PALETTE_BUCKET_SIZE = 1.0f / (PALETTE_SIZE-1);
-    static const float heightPalette[PALETTE_SIZE][3] = {
-        {0.85f, 0.83f, 0.66f}, {0.80f, 0.21f, 0.28f}, {0.29f, 0.37f, 0.50f} };
-#endif
-
-    uint numHeights = TILE_RESOLUTION*TILE_RESOLUTION;
-    float* end = heights + numHeights;
-    for (; heights<end; ++heights, colors+=3)
+    if (node->terrain->colorFile != NULL)
     {
-        colors[0] = 255;
-        colors[1] = 255;
-        colors[2] = 255;
-#if 0
-        float alpha = *heights / 4000.0;//(*heights - 1.0f) * 4.0f;
-        alpha = std::max(alpha, 1.0f);
-        alpha /= PALETTE_BUCKET_SIZE;
-        uint low  = (uint)(Math::floor(alpha+0.5f));
-        uint high = low==(PALETTE_SIZE-1) ? (PALETTE_SIZE-1) : low+1;
-        alpha -= low;
-        
-        colors[0] = ((1.0f-alpha)*heightPalette[low][0] +
-                    alpha*heightPalette[high][0]) * 255;
-        colors[1] = ((1.0f-alpha)*heightPalette[low][1] +
-                    alpha*heightPalette[high][1]) * 255;
-        colors[2] = ((1.0f-alpha)*heightPalette[low][2] +
-                    alpha*heightPalette[high][2]) * 255;
-#endif
+        if (node->colorTile!=ColorFile::INVALID_TILEINDEX)
+        {
+            if (!node->terrain->colorFile->readTile(
+                node->colorTile, node->childColorTiles, colors))
+            {
+                Misc::throwStdErr("QuadTerrain::QuadTerrain: Invalid Color "
+                                  "file: could not read node %s's data",
+                                  node->index.med_str().c_str());
+            }
+        }
+    }
+    else
+    {
+        if (colors != NULL)
+        {
+            for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
+                colors[i] = colorNodata;
+        }
     }
 }
 
@@ -276,9 +277,12 @@ if there is data to support it */
     for (uint i=0; i<4; ++i)
     {
         //if there is no finer detail data, then there's no point refining
+///\todo allow split if only one type of data is available (so && instead of ||)
         if (node->childDemTiles[i]   ==   DemFile::INVALID_TILEINDEX &&
             node->childColorTiles[i] == ColorFile::INVALID_TILEINDEX)
+        {
             return false;
+        }
     }
 
     //tentatively assemble the children
@@ -314,19 +318,12 @@ if there is data to support it */
     else
     {
     //- split was successful
-        /* read in the indices of the dem tiles for the children as well as
-           compute the average elevation */
-        DemTileHeader header;
+        /* source the meta-data for the elevation and color */
         for (uint i=0; i<4; ++i)
         {
-            Node& child = node->children[i];
-            if (!child.terrain->demFile->readTile(
-                    child.demTile, child.childDemTiles, header))
-            {
-                Misc::throwStdErr("QuadTerrain::Split: couldn't retrieve the "
-                                  "dem tile indices for the children");
-            }
-            child.init(header.range);
+            Node* child = &node->children[i];
+            sourceDem(child);
+            sourceColor(child);
         }
 /** \todo wait... since the buffer can dissappear under the node between any
 frame with no prior notice one can never assume these things are there and must
@@ -639,31 +636,29 @@ GlData(QuadTerrain* terrain, const TreeIndex& iRootIndex,
     //generate/fetch the data content for the static data
     const QuadNodeMainData& rootData = root->mainBuffer->getData();
 
-    DemTileHeader header;
-    if (!root->terrain->demFile->readTile(root->demTile, root->childDemTiles,
-                                          header,rootData.height))
+    if (root->terrain->demFile != NULL)
     {
-        Misc::throwStdErr("QuadTerrain::QuadTerrain: Invalid DEM file: could "
-                          "not read root data");
+        root->terrain->demNodata =
+            root->terrain->demFile->getDefaultPixelValue();
     }
-    root->init(header.range);
+    else
+        root->terrain->demNodata = DemHeight(-1);
+    root->terrain->sourceDem(root, rootData.height);
 
 /**\todo the geometry generation is now dependent on the data!! Need to load it
 in before the geometry can be generated. So long as the data is not loaded yet
 use the values of the node from which the data is being sampled */
     root->terrain->generateGeometry(root, rootData.geometry);
 
+    root->colorTile = 0;
     if (root->terrain->colorFile != NULL)
     {
-        root->colorTile = 0;
-        if (!root->terrain->colorFile->readTile(root->colorTile,
-                                                root->childColorTiles,
-                                                (TextureColor*)rootData.color))
-        {
-            Misc::throwStdErr("QuadTerrain::QuadTerrain: Invalid color texture "
-                              "file: could not read root data");
-        }
+        root->terrain->colorNodata =
+            root->terrain->colorFile->getDefaultPixelValue();
     }
+    else
+        root->terrain->colorNodata = TextureColor(0,0,0);
+    root->terrain->sourceColor(root, rootData.color);
     
     //initialize the shader
 //    shader.compileVertexShader("elevation.vs");

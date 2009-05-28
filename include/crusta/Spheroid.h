@@ -9,7 +9,7 @@ BEGIN_CRUSTA
 class Spheroid
 {
 public:
-    Spheroid(const std::string& demBase, const std::string& colorBase="");
+    Spheroid(const std::string& demBase, const std::string& colorBase);
     ~Spheroid();
 
     /** process a display update */

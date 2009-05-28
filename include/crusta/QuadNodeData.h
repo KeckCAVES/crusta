@@ -3,7 +3,8 @@
 
 #include <GL/GLVertex.h>
 
-#include <crusta/basics.h>
+#include <crusta/DemSpecs.h>
+#include <crusta/ColorTextureSpecs.h>
 
 BEGIN_CRUSTA
 
@@ -19,9 +20,9 @@ struct QuadNodeMainData
     /** 3D vertex data for the node's flat-sphere geometry */
     Vertex* geometry;
     /** height map defining elevations within the node */
-    float* height;
+    DemHeight* height;
     /** color texture */
-    uint8* color;
+    TextureColor* color;
 };
 
 /** stores the video RAM view-independent data of the terrain that can be shared
