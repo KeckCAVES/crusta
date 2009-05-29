@@ -14,14 +14,14 @@ CrustaApp::
 CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     Vrui::Application(argc, argv, appDefaults), crusta(NULL)
 {
-    char* demName   = "";
-    char* colorName = "";
+    std::string demName;
+    std::string colorName;
     for (int i=0; i<argc; ++i)
     {
         if (strcmp(argv[i], "-dem")==0)
-            demName   = argv[++i];
+            demName   = std::string(argv[++i]);
         if (strcmp(argv[i], "-color")==0)
-            colorName = argv[++i];
+            colorName = std::string(argv[++i]);
     }
     crusta = new Crusta(demName, colorName);
 

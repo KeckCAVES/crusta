@@ -2,10 +2,15 @@
 #define _QuadCache_H_
 
 #ifdef __GNUC__
-#include <ext/hash_map>
+    #if __GNUC__ > 3 && __GNUC_MINOR__ > 0
+        #include <tr1/unordered_map>
+    #else
+        #include <ext/hash_map>
+    #endif
 #else
-#include <hash_map>
+    #include <hash_map>
 #endif
+
 #include <vector>
 
 #include <GL/GLObject.h>
@@ -16,14 +21,15 @@
 #include <crusta/QuadNodeData.h>
 #include <crusta/TreeIndex.h>
 
-namespace std
-{
 #ifdef __GNUC__
-    using namespace __gnu_cxx;
+    #if __GNUC__ > 3 && __GNUC_MINOR__ > 0
+        #define PortableTable std::tr1::unordered_map
+    #else
+        #define PortableTable std::__gnu_cxx::hash_map
+    #endif
 #else
-    using namespace stdext;
+    #define PortableTable stdext::hash_map
 #endif
-}
 
 BEGIN_CRUSTA
 
@@ -46,8 +52,7 @@ public:
 
 
 protected:
-    typedef std::hash_map<TreeIndex, BufferType*, TreeIndex::hash>
-        BufferPtrMap;
+    typedef PortableTable<TreeIndex, BufferType*, TreeIndex::hash> BufferPtrMap;
 
     /** combines a tree index with a cache buffer when the buffer is taken
         outside the context of the buffer map */

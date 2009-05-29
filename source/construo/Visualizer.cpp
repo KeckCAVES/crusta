@@ -57,7 +57,11 @@ init()
 {
     if (vis == NULL)
     {
-        int argc=1;char* v="visualizer";char** argv=&v;char** appDefaults=NULL;
+        int argc = 1;
+        char v[] = "visualizer";
+        char* vv = &v[0];
+        char** argv = &vv;
+        char** appDefaults = NULL;
         vis = new Visualizer(argc, argv, appDefaults);
     }
 }

@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
 	BuildType buildType = UNDEFINED_BUILD;
 
     //the tile size should only be an internal parameter
-    static const uint tileSize[2] = {TILE_RESOLUTION, TILE_RESOLUTION};
+    static const crusta::uint tileSize[2] = {TILE_RESOLUTION, TILE_RESOLUTION};
     
 	const char* spheroidName = NULL;
 	Names       imagePatchNames;

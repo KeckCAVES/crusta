@@ -526,9 +526,9 @@ prepareGlData(GlData* glData, Node* node, DataCropOut& crop)
     }
 
     //elevation
+    res.height = videoData.height;
     if (demNode==node)
     {
-        res.height = videoData.height;
         if (!existed)
         {
             glBindTexture(GL_TEXTURE_2D, res.height);
@@ -560,9 +560,9 @@ prepareGlData(GlData* glData, Node* node, DataCropOut& crop)
     }
     
     //color
+    res.color = videoData.color;
     if (colorNode==node)
     {
-        res.color = videoData.color;
         if (!existed)
         {
             glBindTexture(GL_TEXTURE_2D, res.color);
@@ -808,7 +808,7 @@ use the values of the node from which the data is being sampled */
             root->terrain->colorFile->getDefaultPixelValue();
     }
     else
-        root->terrain->colorNodata = TextureColor(0,0,0);
+        root->terrain->colorNodata = TextureColor(1,1,1);
     root->terrain->sourceColor(root, rootData.color);
     
     //initialize the shader

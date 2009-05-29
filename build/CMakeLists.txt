@@ -91,9 +91,12 @@ find_package(ImageMagick COMPONENTS Magick++)
 include_directories(${ImageMagick_Magick++_INCLUDE_DIRS})
 
 #GDAL
-IF(APPLE)
-   FIND_LIBRARY(GDAL_LIBRARY GDAL)
-ENDIF (APPLE)
+if(APPLE)
+   find_library(GDAL_LIBRARY GDAL)
+else(APPLE)
+   find_package(GDAL)
+   include_directories(${GDAL_INCLUDE_DIR})
+endif(APPLE)
 
 set(CONSTRUO_SOURCES ../source/construo/ArcInfoBinaryGridImageFile.cpp
                      ../source/construo/Construo.cpp

@@ -3,6 +3,8 @@
 
 #include <construo/SphereCoverage.h>
 
+#include <cassert>
+
 #include <construo/Converters.h>
 #include <construo/ImageCoverage.h>
 #include <construo/ImageTransform.h>

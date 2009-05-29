@@ -65,14 +65,14 @@ CrustaVislet::
 CrustaVislet(int numArguments, const char* const arguments[]) :
     crusta(NULL)
 {
-    const char* demName   = "";
-    const char* colorName = "";
+    std::string demName;
+    std::string colorName;
     for (int i=0; i<numArguments; ++i)
     {
         if (strcmp(arguments[i], "-dem")==0)
-            demName   = arguments[++i];
+            demName   = std::string(arguments[++i]);
         if (strcmp(arguments[i], "-color")==0)
-            colorName = arguments[++i];
+            colorName = std::string(arguments[++i]);
     }
     crusta = new Crusta(demName, colorName);
 }

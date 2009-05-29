@@ -122,7 +122,7 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
 	projectionFileName.append("/prj.adf");
 	Misc::File projectionFile(projectionFileName.c_str(),"rt");
 	int projectionType=-1; // 0 - Geographic; 1 - UTM
-	int utmZone;
+	int utmZone = 0;
 	char tag[256],value[256];
 	while(true)
     {

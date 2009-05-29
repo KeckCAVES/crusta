@@ -1,5 +1,6 @@
 #include <crusta/TreeIndex.h>
 
+#include <cassert>
 #include <sstream>
 
 BEGIN_CRUSTA

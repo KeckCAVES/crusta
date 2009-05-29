@@ -28,8 +28,13 @@
 #include <Geometry/AffineTransformation.h>
 #include <Math/Math.h>
 
+#if __APPLE__
 #include <GDAL/ogr_spatialref.h>
 #include <GDAL/ogr_srs_api.h>
+#else
+#include <ogr_spatialref.h>
+#include <ogr_srs_api.h>
+#endif //__APPLE__
 
 #include <construo/ImageTransform.h>
 

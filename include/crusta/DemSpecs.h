@@ -3,6 +3,8 @@
 #ifndef _DemSpecs_H_
 #define _DemSpecs_H_
 
+#include <cassert>
+
 #include <Misc/LargeFile.h>
 
 #include <crusta/QuadtreeFileHeaders.h>

@@ -35,7 +35,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <construo/GeoTransform.h>
 #include <construo/ImageTransform.h>
 #include <construo/GeometryTypes.h>
-#include <construo/UTMTransform.h>
+#include <construo/UtmTransform.h>
 
 /*************************************
 Methods of class ImageTransformReader:
