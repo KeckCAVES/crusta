@@ -94,6 +94,9 @@ template <>
 ImageFile<TextureColor>* ImageFileLoader<TextureColor>::
 loadImageFile(const char* fileName)
 {
+#if 1
+    return new GdalColorImageFile(fileName);
+#else
 	/* Find the file name's extension: */
 	const char* extPtr=0;
 	for(const char* ifnPtr=fileName;*ifnPtr!='\0';++ifnPtr)
@@ -137,6 +140,7 @@ loadImageFile(const char* fileName)
     }
 	
 	return result;
+#endif
 }
 
 END_CRUSTA

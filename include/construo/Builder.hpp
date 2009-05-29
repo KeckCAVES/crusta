@@ -30,8 +30,8 @@ assert(size[0]==size[1]);
     globe = new Globe(spheroidName, tileSize);
 
 ///\todo for now hardcode the subsampling filter
-    Filter::makePointFilter(subsamplingFilter);
-//    Filter::makeTriangleFilter(subsamplingFilter);
+//    Filter::makePointFilter(subsamplingFilter);
+    Filter::makeTriangleFilter(subsamplingFilter);
 //    Filter::makeFiveLobeLanczosFilter(subsamplingFilter);
 
     scopeBuf          = new Scope::Scalar[tileSize[0]*tileSize[1]*3];
@@ -205,8 +205,12 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
         {
 ///\todo abstract the sampler assume bilinear interpolation here
             rectOrigin[i] = static_cast<int>(Math::floor(bIt->min[i]));
-            rectSize[i]   = static_cast<int>(Math::ceil (bIt->max[i])) + 1 -
-                            rectOrigin[i];
+            /* size should be one more then indicies (i.e. i-i=0 but size=1),
+               for bilinear sampling always assume 4 points. It'll work due to
+               the alpha term choosing one but so simplify the code below to
+               avoid checking exact boundaries, simply extend the rectangle */
+            rectSize[i]   = static_cast<int>(Math::ceil (bIt->max[i])) -
+                            rectOrigin[i] + 2;
         }
         PixelParam* rectBuffer = new PixelParam[rectSize[0] * rectSize[1]];
         imgPatch->image->readRectangle(rectOrigin, rectSize, rectBuffer);
@@ -216,7 +220,7 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
              sIt!=bIt->indices.end(); ++sIt)
         {
             Point& p = sampleBuf[*sIt];
-#if 1
+#if 0
             /* nearest neighbor sampling */
             int ip[2];
             for (uint i=0; i<2; ++i)
@@ -512,6 +516,7 @@ Visualizer::show();
 #endif //show image pixels
 
         std::cout << "Adding source image " << i << " out of " << numPatches;
+        std::cout.flush();
 
         //grab the smallest resolution from the image
         Point::Scalar imgResolution=patches[i]->transform->getFinestResolution(
@@ -528,6 +533,7 @@ Visualizer::show();
                              depth);
 
             std::cout << ".";
+            std::cout.flush();
 ///\todo this is debugging code to check tree consistency
 //verifyQuadtreeFile(&(*bIt));
 //Visualizer::show();
@@ -732,6 +738,7 @@ updateCoarserLevels(int depth)
     for (int level=depth-1; level>=0; --level)
     {
         std::cout << "Upsampling level " << level;
+        std::cout.flush();
         for (typename Globe::BaseNodes::iterator it=globe->baseNodes.begin();
              it!=globe->baseNodes.end(); ++it)
         {
@@ -742,6 +749,7 @@ updateCoarserLevels(int depth)
             updateCoarser(&(*it), level);
 //verifyQuadtreeFile(&(*it));
             std::cout << ".";
+            std::cout.flush();
         }
         std::cout << " done" << std::endl;
     }

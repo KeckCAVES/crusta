@@ -89,9 +89,13 @@ display(GLContextData& contextData)
     
     /* traverse the terrain tree, update as necessary and issue drawing commands
        for active nodes */
+DEBUG_BEGIN(1)
 checkTree(glData, glData->root);
+DEBUG_END
     traverse(contextData, glData, glData->root, dataRequests);
+DEBUG_BEGIN(1)
 checkTree(glData, glData->root);
+DEBUG_END
 
     //restore the GL transform as it was before
     glPopMatrix();
@@ -252,8 +256,10 @@ merge(GlData* glData, Node* node, float lod,
     node->parent->videoBuffer = NULL;
 DEBUG_OUT(1, "-Merge: %s:\n", node->parent->index.str().c_str());
     discardSubTree(glData, node->parent);
+DEBUG_BEGIN(1)
 printTree(glData->root); DEBUG_OUT(1, "\n\n");
 checkTree(glData, glData->root);
+DEBUG_END
     return true;
 }
 
@@ -336,8 +342,10 @@ better solution here in general */
         node->mainBuffer  = NULL;
         node->videoBuffer = NULL;
 DEBUG_OUT(1, "+Split: %s:\n", node->index.str().c_str());
+DEBUG_BEGIN(1)
 printTree(glData->root); DEBUG_OUT(1, "\n\n");
 checkTree(glData, glData->root);
+DEBUG_END
         return true;
     }
 }
@@ -731,7 +739,7 @@ glData->shader.disablePrograms();
 glData->shader.useProgram();
 #endif
 
-#if 1
+#if 0
 glData->shader.disablePrograms();
     Scope::Vertex* c = node->scope.corners;
     glDisable(GL_LIGHTING);
