@@ -62,13 +62,13 @@ display(GLContextData& contextData)
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &arrayBuffer);
     GLint elementArrayBuffer;
     glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &elementArrayBuffer);
-    
+
     glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_POLYGON_BIT);
 	glEnable(GL_CULL_FACE);
     glEnable(GL_TEXTURE_2D);
 //	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glLineWidth(1.0f);
-    
+
     glData->shader.useProgram();
 
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
@@ -86,7 +86,7 @@ display(GLContextData& contextData)
        traversal with a scope centroid centered one to alleviate floating point
        issues with rotating vertices far off the origin */
     glPushMatrix();
-    
+
     /* traverse the terrain tree, update as necessary and issue drawing commands
        for active nodes */
 DEBUG_BEGIN(1)
@@ -107,7 +107,7 @@ DEBUG_END
     glActiveTexture(activeTexture);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
-    
+
     //merge the data requests
     crustaQuadCache.getMainCache().request(dataRequests);
 }
@@ -395,7 +395,7 @@ discardSubTree(GlData* glData, Node* node)
 {
     if (node->children==NULL)
         return;
-    
+
     //recurse down the children that have subtrees
     for (uint i=0; i<4; ++i)
     {
@@ -446,7 +446,7 @@ traverse(GLContextData& contextData, GlData* glData, Node* node,
                 return;
             }
         }
-        
+
     //- draw the node
         //confirm current state of the node
         confirmCurrent(node, lod, requests);
@@ -558,7 +558,7 @@ prepareGlData(GlData* glData, Node* node, DataCropOut& crop)
                             demMainData.height);
         }
     }
-    
+
     //color
     res.color = videoData.color;
     if (colorNode==node)
@@ -592,7 +592,7 @@ prepareGlData(GlData* glData, Node* node, DataCropOut& crop)
                             GL_UNSIGNED_BYTE, colorMainData.color);
         }
     }
-    
+
     return res;
 #else
     //check if we already have the data locally cached
@@ -643,7 +643,7 @@ checkTree(glData, glData->root);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
                         TILE_RESOLUTION, TILE_RESOLUTION, GL_RGB, GL_FLOAT,
                         mainData.geometry);
-        
+
         //transfer the evelation
         glBindTexture(GL_TEXTURE_2D, videoData.height);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
@@ -655,7 +655,7 @@ checkTree(glData, glData->root);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
                         TILE_RESOLUTION, TILE_RESOLUTION, GL_RGB,
                         GL_UNSIGNED_BYTE, mainData.color);
-        
+
         //return the data
         return videoData;
     }
@@ -691,7 +691,7 @@ drawNode(GLContextData& contextData, GlData* glData, Node* node)
     Vrui::getDisplayState(contextData).modelviewNavigational;
     nav *= Vrui::NavTransform::translate(centroidTranslation);
     glLoadMatrix(nav);
-    
+
 //    glPointSize(1.0);
 //    glDrawRangeElements(GL_POINTS, 0,
     glUniform3f(glData->centroidUniform,
@@ -716,7 +716,7 @@ glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 glVertexPointer(3, GL_FLOAT, 0, node->mainBuffer->getData().geometry);
 glDrawArrays(GL_POINTS, 0, TILE_RESOLUTION*TILE_RESOLUTION);
 #endif
-    
+
 #if 0
 glData->shader.disablePrograms();
     Scope::Vertex* c = node->scope.corners;
@@ -739,7 +739,7 @@ glData->shader.disablePrograms();
 glData->shader.useProgram();
 #endif
 
-#if 0
+#if 1
 glData->shader.disablePrograms();
     Scope::Vertex* c = node->scope.corners;
     glDisable(GL_LIGHTING);
@@ -775,7 +775,7 @@ GlData(QuadTerrain* terrain, const TreeIndex& iRootIndex,
     //initialize the static gl buffer templates
     generateVertexAttributeTemplate();
     generateIndexTemplate();
-    
+
     //initialize the active front to be just the root node
     root = new Node;
     root->terrain    = terrain;
@@ -808,9 +808,9 @@ use the values of the node from which the data is being sampled */
             root->terrain->colorFile->getDefaultPixelValue();
     }
     else
-        root->terrain->colorNodata = TextureColor(1,1,1);
+        root->terrain->colorNodata = TextureColor(255,255,255);
     root->terrain->sourceColor(root, rootData.color);
-    
+
     //initialize the shader
 //    shader.compileVertexShader("elevation.vs");
     shader.compileVertexShader((std::string(CRUSTA_SHARE_PATH) +
@@ -838,7 +838,7 @@ use the values of the node from which the data is being sampled */
     glUniform1f(uniform, TEXTURE_COORD_STEP);
 
     shader.disablePrograms();
-    
+
 ///\todo debug, remove: makes LOD recommend very coarse
 //    lod.bias = -1.0;
 }
@@ -907,7 +907,7 @@ generateVertexAttributeTemplate()
     glBufferData(GL_ARRAY_BUFFER, numTexCoords*sizeof(float), positionsInMemory,
                  GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    
+
     //clean-up
     delete positionsInMemory;
 }
@@ -923,7 +923,7 @@ generateIndexTemplate()
        zizag through the geometry a row at a time: e.g.
               12 ...
               |
-       10 11 13 - 14 
+       10 11 13 - 14
               9 -  7
               | /  |
               8  -  4 5 6
@@ -949,14 +949,14 @@ generateIndexTemplate()
                 *indices = index[1];
         }
     }
-    
+
     //generate the index buffer and stream in the data
     glGenBuffers(1, &indexTemplate);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexTemplate);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, NUM_GEOMETRY_INDICES*sizeof(uint16),
                  indicesInMemory, GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    
+
     //clean-up
     delete indicesInMemory;
 }
@@ -972,7 +972,7 @@ initContext(GLContextData& contextData) const
     MainCacheBuffer* rootBuffer =
         crustaQuadCache.getMainCache().findCached(rootIndex);
     assert(rootBuffer != NULL);
-    
+
     //allocate the context dependent data
     GlData* glData = new GlData(const_cast<QuadTerrain*>(this), rootIndex,
                                 rootBuffer, baseScope,

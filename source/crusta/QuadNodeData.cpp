@@ -12,9 +12,9 @@ QuadNodeMainData(uint size)
 QuadNodeMainData::
 ~QuadNodeMainData()
 {
-    delete geometry;
-    delete height;
-    delete color;
+    delete[] geometry;
+    delete[] height;
+    delete[] color;
 }
 
 QuadNodeVideoData::

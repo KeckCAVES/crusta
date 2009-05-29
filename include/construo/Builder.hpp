@@ -205,16 +205,12 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
         {
 ///\todo abstract the sampler assume bilinear interpolation here
             rectOrigin[i] = static_cast<int>(Math::floor(bIt->min[i]));
-            /* size should be one more then indicies (i.e. i-i=0 but size=1),
-               for bilinear sampling always assume 4 points. It'll work due to
-               the alpha term choosing one but so simplify the code below to
-               avoid checking exact boundaries, simply extend the rectangle */
             rectSize[i]   = static_cast<int>(Math::ceil (bIt->max[i])) -
-                            rectOrigin[i] + 2;
+                            rectOrigin[i] + 1;
         }
         PixelParam* rectBuffer = new PixelParam[rectSize[0] * rectSize[1]];
         imgPatch->image->readRectangle(rectOrigin, rectSize, rectBuffer);
-        
+
         //sample the points
         for (ImgBox::Indices::iterator sIt=bIt->indices.begin();
              sIt!=bIt->indices.end(); ++sIt)
@@ -243,6 +239,11 @@ if (!(*((float*)&node->data[*sIt])>=0.0 &&
                 double pFloor = Math::floor(p[i]);
                 d[i]          = p[i] - pFloor;
                 ip[i]         = static_cast<int>(pFloor) - rectOrigin[i];
+                if (ip[i] == rectSize[i]-1)
+                {
+                    --ip[i];
+                    d[i] = 1.0;
+                }
             }
             PixelParam* base = rectBuffer + (ip[1]*rectSize[0] + ip[0]);
             PixelParam  one  = (1.0-d[0])*base[0] + d[0]*(base[1]);
@@ -300,7 +301,7 @@ region for the sampling. For now just arbitrarily widen the region */
     //prepare the node's data buffer
     node->data = nodeDataBuf;
     node->treeState->file->readTile(node->tileIndex, node->data);
-    
+
     //resample pixel values for the node from the read rectangle
     Scope::Scalar* endPtr = scopeBuf + tileSize[0]*tileSize[1]*3;
     PixelParam* dataPtr   = node->data;
@@ -321,7 +322,7 @@ Visualizer::addPrimitive(GL_POINTS, scopeSample, scopeSampleColor);
 Visualizer::show();
 #endif //DEBUG_SOURCEFINEST
         p = imgPatch->transform->worldToImage(p);
-        
+
         /* Check if the point is inside the image patch's coverage region: */
         if(overlap==SphereCoverage::ISCONTAINED ||
            imgPatch->imageCoverage->contains(p))
@@ -389,7 +390,7 @@ Visualizer::show();
 }
 #endif
     node->data = NULL;
-    
+
     if (node->parent != NULL)
     {
 #if DEBUG_FLAGANCESTORSFORUPDATE
@@ -399,7 +400,7 @@ flagAncestorsForUpdateColor[2] = (float)rand() / RAND_MAX;
 #endif //DEBUG_FLAGANCESTORSFORUPDATE
         //make sure that the parent dependent on this new data is also updated
         flagAncestorsForUpdate(node->parent);
-        
+
         //we musn't forget to update all the adjacent non-sibling nodes either
 /**\todo DANGER: there exist valence 5 corners. Need to account for reaching 2
 different nodes on corners depending on which neighbor we traverse first. Need
@@ -458,7 +459,7 @@ Visualizer::peek();
     sourceFinest(node, imgPatch, overlap);
     return node->treeIndex.level;
 }
-    
+
 template <typename PixelParam, typename PolyhedronParam>
 int Builder<PixelParam, PolyhedronParam>::
 updateFinestLevels()
@@ -558,7 +559,7 @@ Visualizer::show();
 ///\todo remove
 for (uint i=0; i<domainSize[0]*domainSize[1]; ++i)
 domainBuf[i] = PixelParam(33.0f);
-    
+
     PixelParam* domain = domainBuf + (tileSize[1]-1)*domainSize[0] +
                          tileSize[0]-1;
 
@@ -589,12 +590,13 @@ Visualizer::show();
     //- retrieve data as appropriate
         //default to blank data
         const PixelParam* data = node->treeState->file->getBlank();
-        
+
         //read the data from file
 /**\todo disabled reading from neighbors that don't have the same orientation
 reading of neighbor data with differring orientation is currently absolutely
-broken, overwrites random memory regions and breaks fraking everything */
-        if (kin != NULL && kinO==0)
+broken, overwrites random memory regions and breaks fraking everything.
+Note: getKin across patches seem to be broken: e.g. offset==3 returned. */
+        if (kin != NULL && node->treeIndex.patch==kin->treeIndex.patch)
         {
             assert(kin->tileIndex!=Node::State::File::INVALID_TILEINDEX);
             if (nodeOff[0]==0 && nodeOff[1]==0)
@@ -610,14 +612,12 @@ broken, overwrites random memory regions and breaks fraking everything */
                                                nodeDataSampleBuf);
                 //determine the resample step size
                 double scale = 1;
-                for (uint i=node->treeIndex.level-1;
-                     i<kin->treeIndex.level; ++i)
+                for (int i=kin->treeIndex.level;
+                     i<node->treeIndex.level+1; ++i)
                 {
                     scale *= 0.5;
                 }
-                double step[2] = {1.0/(tileSize[0]-1), 1.0/(tileSize[1]-1)};
-                step[0] *= scale;
-                step[1] *= scale;
+                double step[2] = {scale/(tileSize[0]-1), scale/(tileSize[1]-1)};
 ///\todo abstract out the filtering. Currently using bilinear filtering
                 double d[2];
                 uint ny=0;
@@ -629,7 +629,7 @@ broken, overwrites random memory regions and breaks fraking everything */
                     double fy = floor(py);
                     d[1]      = py - fy;
                     uint iy   = static_cast<uint>(fy);
-                    if (iy == tileSize[1])
+                    if (iy == tileSize[1]-1)
                     {
                         --iy;
                         d[1] = 1.0;
@@ -644,7 +644,7 @@ broken, overwrites random memory regions and breaks fraking everything */
                         double fx = floor(px);
                         d[0]      = px - fx;
                         uint ix   = static_cast<uint>(fx);
-                        if (ix == tileSize[0])
+                        if (ix == tileSize[0]-1)
                         {
                             --ix;
                             d[0] = 1.0;
@@ -663,7 +663,11 @@ broken, overwrites random memory regions and breaks fraking everything */
                 data = nodeDataBuf;
             }
         }
-        
+
+/**\todo disabled reading from neighbors that don't have the same orientation
+reading of neighbor data with differring orientation is currently absolutely
+broken, overwrites random memory regions and breaks fraking everything */
+kinO = 0;
     //- insert the data at the appropriate location
         PixelParam* base = domain +
                            domainOff[1] * (tileSize[1]-1) * domainSize[0] +
@@ -677,7 +681,7 @@ broken, overwrites random memory regions and breaks fraking everything */
             PixelParam* to         = base + y*domainSize[0];
             const PixelParam* from = data + startY[kinO] + y*stepY[kinO] +
                                      startX[kinO];
-            for (uint x=0; x<tileSize[1]; ++x, ++to, from+=stepX[kinO])
+            for (uint x=0; x<tileSize[0]; ++x, ++to, from+=stepX[kinO])
                 *to = *from;
         }
     }
@@ -722,7 +726,7 @@ updateCoarser(Node* node, int level)
     QuadtreeTileHeader<PixelParam> header;
     header.reset(node);
     node->treeState->file->writeTile(node->tileIndex, header, node->data);
-    
+
     node->data = NULL;
 ///\todo this is debugging code to check tree consistency
 //verifyQuadtreeFile(node);
@@ -802,7 +806,7 @@ verifyQuadtreeFile(Node* node)
     //go up to parent
     while (node->parent != NULL)
         node = node->parent;
-    
+
     return verifyQuadtreeNode(node);
 #endif //VERIFYQUADTREEFILE
 }
