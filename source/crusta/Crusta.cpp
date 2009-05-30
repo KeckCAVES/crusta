@@ -15,19 +15,27 @@ BEGIN_CRUSTA
    current and previous frame are locked */
 uint crustaFrameNumber = 2;
 
+double Crusta::verticalExaggeration = 1.0;
+
 Crusta::
 Crusta(const std::string& demFileBase, const std::string& colorFileBase) :
     spheroid(demFileBase, colorFileBase)
 {}
 
+double Crusta::
+getVerticalExaggeration() const
+{
+    return verticalExaggeration;
+}
+
 void Crusta::
 frame()
 {
     ++crustaFrameNumber;
-    
+
     DEBUG_OUT(8, "\n\n\n--------------------------------------\n%u\n\n\n",
               static_cast<unsigned int>(crustaFrameNumber));
-    
+
     //process the requests from the last frame
     crustaQuadCache.getMainCache().frame();
 }

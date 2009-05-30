@@ -35,19 +35,27 @@ class ImageFileBase
 {
 public:
     ///data type for pixel values stored in images
-	typedef PixelParam Pixel;
+    typedef PixelParam Pixel;
 
-	virtual ~ImageFileBase();
+    ImageFileBase();
+    virtual ~ImageFileBase();
 
+    ///set the uniform scale of the pixel values
+    void setPixelScale(double scale);
+    ///retrieve the uniform scale fo the pixel values
+    double getPixelScale() const;
     ///returns image size
-	const int* getSize() const;
+    const int* getSize() const;
     ///reads a rectangle of pixel data into the given buffer
-	virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
+    virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
                                Pixel* rectBuffer) const = 0;
 
 protected:
+    /** the uniform scale of the values of the image (in particular for DEMs
+        that would be the elevation resolution in meters) */
+    double pixelScale;
     ///size of the image in pixels (width x height)
-	int size[2];
+    int size[2];
 };
 
 template <class PixelParam>

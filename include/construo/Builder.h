@@ -16,7 +16,8 @@ public:
     virtual ~BuilderBase(){}
 
     ///add a source image patch to be integrated into the spheroid
-    virtual void addImagePatch(const std::string& patchName) = 0;
+    virtual void addImagePatch(const std::string& patchName,
+                               double pixelScale) = 0;
     ///update the spheroid with the new patches
     virtual void update() = 0;
 };
@@ -65,7 +66,7 @@ protected:
 
     ///filter used for subsampling the coarser levels from finer ones
     Filter subsamplingFilter;
-    
+
     ///temporary buffer to hold scope refinements
     Scope::Scalar* scopeBuf;
     ///temporary buffer to hold sample positions for sourcing data
@@ -83,8 +84,8 @@ protected:
 
 //- Inherited from BuilderBase
 public:
-    virtual void addImagePatch(const std::string& patchName);
-    virtual void update();    
+    virtual void addImagePatch(const std::string& patchName, double pixelScale);
+    virtual void update();
 
 ///\todo remove
 void verifyQuadtreeNode(Node* node);

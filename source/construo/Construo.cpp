@@ -2,19 +2,19 @@
  Mosaicker - Program to reproject, resample, and join a set of
  georeferenced color images into a single multiresolution mosaic image.
  Copyright (c) 2007-2008 Oliver Kreylos
- 
+
  This file is part of the DEM processing and visualization package.
- 
+
  The DEM processing and visualization package is free software; you can
  redistribute it and/or modify it under the terms of the GNU General
  Public License as published by the Free Software Foundation; either
  version 2 of the License, or (at your option) any later version.
- 
+
  The DEM processing and visualization package is distributed in the hope
  that it will be useful, but WITHOUT ANY WARRANTY; without even the
  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
  PURPOSE.  See the GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License along
  with the DEM processing and visualization package; if not, write to the
  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -49,6 +49,7 @@ int main(int argc, char* argv[])
 {
 	/* Parse the command line: */
     typedef std::vector<const char*> Names;
+    typedef std::vector<double>      Scales;
     enum BuildType
     {
         UNDEFINED_BUILD,
@@ -58,46 +59,63 @@ int main(int argc, char* argv[])
 
     //flag whether to create color or DEM mosaics
 	BuildType buildType = UNDEFINED_BUILD;
+	/* the current scaling factor to be applied to values of the input data.
+       This value can be changed on the command line during parsing by using
+       the -scale flag */
+	double scale = 1.0;
 
     //the tile size should only be an internal parameter
     static const crusta::uint tileSize[2] = {TILE_RESOLUTION, TILE_RESOLUTION};
-    
+
 	const char* spheroidName = NULL;
 	Names       imagePatchNames;
+	Scales      imagePatchScales;
 	for (int i=1; i<argc; ++i)
     {
-		if (argv[i][0]=='-')
+        if (strcasecmp(argv[i], "-dem") == 0)
         {
-			if (strcasecmp(argv[i]+1, "dem") == 0)
+            //create/update a color texture spheroid
+            buildType = DEM_BUILD;
+        }
+        else if (strcasecmp(argv[i], "-color") == 0)
+        {
+            //create/update a color texture spheroid
+            buildType = COLORTEXTURE_BUILD;
+        }
+        else if (strcasecmp(argv[i], "-o") == 0)
+        {
+            //read the spheroid filename
+            ++i;
+            if (i<argc)
             {
-				//create/update a color texture spheroid
-				buildType = DEM_BUILD;
+                spheroidName = argv[i];
             }
-			else if (strcasecmp(argv[i]+1, "color") == 0)
+            else
             {
-				//create/update a color texture spheroid
-				buildType = COLORTEXTURE_BUILD;
+                std::cerr << "Dangling spheroid file name argument" <<
+                             std::endl;
+                return 1;
             }
-			else if (strcasecmp(argv[i]+1, "o") == 0)
+        }
+        else if (strcasecmp(argv[i], "-scale") == 0)
+        {
+            //read the scale for the following input data
+            ++i;
+            if (i<argc)
             {
-				//read the spheroid filename
-				++i;
-				if (i<argc)
-                {
-					spheroidName = argv[i];
-                }
-				else
-                {
-					std::cerr << "Dangling spheroid file name argument" <<
-                                 std::endl;
-					return 1;
-                }
+                scale = atof(argv[i]);
+            }
+            else
+            {
+                std::cerr << "Dangling scale argument" << std::endl;
+                return 1;
             }
         }
 		else
         {
-			//gather the image patch name
+			//gather the image patch name and scale factor for the values
 			imagePatchNames.push_back(argv[i]);
+			imagePatchScales.push_back(scale);
         }
     }
 
@@ -117,7 +135,7 @@ int main(int argc, char* argv[])
         std::cerr << "No data sources provided" << std::endl;
         return 1;
     }
-	
+
 	//reate the builder object
 	BuilderBase* builder = NULL;
     switch (buildType)
@@ -135,25 +153,26 @@ int main(int argc, char* argv[])
             return 1;
             break;
     }
-	
+
 	//load all image patches
-	for(Names::const_iterator it=imagePatchNames.begin();
-        it!=imagePatchNames.end(); ++it)
+	int numPatches = static_cast<int>(imagePatchNames.size());
+	assert(numPatches == static_cast<int>(imagePatchScales.size()));
+	for (int i=0; i<numPatches; ++i)
     {
 		try
         {
-			builder->addImagePatch(*it);
+			builder->addImagePatch(imagePatchNames[i], imagePatchScales[i]);
         }
 		catch(std::runtime_error err)
         {
-			std::cerr << "Ignoring image patch " << *it <<
+			std::cerr << "Ignoring image patch " << imagePatchNames[i] <<
                          " due to exception " << err.what() << std::endl;
         }
     }
 
 	//update the spheroid
     builder->update();
-	
+
 	//clean up and return
 	delete builder;
 	return 0;

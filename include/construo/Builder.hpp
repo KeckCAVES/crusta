@@ -762,12 +762,13 @@ updateCoarserLevels(int depth)
 
 template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
-addImagePatch(const std::string& patchName)
+addImagePatch(const std::string& patchName, double pixelScale)
 {
-	//create a new image patch
-	ImagePatch<PixelParam>* newIp = new ImagePatch<PixelParam>(patchName);
-	//store the new image patch:
-	patches.push_back(newIp);
+    //create a new image patch
+    ImagePatch<PixelParam>* newIp = new ImagePatch<PixelParam>(patchName,
+                                                               pixelScale);
+    //store the new image patch:
+    patches.push_back(newIp);
 }
 
 template <typename PixelParam, typename PolyhedronParam>

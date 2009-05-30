@@ -33,65 +33,65 @@ BEGIN_CRUSTA
 class ImageTransform
 {
 public:
-	virtual ~ImageTransform() {}
+    virtual ~ImageTransform() {}
 
-	///sets the image transform scale factors and offset values
-	void setImageTransformation(const Point::Scalar newScale[2],
+    ///sets the image transform scale factors and offset values
+    void setImageTransformation(const Point::Scalar newScale[2],
                                 const Point::Scalar newOffset[2]);
     /** flips the image transformation vertically according to the given image
         height */
-	virtual void flip(int imageHeight);
+    virtual void flip(int imageHeight);
     ///returns the size in meters of the shortest side of the smallest pixel
     virtual Point::Scalar getFinestResolution(const int size[2]) const = 0;
     ///returns scaling factors as array
-	const Point::Scalar* getScale() const;
+    const Point::Scalar* getScale() const;
     ///returns offset values as array
-	const Point::Scalar* getOffset() const;
+    const Point::Scalar* getOffset() const;
 
     ///converts a point in image coordinates to system coordinates
-	virtual Point imageToSystem(const Point& imagePoint) const;
+    virtual Point imageToSystem(const Point& imagePoint) const;
     ///ditto, with integer image coordinate
-	virtual Point imageToSystem(int imageX, int imageY) const;
+    virtual Point imageToSystem(int imageX, int imageY) const;
     ///converts a point in system coordinates to image coordinates
-	virtual Point systemToImage(const Point& systemPoint) const;
+    virtual Point systemToImage(const Point& systemPoint) const;
     ///converts a box in image coordinates to system coordinates
-	virtual Box imageToSystem(const Box& imageBox) const;
+    virtual Box imageToSystem(const Box& imageBox) const;
     ///converts a box in system coordinates to image coordinates
-	virtual Box systemToImage(const Box& systemBox) const;
+    virtual Box systemToImage(const Box& systemBox) const;
 
     ///converts a point from system coordinates to world coordinates
-	virtual Point systemToWorld(const Point& systemPoint) const =0;
+    virtual Point systemToWorld(const Point& systemPoint) const =0;
     ///converts a point from world coordinates to system coordinates
-	virtual Point worldToSystem(const Point& worldPoint) const =0;
+    virtual Point worldToSystem(const Point& worldPoint) const =0;
     ///converts a box from system coordinates to world coordinates
-	virtual Box systemToWorld(const Box& systemBox) const =0;
+    virtual Box systemToWorld(const Box& systemBox) const =0;
     ///converts a box from world coordinates to system coordinates
-	virtual Box worldToSystem(const Box& worldBox) const =0;
+    virtual Box worldToSystem(const Box& worldBox) const =0;
 
     ///directly converts a point from image to world coordinates
-	virtual Point imageToWorld(const Point& imagePoint) const;
+    virtual Point imageToWorld(const Point& imagePoint) const;
     ///ditto, with integer image coordinate
-	virtual Point imageToWorld(int imageX, int imageY) const;
+    virtual Point imageToWorld(int imageX, int imageY) const;
     ///directly converts a point from world to image coordinates
-	virtual Point worldToImage(const Point& worldPoint) const;
+    virtual Point worldToImage(const Point& worldPoint) const;
     ///directly converts a box from image to world coordinates
-	virtual Box imageToWorld(const Box& imageBox) const;
+    virtual Box imageToWorld(const Box& imageBox) const;
     ///directly converts a box from world to image coordinates
-	virtual Box worldToImage(const Box& worldBox) const;
+    virtual Box worldToImage(const Box& worldBox) const;
 
     ///checks if two image transformations are pixel-to-pixel compatible
-	virtual bool isCompatible(const ImageTransform& other) const = 0;
+    virtual bool isCompatible(const ImageTransform& other) const = 0;
     ///returns the size of the transformation when written to a binary file
-	virtual size_t getFileSize() const;
+    virtual size_t getFileSize() const;
 
 protected:
     ///returns true if two image transformations are system-wise compatible
-	bool isSystemCompatible(const ImageTransform& other) const;
+    bool isSystemCompatible(const ImageTransform& other) const;
 
     ///scale factors from pixel coordinates to system coordinates
-	Point::Scalar scale[2];
+    Point::Scalar scale[2];
     ///offset factors from pixel coordinates to system coordinates
-	Point::Scalar offset[2];
+    Point::Scalar offset[2];
 };
 
 END_CRUSTA

@@ -27,9 +27,9 @@ public:
     ImageCoverage* imageCoverage;
     ///image's coverage region in world coordinates (destination)
     SphereCoverage* sphereCoverage;
-    
+
     ImagePatch();
-    ImagePatch(const std::string patchName);
+    ImagePatch(const std::string patchName, double pixelScale);
     ~ImagePatch();
 };
 

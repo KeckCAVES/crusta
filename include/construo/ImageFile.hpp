@@ -28,8 +28,33 @@ BEGIN_CRUSTA
 template <class PixelParam>
 inline
 ImageFileBase<PixelParam>::
+ImageFileBase() :
+    pixelScale(1.0)
+{
+    size[0] = size[1] = 0;
+}
+
+template <class PixelParam>
+inline
+ImageFileBase<PixelParam>::
 ~ImageFileBase()
 {}
+
+template <class PixelParam>
+inline void
+ImageFileBase<PixelParam>::
+setPixelScale(double scale)
+{
+    pixelScale = scale;
+}
+
+template <class PixelParam>
+inline double
+ImageFileBase<PixelParam>::
+getPixelScale() const
+{
+    return pixelScale;
+}
 
 template <class PixelParam>
 inline
