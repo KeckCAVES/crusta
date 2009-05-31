@@ -24,6 +24,9 @@ public:
 
     Node();
 
+    /** compute the bounding sphere. It is dependent on the vertical scale,
+        so this method is a convinient API for such updates */
+    void computeBoundingSphere();
     /** compute the various "cached values" (e.g. bounding sphere, centroid,
         etc.) */
     void init(const DemHeight range[2]);

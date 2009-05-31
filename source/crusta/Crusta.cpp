@@ -15,17 +15,23 @@ BEGIN_CRUSTA
    current and previous frame are locked */
 uint crustaFrameNumber = 2;
 
-double Crusta::verticalExaggeration = 1.0;
+double Crusta::verticalScale = 1.0;
 
 Crusta::
 Crusta(const std::string& demFileBase, const std::string& colorFileBase) :
     spheroid(demFileBase, colorFileBase)
 {}
 
-double Crusta::
-getVerticalExaggeration() const
+void Crusta::
+setVerticalScale(double newVerticalScale)
 {
-    return verticalExaggeration;
+    verticalScale = newVerticalScale;
+}
+
+double Crusta::
+getVerticalScale()
+{
+    return verticalScale;
 }
 
 void Crusta::

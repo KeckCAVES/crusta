@@ -69,6 +69,11 @@ protected:
     void printTree(Node* node);
     void checkTree(GlData* glData, Node* node);
 
+    /** make sure the bounding objects used for visibility and LOD checks are
+        up-to-date wrt to the vertical scale. It recurses down the subtree
+        of the given node */
+    void updateVerticalScale(Node* node);
+
     /** check for the possibility of a merge and perform it if the critical
         data required is available */
     bool merge(GlData* glData, Node* node, float lod, CacheRequests& requests);
@@ -163,6 +168,9 @@ protected:
         /** evaluates the level of detail of a scope */
         FocusViewEvaluator lod;
 
+        /** the current vertical exaggeration of the tree */
+        double verticalScale;
+
         /** basic data being passed to the GL to represent a vertex. The
             template provides simply texel-centered, normalized texture
             coordinates that are used to address the corresponding data in the
@@ -171,7 +179,9 @@ protected:
         /** defines a triangle-string triangulation of the vertices */
         GLuint indexTemplate;
 
-        /** uniform relating the centroid vector to the shader for elevation
+        /** uniform relation to the vertical exaggeration */
+        GLint verticalScaleUniform;
+        /** uniform relating to the centroid vector to the shader for elevation
             extrusion */
         GLint centroidUniform;
 

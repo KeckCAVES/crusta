@@ -3,7 +3,8 @@ uniform sampler2D heightTex;
 uniform sampler2D colorTex;
 
 uniform float texStep;
-uniform vec3 centroid;
+uniform float verticalScale;
+uniform vec3  centroid;
 
 uniform float demScale;
 uniform vec2  demOffset;
@@ -16,9 +17,7 @@ vec3 surfacePoint(in vec2 coords)
     vec3 dir      = normalize(centroid + res);
     vec2 demCoord = demScale*coords + demOffset;
     float height  = texture2D(heightTex, demCoord).r;
-///\todo removeZ once the preprocessor is cleaned-up then this can eliminated
-//height       = height>9000.0 ? 0.0 : height;
-height *= 2000.0;
+    height       *= verticalScale;
     res          += height * dir;
     return res;
 }
@@ -49,7 +48,8 @@ void main()
 	gl_FrontColor =  color * intensity;
 #else
     float single;
-    single = intensity;
+    single = abs(verticalScale);// / 1.0;
+//    single = intensity;
 //    single = texture2D(heightTex, gl_Vertex.xy).r / 1000.0;
 
 	gl_FrontColor =  vec4(single, single, single, 1.0);

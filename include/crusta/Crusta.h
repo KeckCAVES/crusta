@@ -11,14 +11,17 @@ BEGIN_CRUSTA
 class Crusta
 {
 protected:
-    static double verticalExaggeration;
+    static double verticalScale;
     Spheroid spheroid;
 
 public:
     Crusta(const std::string& demFileBase, const std::string& colorFileBase);
 
+    /** set the vertical exaggeration. Make sure to set this value within a 
+        frame callback so that it doesn't change during a rendering phase */
+    static void setVerticalScale(double newVerticalScale);
     ///retrieve the vertical exaggeration factor
-    static double getVerticalExaggeration() const;
+    static double getVerticalScale();
 
     void frame();
     void display(GLContextData& contextData) const;

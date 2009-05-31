@@ -25,7 +25,7 @@
     #if __GNUC__ > 3 && __GNUC_MINOR__ > 0
         #define PortableTable std::tr1::unordered_map
     #else
-        #define PortableTable std::__gnu_cxx::hash_map
+        #define PortableTable __gnu_cxx::hash_map
     #endif
 #else
     #define PortableTable stdext::hash_map

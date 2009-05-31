@@ -9,6 +9,7 @@
 #include <Vrui/Vrui.h>
 
 #include <crusta/CacheRequest.h>
+#include <crusta/Crusta.h>
 #include <crusta/QuadCache.h>
 ///\todo remove
 #include <crusta/simplexnoise1234.h>
@@ -71,6 +72,14 @@ display(GLContextData& contextData)
 
     glData->shader.useProgram();
 
+    //make sure to update the tree for the new vertical scale
+    if (glData->verticalScale != Crusta::getVerticalScale())
+    {
+        updateVerticalScale(glData->root);
+        glData->verticalScale = Crusta::getVerticalScale();
+        glUniform1f(glData->verticalScaleUniform, glData->verticalScale);
+    }
+    
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
     glEnableClientState(GL_VERTEX_ARRAY);
 
@@ -235,6 +244,18 @@ checkTree(GlData* glData, Node* node)
             if (node->videoBuffer != video)
                 std::cout<< "FRAKORAMA";
         }
+    }
+}
+
+
+void QuadTerrain::
+updateVerticalScale(Node* node)
+{
+    node->computeBoundingSphere();
+    if (node->children != NULL)
+    {
+        for (int i=0; i<4; ++i)
+            node->children[i].computeBoundingSphere();
     }
 }
 
@@ -739,7 +760,7 @@ glData->shader.disablePrograms();
 glData->shader.useProgram();
 #endif
 
-#if 1
+#if 0
 glData->shader.disablePrograms();
     Scope::Vertex* c = node->scope.corners;
     glDisable(GL_LIGHTING);
@@ -769,8 +790,10 @@ QuadTerrain::GlData::
 GlData(QuadTerrain* terrain, const TreeIndex& iRootIndex,
        MainCacheBuffer* iRootBuffer, const Scope& baseScope,
        VideoCache& iVideoCache) :
-    root(NULL), videoCache(iVideoCache), vertexAttributeTemplate(0),
-    indexTemplate(0)
+    root(NULL), videoCache(iVideoCache), verticalScale(1.0),
+    vertexAttributeTemplate(0), indexTemplate(0), verticalScaleUniform(0),
+    centroidUniform(0), demScaleUniform(0), demOffsetUniform(0),
+    colorScaleUniform(0), colorOffsetUniform(0)
 {
     //initialize the static gl buffer templates
     generateVertexAttributeTemplate();
@@ -820,7 +843,10 @@ use the values of the node from which the data is being sampled */
     shader.linkShader();
     shader.useProgram();
 
-    centroidUniform    = shader.getUniformLocation("centroid");
+    verticalScaleUniform =
+        shader.getUniformLocation("verticalScale");
+    glUniform1f(verticalScaleUniform, 1);
+    centroidUniform = shader.getUniformLocation("centroid");
 
     demScaleUniform    = shader.getUniformLocation("demScale");
     demOffsetUniform   = shader.getUniformLocation("demOffset");
