@@ -54,7 +54,9 @@ public:
     DemFile* demFile;
     /** quadtree file from which to source data for the color */
     ColorFile* colorFile;
-    
+
+    /** display debugging grid or not */
+    static bool displayDebuggingGrid;
 protected:
     struct GlData;
     struct DataCropOut
@@ -120,6 +122,7 @@ protected:
     DemHeight demNodata;
     /** value for "no-data" colors */
     TextureColor colorNodata;
+
     /** temporary storage for computing the high-precision surface geometry */
     double* geometryBuf;
 

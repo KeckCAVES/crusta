@@ -15,6 +15,8 @@
 #include <Vrui/Vrui.h>
 #include <crusta/Crusta.h>
 
+#include <crusta/QuadTerrain.h>
+
 BEGIN_CRUSTA
 
 CrustaApp::
@@ -64,6 +66,13 @@ produceMainMenu()
     showVerticalScaleToggle->setToggle(false);
     showVerticalScaleToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::showVerticalScaleCallback);
+
+    /* Create a button to toogle display of the debugging grid: */
+    GLMotif::ToggleButton* debugGridToggle = new GLMotif::ToggleButton(
+        "DebugGridToggle", mainMenu, "Debug Grid");
+    debugGridToggle->setToggle(false);
+    debugGridToggle->getValueChangedCallbacks().add(
+        this, &CrustaApp::debugGridCallback);
 
     /* Create a button: */
     GLMotif::Button* resetNavigationButton = new GLMotif::Button(
@@ -115,6 +124,12 @@ showVerticalScaleCallback(
     }
     else
         Vrui::popdownPrimaryWidget(verticalScaleDialog);
+}
+
+void CrustaApp::
+debugGridCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+{
+    QuadTerrain::displayDebuggingGrid = cbData->set;
 }
 
 void CrustaApp::

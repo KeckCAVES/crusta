@@ -32,6 +32,8 @@ private:
 
     void showVerticalScaleCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
+    void debugGridCallback(
+        GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     void changeScaleCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
 	void resetNavigationCallback(Misc::CallbackData* cbData);
 

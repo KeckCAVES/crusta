@@ -22,6 +22,8 @@ static const float TEXTURE_COORD_STEP  = 1.0 / TILE_RESOLUTION;
 static const float TEXTURE_COORD_START = TEXTURE_COORD_STEP * 0.5;
 static const float TEXTURE_COORD_END   = 1.0 - TEXTURE_COORD_START;
 
+bool QuadTerrain::displayDebuggingGrid = false;
+
 QuadTerrain::
 QuadTerrain(uint8 patch, const Scope& scope, const std::string& demFileName,
             const std::string& colorFileName) :
@@ -760,7 +762,8 @@ glData->shader.disablePrograms();
 glData->shader.useProgram();
 #endif
 
-#if 0
+if (displayDebuggingGrid)
+{
 glData->shader.disablePrograms();
     Scope::Vertex* c = node->scope.corners;
     glDisable(GL_LIGHTING);
@@ -782,7 +785,8 @@ glData->shader.disablePrograms();
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
 glData->shader.useProgram();
-#endif
+}
+
 }
 
 
