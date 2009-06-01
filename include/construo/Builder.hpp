@@ -63,6 +63,45 @@ Builder<PixelParam, PolyhedronParam>::
 
 template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
+subsampleChildren(Node* node)
+{
+    assert(node->children != NULL);
+    //read in the node's existing data from file
+    node->treeState->file->readTile(node->tileIndex, nodeDataSampleBuf);
+
+    static const int offsets[4] = {
+        0, (tileSize[0]-1)>>1, ((tileSize[1]-1)>>1)*tileSize[0],
+        ((tileSize[1]-1)>>1)*tileSize[0] + ((tileSize[0]-1)>>1) };
+    int halfSize[2] = { (tileSize[0]+1)>>1, (tileSize[1]+1)>>1 };
+    for (int i=0; i<4; ++i)
+    {
+        for (int y=0; y<halfSize[1]; ++y)
+        {
+            PixelParam* wbase = nodeDataBuf + y*2*tileSize[0];
+            PixelParam* rbase = nodeDataSampleBuf + y*tileSize[0] + offsets[i];
+            for (int x=0; x<halfSize[0]; ++x, wbase+=2, ++rbase)
+            {
+                wbase[0] = rbase[0];
+                if (x<halfSize[0]-1)
+                    wbase[1] = (rbase[0] + rbase[1]) * 0.5;
+                if (y<halfSize[1]-1)
+                    wbase[tileSize[0]] = (rbase[0]+rbase[tileSize[0]]) * 0.5;
+                if (x<halfSize[0]-1 && y<halfSize[1]-1)
+                {
+                    wbase[tileSize[0]+1] = (rbase[0] + rbase[1] +
+                                            rbase[tileSize[0]] +
+                                            rbase[tileSize[0]+1]) * 0.25;
+                }
+            }
+        }
+        //write the subsampled data to the child
+        Node& child = node->children[i];
+        child.treeState->file->writeTile(child.tileIndex, nodeDataBuf);
+    }
+}
+
+template <typename PixelParam, typename PolyhedronParam>
+void Builder<PixelParam, PolyhedronParam>::
 refine(Node* node)
 {
     //try to load the missing children from the quadtree file
@@ -82,6 +121,7 @@ refine(Node* node)
 ///\todo should I dump default-value-initialized to file here?
             childIndices[i]  = child->tileIndex;
         }
+        subsampleChildren(node);
         //link the parent with the new children in the file
         node->treeState->file->writeTile(node->tileIndex, childIndices);
 ///\todo this is debugging code to check tree consistency
@@ -442,7 +482,7 @@ Visualizer::peek();
 
     //recurse to children if the resolution of the node is too coarse
 ///\todo remove the forced recursion of at least a level
-    if (node->resolution > imgResolution || node->treeIndex.level<1)
+    if (node->resolution > imgResolution || node->treeIndex.level<2)
     {
         int depth = 0;
         refine(node);
@@ -555,10 +595,6 @@ Visualizer::addPrimitive(GL_LINES, node->coverage);
 Visualizer::show();
 #endif //DEBUG_PREPARESUBSAMPLINGDOMAIN
     Node* kin     = NULL;
-
-///\todo remove
-for (uint i=0; i<domainSize[0]*domainSize[1]; ++i)
-domainBuf[i] = PixelParam(33.0f);
 
     PixelParam* domain = domainBuf + (tileSize[1]-1)*domainSize[0] +
                          tileSize[0]-1;
@@ -691,8 +727,12 @@ template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
 updateCoarser(Node* node, int level)
 {
-//Visualizer::addPrimitive(GL_LINES, node->coverage);
-//Visualizer::peek();
+#if DEBUG_PREPARESUBSAMPLINGDOMAIN
+static const float covColor[3] = { 0.1f, 0.4f, 0.6f };
+Visualizer::addPrimitive(GL_LINES, node->coverage, covColor);
+Visualizer::peek();
+#endif
+
     //the nodes on the way must be flagged for update
     if (!node->mustBeUpdated)
         return;

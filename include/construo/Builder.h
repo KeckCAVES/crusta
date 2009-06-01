@@ -37,6 +37,8 @@ protected:
     typedef ImagePatch<PixelParam>                  Patch;
     typedef std::vector<Patch*>                     PatchPtrs;
 
+    ///subsamples data from the given node into that node's children
+    void subsampleChildren(Node* node);
     ///refines a node by adding the children to the build tree
     void refine(Node* node);
 

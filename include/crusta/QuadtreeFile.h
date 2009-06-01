@@ -67,7 +67,7 @@ public:
         ///the biggest tile index (relates to the number of tiles stored)
         TileIndex maxTileIndex;
     };
-	
+
     ///opens an existing quadtree file for update or creates a new one
 	QuadtreeFile(const char* quadtreeFileName, const uint iTileSize[2]);
 	~QuadtreeFile();
@@ -100,7 +100,7 @@ public:
     TileIndex checkTile(const TreePath& path, TileIndex start) const;
 #if CONSTRUO_BUILD
     ///appends a new tile to the file (only reserves the space for it)
-    TileIndex appendTile();
+    TileIndex appendTile(bool writeBlank=false);
 #endif //CONSTRUO_BUILD
 
     ///reads the tile of given index into the given buffer
@@ -130,7 +130,7 @@ const TileIndex* getLastChildPointers() const;
 TileIndex getLastChildPointer(int childIndex) const;
 ///returns the last ignored tile header
 const TileHeader& getLastTileHeader() const;
-    
+
     ///handle of the quadtree file for local quadtree files
 	Misc::LargeFile* quadtreeFile;
     ///Header containing the basic meta-data

@@ -46,9 +46,10 @@ ImagePatch(const std::string patchName, double pixelScale) :
         imageCoverage->finalizeVertices();
     }
 
+///\todo remove
     //flip the image transformation and coverage:
-    transform->flip(imgSize[1]);
-    imageCoverage->flip(imgSize[1]);
+//    transform->flip(imgSize[1]);
+//    imageCoverage->flip(imgSize[1]);
 
     //compute the image's coverage on the spheroid:
     sphereCoverage = new StaticSphereCoverage(3, imageCoverage, transform);

@@ -25,7 +25,7 @@ if ((a)<=CRUSTA_BEBUG_LEVEL) fprintf(CRUSTA_DEBUG_OUTPUT_DESTINATION, b, ## args
 #endif
 
 typedef size_t		uint;
-    
+
 typedef uint8_t		uint8;
 typedef uint16_t	uint16;
 typedef uint32_t	uint32;
@@ -49,5 +49,5 @@ const double INV_SPHEROID_RADIUS = 1.0 / 6371000.0;
 extern uint crustaFrameNumber;
 
 END_CRUSTA
-    
+
 #endif //_basics_H_

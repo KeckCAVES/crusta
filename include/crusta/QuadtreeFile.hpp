@@ -236,7 +236,7 @@ checkTile(const TreePath& path, TileIndex i) const
 template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
 typename QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::TileIndex
 QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
-appendTile()
+appendTile(bool writeBlank)
 {
     static const TileIndex invalidChildren[4] = {
         INVALID_TILEINDEX, INVALID_TILEINDEX,
@@ -244,7 +244,8 @@ appendTile()
     };
 
     ++header.maxTileIndex;
-    writeTile(header.maxTileIndex, invalidChildren, TileHeader(), blank);
+    writeTile(header.maxTileIndex, invalidChildren, TileHeader(),
+              writeBlank ? blank : NULL);
 
     return header.maxTileIndex;
 }
