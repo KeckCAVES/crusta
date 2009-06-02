@@ -19,7 +19,7 @@ cartesianToSpherical(const Geometry::Point<ScalarParam, 3>& p)
         Math::Constants<ScalarParam>::pi*ScalarParam(0.5);
 
     ScalarParam len   = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
-    ScalarParam theta = acos(p[2]/len) - halfPi;
+    ScalarParam theta = halfPi - acos(p[2]/len);
     ScalarParam phi   = atan2(p[1], p[0]);
 
     return Geometry::Point<ScalarParam, 2>(phi, theta);
@@ -34,9 +34,9 @@ sphericalToCartesian(const Geometry::Point<ScalarParam, 2>& p,
         Math::Constants<ScalarParam>::pi*ScalarParam(0.5);
 
     Geometry::Point<ScalarParam, 3> r(
-        radius * Math::cos(p[0]) * Math::sin(p[1]+halfPi),
-        radius * Math::sin(p[0]) * Math::sin(p[1]+halfPi),
-        radius * Math::cos(p[1]+halfPi)
+        radius * Math::cos(p[0]) * Math::sin(halfPi - p[1]),
+        radius * Math::sin(p[0]) * Math::sin(halfPi - p[1]),
+        radius * Math::cos(halfPi - p[1])
     );
     return r;
 }
@@ -49,12 +49,12 @@ haversineDist(const Geometry::Point<ScalarParam, 2>& one,
               ScalarParam radius)
 {
     Geometry::Point<ScalarParam, 2> delta(two[0]-one[0], two[1]-one[1]);
-    
+
     ScalarParam a = Math::sin(delta[1]*ScalarParam(0.5)) *
                     Math::sin(delta[1]*ScalarParam(0.5))     +
                     Math::cos(one[1]) *Math::cos(two[1]) *
                     Math::sin(delta[0]*ScalarParam(0.5)) *
-                    Math::sin(delta[0]*ScalarParam(0.5)); 
+                    Math::sin(delta[0]*ScalarParam(0.5));
     ScalarParam c = ScalarParam(2) *
                     Math::atan2(Math::sqrt(a), Math::sqrt(ScalarParam(1)-a));
 

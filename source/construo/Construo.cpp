@@ -76,14 +76,25 @@ int main(int argc, char* argv[])
         {
             //create/update a color texture spheroid
             buildType = DEM_BUILD;
+
+            //read the spheroid filename
+            ++i;
+            if (i<argc)
+            {
+                spheroidName = argv[i];
+            }
+            else
+            {
+                std::cerr << "Dangling spheroid file name argument" <<
+                             std::endl;
+                return 1;
+            }
         }
         else if (strcasecmp(argv[i], "-color") == 0)
         {
             //create/update a color texture spheroid
             buildType = COLORTEXTURE_BUILD;
-        }
-        else if (strcasecmp(argv[i], "-o") == 0)
-        {
+
             //read the spheroid filename
             ++i;
             if (i<argc)

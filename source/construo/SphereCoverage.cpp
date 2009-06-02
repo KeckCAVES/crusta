@@ -33,8 +33,8 @@ shortestArcShift(const Point& c0, const Point& c1)
     for (uint i=0; i<2; ++i)
     {
         Point::Scalar dist = c1[0] - c0[0];
-        vec[i] = dist> Math::Constants<Point::Scalar>::pi ? -twopi : 0;
-        vec[i] = dist<-Math::Constants<Point::Scalar>::pi ?  twopi : 0;
+        vec[i] = dist>= Math::Constants<Point::Scalar>::pi ? -twopi : 0;
+        vec[i] = dist<=-Math::Constants<Point::Scalar>::pi ?  twopi : 0;
     }
 
     return vec;
@@ -95,7 +95,7 @@ contains(const Point& v) const
         }
         prev = curr;
     }
-    
+
     return (numRegionChanges&0x1) != 0x0;
 }
 
@@ -114,7 +114,7 @@ overlaps(const Box& bBox) const
     for (uint vertexIndex=0; vertexIndex<numVertices; ++vertexIndex)
     {
         const Point* curr = &vertices[vertexIndex];
-        
+
         //check if the current edge intersects the box or is contained by it:
         Point::Scalar lambda0 = Point::Scalar(0);
         Point::Scalar lambda1 = Point::Scalar(1);
@@ -149,7 +149,7 @@ overlaps(const Box& bBox) const
                     lambda1 = Point::Scalar(0);
                 }
             }
-            
+
             //check against max box edge:
             if ((*prev)[i] > bBox.max[i])
             {
@@ -180,11 +180,11 @@ overlaps(const Box& bBox) const
                 }
             }
         }
-        
+
         //box overlaps if current edge is contained by or intersects the box
         if (lambda0 < lambda1)
             return OVERLAPS;
-        
+
         //check the box's min vertex for region changes against the current edge
         if ( ((*prev)[1] <= bBox.min[1])  &&  ((*curr)[1]>bBox.min[1]) )
         {
@@ -204,7 +204,7 @@ overlaps(const Box& bBox) const
         }
         prev = curr;
     }
-    
+
     //box overlaps if its min vertex is contained in the polygon:
     return (numRegionChanges&0x1)!=0x0 ? CONTAINS : SEPARATE;
 }
@@ -317,19 +317,34 @@ StaticSphereCoverage(uint subdivisions, const Scope& scope)
     //clean-up temporary memory used to store the samples
     delete[] samples;
 
+///\todo bad triacontahedron hack for spherical coords
+#if 1
+if ((Math::Constants<Point::Scalar>::pi - vertices[0][0]) < 1e-5)
+    vertices[0][0] = -Math::Constants<Point::Scalar>::pi;
+static const Point::Scalar halfpi = Math::Constants<Point::Scalar>::pi *
+                                    Point::Scalar(0.5);
+for (uint i=0; i<numVertices; ++i)
+{
+    if ((Math::abs( halfpi - vertices[i][1])<1e-5) ||
+        (Math::abs(-halfpi - vertices[i][1])<1e-5))
+    {
+        vertices[i][0] = vertices[(i-1)%numVertices][0];
+    }
+}
+#endif
     //take care of periodicity of spherical space
     for (uint i=1; i<numVertices; ++i)
         shortestArc(vertices[i-1], vertices[i]);
 ///\todo this is bad fix for the exact pole points of the triacontahedron
-#if 0
+#if 1
     for (uint i=0; i<numVertices; ++i)
     {
-        if (vertices[i][0]==0 && (vertices[i][1]==0 ||
-             (Math::Constants<Point::Scalar>::pi - vertices[i][1])<1e-5))
+        if ((Math::abs( halfpi - vertices[i][1])<1e-5) ||
+            (Math::abs(-halfpi - vertices[i][1])<1e-5))
         {
             Point& prev = vertices[(i-1)%numVertices];
             Point& next = vertices[(i+1)%numVertices];
-            vertices[i][0] = (prev[0] + next[0]) * 0.5;
+            vertices[i][0] = (prev[0] + next[0]) * Point::Scalar(0.5);
         }
     }
 #endif
@@ -360,7 +375,7 @@ StaticSphereCoverage(uint subdivisions, const ImageCoverage* coverage,
     uint numImgVertices = coverage->getNumVertices();
     uint numVertices    = numImgVertices*numSamples - numImgVertices;
     vertices.reserve(numVertices);
-    
+
     /* go through all the side-segments of the image in order and produce
      samples on each segment through 'subdivisions' number of subdivisions.
      Each sample corresponsing to a vertex of the coverage */
@@ -380,7 +395,7 @@ StaticSphereCoverage(uint subdivisions, const ImageCoverage* coverage,
             vertices.push_back(newVertex);
         }
     }
-    
+
     //take care of periodicity of spherical space
     centroid = Point(0,0);
     box.addPoint(vertices[0]);
@@ -390,13 +405,13 @@ StaticSphereCoverage(uint subdivisions, const ImageCoverage* coverage,
     {
         Point& prev = vertices[i-1];
         Point& cur  = vertices[i];
-        
+
         shortestArc(prev, cur);
         box.addPoint(cur);
         centroid[0] += cur[0];
         centroid[1] += cur[1];
     }
-    
+
     Point::Scalar norm = Point::Scalar(1) / Point::Scalar(numVertices);
     centroid[0] *= norm;
     centroid[1] *= norm;

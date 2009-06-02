@@ -5,6 +5,7 @@
 #include <GLMotif/Slider.h>
 
 #include <Vrui/Application.h>
+#include <Vrui/Geometry.h>
 
 #include <crusta/basics.h>
 
@@ -30,6 +31,8 @@ private:
 	void produceMainMenu();
     void produceVerticalScaleDialog();
 
+    void alignSurfaceFrame(Vrui::NavTransform& surfaceFrame);
+
     void showVerticalScaleCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     void debugGridCallback(
@@ -48,6 +51,7 @@ private:
 
 //- inherited from Vrui::Application
 public:
+    virtual void toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData);
     virtual void frame();
     virtual void display(GLContextData& contextData) const;
 };

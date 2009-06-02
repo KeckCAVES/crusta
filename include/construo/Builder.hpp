@@ -470,9 +470,12 @@ updateFiner(Node* node, Patch* imgPatch, Point::Scalar imgResolution)
 {
 ///\todo remove
 #if DEBUG_SOURCEFINEST || 0
+if (node->treeIndex.level<2)
+{
 static const float covColor[3] = { 0.1f, 0.4f, 0.6f };
 Visualizer::addPrimitive(GL_LINES, node->coverage, covColor);
-Visualizer::peek();
+Visualizer::show();
+}
 #endif
 
     //check for an overlap
@@ -481,8 +484,7 @@ Visualizer::peek();
         return 0;
 
     //recurse to children if the resolution of the node is too coarse
-///\todo remove the forced recursion of at least a level
-    if (node->resolution > imgResolution || node->treeIndex.level<2)
+    if (node->resolution > imgResolution)
     {
         int depth = 0;
         refine(node);

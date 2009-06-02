@@ -17,6 +17,12 @@
 
 #include <crusta/QuadTerrain.h>
 
+
+#include <Geometry/Geoid.h>
+#include <Misc/FunctionCalls.h>
+#include <Vrui/ToolManager.h>
+#include <Vrui/Tools/SurfaceNavigationTool.h>
+
 BEGIN_CRUSTA
 
 CrustaApp::
@@ -55,7 +61,7 @@ produceMainMenu()
     /* Create a popup shell to hold the main menu: */
     popMenu = new GLMotif::PopupMenu("MainMenuPopup",Vrui::getWidgetManager());
     popMenu->setTitle("Crusta");
-    
+
     /* Create the main menu itself: */
     GLMotif::Menu* mainMenu =
     new GLMotif::Menu("MainMenu",popMenu,false);
@@ -77,14 +83,14 @@ produceMainMenu()
     /* Create a button: */
     GLMotif::Button* resetNavigationButton = new GLMotif::Button(
         "ResetNavigationButton",mainMenu,"Reset Navigation");
-    
+
     /* Add a callback to the button: */
     resetNavigationButton->getSelectCallbacks().add(
         this, &CrustaApp::resetNavigationCallback);
-    
+
     /* Finish building the main menu: */
     mainMenu->manageChild();
-    
+
     Vrui::setMainMenu(popMenu);
 }
 
@@ -110,6 +116,20 @@ produceVerticalScaleDialog()
 
     root->setNumMinorWidgets(2);
     root->manageChild();
+}
+
+void CrustaApp::
+alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
+{
+/* Do whatever to the surface frame, but don't change its scale factor: */
+    Geometry::Geoid<double> geoid(SPHEROID_RADIUS, 0.0);
+
+    Vrui::Point origin = surfaceFrame.getOrigin();
+    Vrui::Point lonLat = geoid.cartesianToGeodetic(origin);
+    lonLat[2] = 0.0;
+
+    Geometry::Geoid<double>::Frame frame = geoid.geodeticToCartesianFrame(lonLat);
+    surfaceFrame = Vrui::NavTransform(frame.getTranslation(), frame.getRotation(), surfaceFrame.getScaling());
 }
 
 void CrustaApp::
@@ -156,6 +176,18 @@ resetNavigationCallback(Misc::CallbackData* cbData)
 
 
 void CrustaApp::
+toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
+{
+    /* Check if the new tool is a surface navigation tool: */
+    Vrui::SurfaceNavigationTool* surfaceNavigationTool=dynamic_cast<Vrui::SurfaceNavigationTool*>(cbData->tool);
+    if(surfaceNavigationTool!=0)
+           {
+           /* Set the new tool's alignment function: */
+    surfaceNavigationTool->setAlignFunction(Misc::createFunctionCall<Vrui::NavTransform&,CrustaApp>(this,&CrustaApp::alignSurfaceFrame));
+           }
+}
+
+void CrustaApp::
 frame()
 {
     Crusta::setVerticalScale(newVerticalScale);
@@ -176,8 +208,8 @@ int main(int argc, char* argv[])
 {
 	char** appDefaults = 0; // This is an additional parameter no one ever uses
     crusta::CrustaApp app(argc, argv, appDefaults);
-	
+
 	app.run();
-	
+
     return 0;
 }
