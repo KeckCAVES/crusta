@@ -81,7 +81,7 @@ display(GLContextData& contextData)
         glData->verticalScale = Crusta::getVerticalScale();
         glUniform1f(glData->verticalScaleUniform, glData->verticalScale);
     }
-    
+
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
     glEnableClientState(GL_VERTEX_ARRAY);
 
@@ -115,6 +115,7 @@ DEBUG_END
 
     glPopClientAttrib();
     glPopAttrib();
+
     glActiveTexture(activeTexture);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);

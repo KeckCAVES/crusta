@@ -26,6 +26,7 @@ void main()
 {
     vec2 demCoord = gl_Vertex.xy;
     vec3 me       = surfacePoint(demCoord);
+    vec4 meInEye  = gl_ModelViewMatrix * vec4(me, 1.0);
     gl_Position   = gl_ModelViewProjectionMatrix * vec4(me, 1.0);
 
     vec3 up    = surfacePoint(vec2(demCoord.x, demCoord.y + texStep));
@@ -34,10 +35,10 @@ void main()
     vec3 right = surfacePoint(vec2(demCoord.x + texStep, demCoord.y));
 
     vec3 normal   = cross((right - left), (up - down));
-    normal        = normalize(gl_NormalMatrix * -normal);
+    normal        = normalize(gl_NormalMatrix * normal);
 
-    vec3 lightDir = (gl_LightSource[0].position.xyz * gl_Position.w) -
-                    (gl_Position.xyz * gl_LightSource[0].position.w);
+    vec3 lightDir = (gl_LightSource[0].position.xyz * meInEye.w) -
+                    (meInEye.xyz * gl_LightSource[0].position.w);
     lightDir      = normalize(lightDir);
 
     float intensity = max(dot(normal, lightDir), 0.0);
@@ -53,5 +54,7 @@ void main()
 //    single = texture2D(heightTex, gl_Vertex.xy).r / 1000.0;
 
 	gl_FrontColor =  vec4(single, single, single, 1.0);
+
+    gl_FrontColor = vec4(lightDir, 1.0);
 #endif
 }
