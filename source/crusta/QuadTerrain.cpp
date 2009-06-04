@@ -13,6 +13,7 @@
 #include <crusta/QuadCache.h>
 ///\todo remove
 #include <crusta/simplexnoise1234.h>
+#include <Misc/File.h>
 
 BEGIN_CRUSTA
 
@@ -204,8 +205,56 @@ sourceColor(Node* node, TextureColor* colors)
     {
         if (colors != NULL)
         {
+#if 1
+#if 1
+
+    Misc::File f("/home/saru/dev/proj/Crusta/bin/65pattern.rgb", "rb");
+    f.read<uint8>((uint8*)(colors), 65*65*3);
+
+#if 0
+    srand(333);
+    TextureColor palette[16];
+    for (int i=0; i<16; ++i)
+    {
+        palette[i] = TextureColor(255*float(rand())/RAND_MAX,
+                                  255*float(rand())/RAND_MAX,
+                                  255*float(rand())/RAND_MAX);
+    }
+
+    int numInner = (((TILE_RESOLUTION-1)>>2) + 1) - 2;
+    int p = 0;
+    TextureColor* c = colors;
+    for (int y=0; y<4; ++y)
+    {
+        //place border row
+        for (int x=0; x<TILE_RESOLUTION; ++x, ++c)
+            *c = TextureColor((y%2)*255, (y%2)*255, (y%2)*255);
+        //do inners
+        for (int i=0; i<numInner; ++i)
+        {
+            *c = palette[y*4
+        }
+    }
+#endif
+
+#else
+int w = 8;
+for (uint i=0; i<TILE_RESOLUTION; ++i)
+{
+    for (uint j=0; j<TILE_RESOLUTION; ++j)
+    {
+//        uint8 c = ((((i&w)==0)^((j&w))==0));
+        TextureColor& tc = colors[i*TILE_RESOLUTION + j];
+        tc[0] = 255 * (float(j)/TILE_RESOLUTION);
+        tc[1] = 255 * (float(i)/TILE_RESOLUTION);
+        tc[2] = 0;
+    }
+}
+#endif
+#else
             for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
                 colors[i] = colorNodata;
+#endif
         }
     }
 }
@@ -490,12 +539,15 @@ findNodeData(Node* node, Node*& dem, Node*& color, DataCropOut& crop)
     crop.demScale     = 1.0f;
     crop.demOffset[0] = crop.demOffset[1] = 0.0f;
     dem = node;
-    while (dem->demTile==DemFile::INVALID_TILEINDEX || dem->mainBuffer==NULL)
+    while (dem->demTile==DemFile::INVALID_TILEINDEX ||
+           dem->mainBuffer==NULL)// || dem->index.level>1 )
     {
         //update the crop region
-        crop.demScale *= 0.5f;
-        crop.demOffset[0] += dem->index.child&0x1 ? crop.demScale : 0;
-        crop.demOffset[1] += dem->index.child&0x2 ? crop.demScale : 0;
+        crop.demScale     *= 0.5f;
+        crop.demOffset[0] *= 0.5f;
+        crop.demOffset[1] *= 0.5f;
+        crop.demOffset[0] += dem->index.child&0x1 ? 0.5f : 0;
+        crop.demOffset[1] += dem->index.child&0x2 ? 0.5f : 0;
         //move up to the parent
         dem = dem->parent;
     }
@@ -505,12 +557,14 @@ findNodeData(Node* node, Node*& dem, Node*& color, DataCropOut& crop)
     crop.colorOffset[0] = crop.colorOffset[1] = 0.0f;
     color = node;
     while (color->colorTile==ColorFile::INVALID_TILEINDEX ||
-           color->mainBuffer==NULL)
+           color->mainBuffer==NULL)// || color->index.level>1 )
     {
         //update the crop region
-        crop.colorScale *= 0.5f;
-        crop.colorOffset[0] += color->index.child&0x1 ? crop.colorScale : 0;
-        crop.colorOffset[1] += color->index.child&0x2 ? crop.colorScale : 0;
+        crop.colorScale     *= 0.5f;
+        crop.colorOffset[0] *= 0.5f;
+        crop.colorOffset[1] *= 0.5f;
+        crop.colorOffset[0] += color->index.child&0x1 ? 0.5f : 0;
+        crop.colorOffset[1] += color->index.child&0x2 ? 0.5f : 0;
         //move up to the parent
         color = color->parent;
     }
@@ -566,7 +620,7 @@ prepareGlData(GlData* glData, Node* node, DataCropOut& crop)
         //try to find a video cached source
         VideoCacheBuffer* demVideoBuf =
             glData->videoCache.findCached(demNode->index);
-        if (demVideoBuf != NULL)
+        if (false)//demVideoBuf != NULL)
         {
             res.height = demVideoBuf->getData().height;
             demVideoBuf->touch();
@@ -600,7 +654,7 @@ prepareGlData(GlData* glData, Node* node, DataCropOut& crop)
         //try to find a video cached source
         VideoCacheBuffer* colorVideoBuf =
             glData->videoCache.findCached(colorNode->index);
-        if (colorVideoBuf != NULL)
+        if (false)//colorVideoBuf != NULL)
         {
             res.color = colorVideoBuf->getData().color;
             colorVideoBuf->touch();
@@ -871,7 +925,7 @@ use the values of the node from which the data is being sampled */
     shader.disablePrograms();
 
 ///\todo debug, remove: makes LOD recommend very coarse
-//    lod.bias = -1.0;
+    lod.bias = -1.0;
 }
 
 QuadTerrain::GlData::
