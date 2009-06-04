@@ -415,6 +415,32 @@ StaticSphereCoverage(uint subdivisions, const ImageCoverage* coverage,
     Point::Scalar norm = Point::Scalar(1) / Point::Scalar(numVertices);
     centroid[0] *= norm;
     centroid[1] *= norm;
+
+///\todo fix-it. hacked in global coverage
+Point::Scalar pi     = Math::Constants<Point::Scalar>::pi;
+Point::Scalar halfpi = pi * Point::Scalar(0.5);
+bool lonExtend = box.min[0]<=-pi+0.00872664626 || box.max[0]>=pi-0.00872664626;
+bool latExtend = box.min[1]<=-halfpi+0.00872664626 ||
+                 box.max[1]>= halfpi-0.00872664626;
+if (lonExtend || latExtend)
+{
+    box.min[0] = lonExtend ? -Point::Scalar(10) : box.min[0];
+    box.min[1] = latExtend ? -Point::Scalar(10) : box.min[1];
+    box.max[0] = lonExtend ?  Point::Scalar(10) : box.max[0];
+    box.max[1] = latExtend ?  Point::Scalar(10) : box.max[1];
+
+    vertices.resize(4);
+    vertices[0] = Point(box.min[0], box.min[1]);
+    vertices[1] = Point(box.max[0], box.min[1]);
+    vertices[2] = Point(box.max[0], box.max[1]);
+    vertices[3] = Point(box.min[0], box.max[1]);
+
+    centroid[0] = lonExtend ? Point::Scalar(0) :
+                              (box.min[0]+box.max[0]) * Point::Scalar(0.5);
+    centroid[1] = latExtend ? Point::Scalar(0) :
+                              (box.min[1]+box.max[1]) * Point::Scalar(0.5);
+}
+
 }
 
 
