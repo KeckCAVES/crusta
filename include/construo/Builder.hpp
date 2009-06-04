@@ -211,6 +211,7 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
         {
             continue;
         }
+assert(p[0]>=0 && p[0]<=imgSize[0]-1 && p[1]>=0 && p[1]<=imgSize[1]-1);
 
         //insert the sample into an image box
         bool wasInserted = false;
@@ -469,12 +470,12 @@ int Builder<PixelParam, PolyhedronParam>::
 updateFiner(Node* node, Patch* imgPatch, Point::Scalar imgResolution)
 {
 ///\todo remove
-#if DEBUG_SOURCEFINEST || 0
+#if DEBUG_SOURCEFINEST || 1
 if (node->treeIndex.level<2)
 {
 static const float covColor[3] = { 0.1f, 0.4f, 0.6f };
 Visualizer::addPrimitive(GL_LINES, node->coverage, covColor);
-Visualizer::show();
+Visualizer::peek();
 }
 #endif
 
@@ -512,10 +513,10 @@ updateFinestLevels()
     for (int i=0; i<numPatches; ++i)
     {
 ///\todo remove
-#if 0
+#if 1
 Visualizer::clear();
 Visualizer::addPrimitive(GL_LINES, *(patches[i]->sphereCoverage));
-Visualizer::show();
+Visualizer::peek();
 #endif
 
 #if DEBUG_SOURCEFINEST
