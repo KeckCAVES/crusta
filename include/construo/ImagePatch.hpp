@@ -32,7 +32,7 @@ ImagePatch(const std::string patchName, double pixelScale) :
     {
         //read the image's coverage file:
         std::string covName(baseName);
-        covName.append("cov");
+        covName.append(".cov");
         imageCoverage = new ImageCoverage(covName.c_str());
     }
     catch(std::runtime_error err)
