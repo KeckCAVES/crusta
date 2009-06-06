@@ -11,9 +11,11 @@
     #include <hash_map>
 #endif
 
+#include <list>
 #include <vector>
 
 #include <GL/GLObject.h>
+#include <Threads/Cond.h>
 #include <Threads/Mutex.h>
 #include <Threads/Thread.h>
 
@@ -84,6 +86,7 @@ class MainCache : public CacheUnit<MainCacheBuffer>
 {
 public:
     MainCache(uint size);
+    ~MainCache();
 
     /** process requests */
     void frame();
@@ -91,21 +94,42 @@ public:
     void request(const CacheRequests& reqs);
 
 protected:
-    /** lazy thread function: process the non-critical part of data requests */
-    void* lazyThreadFunc();
+    struct FetchRequest
+    {
+        Node*            node;
+        Node*            children;
+        MainCacheBuffer* childBuffers[4];
+        bool             childCached[4];
 
-    /** keep track of pending critical requests */
-    CacheRequests criticalRequests;
-    /** keep track of lazy-fetch requests (critical data already loaded) */
-    CacheRequests lazyRequests;
+        FetchRequest();
+        FetchRequest(const FetchRequest& other);
+        bool operator ==(const FetchRequest& other) const;
+        bool operator <(const FetchRequest& other) const;
+    };
+    typedef std::list<FetchRequest> FetchRequests;
 
-    /** used to protect access to the critical request queue */
-    Threads::Mutex criticalMutex;
-    /** used to protect access to the lazy request queue */
-    Threads::Mutex lazyMutex;
+    /** fetch thread function: process the generation/reading of the data */
+    void* fetchThreadFunc();
 
-    /** thread handling lazy request processing */
-    Threads::Thread lazyThread;
+    /** keep track of pending child requests */
+    CacheRequests childRequests;
+
+    /** impose a limit on the number of outstanding fetch requests. This
+        minimizes processing outdated requests */
+    int maxFetchRequests;
+    /** buffer for fetch requests to the fetch thread */
+    FetchRequests fetchRequests;
+    /** buffer for fetch results that have been processed by the fetch thread */
+    FetchRequests fetchResults;
+
+    /** used to protect access to any of the buffers. For simplicity fetching
+        is stalled as a frame is processed */
+    Threads::Mutex requestMutex;
+    /** allow the fetching thread to blocking wait for requests */
+    Threads::Cond fetchCond;
+
+    /** thread handling fetch request processing */
+    Threads::Thread fetchThread;
 };
 
 class VideoCache : public CacheUnit<VideoCacheBuffer>

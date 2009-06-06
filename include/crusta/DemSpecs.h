@@ -18,6 +18,29 @@ BEGIN_CRUSTA
 /// data type for values of a DEM stored in the preprocessed hierarchies
 typedef float DemHeight;
 
+inline DemHeight
+pixelAvg(const DemHeight& a, const DemHeight& b)
+{
+    return (a+b) * DemHeight(0.5);
+}
+inline DemHeight
+pixelAvg(const DemHeight& a, const DemHeight& b, const DemHeight& c,
+         const DemHeight& d)
+{
+    return (a+b+c+d) * DemHeight(0.25);
+}
+
+inline DemHeight
+pixelMin(const DemHeight& one, const DemHeight& two)
+{
+    return one<two ? one : two;
+}
+inline DemHeight
+pixelMax(const DemHeight& one, const DemHeight& two)
+{
+    return one>two ? one : two;
+}
+
 #if CONSTRUO_BUILD
 template <>
 class TreeState<DemHeight>
@@ -74,7 +97,7 @@ public:
         }
     }
 #endif //CONSTRUO_BUILD
-    
+
 	void read(Misc::LargeFile* file)
     {
 		file->read(range, 2);

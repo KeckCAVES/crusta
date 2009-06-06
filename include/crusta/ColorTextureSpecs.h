@@ -17,6 +17,42 @@ BEGIN_CRUSTA
 /// data type for values of a color texture stored in the preproccessed database
 typedef Geometry::Vector<uint8, 3> TextureColor;
 
+inline TextureColor
+pixelAvg(const TextureColor& a, const TextureColor& b)
+{
+    TextureColor res(0,0,0);
+    for (int i=0; i<3; ++i)
+        res[i] = (a[i] + b[i]) * 0.5;
+    return res;
+}
+inline TextureColor
+pixelAvg(const TextureColor& a, const TextureColor& b, const TextureColor& c,
+         const TextureColor& d)
+{
+    TextureColor res(0,0,0);
+    for (int i=0; i<3; ++i)
+        res[i] = (a[i] + b[i] + c[i] + d[i]) * 0.25;
+    return res;
+}
+
+inline TextureColor
+pixelMin(const TextureColor& one, const TextureColor& two)
+{
+    TextureColor res(0,0,0);
+    for (int i=0; i<3; ++i)
+        res[i] = one[i]<two[i] ? one[i] : two[i];
+    return res;
+}
+inline TextureColor
+pixelMax(const TextureColor& one, const TextureColor& two)
+{
+    TextureColor res(0,0,0);
+    for (int i=0; i<3; ++i)
+        res[i] = one[i]>two[i] ? one[i] : two[i];
+    return res;
+}
+
+
 inline
 TextureColor operator*(const TextureColor& tc, double d) {
     return TextureColor(tc[0]*d, tc[1]*d, tc[2]*d);

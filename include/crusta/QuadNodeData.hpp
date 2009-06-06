@@ -12,10 +12,17 @@ CacheBuffer(uint size) :
 {}
 
 template <typename NodeDataType>
-const NodeDataType& CacheBuffer<NodeDataType>::
-getData() const
+NodeDataType& CacheBuffer<NodeDataType>::
+getData()
 {
     return data;
+}
+
+template <typename NodeDataType>
+bool CacheBuffer<NodeDataType>::
+isValid()
+{
+    return frameNumber != 0;
 }
 
 template <typename NodeDataType>
@@ -23,6 +30,13 @@ void CacheBuffer<NodeDataType>::
 touch()
 {
     frameNumber = std::max(frameNumber, crustaFrameNumber);
+}
+
+template <typename NodeDataType>
+void CacheBuffer<NodeDataType>::
+invalidate()
+{
+    frameNumber = 0;
 }
 
 template <typename NodeDataType>

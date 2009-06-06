@@ -36,16 +36,16 @@ BufferType* CacheUnit<BufferType>::
 findCached(const TreeIndex& index) const
 {
     typename BufferPtrMap::const_iterator it = cached.find(index);
-    if (it != cached.end())
+    if (it!=cached.end() && it->second->isValid())
     {
         DEBUG_OUT(10, "Cache%u::find: found %s\n", (unsigned int)cached.size(),
-                  index.str().c_str());
+                  index.med_str().c_str());
         return it->second;
     }
     else
     {
         DEBUG_OUT(9, "Cache%u::find: missed %s\n", (unsigned int)cached.size(),
-                  index.str().c_str());
+                  index.med_str().c_str());
         return NULL;
     }
 }
@@ -59,7 +59,7 @@ getBuffer(const TreeIndex& index, bool* existed)
     if (buffer != NULL)
     {
         DEBUG_OUT(10, "Cache%u::get: found %s\n", (unsigned int)cached.size(),
-                  index.str().c_str());
+                  index.med_str().c_str());
         if (existed != NULL)
             *existed = true;
         return buffer;
@@ -86,15 +86,15 @@ getBuffer(const TreeIndex& index, bool* existed)
     if (lruBuf.buffer != NULL)
     {
         DEBUG_OUT(5, "Cache%u::get: swaped %s for %s\n",
-                  (unsigned int)cached.size(), lruBuf.index.str().c_str(),
-                  index.str().c_str());
+                  (unsigned int)cached.size(), lruBuf.index.med_str().c_str(),
+                  index.med_str().c_str());
         cached.erase(lruBuf.index);
         cached.insert(typename BufferPtrMap::value_type(index, lruBuf.buffer));
     }
     else
     {
         DEBUG_OUT(3, "Cache%u::get: unable to provide for %s\n",
-                  (unsigned int)cached.size(), index.str().c_str());
+                  (unsigned int)cached.size(), index.med_str().c_str());
     }
 
     return lruBuf.buffer;
@@ -141,21 +141,25 @@ refreshLru()
         for (typename IndexedBuffers::const_iterator it=lruCached.begin();
              it!=lruCached.end(); ++it)
         {
-            DEBUG_OUT(6, "%s.%u ", it->index.str().c_str(),
+            DEBUG_OUT(6, "%s.%u ", it->index.med_str().c_str(),
                       (unsigned int)(it->buffer->getFrameNumber()));
         }
         DEBUG_OUT(6, "\n");
 
-///\todo debug
+DEBUG_BEGIN(1)
 bool encounteredNonInvalid = false;
 for (typename IndexedBuffers::reverse_iterator it=lruCached.rbegin();
      it!=lruCached.rend(); ++it)
 {
-    if (it->index.patch != uint8(~0))
+    if (it->buffer->isValid())
         encounteredNonInvalid = true;
     else if (encounteredNonInvalid)
+    {
         std::cout << "FRAKAMUNDO!";
+        assert(false && "bad LRU, can't find something inbetween invalids");
+    }
 }
+DEBUG_END
         sortFrameNumber = crustaFrameNumber;
     }
 }

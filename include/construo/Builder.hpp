@@ -83,14 +83,13 @@ subsampleChildren(Node* node)
             {
                 wbase[0] = rbase[0];
                 if (x<halfSize[0]-1)
-                    wbase[1] = (rbase[0] + rbase[1]) * 0.5;
+                    wbase[1] = pixelAvg(rbase[0], rbase[1]);
                 if (y<halfSize[1]-1)
-                    wbase[tileSize[0]] = (rbase[0]+rbase[tileSize[0]]) * 0.5;
+                    wbase[tileSize[0]] = pixelAvg(rbase[0], rbase[tileSize[0]]);
                 if (x<halfSize[0]-1 && y<halfSize[1]-1)
                 {
-                    wbase[tileSize[0]+1] = (rbase[0] + rbase[1] +
-                                            rbase[tileSize[0]] +
-                                            rbase[tileSize[0]+1]) * 0.25;
+                    wbase[tileSize[0]+1] = pixelAvg(rbase[0], rbase[1],
+                        rbase[tileSize[0]], rbase[tileSize[0]+1]);
                 }
             }
         }

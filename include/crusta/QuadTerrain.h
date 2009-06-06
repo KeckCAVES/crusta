@@ -41,13 +41,24 @@ public:
         2. issue requests for loading in new nodes (from splits or merges)
         3. issue the drawing commands for the active set */
     void display(GLContextData& contextData);
-    
+
+    /** load the data required for splitting a node into its children */
+    void loadChildren(Node* node, Node* children,
+                      MainCacheBuffer* childBuffers[4], bool childCached[4]);
+
     /** produce the flat sphere cartesian space coordinates for a node */
-    void generateGeometry(Node* node, QuadNodeMainData::Vertex* vertices);
+    void generateGeometry(Node* node);
     /** source the elevation meta-data and optionally data for a node */
-    void sourceDem(Node* node, DemHeight* elevations=NULL);
+    void sourceDem(Node* node);
     /** source the color meta-data and optionally data for a node */
-    void sourceColor(Node* node, TextureColor* colors=NULL);
+    void sourceColor(Node* node);
+
+    /** grab a set of four nodes from the node pool. Used during split
+        operations */
+    Node* grabNodeBlock();
+    /** release a set of four nodes into the node pool. Used during merge
+        operations */
+    void releaseNodeBlock(Node* children);
 
 ///\todo proper access restrictions
     /** quadtree file from which to source data for the elevation */
@@ -57,59 +68,45 @@ public:
 
     /** display debugging grid or not */
     static bool displayDebuggingGrid;
-protected:
-    struct GlData;
-    struct DataCropOut
-    {
-        float demScale;
-        float demOffset[2];
-        float colorScale;
-        float colorOffset[2];
-    };
 
 ///\todo remove, debug
-    void printTree(Node* node);
-    void checkTree(GlData* glData, Node* node);
+void printTree(Node* node);
+void checkTree(Node* node);
+void checkTreeRoot(Node* root);
+
+protected:
+    typedef std::vector<Node*> NodeBlocks;
+
+    struct GlData;
 
     /** make sure the bounding objects used for visibility and LOD checks are
         up-to-date wrt to the vertical scale. It recurses down the subtree
         of the given node */
     void updateVerticalScale(Node* node);
 
-    /** check for the possibility of a merge and perform it if the critical
-        data required is available */
-    bool merge(GlData* glData, Node* node, float lod, CacheRequests& requests);
-    /** compute the scopes of the children of specified node */
-    void computeChildScopes(Node* node);
     /** check for the possibility of a split and perform it if the critical
         data required is available */
     bool split(GlData* glData, Node* node, float lod, CacheRequests& requests);
-    /** confirm the specified node as being part of the current approximation.
-        The parent and parent's parent are also touched/requested to make sure
-        coarsening can be processed in case the cache capacity is reaching its
-        limit */
-    void confirmCurrent(Node* node, float lod, CacheRequests& requests);
-    /** discard the nodes of the subtree */
-    static void discardSubTree(GlData* glData, Node* node);
+    /** discard the nodes of the subtree if they are not active or pinned */
+    static bool discardSubTree(Node* node);
     /** evaluate the terrain tree starting with the node specified. The terrain
         tree is manipulated to add/remove nodes as necessary. */
     void traverse(GLContextData& contextData, GlData* glData, Node* node,
                   CacheRequests& requests);
 
-    /** find the closest ancestors that can provide data for given node. During
-        the traversal the offset and scale for the crop-out are computed and
-        stored in the given node */
-    void findNodeData(Node* node, Node*& dem, Node*& color, DataCropOut& crop);
     /** make sure the required GL data for drawing is available. In case a
         buffer cannot be associated with the specified node (cache is full),
         then a temporary buffer is provided that has had the data streamed to
         it */
-    QuadNodeVideoDataRef prepareGlData(GlData* glData, Node* node,
-                                       DataCropOut& crop);
-    /** issue the drawing commands for displaying a node. The video cache 
+    const QuadNodeVideoData& prepareGlData(GlData* glData, Node* node);
+    /** issue the drawing commands for displaying a node. The video cache
         operations to stream data from the main cache are performed at this
         point. */
     void drawNode(GLContextData& contextData, GlData* glData, Node* node);
+
+    /** draw the finest resolution node that are part of the currently terrain
+        approximation */
+    void draw(GLContextData& contextData, GlData* glData, Node* node);
 
     /** spheroid base patch ID (specified at construction but needed during
         initContext) */
@@ -117,6 +114,9 @@ protected:
     /** spheroid base scope (specified at construction but needed during
         initContext) */
     Scope baseScope;
+
+    /** a pool of four-sets of nodes */
+    NodeBlocks nodePool;
 
     /** value for "no-data" elevations */
     DemHeight demNodata;
@@ -133,19 +133,10 @@ public:
 protected:
     struct GlData : public GLObject::DataItem
     {
-        typedef std::vector<Node*> NodeBlocks;
-
         GlData(QuadTerrain* terrain, const TreeIndex& iRootIndex,
                MainCacheBuffer* iRootBuffer, const Scope& baseScope,
                VideoCache& iVideoCache);
         ~GlData();
-
-        /** grab a set of four nodes from the node pool. Used during split
-         operations */
-        Node* grabNodeBlock();
-        /** release a set of four nodes into the node pool. Used during merge
-         operations */
-        void releaseNodeBlock(Node* children);
 
         /** generate the vertex stream template characterizing a node and
             stream it to the graphics card as a vertex buffer. This buffer
@@ -156,11 +147,9 @@ protected:
         /** generate the index-template characterizing a node and stream it to
             the graphics card as a index buffer. */
         void generateIndexTemplate();
-        
+
         /** root of the tree that currently defines the terrain approximation */
         Node* root;
-        /** a pool of four-sets of nodes */
-        NodeBlocks nodePool;
 
         /** store a handle to the video cache of this context for convenient
             access */
@@ -188,22 +177,9 @@ protected:
             extrusion */
         GLint centroidUniform;
 
-        /** uniform relating to the scale for sampling corser nodes'
-            elevations */
-        GLint demScaleUniform;
-        /** uniform relating to the offset for sampling corser nodes'
-            elevations */
-        GLint demOffsetUniform;
-        /** uniform relating to the scale for sampling corser nodes'
-            colors */
-        GLint colorScaleUniform;
-        /** uniform relating to the offset for sampling corser nodes'
-            colors */
-        GLint colorOffsetUniform;
-
         /** GL shader generating textured terrain */
         GLShader shader;
-    };    
+    };
 };
 
 END_CRUSTA

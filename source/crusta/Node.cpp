@@ -8,24 +8,19 @@ Node::
 Node() :
     demTile(DemFile::INVALID_TILEINDEX),
     colorTile(ColorFile::INVALID_TILEINDEX), mainBuffer(NULL),
-    videoBuffer(NULL), parent(NULL), children(NULL)
-{
-    elevationRange[0] = elevationRange[1] = DemHeight(0);
-    childDemTiles[0] = childDemTiles[1] = DemFile::INVALID_TILEINDEX;
-    childDemTiles[2] = childDemTiles[3] = DemFile::INVALID_TILEINDEX;
-    childColorTiles[0] = childColorTiles[1] = ColorFile::INVALID_TILEINDEX;
-    childColorTiles[2] = childColorTiles[3] = ColorFile::INVALID_TILEINDEX;
-}
+    pinned(false), parent(NULL), children(NULL)
+{}
 
 void Node::
 computeBoundingSphere()
 {
-    DemHeight avgElevation = (elevationRange[0] + elevationRange[1]) *
-                             DemHeight(0.5);
+    assert(mainBuffer != NULL);
+    DemHeight* range = mainBuffer->getData().elevationRange;
+    DemHeight avgElevation = (range[0] + range[1]) * DemHeight(0.5);
     avgElevation *= Crusta::getVerticalScale();
 
     boundingCenter = scope.getCentroid(SPHEROID_RADIUS + avgElevation);
-    
+
     boundingRadius = Scope::Scalar(0);
     for (int i=0; i<4; ++i)
     {
@@ -33,7 +28,7 @@ computeBoundingSphere()
         {
             Scope::Vertex corner = scope.corners[i];
             Scope::Scalar norm = Scope::Scalar(SPHEROID_RADIUS);
-            norm += elevationRange[j]*Crusta::getVerticalScale();
+            norm += range[j]*Crusta::getVerticalScale();
             norm /= sqrt(corner[0]*corner[0] + corner[1]*corner[1] +
                          corner[2]*corner[2]);
             Scope::Vertex toCorner;
@@ -48,14 +43,14 @@ computeBoundingSphere()
 }
 
 void Node::
-init(const DemHeight range[2])
+init()
 {
-    elevationRange[0] = range[0];
-    elevationRange[1] = range[1];
+    assert(mainBuffer != NULL);
+
     //compute the centroid on the average elevation (see split)
 #if USING_AVERAGE_HEIGHT
-    DemHeight avgElevation = (elevationRange[0] + elevationRange[1]) *
-                              DemHeight(0.5);
+    DemHeight* range = mainBuffer->getData().elevationRange;
+    DemHeight avgElevation = (range[0] + range[1]) * DemHeight(0.5);
     Scope::Vertex scopeCentroid = scope.getCentroid(SPHEROID_RADIUS +
                                                     avgElevation);
 #else

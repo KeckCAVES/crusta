@@ -13,10 +13,10 @@ struct TreeIndex
     struct hash {
         size_t operator() (const TreeIndex& i) const;
     };
-    
-    TreeIndex(uint8 iPatch=0,uint8 iChild=0,uint16 iLevel=0,uint32 iIndex=0);
+
+    TreeIndex(uint8 iPatch=0,uint8 iChild=0,uint8 iLevel=0,uint64 iIndex=0);
     TreeIndex(const TreeIndex& i);
-    
+
     TreeIndex up() const;
     TreeIndex down(uint8 which) const;
 
@@ -25,14 +25,14 @@ struct TreeIndex
     std::string str() const;
     std::string med_str() const;
     friend std::ostream& operator<<(std::ostream& os, const TreeIndex& i);
-    
+
     uint64 patch :  8; ///< index of the base patch of the global hierarchy
-    uint64 child :  8; ///< index within the group of siblings
-    uint64 level : 16; ///< level in the global hierarchy (0 is root)
+    uint64 child :  2; ///< index within the group of siblings
+    uint64 level :  8; ///< level in the global hierarchy (0 is root)
     /** describes a path from the root to the indicated node as a sequence
      of two-bit child-indices. The sequence starts with the least
      significant bits. */
-    uint64 index : 32;
+    uint64 index : 46;
 };
 
 /** A traversal helper for following the path from the root to a node specified
@@ -41,15 +41,15 @@ struct TreeIndex
 struct TreePath
 {
     static const uint8 END = ~0x0;
-    
+
     TreePath(TreeIndex i);
-    
+
     /** returns the index of the child to go to for continueing the traversal.
      The end is reached when the returned child index is END */
     uint8 pop();
-    
-    uint16 level;
-    uint32 index;
+
+    uint8 level;
+    uint64 index;
 };
 
 

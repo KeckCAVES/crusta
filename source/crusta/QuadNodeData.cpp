@@ -8,6 +8,13 @@ QuadNodeMainData(uint size)
     geometry = new Vertex[size*size];
     height   = new DemHeight[size*size];
     color    = new TextureColor[size*size];
+
+    for (int i=0; i<4; ++i)
+    {
+        childDemTiles[i]   = DemFile::INVALID_TILEINDEX;
+        childColorTiles[i] = ColorFile::INVALID_TILEINDEX;
+    }
+    elevationRange[0] = elevationRange[1] = 0.0;
 }
 QuadNodeMainData::
 ~QuadNodeMainData()
