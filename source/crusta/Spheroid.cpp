@@ -38,7 +38,7 @@ Spheroid(const std::string& demBase, const std::string& colorBase)
     //Triacontahedron from Mathematica 6-7.
     Triacontahedron triacontahedron(SPHEROID_RADIUS);
 
-#if 1
+#if 0
     int single = 20;
     std::ostringstream demName;
     demName << demBase;

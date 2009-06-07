@@ -15,7 +15,7 @@ class FrustumVisibility : public VisibilityEvaluator
 {
 public:
     /** the specification of the viewing parameters */
-    GLFrustum<float> frustum;
+    GLFrustum<double> frustum;
     
 //- inherited from VisibilityEvaluator
 public:

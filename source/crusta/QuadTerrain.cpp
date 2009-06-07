@@ -93,6 +93,7 @@ display(GLContextData& contextData)
     //setup the evaluators
     glData->visibility.frustum.setFromGL();
     glData->lod.frustum = glData->visibility.frustum;
+    glData->lod.setFocusFromDisplay();
 
     /* display could be multi-threaded. Buffer all the node data requests and
        merge them into the request list en block */
@@ -315,7 +316,7 @@ sourceColor(Node* node)
         }
         else
         {
-#if 1
+#if 0
 #if 1
 
     Misc::File f("/home/saru/dev/proj/Crusta/bin/65pattern.rgb", "rb");
