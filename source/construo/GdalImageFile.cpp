@@ -8,6 +8,22 @@ GdalDemImageFile::
 GdalDemImageFile(const char* imageFileName) :
     Base(imageFileName)
 {
+    //retrieve raster bands from the data set
+    int numBands = dataset->GetRasterCount();
+    if (numBands < 1)
+        Misc::throwStdErr("GdalDemImageFile: no raster bands in the file");\
+
+    GDALRasterBand* band = dataset->GetRasterBand(1);
+
+    //try to retrieve the nodata value from the band
+    nodata.value = band->GetNoDataValue();
+}
+
+void GdalDemImageFile::
+setNodata(const std::string& nodataString)
+{
+    std::istringstream iss(nodataString);
+    iss >> nodata.value;
 }
 
 void GdalDemImageFile::
@@ -52,10 +68,29 @@ assert(rectOrigin[i]+rectSize[i]-1 < size[i]);
 
 
 
+void GdalColorImageFile::
+setNodata(const std::string& nodataString)
+{
+    std::istringstream iss(nodataString);
+    iss >> nodata.value[0] >> nodata.value[1] >> nodata.value[2];
+}
+
 GdalColorImageFile::
 GdalColorImageFile(const char* imageFileName) :
     Base(imageFileName)
 {
+    //retrieve raster bands from the data set
+    int numBands = dataset->GetRasterCount();
+    if (numBands < 1)
+        Misc::throwStdErr("GdalColorImageFile: no raster bands in the file");\
+
+    GDALRasterBand* bands[3];
+    bands[0] = dataset->GetRasterBand(1);
+    bands[1] = numBands<2 ?bands[0] :dataset->GetRasterBand(2);
+    bands[2] = numBands<3 ?bands[1] :dataset->GetRasterBand(3);
+
+    for (int i=0; i<3; ++i)
+        nodata.value[i] = bands[i]->GetNoDataValue();
 }
 
 void GdalColorImageFile::

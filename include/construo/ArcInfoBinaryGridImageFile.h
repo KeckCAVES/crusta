@@ -67,6 +67,7 @@ private:
 
 //- inherited from ImageFileBase
 public:
+    virtual void setNodata(const std::string& nodataString);
 	virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
                                Pixel* rectBuffer) const;
 };

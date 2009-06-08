@@ -40,7 +40,7 @@ public:
 	PngImageFile(const char* imageFileName);
     ///closes the image file
 	virtual ~PngImageFile();
-	
+
 private:
     /* seems impossible to read PNG files one row at a time, starting at the
        bottom */
@@ -48,6 +48,7 @@ private:
 
 //- inherited from ImageFileBase
 public:
+    virtual void setNodata(const std::string& nodataString);
 	virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
                                Pixel* rectBuffer) const;
 };

@@ -5,6 +5,7 @@
 
 #include <Geometry/Vector.h>
 
+#include <crusta/PixelSpecs.h>
 #include <crusta/QuadtreeFile.h>
 #include <crusta/QuadtreeFileHeaders.h>
 
@@ -61,6 +62,19 @@ inline
 TextureColor operator*(double d, const TextureColor& tc) {
     return tc * d;
 }
+
+
+template <>
+struct Nodata<TextureColor>
+{
+    double value[3];
+    bool isNodata(const TextureColor& test) const
+    {
+        return double(test[0])==value[0] &&
+               double(test[1])==value[1] &&
+               double(test[2])==value[2];
+    }
+};
 
 #if CONSTRUO_BUILD
 template<>

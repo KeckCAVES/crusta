@@ -36,7 +36,7 @@ PpmImageFile(const char* imageFileName) :
 {
 	/* Parse the image file header: */
 	char line[256];
-	
+
 	/* Read the file type: */
 	imageFile.gets(line,sizeof(line));
 	if(strncmp(line,"P6\n",3)!=0)
@@ -44,30 +44,30 @@ PpmImageFile(const char* imageFileName) :
 		Misc::throwStdErr("PpmImageFile::PpmImageFile: Input file %s is not a"
                           "binary RGB PPM file",imageFileName);
     }
-	
+
 	/* Skip any comment lines: */
 	do
     {
 		imageFile.gets(line,sizeof(line));
     }
 	while(line[0]=='#');
-	
+
 	/* Read the image size: */
     unsigned int sizeX, sizeY;
 	sscanf(line, "%u %u", &sizeX, &sizeY);
     size[0] = sizeX;
     size[1] = sizeY;
-	
+
 	/* Skip the maxvalue: */
 	imageFile.gets(line,sizeof(line));
-	
+
 	/* Save the current file position as header size: */
 	headerSize=imageFile.tell();
-	
+
 	/* Calculate the length of an image row in bytes: */
 	rowLength = Misc::LargeFile::Offset(size[0]) *
                                         Misc::LargeFile::Offset(sizeof(Pixel));
-	
+
 	/* Calculate the offset of the first pixel row: */
 	firstRow=headerSize+Misc::LargeFile::Offset(size[1]-1)*rowLength;
 }
@@ -77,12 +77,19 @@ PpmImageFile::
 {}
 
 void PpmImageFile::
+setNodata(const std::string& nodataString)
+{
+    std::istringstream iss(nodataString);
+    iss >> nodata.value[0] >> nodata.value[1] >> nodata.value[2];
+}
+
+void PpmImageFile::
 readRectangle(const int rectOrigin[2], const int rectSize[2],
               PpmImageFile::Pixel* rectBuffer) const
 {
 	/* Lock the image file (no sense in multithreading at this point): */
 	Threads::Mutex::Lock imageFileLock(imageFileMutex);
-	
+
 	/* Clip the rectangle against the image's valid region: */
 	int min[2],max[2];
 	for(int i=0;i<2;++i)
@@ -94,12 +101,12 @@ readRectangle(const int rectOrigin[2], const int rectSize[2],
 		if(max[i]>rectOrigin[i]+rectSize[i])
 			max[i]=rectOrigin[i]+rectSize[i];
     }
-	
+
 	/* Copy into the destination rectangle row by row while flipping the
        vertical orientation: */
 	Pixel* rowPtr = rectBuffer + ( (min[1]-rectOrigin[1])*rectSize[0] +
                                    (min[0]-rectOrigin[0]) );
-	Misc::LargeFile::Offset sourceRowPtr = 
+	Misc::LargeFile::Offset sourceRowPtr =
         firstRow - Misc::LargeFile::Offset(min[1])*rowLength;
 	sourceRowPtr += Misc::LargeFile::Offset(min[1]*sizeof(Pixel));
 	for(int row=min[1];row<max[1];++row)
@@ -108,7 +115,7 @@ readRectangle(const int rectOrigin[2], const int rectSize[2],
            for now: */
 		imageFile.seekSet(sourceRowPtr);
 		imageFile.read(rowPtr,max[0]-min[0]);
-		
+
 		/* Go to the next row: */
 		rowPtr+=rectSize[0];
 		sourceRowPtr-=rowLength;

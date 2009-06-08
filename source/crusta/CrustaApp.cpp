@@ -109,8 +109,8 @@ produceVerticalScaleDialog()
         10.0 * style->fontHeight);
     verticalScaleLabel = new GLMotif::Label("ScaleLabel", root, "1.0x");
 
-    slider->setValue(1.0);
-    slider->setValueRange(-1000.0, 1000.0, 10.0);
+    slider->setValue(0.0);
+    slider->setValueRange(-10.0, 10.0, 0.1);
     slider->getValueChangedCallbacks().add(
         this, &CrustaApp::changeScaleCallback);
 
@@ -125,7 +125,11 @@ alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
     Geometry::Geoid<double> geoid(SPHEROID_RADIUS, 0.0);
 
     Vrui::Point origin = surfaceFrame.getOrigin();
-    Vrui::Point lonLat = geoid.cartesianToGeodetic(origin);
+    Vrui::Point lonLat;
+    if (origin == Vrui::Point::origin)
+        lonLat = Vrui::Point::origin;
+    else
+        lonLat = geoid.cartesianToGeodetic(origin);
     lonLat[2] = 0.0;
 
     Geometry::Geoid<double>::Frame frame = geoid.geodeticToCartesianFrame(lonLat);
@@ -155,10 +159,7 @@ debugGridCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 void CrustaApp::
 changeScaleCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
-    if (cbData->value >= 0)
-        newVerticalScale = 1 + cbData->value;
-    else
-        newVerticalScale = exp(cbData->value);
+    newVerticalScale = pow(10, cbData->value);
 
     std::ostringstream oss;
     oss.precision(2);

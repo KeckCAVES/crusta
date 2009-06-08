@@ -58,6 +58,14 @@ getPixelScale() const
 
 template <class PixelParam>
 inline
+const Nodata<PixelParam>& ImageFileBase<PixelParam>::
+getNodata() const
+{
+    return nodata;
+}
+
+template <class PixelParam>
+inline
 const int* ImageFileBase<PixelParam>::
 getSize() const
 {

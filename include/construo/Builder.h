@@ -17,7 +17,7 @@ public:
 
     ///add a source image patch to be integrated into the spheroid
     virtual void addImagePatch(const std::string& patchName,
-                               double pixelScale) = 0;
+                               double pixelScale, const std::string& nodata) =0;
     ///update the spheroid with the new patches
     virtual void update() = 0;
 };
@@ -86,7 +86,8 @@ protected:
 
 //- Inherited from BuilderBase
 public:
-    virtual void addImagePatch(const std::string& patchName, double pixelScale);
+    virtual void addImagePatch(const std::string& patchName, double pixelScale,
+                               const std::string& nodata);
     virtual void update();
 
 ///\todo remove

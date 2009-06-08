@@ -31,8 +31,8 @@ assert(size[0]==size[1]);
 
 ///\todo for now hardcode the subsampling filter
 //    Filter::makePointFilter(subsamplingFilter);
-    Filter::makeTriangleFilter(subsamplingFilter);
-//    Filter::makeFiveLobeLanczosFilter(subsamplingFilter);
+//    Filter::makeTriangleFilter(subsamplingFilter);
+    Filter::makeFiveLobeLanczosFilter(subsamplingFilter);
 
     scopeBuf          = new Scope::Scalar[tileSize[0]*tileSize[1]*3];
     sampleBuf         = new Point[tileSize[0]*tileSize[1]];
@@ -185,10 +185,10 @@ template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
 sourceFinest(Node* node, Patch* imgPatch, uint overlap)
 {
-#if 1
     ImgBoxes imgBoxes;
-    const int* imgSize = imgPatch->image->getSize();
-    Point::Scalar allowedBoxSize[2] = { imgSize[0]>>1, imgSize[1]>>1 };
+    const int* imgSize               = imgPatch->image->getSize();
+    const Nodata<PixelParam>& nodata = imgPatch->image->getNodata();
+    Point::Scalar allowedBoxSize[2]  = { imgSize[0]>>1, imgSize[1]>>1 };
 
     //transform all the sample points into the image space
     node->scope.getRefinement(tileSize[0], scopeBuf);
@@ -234,7 +234,6 @@ assert(p[0]>=0 && p[0]<=imgSize[0]-1 && p[1]>=0 && p[1]<=imgSize[1]-1);
     node->data = nodeDataBuf;
     node->treeState->file->readTile(node->tileIndex, node->data);
 
-#if 1
     //go through all the image boxes and sample them
     for (ImgBoxes::iterator bIt=imgBoxes.begin(); bIt!=imgBoxes.end(); ++bIt)
     {
@@ -286,10 +285,17 @@ if (!(*((float*)&node->data[*sIt])>=0.0 &&
                 }
             }
             PixelParam* base = rectBuffer + (ip[1]*rectSize[0] + ip[0]);
-            PixelParam  one  = (1.0-d[0])*base[0] + d[0]*(base[1]);
-            PixelParam  two  = (1.0-d[0])*base[rectSize[0]] +
-                               d[0]*base[rectSize[0]+1];
-            node->data[*sIt] = (1.0-d[1])*one + d[1]*two;
+            PixelParam v[4];
+            v[0] = nodata.isNodata(base[0]) ? node->data[*sIt] : base[0];
+            v[1] = nodata.isNodata(base[1]) ? node->data[*sIt] : base[1];
+            v[2] = nodata.isNodata(base[rectSize[0]])   ? node->data[*sIt] :
+                                                          base[rectSize[0]];
+            v[3] = nodata.isNodata(base[rectSize[0]+1]) ? node->data[*sIt] :
+                                                          base[rectSize[0]+1];
+
+            PixelParam  one  = (1.0-d[0])*v[0] + d[0]*v[1];
+            PixelParam  two  = (1.0-d[0])*v[2] + d[0]*v[3];
+            node->data[*sIt] = (1.0-d[1])*one  + d[1]*two;
 #endif
 #if DEBUG_SOURCEFINEST
 Visualizer::Floats scopeSample;
@@ -308,109 +314,6 @@ Visualizer::show();
         //clean up the temporary image uffer
         delete[] rectBuffer;
     }
-#endif
-
-
-#else
-
-
-    //convert the node's bounding box to the image space
-    Box nodeImgBox = imgPatch->transform->worldToImage(
-        node->coverage.getBoundingBox());
-    //use the box to load an appropriate rectangle from the image file
-    int rectOrigin[2];
-    int rectSize[2];
-    for (int i=0; i<2; i++)
-    {
-/**\todo find a more robust solution to using the bounding box to grab an image
-region for the sampling. For now just arbitrarily widen the region */
-        static const int border = 5;
-///\todo abstract the sampler
-        //assume bilinear interpolation here
-        rectOrigin[i] = static_cast<int>(Math::floor(nodeImgBox.min[i]))-border;
-        rectSize[i]   = static_cast<int>(Math::ceil(nodeImgBox.max[i])) + 1 -
-                                                    rectOrigin[i] + border;
-    }
-    PixelParam* rectBuffer = new PixelParam[rectSize[0] * rectSize[1]];
-    imgPatch->image->readRectangle(rectOrigin, rectSize, rectBuffer);
-
-    //determine the sample positions for the scope
-///\todo enhance get Refinement such that is can produce non-uniform samples
-    node->scope.getRefinement(tileSize[0], scopeBuf);
-///\todo remove
-    //prepare the node's data buffer
-    node->data = nodeDataBuf;
-    node->treeState->file->readTile(node->tileIndex, node->data);
-
-    //resample pixel values for the node from the read rectangle
-    Scope::Scalar* endPtr = scopeBuf + tileSize[0]*tileSize[1]*3;
-    PixelParam* dataPtr   = node->data;
-    for (Scope::Scalar* curPtr=scopeBuf; curPtr!=endPtr; curPtr+=3, ++dataPtr)
-    {
-        /* transform the sample position into spherical space and then to the
-           image patch's image coordinates: */
-        Point p = Converter::cartesianToSpherical(
-            Scope::Vertex(curPtr[0], curPtr[1], curPtr[2]));
-#if DEBUG_SOURCEFINEST
-Visualizer::Floats scopeSample;
-scopeSample.resize(3);
-scopeSample[0] = p[0];
-scopeSample[1] =  0.0;
-scopeSample[2] = p[1];
-static const float scopeSampleColor[3] = { 0.2f, 1.0f, 0.1f };
-Visualizer::addPrimitive(GL_POINTS, scopeSample, scopeSampleColor);
-Visualizer::show();
-#endif //DEBUG_SOURCEFINEST
-        p = imgPatch->transform->worldToImage(p);
-
-        /* Check if the point is inside the image patch's coverage region: */
-        if(overlap==SphereCoverage::ISCONTAINED ||
-           imgPatch->imageCoverage->contains(p))
-        {
-#if 1
-            /* nearest neighbor sampling */
-            int ip[2];
-            for (uint i=0; i<2; ++i)
-            {
-                double pFloor = Math::floor(p[i] + 0.5f);
-                ip[i]         = static_cast<int>(pFloor) - rectOrigin[i];
-            }
-            *dataPtr  = rectBuffer[ip[1]*rectSize[0] + ip[0]];
-#else
-            /* Sample the point: */
-            int ip[2];
-            double d[2];
-            for(uint i=0; i<2; i++)
-            {
-                double pFloor = Math::floor(p[i]);
-                d[i]          = p[i] - pFloor;
-                ip[i]         = static_cast<int>(pFloor) - rectOrigin[i];
-            }
-            PixelParam* basePtr = rectBuffer + (ip[1]*rectSize[0] + ip[0]);
-            PixelParam one = (1.0-d[0])*basePtr[0] + d[0]*(basePtr[1]);
-            PixelParam two = (1.0-d[0])*basePtr[rectSize[0]] +
-                             d[0]*basePtr[rectSize[0]+1];
-            *dataPtr  = (1.0-d[1])*one + d[1]*two;
-#endif
-#if DEBUG_SOURCEFINEST
-Point pp = imgPatch->transform->imageToWorld(
-    ip[0]+rectOrigin[0], (ip[1]+rectOrigin[1]));
-Visualizer::Floats imgSample;
-imgSample.resize(3);
-imgSample[0] = pp[0];
-imgSample[1] =   0.0;
-imgSample[2] = pp[1];
-float imgSampleColor[3] = {
-    (float)rand()/RAND_MAX, (float)rand()/RAND_MAX, (float)rand()/RAND_MAX };
-Visualizer::addPrimitive(GL_POINTS, imgSample, imgSampleColor);
-Visualizer::show();
-#endif //DEBUG_SOURCEFINEST
-        }
-    }
-
-    //clean up the temporary image uffer
-    delete[] rectBuffer;
-#endif
 
     //prepare the header
     QuadtreeTileHeader<PixelParam> header;
@@ -469,7 +372,7 @@ int Builder<PixelParam, PolyhedronParam>::
 updateFiner(Node* node, Patch* imgPatch, Point::Scalar imgResolution)
 {
 ///\todo remove
-#if DEBUG_SOURCEFINEST || 1
+#if DEBUG_SOURCEFINEST || 0
 if (node->treeIndex.level<2)
 {
 static const float covColor[3] = { 0.1f, 0.4f, 0.6f };
@@ -512,7 +415,7 @@ updateFinestLevels()
     for (int i=0; i<numPatches; ++i)
     {
 ///\todo remove
-#if 1
+#if 0
 Visualizer::clear();
 Visualizer::addPrimitive(GL_LINES, *(patches[i]->sphereCoverage));
 Visualizer::peek();
@@ -952,11 +855,12 @@ updateCoarserLevels(int depth)
 
 template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
-addImagePatch(const std::string& patchName, double pixelScale)
+addImagePatch(const std::string& patchName, double pixelScale,
+              const std::string& nodata)
 {
     //create a new image patch
-    ImagePatch<PixelParam>* newIp = new ImagePatch<PixelParam>(patchName,
-                                                               pixelScale);
+    ImagePatch<PixelParam>* newIp = new ImagePatch<PixelParam>(
+        patchName, pixelScale, nodata);
     //store the new image patch:
     patches.push_back(newIp);
 }

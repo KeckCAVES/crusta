@@ -49,6 +49,7 @@ int main(int argc, char* argv[])
 {
 	/* Parse the command line: */
     typedef std::vector<const char*> Names;
+    typedef std::vector<std::string> NodataStrings;
     typedef std::vector<double>      Scales;
     enum BuildType
     {
@@ -63,13 +64,16 @@ int main(int argc, char* argv[])
        This value can be changed on the command line during parsing by using
        the -scale flag */
 	double scale = 1.0;
+	/* the current nodata string, initialized to the empty string */
+	std::string nodata;
 
     //the tile size should only be an internal parameter
     static const crusta::uint tileSize[2] = {TILE_RESOLUTION, TILE_RESOLUTION};
 
-	const char* spheroidName = NULL;
-	Names       imagePatchNames;
-	Scales      imagePatchScales;
+	const char*   spheroidName = NULL;
+	Names         imagePatchNames;
+	Scales        imagePatchScales;
+	NodataStrings imageNodataStrings;
 	for (int i=1; i<argc; ++i)
     {
         if (strcasecmp(argv[i], "-dem") == 0)
@@ -122,11 +126,26 @@ int main(int argc, char* argv[])
                 return 1;
             }
         }
+        else if (strcasecmp(argv[0], "-nodata") == 0)
+        {
+            //read the nodata value string for the following input data
+            ++i;
+            if (i<argc)
+            {
+                nodata = std::string(argv[i]);
+            }
+            else
+            {
+                std::cerr << "Dangling 'nodata' argument" << std::endl;
+                return 1;
+            }
+        }
 		else
         {
 			//gather the image patch name and scale factor for the values
 			imagePatchNames.push_back(argv[i]);
 			imagePatchScales.push_back(scale);
+			imageNodataStrings.push_back(nodata);
         }
     }
 
@@ -172,7 +191,8 @@ int main(int argc, char* argv[])
     {
 		try
         {
-			builder->addImagePatch(imagePatchNames[i], imagePatchScales[i]);
+			builder->addImagePatch(imagePatchNames[i], imagePatchScales[i],
+                                   imageNodataStrings[i]);
         }
 		catch(std::runtime_error err)
         {

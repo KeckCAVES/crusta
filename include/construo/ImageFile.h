@@ -26,11 +26,16 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #ifndef _ImageFile_H_
 #define _ImageFile_H_
 
+#include <string>
+
 #include <crusta/basics.h>
 
 BEGIN_CRUSTA
 
-template <class PixelParam>
+template <typename PixelParam>
+struct Nodata;
+
+template <typename PixelParam>
 class ImageFileBase
 {
 public:
@@ -44,6 +49,10 @@ public:
     void setPixelScale(double scale);
     ///retrieve the uniform scale fo the pixel values
     double getPixelScale() const;
+    ///set a nodata value to use
+    virtual void setNodata(const std::string& nodataString) = 0;
+    ///retrieve the nodata value
+    const Nodata<PixelParam>& getNodata() const;
     ///returns image size
     const int* getSize() const;
     ///reads a rectangle of pixel data into the given buffer
@@ -54,11 +63,13 @@ protected:
     /** the uniform scale of the values of the image (in particular for DEMs
         that would be the elevation resolution in meters) */
     double pixelScale;
+    ///the value corresponding to "no data"
+    Nodata<PixelParam> nodata;
     ///size of the image in pixels (width x height)
     int size[2];
 };
 
-template <class PixelParam>
+template <typename PixelParam>
 class ImageFile : public ImageFileBase<PixelParam>
 {
 };

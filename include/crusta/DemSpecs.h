@@ -7,6 +7,7 @@
 
 #include <Misc/LargeFile.h>
 
+#include <crusta/PixelSpecs.h>
 #include <crusta/QuadtreeFileHeaders.h>
 
 #if CONSTRUO_BUILD
@@ -40,6 +41,16 @@ pixelMax(const DemHeight& one, const DemHeight& two)
 {
     return one>two ? one : two;
 }
+
+template <>
+struct Nodata<DemHeight>
+{
+    double value;
+    bool isNodata(const DemHeight& test) const
+    {
+        return double(test) == value;
+    }
+};
 
 #if CONSTRUO_BUILD
 template <>

@@ -38,7 +38,7 @@ PngImageFile(const char* imageFileName)	:
 {
 	/* Open input file: */
 	Misc::File pngFile(imageFileName,"rb");
-	
+
 	/* Check for PNG file signature: */
 	unsigned char pngSignature[8];
 	pngFile.read(pngSignature,8);
@@ -47,7 +47,7 @@ PngImageFile(const char* imageFileName)	:
 		Misc::throwStdErr("PngImageFile::PngImageFile: Input file %s is not a"
                           "PNG file", imageFileName);
     }
-	
+
 	/* Allocate the PNG library data structures: */
 	png_structp pngReadStruct =
         png_create_read_struct(PNG_LIBPNG_VER_STRING, 0, 0, 0);
@@ -64,7 +64,7 @@ PngImageFile(const char* imageFileName)	:
 		Misc::throwStdErr("PngImageFile::PngImageFile: Internal error in PNG"
                           "library");
     }
-	
+
 	/* Set up longjump facility for PNG error handling (ouch): */
 	if(setjmp(png_jmpbuf(pngReadStruct)))
     {
@@ -72,10 +72,10 @@ PngImageFile(const char* imageFileName)	:
 		Misc::throwStdErr("PngImageFile::PngImageFile: Error while setting up"
                           "PNG library error handling");
     }
-	
+
 	/* Initialize PNG I/O: */
 	png_init_io(pngReadStruct,pngFile.getFilePtr());
-	
+
 	/* Read PNG image header: */
 	png_set_sig_bytes(pngReadStruct,8);
 	png_read_info(pngReadStruct,pngInfoStruct);
@@ -84,11 +84,11 @@ PngImageFile(const char* imageFileName)	:
 	int colorType;
 	png_get_IHDR(pngReadStruct, pngInfoStruct, &imageSize[0], &imageSize[1],
                  &elementSize, &colorType, 0, 0, 0);
-	
+
 	/* Set the image size: */
 	for(int i=0;i<2;++i)
 		size[i]=int(imageSize[i]);
-	
+
 	/* Set up image processing: */
 	if(colorType==PNG_COLOR_TYPE_PALETTE)
 		png_set_expand(pngReadStruct);
@@ -102,21 +102,21 @@ PngImageFile(const char* imageFileName)	:
 	if(png_get_gAMA(pngReadStruct,pngInfoStruct,&gamma))
 		png_set_gamma(pngReadStruct,2.2,gamma);
 	png_read_update_info(pngReadStruct,pngInfoStruct);
-	
+
 	/* Create the result image: */
 	image =new TextureColor[size_t(size[0])*size_t(size[1])];
-	
+
 	/* Create row pointers to flip the image during reading: */
 	TextureColor** rowPointers=new TextureColor*[size[1]];
 	for(int y=0;y<size[1];++y)
 		rowPointers[y]=image+((size[1]-1-y)*size[0]);
-	
+
 	/* Read the PNG image: */
 	png_read_image(pngReadStruct,reinterpret_cast<png_byte**>(rowPointers));
-	
+
 	/* Finish reading image: */
 	png_read_end(pngReadStruct,0);
-	
+
 	/* Clean up: */
 	delete[] rowPointers;
 	png_destroy_read_struct(&pngReadStruct,&pngInfoStruct,0);
@@ -126,6 +126,13 @@ PngImageFile::
 ~PngImageFile()
 {
 	delete[] image;
+}
+
+void PngImageFile::
+setNodata(const std::string& nodataString)
+{
+    std::istringstream iss(nodataString);
+    iss >> nodata.value[0] >> nodata.value[1] >> nodata.value[2];
 }
 
 void PngImageFile::
@@ -143,7 +150,7 @@ readRectangle(const int rectOrigin[2],const int rectSize[2],
 		if(max[i]>rectOrigin[i]+rectSize[i])
 			max[i]=rectOrigin[i]+rectSize[i];
     }
-	
+
 	/* Copy into the destination rectangle row by row: */
 	Pixel* rowPtr = rectBuffer + ( (min[1]-rectOrigin[1])*rectSize[0] +
                                    (min[0]-rectOrigin[0]) );
@@ -152,7 +159,7 @@ readRectangle(const int rectOrigin[2],const int rectSize[2],
     {
 		/* Copy the pixel row: */
 		memcpy(rowPtr, sourceRowPtr, (max[0]-min[0])*sizeof(Pixel));
-		
+
 		/* Go to the next row: */
 		rowPtr       += rectSize[0];
 		sourceRowPtr += size[0];

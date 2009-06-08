@@ -11,12 +11,14 @@ ImagePatch() :
 
 template <typename PixelParam>
 ImagePatch<PixelParam>::
-ImagePatch(const std::string patchName, double pixelScale) :
+ImagePatch(const std::string patchName, double pixelScale,
+           const std::string& nodata) :
     image(NULL), transform(NULL), imageCoverage(NULL), sphereCoverage(NULL)
 {
     //load the image file
     image = ImageFileLoader<PixelParam>::loadImageFile(patchName.c_str());
     image->setPixelScale(pixelScale);
+    image->setNodata(nodata);
     const int* imgSize = image->getSize();
 
     //remove the extension from the image file name

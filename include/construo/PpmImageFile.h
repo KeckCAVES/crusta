@@ -53,10 +53,11 @@ private:
 	Misc::LargeFile::Offset rowLength;
     ///pointer to image row 0 (at the end of the file, due to PPM row order)
 	Misc::LargeFile::Offset firstRow;
-	
+
 
 //- inherited from ImageFileBase
 public:
+    virtual void setNodata(const std::string& nodataString);
 	virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
                                Pixel* rectBuffer) const;
 };

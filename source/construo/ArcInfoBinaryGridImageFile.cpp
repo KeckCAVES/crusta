@@ -55,13 +55,13 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
 	double pixelSize[2];
 	double ref[2]; // ??
 	double boundary[4];
-	
+
 	{
 	/* Read the image's header file: */
 	std::string headerFileName(directoryName);
 	headerFileName.append("/hdr.adf");
 	Misc::File headerFile(headerFileName.c_str(),"rb",Misc::File::BigEndian);
-	
+
 	unsigned int magic[2];
 	headerFile.read(magic,2);
 	if(magic[0]!=0x47524944U||magic[1]!=0x312e3200U)
@@ -71,7 +71,7 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
                           "contain a valid Arc/Info binary grid file",
                           directoryName);
     }
-	
+
 	unsigned int dummy1[2];
 	headerFile.read(dummy1,2);
 	pixelType=headerFile.read<int>();
@@ -90,7 +90,7 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
 	headerFile.read<int>();
 	tileSize[1]=headerFile.read<int>();
 	}
-	
+
 	{
 	/* Read the boundary file to determine the image's size in system
        coordinates: */
@@ -104,7 +104,7 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
 	std::cout << boundary[0] << ", " << boundary[1] << ", " << boundary[2]
               << ", " << boundary[3] << std::endl;
 	}
-	
+
 	/* Calculate the image's size in pixels: */
 	size[0] = int(Math::floor((boundary[2]-boundary[0])/pixelSize[0]+0.5));
 	size[1] = int(Math::floor((boundary[3]-boundary[1])/pixelSize[1]+0.5));
@@ -115,7 +115,7 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
 	std::cout<<"System transformation: "<<pixelSize[0]<<", "<<boundary[0]<<", "
              <<pixelSize[1]<<", "<<boundary[1]<<std::endl;
 	std::cout<<"Reference point: "<<ref[0]<<", "<<ref[1]<<std::endl;
-	
+
 	{
 	/* Read the projection file to create a projection file suitable for Mosaicker: */
 	std::string projectionFileName(directoryName);
@@ -128,7 +128,7 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
     {
 		if(fscanf(projectionFile.getFilePtr(),"%s %s",tag,value)!=2)
 			break;
-		
+
 		if(strcasecmp(tag,"Projection")==0)
         {
 			if(strcasecmp(value,"GEOGRAPHIC")==0)
@@ -153,7 +153,7 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
                                   "coordinates, but not in meters");
         }
     }
-	
+
 	/* Create the Mosaicker projection file: */
 	std::string projFileName(directoryName);
 	projFileName.append(".proj");
@@ -178,26 +178,26 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
 	else
 		Misc::throwStdErr("Arc/Info binary grid is in unknown coordinates");
 	}
-	
+
 	{
 	/* Read the tile directory file: */
 	std::string tileDirectoryFileName(directoryName);
 	tileDirectoryFileName.append("/w001001x.adf");
 	Misc::File tileDirectoryFile(tileDirectoryFileName.c_str(),"rb",
                                  Misc::File::BigEndian);
-	
+
 	unsigned int magic[2];
 	tileDirectoryFile.read(magic,2);
 	if(magic[0]!=0x0000270aU||magic[1]!=0xfffffc14U)
 		Misc::throwStdErr("ArcInfoBinaryGridImageFile::ArcInfoBinaryGridImageFile: Directory %s does not contain a valid Arc/Info binary grid file",directoryName);
-	
+
 	unsigned int dummy1[4];
 	tileDirectoryFile.read(dummy1,4);
 	size_t fileSize=tileDirectoryFile.read<unsigned int>()*2U;
 	std::cout<<"Tile directory file size: "<<fileSize<<std::endl;
 	unsigned int dummy2[18];
 	tileDirectoryFile.read(dummy2,18);
-	
+
 	/* Read the tile directory: */
 	size_t totalNumTiles=size_t(numTiles[0])*size_t(numTiles[1]);
 	tileOffsets=new Misc::LargeFile::Offset[totalNumTiles];
@@ -215,7 +215,7 @@ ArcInfoBinaryGridImageFile(const char* directoryName) :
 		tileSizes[i]   = 0;
     }
 	}
-	
+
 	/* Check the image file: */
 	unsigned int magic[2];
 	file.read(magic,2);
@@ -283,6 +283,13 @@ getNumTiles(int dimension) const
 
 
 void ArcInfoBinaryGridImageFile::
+setNodata(const std::string& nodataString)
+{
+    std::istringstream iss(nodataString);
+    iss >> nodata.value;
+}
+
+void ArcInfoBinaryGridImageFile::
 readRectangle(const int rectOrigin[2], const int rectSize[2],
               ArcInfoBinaryGridImageFile::Pixel* rectBuffer) const
 {
@@ -297,7 +304,7 @@ readRectangle(const int rectOrigin[2], const int rectSize[2],
 		if(tileIndexEnd[i]>numTiles[i])
 			tileIndexEnd[i]=numTiles[i];
     }
-	
+
 	/* Copy pixels from all tiles overlapping the pixel rectangle: */
 	float* tile=new float[tileSize[0]*tileSize[1]];
 	int tileIndex[2];
@@ -318,7 +325,7 @@ readRectangle(const int rectOrigin[2], const int rectSize[2],
                 file.read<unsigned short>();
 				file.read(tile, tileSize[0]*tileSize[1]);
                 }
-				
+
 				/* Calculate the overlap region between the tile and the pixel
                    rectangle: */
 				int tileOrigin[2],min[2],max[2];
@@ -332,7 +339,7 @@ readRectangle(const int rectOrigin[2], const int rectSize[2],
 					if(max[i]>rectOrigin[i]+rectSize[i])
 						max[i]=rectOrigin[i]+rectSize[i];
                 }
-				
+
 				/* Copy the tile data into the pixel rectangle: */
 				Pixel* rowPtr = rectBuffer +
                                 ( (min[1]-rectOrigin[1])*rectSize[0] -
@@ -352,7 +359,7 @@ readRectangle(const int rectOrigin[2], const int rectSize[2],
 						else
 							rowPtr[x]=Pixel(Math::floor(sourceRowPtr[x]+0.5f));
                     }
-					
+
 					/* Go to the next row: */
 					rowPtr+=rectSize[0];
 					sourceRowPtr+=tileSize[0];

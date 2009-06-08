@@ -51,6 +51,12 @@ exit(0);
 
 //- inherited from ImageFileBase
 public:
+    virtual void setNodata(const std::string& nodataString)
+    {
+        std::istringstream iss(nodataString);
+        iss >> nodata.value;
+    }
+
 	virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
                                Pixel* rectBuffer) const
     {
