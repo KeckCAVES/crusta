@@ -3,19 +3,19 @@
  coordinates using Universal Transverse Mercator projection on the WGS-84
  reference geoid.
  Copyright (c) 2007-2008 Oliver Kreylos
- 
+
  This file is part of the DEM processing and visualization package.
- 
+
  The DEM processing and visualization package is free software; you can
  redistribute it and/or modify it under the terms of the GNU General
  Public License as published by the Free Software Foundation; either
  version 2 of the License, or (at your option) any later version.
- 
+
  The DEM processing and visualization package is distributed in the hope
  that it will be useful, but WITHOUT ANY WARRANTY; without even the
  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
  PURPOSE.  See the GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License along
  with the DEM processing and visualization package; if not, write to the
  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -47,7 +47,7 @@ public:
     GdalTransform();
     ///constructor with given well known text description of the transform
     GdalTransform(const char* projectionFileName);
-    
+
 	virtual void flip(int imageHeight);
 
     virtual Point::Scalar getFinestResolution(const int size[2]) const;
@@ -68,10 +68,10 @@ public:
     virtual Point worldToImage(const Point& worldPoint) const;
 	virtual Box imageToWorld(const Box& imageBox) const;
 	virtual Box worldToImage(const Box& worldBox) const;
-    
+
     virtual bool isCompatible(const ImageTransform& other) const;
     virtual size_t getFileSize() const;
-    
+
 private:
     typedef Geometry::AffineTransformation<Point::Scalar, 2> Transform;
 

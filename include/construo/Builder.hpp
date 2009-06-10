@@ -204,6 +204,9 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
         //transform the sample into the image space
         p = imgPatch->transform->worldToImage(p);
 
+assert(p[0]<-0.5 || (p[0]>=0 && p[0]<=imgSize[0]-1) || p[0]>imgSize[0]-1+0.5);
+assert(p[1]<-0.5 || (p[1]>=0 && p[1]<=imgSize[1]-1) || p[1]>imgSize[1]-1+0.5);
+
         //make sure the sample is valid
         if (overlap!=SphereCoverage::ISCONTAINED &&
             !imgPatch->imageCoverage->contains(p))
@@ -409,6 +412,13 @@ template <typename PixelParam, typename PolyhedronParam>
 int Builder<PixelParam, PolyhedronParam>::
 updateFinestLevels()
 {
+#if 1
+Visualizer::clear();
+for (int i=0; i<(int)patches.size(); ++i)
+    Visualizer::addPrimitive(GL_LINES, *(patches[i]->sphereCoverage));
+Visualizer::show();
+#endif
+
     int depth = 0;
     //iterate over all the image patches to source
     int numPatches = static_cast<int>(patches.size());
@@ -856,11 +866,11 @@ updateCoarserLevels(int depth)
 template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
 addImagePatch(const std::string& patchName, double pixelScale,
-              const std::string& nodata)
+              const std::string& nodata, bool pointSampled)
 {
     //create a new image patch
     ImagePatch<PixelParam>* newIp = new ImagePatch<PixelParam>(
-        patchName, pixelScale, nodata);
+        patchName, pixelScale, nodata, pointSampled);
     //store the new image patch:
     patches.push_back(newIp);
 }

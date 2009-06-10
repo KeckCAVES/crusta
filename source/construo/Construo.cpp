@@ -51,6 +51,7 @@ int main(int argc, char* argv[])
     typedef std::vector<const char*> Names;
     typedef std::vector<std::string> NodataStrings;
     typedef std::vector<double>      Scales;
+    typedef std::vector<bool>        GridSamplingFlags;
     enum BuildType
     {
         UNDEFINED_BUILD,
@@ -64,16 +65,19 @@ int main(int argc, char* argv[])
        This value can be changed on the command line during parsing by using
        the -scale flag */
 	double scale = 1.0;
+	/* the current grid type flag, defaults to area sampling */
+	bool pointSampled = false;
 	/* the current nodata string, initialized to the empty string */
 	std::string nodata;
 
     //the tile size should only be an internal parameter
     static const crusta::uint tileSize[2] = {TILE_RESOLUTION, TILE_RESOLUTION};
 
-	const char*   spheroidName = NULL;
-	Names         imagePatchNames;
-	Scales        imagePatchScales;
-	NodataStrings imageNodataStrings;
+	const char*       spheroidName = NULL;
+	Names             imagePatchNames;
+	Scales            imagePatchScales;
+	NodataStrings     imageNodataStrings;
+	GridSamplingFlags imageSamplingFlags;
 	for (int i=1; i<argc; ++i)
     {
         if (strcasecmp(argv[i], "-dem") == 0)
@@ -126,7 +130,7 @@ int main(int argc, char* argv[])
                 return 1;
             }
         }
-        else if (strcasecmp(argv[0], "-nodata") == 0)
+        else if (strcasecmp(argv[i], "-nodata") == 0)
         {
             //read the nodata value string for the following input data
             ++i;
@@ -140,12 +144,21 @@ int main(int argc, char* argv[])
                 return 1;
             }
         }
+        else if (strcasecmp(argv[i], "-pointsampling") == 0)
+        {
+            pointSampled = true;
+        }
+        else if (strcasecmp(argv[i], "-areasampling") == 0)
+        {
+            pointSampled = false;
+        }
 		else
         {
 			//gather the image patch name and scale factor for the values
 			imagePatchNames.push_back(argv[i]);
 			imagePatchScales.push_back(scale);
 			imageNodataStrings.push_back(nodata);
+			imageSamplingFlags.push_back(pointSampled);
         }
     }
 
@@ -191,8 +204,9 @@ int main(int argc, char* argv[])
     {
 		try
         {
-			builder->addImagePatch(imagePatchNames[i], imagePatchScales[i],
-                                   imageNodataStrings[i]);
+			builder->addImagePatch(
+                imagePatchNames[i], imagePatchScales[i], imageNodataStrings[i],
+                imageSamplingFlags[i]);
         }
 		catch(std::runtime_error err)
         {

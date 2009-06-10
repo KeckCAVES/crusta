@@ -30,7 +30,7 @@ public:
 
     ImagePatch();
     ImagePatch(const std::string patchName, double pixelScale,
-               const std::string& nodata);
+               const std::string& nodata, bool pointSampled);
     ~ImagePatch();
 };
 

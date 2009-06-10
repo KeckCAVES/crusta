@@ -33,7 +33,13 @@ BEGIN_CRUSTA
 class ImageTransform
 {
 public:
+    ImageTransform();
     virtual ~ImageTransform() {}
+
+    ///set the grid sampling convention
+    void setPointSampled(bool isPointSampled, const int* imageSize=NULL);
+    ///retrieve the grid sampling convention
+    bool getPointSampled() const;
 
     ///sets the image transform scale factors and offset values
     void setImageTransformation(const Point::Scalar newScale[2],
@@ -87,6 +93,13 @@ public:
 protected:
     ///returns true if two image transformations are system-wise compatible
     bool isSystemCompatible(const ImageTransform& other) const;
+
+    /** flag relating the sampling convention used for the grid. If false a
+        texel represents the value of the area covered by the texel. If true
+        it represents the value at the center of the cell */
+    bool pointSampled;
+    /** size of the image (needed for area sampled grids) */
+    int imageSize[2];
 
     ///scale factors from pixel coordinates to system coordinates
     Point::Scalar scale[2];

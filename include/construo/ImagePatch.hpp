@@ -12,7 +12,7 @@ ImagePatch() :
 template <typename PixelParam>
 ImagePatch<PixelParam>::
 ImagePatch(const std::string patchName, double pixelScale,
-           const std::string& nodata) :
+           const std::string& nodata, bool pointSampled) :
     image(NULL), transform(NULL), imageCoverage(NULL), sphereCoverage(NULL)
 {
     //load the image file
@@ -29,6 +29,7 @@ ImagePatch(const std::string patchName, double pixelScale,
     std::string projName(baseName);
     projName.append(".proj");
     transform = ImageTransformReader::open(projName.c_str());
+    transform->setPointSampled(pointSampled, imgSize);
 
     try
     {
@@ -36,9 +37,31 @@ ImagePatch(const std::string patchName, double pixelScale,
         std::string covName(baseName);
         covName.append(".cov");
         imageCoverage = new ImageCoverage(covName.c_str());
+
+sphereCoverage = new StaticSphereCoverage(3, imageCoverage, transform);
     }
     catch(std::runtime_error err)
     {
+///\todo fix this hack
+if (!pointSampled)
+{
+    //some error occurred; create a default coverage region:
+    ImageCoverage sphereImageCoverage(4);
+    sphereImageCoverage.setVertex(0, Point(-0.5,-0.5));
+    sphereImageCoverage.setVertex(1, Point(imgSize[0]-0.5, -0.5));
+    sphereImageCoverage.setVertex(2, Point(imgSize[0]-0.5, imgSize[1]-0.5));
+    sphereImageCoverage.setVertex(3, Point(-0.5, imgSize[1]-0.5));
+    sphereImageCoverage.finalizeVertices();
+sphereCoverage = new StaticSphereCoverage(3, &sphereImageCoverage, transform);
+        imageCoverage = new ImageCoverage(4);
+        imageCoverage->setVertex(0, Point(-0.1,-0.1));
+        imageCoverage->setVertex(1, Point(imgSize[0]-1+0.1, -0.1));
+        imageCoverage->setVertex(2, Point(imgSize[0]-1+0.1, imgSize[1]-1+0.1));
+        imageCoverage->setVertex(3, Point(-0.1, imgSize[1]-1+0.1));
+        imageCoverage->finalizeVertices();
+}
+else
+{
         //some error occurred; create a default coverage region:
         imageCoverage = new ImageCoverage(4);
         imageCoverage->setVertex(0, Point(0,0));
@@ -46,15 +69,12 @@ ImagePatch(const std::string patchName, double pixelScale,
         imageCoverage->setVertex(2, Point(imgSize[0]-1, imgSize[1]-1));
         imageCoverage->setVertex(3, Point(0, imgSize[1]-1));
         imageCoverage->finalizeVertices();
+sphereCoverage = new StaticSphereCoverage(3, imageCoverage, transform);
+}
     }
 
-///\todo remove
-    //flip the image transformation and coverage:
-//    transform->flip(imgSize[1]);
-//    imageCoverage->flip(imgSize[1]);
-
     //compute the image's coverage on the spheroid:
-    sphereCoverage = new StaticSphereCoverage(3, imageCoverage, transform);
+//    sphereCoverage = new StaticSphereCoverage(3, imageCoverage, transform);
 }
 
 template <typename PixelParam>

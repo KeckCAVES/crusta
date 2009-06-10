@@ -27,7 +27,7 @@ GdalTransform(const char* projectionFileName)
     outSrs.SetEquirectangular();
     exit(5);
 #endif
-    
+
     Misc::File file(projectionFileName, "r");
 
     OGRSpatialReference geoSys;
@@ -123,27 +123,56 @@ getFinestResolution(const int size[2]) const
 Point GdalTransform::
 imageToSystem(const Point& imagePoint) const
 {
-    return pixelToGeo.transform(imagePoint);
+    if (!pointSampled)
+    {
+        Point mapped = imagePoint;
+        mapped[0] += Point::Scalar(0.5);
+        mapped[1] += Point::Scalar(0.5);
+        return pixelToGeo.transform(mapped);
+    }
+    else
+        return pixelToGeo.transform(imagePoint);
 }
 
 Point GdalTransform::
 imageToSystem(int imageX, int imageY) const
 {
-    return pixelToGeo.transform(Point(imageX, imageY));
+    return imageToSystem(Point(imageX, imageY));
 }
 
 Point GdalTransform::
 systemToImage(const Point& systemPoint) const
 {
-    return geoToPixel.transform(systemPoint);
+    Point res = geoToPixel.transform(systemPoint);
+    if (!pointSampled)
+    {
+        for (int i=0; i<2; ++i)
+        {
+            //map it to cell centered pixel look-up
+            res[i] -= Point::Scalar(0.5);
+
+            /* now we can have valid values half a pixel beyong the boundaries.
+               Snap these to the boundary pixel */
+            if (res[i]<Point::Scalar(0) && res[i]>=Point::Scalar(-0.5))
+            {
+                res[i] = Point::Scalar(0);
+            }
+            else if (res[i] >  Point::Scalar(imageSize[i]-1) &&
+                     res[i] <= Point::Scalar(imageSize[i]-1)+Point::Scalar(0.5))
+            {
+                res[i] = Point::Scalar(imageSize[i]-1);
+            }
+        }
+    }
+    return res;
 }
 
 Box GdalTransform::
 imageToSystem(const Box& imageBox) const
 {
     Box res(HUGE_VAL, -HUGE_VAL);
-    res.addPoint(pixelToGeo.transform(imageBox.min));
-    res.addPoint(pixelToGeo.transform(imageBox.max));
+    res.addPoint(imageToSystem(imageBox.min));
+    res.addPoint(imageToSystem(imageBox.max));
     return res;
 }
 
@@ -151,8 +180,8 @@ Box GdalTransform::
 systemToImage(const Box& systemBox) const
 {
     Box res(HUGE_VAL, -HUGE_VAL);
-    res.addPoint(geoToPixel.transform(systemBox.min));
-    res.addPoint(geoToPixel.transform(systemBox.max));
+    res.addPoint(systemToImage(systemBox.min));
+    res.addPoint(systemToImage(systemBox.max));
     return res;
 }
 
@@ -210,7 +239,7 @@ worldToSystem(const Box& worldBox) const
 ///\todo this is poorly implemented neglecting intricacies of projections
     Box::Scalar xs[2] = { worldBox.min[0], worldBox.max[0] };
     Box::Scalar ys[2] = { worldBox.min[1], worldBox.max[1] };
-    
+
     if (!worldToGeo->Transform(2, xs, ys))
     {
         std::cout << "GdalTransform::worldToSystem(Box): failed to transform {("

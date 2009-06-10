@@ -1,9 +1,35 @@
 ///\todo fix FRAK'ing cmake !@#!@
 #define CONSTRUO_BUILD 1
 
+#include <cassert>
+
 #include <construo/ImageTransform.h>
 
 BEGIN_CRUSTA
+
+ImageTransform::
+ImageTransform() :
+    pointSampled(false)
+{
+}
+
+void ImageTransform::
+setPointSampled(bool isPointSampled, const int* imgSize)
+{
+    pointSampled = isPointSampled;
+    if (!pointSampled)
+    {
+        assert(imgSize != NULL);
+        imageSize[0] = imgSize[0];
+        imageSize[1] = imgSize[1];
+    }
+}
+
+bool ImageTransform::
+getPointSampled() const
+{
+    return pointSampled;
+}
 
 void ImageTransform::
 setImageTransformation(const Point::Scalar newScale[2],
@@ -172,7 +198,7 @@ isSystemCompatible(const ImageTransform& other) const
     //check if the two transformations have identical scale factors
     if(scale[0]!=other.scale[0] || scale[1]!=other.scale[1])
         return false;
-    
+
     //check if the offset difference leads to an integer pixel offset
     for(int i=0;i<2;++i)
     {
@@ -183,7 +209,7 @@ isSystemCompatible(const ImageTransform& other) const
             return false;
         }
     }
-    
+
     return true;
 }
 
