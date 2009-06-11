@@ -412,7 +412,7 @@ template <typename PixelParam, typename PolyhedronParam>
 int Builder<PixelParam, PolyhedronParam>::
 updateFinestLevels()
 {
-#if 1
+#if 0
 Visualizer::clear();
 for (int i=0; i<(int)patches.size(); ++i)
     Visualizer::addPrimitive(GL_LINES, *(patches[i]->sphereCoverage));

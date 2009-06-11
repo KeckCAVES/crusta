@@ -25,17 +25,20 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 #include <cstring>
 #include <iostream>
+#include <Misc/FileNameExtensions.h>
 #include <Misc/ThrowStdErr.h>
 
+#include <construo/ArcInfoBinaryGridImageFile.h>
 #include <construo/GdalImageFile.h>
 #include <construo/GeometryTypes.h>
-#include <construo/PpmImageFile.h>
-#include <construo/PngImageFile.h>
-#include <construo/ReiImageFile.h>
 #if CONSTRUO_USE_IMAGEMAGICK
 #include <construo/MagickImageFile.h>
 #endif //CONSTRUO_USE_IMAGEMAGICK
-#include <construo/ArcInfoBinaryGridImageFile.h>
+#include <construo/PpmImageFile.h>
+#include <construo/PngImageFile.h>
+#include <construo/ReiImageFile.h>
+#include <construo/TpmImageFile.h>
+
 #include <crusta/ColorTextureSpecs.h>
 #include <crusta/DemSpecs.h>
 
@@ -50,7 +53,14 @@ ImageFile<DemHeight>* ImageFileLoader<DemHeight>::
 loadImageFile(const char* fileName)
 {
 #if 1
-    return new GdalDemImageFile(fileName);
+    if (Misc::hasCaseExtension(fileName, ".tpm"))
+    {
+        return new TpmDemImageFile(fileName);
+    }
+    else
+    {
+        return new GdalDemImageFile(fileName);
+    }
 #else
 	/* Find the file name's extension: */
 	const char* extPtr=0;
@@ -59,7 +69,7 @@ loadImageFile(const char* fileName)
 		if(*ifnPtr=='.')
 			extPtr=ifnPtr;
     }
-	
+
 	/* Distinguish between supported image file types based on the extension: */
 	ImageFile<DemHeight>* result=0;
 	if(extPtr==0)
@@ -81,7 +91,7 @@ loadImageFile(const char* fileName)
 		Misc::throwStdErr("ImageFileLoader::loadImageFile: File name %s has an "
                           "unrecognized extension",fileName);
     }
-	
+
 	return result;
 #endif
 }
@@ -95,7 +105,14 @@ ImageFile<TextureColor>* ImageFileLoader<TextureColor>::
 loadImageFile(const char* fileName)
 {
 #if 1
-    return new GdalColorImageFile(fileName);
+    if (Misc::hasCaseExtension(fileName, ".tpm"))
+    {
+        return new TpmColorImageFile(fileName);
+    }
+    else
+    {
+        return new GdalColorImageFile(fileName);
+    }
 #else
 	/* Find the file name's extension: */
 	const char* extPtr=0;
@@ -109,7 +126,7 @@ loadImageFile(const char* fileName)
 		Misc::throwStdErr("ImageFileLoader::loadImageFile: File name %s does "
                           "not have an extension",fileName);
     }
-	
+
 	/* Distinguish between supported image file types based on the extension: */
 	ImageFile<TextureColor>* result=0;
 	if(strcasecmp(extPtr,".ppm")==0)
@@ -138,7 +155,7 @@ loadImageFile(const char* fileName)
                           "unrecognized extension",fileName);
 #endif //CONSTRUO_USE_IMAGEMAGICK
     }
-	
+
 	return result;
 #endif
 }

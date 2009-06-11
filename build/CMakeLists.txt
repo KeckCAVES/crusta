@@ -98,7 +98,7 @@ endif(APPLE)
 
 set(CONSTRUO_SOURCES ../source/construo/ArcInfoBinaryGridImageFile.cpp
                      ../source/construo/Construo.cpp
-					 ../source/construo/Filter.cpp
+                     ../source/construo/Filter.cpp
                      ../source/construo/GdalTransform.cpp
                      ../source/construo/GdalImageFile.cpp
                      ../source/construo/GeoTransform.cpp
@@ -108,6 +108,8 @@ set(CONSTRUO_SOURCES ../source/construo/ArcInfoBinaryGridImageFile.cpp
                      ../source/construo/PngImageFile.cpp
                      ../source/construo/PpmImageFile.cpp
                      ../source/construo/SphereCoverage.cpp
+                     ../source/construo/TpmFile.cpp
+                     ../source/construo/TpmImageFile.cpp
                      ../source/construo/UtmTransform.cpp
                      ../source/construo/Visualizer.cpp)
 
