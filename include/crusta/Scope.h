@@ -54,6 +54,10 @@ public:
     /** generate the next refinement of the scope */
     void split(Scope scopes[4]) const;
 
+    /** check if a point is contained in the solid angle subtended by the
+        scope */
+    bool contains(const Scope::Vertex& p) const;
+
     /** corner points of the scope in cartesian space in order lower-left,
         lower-right, upper-left, upper-right*/
     Vertex corners[4];

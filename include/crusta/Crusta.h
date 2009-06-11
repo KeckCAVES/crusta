@@ -28,9 +28,13 @@ public:
                      const std::string& colorFileBase);
     static void shutdown();
     
+///\todo fix this API. Probably would to define Crusta::Point
+    /** query the height of the surface closest to the query point */
+    static double getHeight(double x, double y, double z);
+    
     static const FrameNumber& getCurrentFrame();
     static const FrameNumber& getLastScaleFrame();
-    
+
     /** set the vertical exaggeration. Make sure to set this value within a 
         frame callback so that it doesn't change during a rendering phase */
     static void setVerticalScale(double newVerticalScale);

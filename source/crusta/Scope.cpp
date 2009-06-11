@@ -102,5 +102,25 @@ split(Scope scopes[4]) const
     scopes[3].corners[3] = corners[3];
 }
 
+bool Scope::
+contains(const Scope::Vertex& p) const
+{
+    typedef Geometry::Vector<Scalar, 3> Vec;
+
+    //compute face normals
+    static const int remap[5] = {0, 1, 3, 2, 0};
+    for (int i=0; i<4; ++i)
+    {
+        Vec one(corners[remap[i]]);
+        Vec two(corners[remap[i+1]]);
+        Vec normal = Geometry::cross(one, two);
+        normal.normalize();
+
+        if (p*normal < 0)
+            return false;
+    }
+    
+    return true;
+}
 
 END_CRUSTA

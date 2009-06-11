@@ -131,7 +131,7 @@ alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
         lonLat = Vrui::Point::origin;
     else
         lonLat = geoid.cartesianToGeodetic(origin);
-    lonLat[2] = 0.0;
+    lonLat[2] = Crusta::getHeight(origin[0], origin[1], origin[2]);
 
     Geometry::Geoid<double>::Frame frame = geoid.geodeticToCartesianFrame(lonLat);
     surfaceFrame = Vrui::NavTransform(frame.getTranslation(), frame.getRotation(), surfaceFrame.getScaling());

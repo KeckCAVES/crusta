@@ -12,7 +12,7 @@ Cache crustaQuadCache(8192, 4096);
 
 MainCache::
 MainCache(uint size) :
-    CacheUnit<MainCacheBuffer>(size), maxFetchRequests(3)
+    CacheUnit<MainCacheBuffer>(size), maxFetchRequests(16)
 {
     //start the fetching thread
     fetchThread.start(this, &MainCache::fetchThreadFunc);
@@ -46,7 +46,7 @@ frame()
     //reprioritize the requests (do this here as the rest blocks fetching)
     std::sort(childRequests.begin(), childRequests.end());
 
-#if 0
+#if 1
 //inline version
     //giver the cache update 0.08ms (8ms for 120 fps, so 1% of frame time)
     double endTime = Vrui::getApplicationTime() + 0.08e-3;
