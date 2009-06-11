@@ -6,6 +6,7 @@
 BEGIN_CRUSTA
 
 class Node;
+class QuadNodeMainData;
 
 /**
     Base class for Level-of-Detail (LOD) evaluation visitors.
@@ -34,7 +35,7 @@ public:
     virtual ~LodEvaluator();
     
     /** computes the LOD-value of a given scope */
-    float evaluate(const Node* scope);
+    float evaluate(const QuadNodeMainData& mainData);
 
     /** biasing factor applied to the computed LOD-value. (default biasing is
         0) */
@@ -45,7 +46,7 @@ public:
     
 protected:
     /** specializations must provide the custom computed LOD-value */
-    virtual float compute(const Node* scope) = 0;
+    virtual float compute(const QuadNodeMainData& mainData) = 0;
 };
 
 END_CRUSTA

@@ -4,8 +4,10 @@
 #include <GL/GLTransformationWrappers.h>
 #include <Vrui/Vrui.h>
 
+#include <crusta/DataManager.h>
 #include <crusta/QuadCache.h>
-#include <crusta/Spheroid.h>
+#include <crusta/QuadTerrain.h>
+#include <crusta/Triacontahedron.h>
 
 BEGIN_CRUSTA
 
@@ -13,19 +15,58 @@ BEGIN_CRUSTA
    are initialized with 0. Thus if crustaFrameNumber starts at 0, the init code
    wouldn't be able to retrieve any cache buffers since all the buffers of the
    current and previous frame are locked */
-uint crustaFrameNumber = 2;
+FrameNumber Crusta::currentFrame   = 2;
+FrameNumber Crusta::lastScaleFrame = 2;
 
 double Crusta::verticalScale = 1.0;
 
-Crusta::
-Crusta(const std::string& demFileBase, const std::string& colorFileBase) :
-    spheroid(demFileBase, colorFileBase)
-{}
+DataManager* Crusta::dataMan = NULL;
+
+Crusta::RenderPatches Crusta::renderPatches;
+
+Crusta::Actives Crusta::actives;
+Threads::Mutex Crusta::activesMutex;
+
+void Crusta::
+init(const std::string& demFileBase, const std::string& colorFileBase)
+{
+    Triacontahedron polyhedron(SPHEROID_RADIUS);
+
+    dataMan  = new DataManager(&polyhedron, demFileBase, colorFileBase);
+
+    uint numPatches = polyhedron.getNumPatches();
+    renderPatches.resize(numPatches);
+    for (uint i=0; i<numPatches; ++i)
+        renderPatches[i] = new QuadTerrain(i, polyhedron.getScope(i));
+}
+
+void Crusta::
+shutdown()
+{
+    for (RenderPatches::iterator it=renderPatches.begin();
+         it!=renderPatches.end(); ++it)
+    {
+        delete *it;
+    }
+}
+
+const FrameNumber& Crusta::
+getCurrentFrame()
+{
+    return currentFrame;
+}
+
+const FrameNumber& Crusta::
+getLastScaleFrame()
+{
+    return lastScaleFrame;
+}
 
 void Crusta::
 setVerticalScale(double newVerticalScale)
 {
-    verticalScale = newVerticalScale;
+    verticalScale  = newVerticalScale;
+    lastScaleFrame = currentFrame;
 }
 
 double Crusta::
@@ -34,54 +75,57 @@ getVerticalScale()
     return verticalScale;
 }
 
+DataManager* Crusta::
+getDataManager()
+{
+    return dataMan;
+}
+
+
+void Crusta::
+submitActives(const Actives& touched)
+{
+    Threads::Mutex::Lock lock(activesMutex);
+    actives.insert(actives.end(), touched.begin(), touched.end());
+}
+
+
 void Crusta::
 frame()
 {
-    ++crustaFrameNumber;
+    ++currentFrame;
 
     DEBUG_OUT(8, "\n\n\n--------------------------------------\n%u\n\n\n",
-              static_cast<unsigned int>(crustaFrameNumber));
+              static_cast<unsigned int>(currentFrame));
+
+    //make sure all the active nodes are current
+    confirmActives();
 
     //process the requests from the last frame
     crustaQuadCache.getMainCache().frame();
 }
 
 void Crusta::
-display(GLContextData& contextData) const
+display(GLContextData& contextData)
 {
-///\todo remove. Debug
-
-//push everything to navigational coordinates for vislet
-glDisable(GL_LIGHTING);
-glEnable(GL_COLOR_MATERIAL);
-glColor3f(1.0, 1.0, 1.0);
-glPointSize(5.0f);
-glBegin(GL_POINTS);
-glVertex3f(0,0,0);
-glEnd();
-
-glColor3f(1.0, 0.0, 0.0);
-glBegin(GL_LINES);
-glVertex3f(0,0,0);
-glVertex3f(1,0,0);
-glEnd();
-
-glColor3f(0.0, 1.0, 0.0);
-glBegin(GL_LINES);
-glVertex3f(0,0,0);
-glVertex3f(0,1,0);
-glEnd();
-
-glColor3f(0.0, 0.0, 1.0);
-glBegin(GL_LINES);
-glVertex3f(0,0,0);
-glVertex3f(0,0,1);
-glEnd();
-
-glEnable(GL_LIGHTING);
-glDisable(GL_COLOR_MATERIAL);
-
-    spheroid.display(contextData);
+    for (RenderPatches::const_iterator it=renderPatches.begin();
+         it!=renderPatches.end(); ++it)
+    {
+        (*it)->display(contextData);
+    }
 }
+
+void Crusta::
+confirmActives()
+{
+    for (Actives::iterator it=actives.begin(); it!=actives.end(); ++it)
+    {
+        if (!(*it)->isCurrent())
+            (*it)->getData().computeBoundingSphere();
+        (*it)->touch();
+    }
+    actives.clear();
+}
+
 
 END_CRUSTA

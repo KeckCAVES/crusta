@@ -5,7 +5,7 @@
 #include <Geometry/OrthogonalTransformation.h>
 #include <Vrui/Vrui.h>
 
-#include <crusta/Node.h>
+#include <crusta/QuadNodeData.h>
 
 BEGIN_CRUSTA
 
@@ -19,18 +19,18 @@ setFocusFromDisplay()
 }
 
 float FocusViewEvaluator::
-compute(const Node* node)
+compute(const QuadNodeMainData& mainData)
 {
     double weight = 2.0;
 
-    float lod = frustum.calcProjectedRadius(node->boundingCenter,
-                                            node->boundingRadius);
+    float lod = frustum.calcProjectedRadius(mainData.boundingCenter,
+                                            mainData.boundingRadius);
     if (lod < 0)
         lod = Math::Constants<float>::max;
     else
     {
-        double dist = Geometry::dist(node->boundingCenter, focusCenter);
-        dist       -= node->boundingRadius;
+        double dist = Geometry::dist(mainData.boundingCenter, focusCenter);
+        dist       -= mainData.boundingRadius;
         if (dist > focusRadius)
             lod /= pow(dist/focusRadius, weight);
     }

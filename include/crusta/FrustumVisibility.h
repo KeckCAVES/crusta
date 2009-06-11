@@ -19,7 +19,7 @@ public:
     
 //- inherited from VisibilityEvaluator
 public:
-    virtual bool evaluate(const Node* scope);
+    virtual bool evaluate(const QuadNodeMainData& mainData);
 };
 
 END_CRUSTA

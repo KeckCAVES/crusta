@@ -27,7 +27,7 @@ BEGIN_CRUSTA
 
 CrustaApp::
 CrustaApp(int& argc, char**& argv, char**& appDefaults) :
-    Vrui::Application(argc, argv, appDefaults), crusta(NULL),
+    Vrui::Application(argc, argv, appDefaults),
     newVerticalScale(1.0)
 {
     std::string demName;
@@ -39,7 +39,7 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
         if (strcmp(argv[i], "-color")==0)
             colorName = std::string(argv[++i]);
     }
-    crusta = new Crusta(demName, colorName);
+    Crusta::init(demName, colorName);
 
     produceMainMenu();
     produceVerticalScaleDialog();
@@ -52,7 +52,8 @@ CrustaApp::
 {
     delete popMenu;
     delete verticalScaleDialog;
-    delete crusta;
+
+    Crusta::shutdown();
 }
 
 void CrustaApp::
@@ -192,13 +193,13 @@ void CrustaApp::
 frame()
 {
     Crusta::setVerticalScale(newVerticalScale);
-    crusta->frame();
+    Crusta::frame();
 }
 
 void CrustaApp::
 display(GLContextData& contextData) const
 {
-    crusta->display(contextData);
+    Crusta::display(contextData);
 }
 
 

@@ -62,8 +62,7 @@ destroyCrustaVisletFactory(Vrui::VisletFactory* factory)
 CrustaVisletFactory* CrustaVislet::factory = NULL;
 
 CrustaVislet::
-CrustaVislet(int numArguments, const char* const arguments[]) :
-    crusta(NULL)
+CrustaVislet(int numArguments, const char* const arguments[])
 {
     std::string demName;
     std::string colorName;
@@ -74,13 +73,13 @@ CrustaVislet(int numArguments, const char* const arguments[]) :
         if (strcmp(arguments[i], "-color")==0)
             colorName = std::string(arguments[++i]);
     }
-    crusta = new Crusta(demName, colorName);
+    Crusta::init(demName, colorName);
 }
 
 CrustaVislet::
 ~CrustaVislet()
 {
-    delete crusta;
+    Crusta::shutdown();
 }
 
 Vrui::VisletFactory* CrustaVislet::
@@ -92,13 +91,13 @@ getFactory() const
 void CrustaVislet::
 frame()
 {
-    crusta->frame();
+    Crusta::frame();
 }
 
 void CrustaVislet::
 display(GLContextData& contextData) const
 {
-    crusta->display(contextData);
+    Crusta::display(contextData);
 }
 
 

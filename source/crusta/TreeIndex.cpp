@@ -5,6 +5,8 @@
 
 BEGIN_CRUSTA
 
+const TreeIndex TreeIndex::invalid(~0,~0,~0,~0);
+
 size_t TreeIndex::hash::
 operator() (const TreeIndex& i) const
 {

@@ -1,6 +1,6 @@
 #include <crusta/LodEvaluator.h>
 
-#include <crusta/Node.h>
+#include <crusta/QuadNodeData.h>
 
 BEGIN_CRUSTA
 
@@ -14,9 +14,9 @@ LodEvaluator::
 {}
 
 float LodEvaluator::
-evaluate(const Node* node)
+evaluate(const QuadNodeMainData& mainData)
 {
-    return (scale * compute(node)) + bias;
+    return (scale * compute(mainData)) + bias;
 }
 
 END_CRUSTA

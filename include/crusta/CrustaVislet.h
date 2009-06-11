@@ -11,8 +11,6 @@ namespace Vrui {
 
 BEGIN_CRUSTA
 
-class Crusta;
-
 ///\todo comment properly
 class CrustaVisletFactory : public Vrui::VisletFactory
 {
@@ -45,8 +43,6 @@ public:
 private:
     /** handle to the factory object for this class */
     static CrustaVisletFactory* factory;
-    /** handle to the crusta instance for this vislet */
-    Crusta* crusta;
 
 //- inherited from Vislet
 public:

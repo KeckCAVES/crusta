@@ -2,15 +2,15 @@
 
 #include <algorithm>
 
-#include <crusta/Node.h>
+#include <crusta/QuadNodeData.h>
 
 BEGIN_CRUSTA
 
 float ViewLod::
-compute(const Node* node)
+compute(const QuadNodeMainData& mainData)
 {
-    float lod = frustum.calcProjectedRadius(node->boundingCenter,
-                                            node->boundingRadius);
+    float lod = frustum.calcProjectedRadius(mainData.boundingCenter,
+                                            mainData.boundingRadius);
     lod /= (TILE_RESOLUTION * 0.55f);
     lod = log(lod);
     return lod;

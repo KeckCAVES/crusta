@@ -10,7 +10,7 @@
 BEGIN_CRUSTA
 
 #ifndef CRUSTA_BEBUG_LEVEL
-#define CRUSTA_BEBUG_LEVEL 0
+#define CRUSTA_BEBUG_LEVEL 5
 #endif //CRUSTA_BEBUG_LEVEL
 #define DEBUG_BEGIN(l) if (CRUSTA_BEBUG_LEVEL>=l) {
 #define DEBUG_END }
@@ -36,17 +36,13 @@ typedef int32_t		int32;
 typedef int64_t     int64;
 
 typedef uint        error;
+    
+typedef uint64      FrameNumber;
 
 
 const uint   TILE_RESOLUTION     = 65;
 const double SPHEROID_RADIUS     = 6371000.0;
 const double INV_SPHEROID_RADIUS = 1.0 / 6371000.0;
-
-
-/** keep track of the number of frames processed. Used, for example, by the
-    cache to perform LRU that is aware of currently active nodes (the ones from
-    the previous frame) */
-extern uint crustaFrameNumber;
 
 END_CRUSTA
 

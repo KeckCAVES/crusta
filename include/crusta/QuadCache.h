@@ -79,7 +79,7 @@ protected:
 
     /** frame number when the last prioritization of the chached set was
         done */
-    uint sortFrameNumber;
+    FrameNumber sortFrameNumber;
 };
 
 class MainCache : public CacheUnit<MainCacheBuffer>
@@ -96,13 +96,11 @@ public:
 protected:
     struct FetchRequest
     {
-        Node*            node;
-        Node*            children;
-        MainCacheBuffer* childBuffers[4];
-        bool             childCached[4];
+        MainCacheBuffer* parent;
+        MainCacheBuffer* child;
+        uint8            which;
 
         FetchRequest();
-        FetchRequest(const FetchRequest& other);
         bool operator ==(const FetchRequest& other) const;
         bool operator <(const FetchRequest& other) const;
     };

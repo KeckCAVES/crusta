@@ -19,8 +19,6 @@ namespace GLMotif {
 
 BEGIN_CRUSTA
 
-class Crusta;
-
 class CrustaApp : public Vrui::Application
 {
 public:
@@ -39,9 +37,6 @@ private:
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     void changeScaleCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
 	void resetNavigationCallback(Misc::CallbackData* cbData);
-
-    /** handle to the core crusta instance */
-    Crusta* crusta;
 
     double newVerticalScale;
 

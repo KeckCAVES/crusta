@@ -3,6 +3,8 @@
 
 #include <algorithm>
 
+#include <crusta/Crusta.h>
+
 BEGIN_CRUSTA
 
 template <typename NodeDataType>
@@ -20,6 +22,13 @@ getData()
 
 template <typename NodeDataType>
 bool CacheBuffer<NodeDataType>::
+isCurrent()
+{
+    return frameNumber >= Crusta::getLastScaleFrame();
+}
+
+template <typename NodeDataType>
+bool CacheBuffer<NodeDataType>::
 isValid()
 {
     return frameNumber != 0;
@@ -29,7 +38,7 @@ template <typename NodeDataType>
 void CacheBuffer<NodeDataType>::
 touch()
 {
-    frameNumber = std::max(frameNumber, crustaFrameNumber);
+    frameNumber = std::max(frameNumber, Crusta::getCurrentFrame());
 }
 
 template <typename NodeDataType>
@@ -47,7 +56,7 @@ pin(bool wantPinned)
 }
 
 template <typename NodeDataType>
-uint CacheBuffer<NodeDataType>::
+FrameNumber CacheBuffer<NodeDataType>::
 getFrameNumber() const
 {
     return frameNumber;

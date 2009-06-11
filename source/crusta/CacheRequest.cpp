@@ -1,17 +1,15 @@
 #include <crusta/CacheRequest.h>
 
-#include <crusta/Node.h>
-
 BEGIN_CRUSTA
 
 CacheRequest::
 CacheRequest() :
-    lod(0), node(NULL)
+    lod(0), parent(NULL), child(~0)
 {}
 
 CacheRequest::
-CacheRequest(float iLod, Node* iNode) :
-    lod(iLod), node(iNode)
+CacheRequest(float iLod, MainCacheBuffer* iParent, uint8 iChild) :
+    lod(iLod), parent(iParent), child(iChild)
 {}
 
 bool CacheRequest::
@@ -21,7 +19,8 @@ operator ==(const CacheRequest& other) const
 components of the request that are allowed to be different. So far, since
 everything is fetched on a node basis the index is all that is needed to
 coalesce requests */
-    return node == other.node;
+    return parent->getData().index == other.parent->getData().index &&
+           child == other.child;
 }
 bool CacheRequest::
 operator <(const CacheRequest& other) const

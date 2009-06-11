@@ -12,7 +12,6 @@
 
 #include <crusta/FrustumVisibility.h>
 #include <crusta/FocusViewEvaluator.h>
-#include <crusta/Node.h>
 
 BEGIN_CRUSTA
 
@@ -31,10 +30,7 @@ class VideoCache;
 class QuadTerrain : public GLObject
 {
 public:
-    QuadTerrain(uint8 patch, const Scope& scope,
-                const std::string& demFileName,
-                const std::string& colorFileName="");
-    ~QuadTerrain();
+    QuadTerrain(uint8 patch, const Scope& scope);
 
     /** diplay has several functions:
         1. evaluate the current active set (as it is view-dependent)
@@ -42,89 +38,33 @@ public:
         3. issue the drawing commands for the active set */
     void display(GLContextData& contextData);
 
-    /** load the data required for splitting a node into its children */
-    void loadChildren(Node* node, Node* children,
-                      MainCacheBuffer* childBuffers[4], bool childCached[4]);
-
-    /** produce the flat sphere cartesian space coordinates for a node */
-    void generateGeometry(Node* node);
-    /** source the elevation meta-data and optionally data for a node */
-    void sourceDem(Node* node);
-    /** source the color meta-data and optionally data for a node */
-    void sourceColor(Node* node);
-
-    /** grab a set of four nodes from the node pool. Used during split
-        operations */
-    Node* grabNodeBlock();
-    /** release a set of four nodes into the node pool. Used during merge
-        operations */
-    void releaseNodeBlock(Node* children);
-
-///\todo proper access restrictions
-    /** quadtree file from which to source data for the elevation */
-    DemFile* demFile;
-    /** quadtree file from which to source data for the color */
-    ColorFile* colorFile;
-
     /** display debugging grid or not */
     static bool displayDebuggingGrid;
 
-///\todo remove, debug
-void printTree(Node* node);
-void checkTree(Node* node);
-void checkTreeRoot(Node* root);
-
 protected:
-    typedef std::vector<Node*> NodeBlocks;
-
     struct GlData;
-
-    /** make sure the bounding objects used for visibility and LOD checks are
-        up-to-date wrt to the vertical scale. It recurses down the subtree
-        of the given node */
-    void updateVerticalScale(Node* node);
-
-    /** check for the possibility of a split and perform it if the critical
-        data required is available */
-    bool split(GlData* glData, Node* node, float lod, CacheRequests& requests);
-    /** discard the nodes of the subtree if they are not active or pinned */
-    static bool discardSubTree(Node* node);
-    /** evaluate the terrain tree starting with the node specified. The terrain
-        tree is manipulated to add/remove nodes as necessary. */
-    void traverse(GLContextData& contextData, GlData* glData, Node* node,
-                  CacheRequests& requests);
 
     /** make sure the required GL data for drawing is available. In case a
         buffer cannot be associated with the specified node (cache is full),
         then a temporary buffer is provided that has had the data streamed to
         it */
-    const QuadNodeVideoData& prepareGlData(GlData* glData, Node* node);
+    const QuadNodeVideoData& prepareGlData(GlData* glData,
+                                            QuadNodeMainData& mainData);
     /** issue the drawing commands for displaying a node. The video cache
         operations to stream data from the main cache are performed at this
         point. */
-    void drawNode(GLContextData& contextData, GlData* glData, Node* node);
+    void drawNode(GLContextData& contextData, GlData* glData,
+                   QuadNodeMainData& mainData);
 
     /** draw the finest resolution node that are part of the currently terrain
         approximation */
-    void draw(GLContextData& contextData, GlData* glData, Node* node);
+    void draw(GLContextData& contextData, GlData* glData,
+              FrustumVisibility& visibility, FocusViewEvaluator& lod,
+              MainCacheBuffer* node, std::vector<MainCacheBuffer*>& actives,
+              CacheRequests& requests);
 
-    /** spheroid base patch ID (specified at construction but needed during
-        initContext) */
-    uint8 basePatchId;
-    /** spheroid base scope (specified at construction but needed during
-        initContext) */
-    Scope baseScope;
-
-    /** a pool of four-sets of nodes */
-    NodeBlocks nodePool;
-
-    /** value for "no-data" elevations */
-    DemHeight demNodata;
-    /** value for "no-data" colors */
-    TextureColor colorNodata;
-
-    /** temporary storage for computing the high-precision surface geometry */
-    double* geometryBuf;
+    /** Index of the root patch for this terrain */
+    TreeIndex rootIndex;
 
 //- inherited from GLObject
 public:
@@ -133,9 +73,7 @@ public:
 protected:
     struct GlData : public GLObject::DataItem
     {
-        GlData(QuadTerrain* terrain, const TreeIndex& iRootIndex,
-               MainCacheBuffer* iRootBuffer, const Scope& baseScope,
-               VideoCache& iVideoCache);
+        GlData(VideoCache& iVideoCache);
         ~GlData();
 
         /** generate the vertex stream template characterizing a node and
@@ -148,20 +86,9 @@ protected:
             the graphics card as a index buffer. */
         void generateIndexTemplate();
 
-        /** root of the tree that currently defines the terrain approximation */
-        Node* root;
-
         /** store a handle to the video cache of this context for convenient
             access */
         VideoCache& videoCache;
-
-        /** evaluates the visibility of a scope */
-        FrustumVisibility visibility;
-        /** evaluates the level of detail of a scope */
-        FocusViewEvaluator lod;
-
-        /** the current vertical exaggeration of the tree */
-        double verticalScale;
 
         /** basic data being passed to the GL to represent a vertex. The
             template provides simply texel-centered, normalized texture

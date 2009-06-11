@@ -26,6 +26,8 @@ struct TreeIndex
     std::string med_str() const;
     friend std::ostream& operator<<(std::ostream& os, const TreeIndex& i);
 
+    static const TreeIndex invalid;
+    
     uint64 patch :  8; ///< index of the base patch of the global hierarchy
     uint64 child :  2; ///< index within the group of siblings
     uint64 level :  8; ///< level in the global hierarchy (0 is root)

@@ -3,12 +3,9 @@
 
 #include <vector>
 
-#include <crusta/QuadtreeFileSpecs.h>
-#include <crusta/Scope.h>
+#include <crusta/QuadNodeData.h>
 
 BEGIN_CRUSTA
-
-class Node;
 
 /** information required to process the fetch/generation of data */
 class CacheRequest
@@ -17,7 +14,7 @@ class CacheRequest
     
 public:
     CacheRequest();
-    CacheRequest(float iLod, Node* iNode);
+    CacheRequest(float iLod, MainCacheBuffer* iParent, uint8 iChild);
 
     bool operator ==(const CacheRequest& other) const;
     bool operator <(const CacheRequest& other) const;
@@ -25,8 +22,10 @@ public:
 protected:
     /** lod value used for prioritizing the requests */
     float lod;
-    /** pointer to the node for which the request was made */
-    Node* node;
+    /** pointer to the parent of the requested */
+    MainCacheBuffer* parent;
+    /** index of the child to be loaded */
+    uint8 child;
 };
 
 typedef std::vector<CacheRequest> CacheRequests;
