@@ -46,7 +46,7 @@ frame()
     //reprioritize the requests (do this here as the rest blocks fetching)
     std::sort(childRequests.begin(), childRequests.end());
 
-#if 1
+#if 0
 //inline version
     //giver the cache update 0.08ms (8ms for 120 fps, so 1% of frame time)
     double endTime = Vrui::getApplicationTime() + 0.08e-3;
@@ -118,7 +118,7 @@ frame()
         }
         //pin the buffers we obtained
         fetch.parent->pin();
-        fetch.child->pin();
+        fetch.child->pin(true, false);
 
         //submit the fetch request
         fetchRequests.push_back(fetch);

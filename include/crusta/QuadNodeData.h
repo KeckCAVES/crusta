@@ -100,7 +100,7 @@ public:
     /** invalidate a buffer */
     void invalidate();
     /** pin the element in the cache such that it cannot be swaped out */
-    void pin(bool wantPinned=true);
+    void pin(bool wantPinned=true, bool asUsable=true);
     /** query the frame number of the buffer */
     FrameNumber getFrameNumber() const;
 

@@ -287,7 +287,9 @@ draw(GLContextData& contextData, GlData* glData,
             {
                 for (int i=0; i<4; ++i)
                 {
-                    if (!children[i]->isCurrent())
+                    if (!children[i]->isValid())
+                        allgood = false;
+                    else if (!children[i]->isCurrent())
                     {
                         //"request" it for update
                         actives.push_back(children[i]);

@@ -31,7 +31,7 @@ template <typename NodeDataType>
 bool CacheBuffer<NodeDataType>::
 isValid()
 {
-    return frameNumber != 0;
+    return frameNumber!=0 && frameNumber!=FrameNumber(~0);
 }
 
 template <typename NodeDataType>
@@ -50,9 +50,11 @@ invalidate()
 
 template <typename NodeDataType>
 void CacheBuffer<NodeDataType>::
-pin(bool wantPinned)
+pin(bool wantPinned, bool asUsable)
 {
-    frameNumber = wantPinned ? ~0 : 0;
+    frameNumber = wantPinned ?
+                  (asUsable ? FrameNumber(~0)-1 : FrameNumber(~0)) :
+                  0;
 }
 
 template <typename NodeDataType>
