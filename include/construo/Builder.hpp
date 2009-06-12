@@ -569,7 +569,7 @@ Note: getKin across patches seem to be broken: e.g. offset==3 returned. */
                 //determine the resample step size
                 double scale = 1;
                 for (uint i=kin->treeIndex.level;
-                     i<node->treeIndex.level+1; ++i)
+                     i<node->treeIndex.level+1U; ++i)
                 {
                     scale *= 0.5;
                 }

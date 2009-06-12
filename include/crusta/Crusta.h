@@ -1,6 +1,7 @@
 #ifndef _Crusta_H_
 #define _Crusta_H_
 
+#include <string>
 #include <vector>
 
 #include <Threads/Mutex.h>
