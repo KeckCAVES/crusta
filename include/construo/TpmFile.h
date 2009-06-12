@@ -26,6 +26,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #ifndef TpmFile_INCLUDED
 #define TpmFile_INCLUDED
 
+#include <cstdio>
 #include <sys/types.h>
 
 class TpmFile
@@ -34,7 +35,7 @@ class TpmFile
 	public:
 	typedef unsigned int Card; // Data type for (short) unsigned integers
 	static const Card invalidIndex=~Card(0); // Denotes an invalid index value
-	#ifdef __DARWIN__
+	#ifdef __APPLE__
 	typedef fpos_t FilePos; // Type for positions in large files
 	#else
 	typedef off64_t FilePos; // Type for positions in large files

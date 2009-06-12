@@ -33,6 +33,10 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <Misc/ThrowStdErr.h>
 #include <Misc/Endianness.h>
 
+#if defined(__APPLE__)
+#define lseek64 lseek
+#endif //__APPLE__
+
 namespace {
 
 /****************
