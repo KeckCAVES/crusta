@@ -13,6 +13,9 @@
 #include <crusta/DataManager.h>
 #include <crusta/QuadCache.h>
 
+///\todo remove debug
+#include <GL/GLModels.h>
+
 BEGIN_CRUSTA
 
 static const uint NUM_GEOMETRY_INDICES =
@@ -77,7 +80,7 @@ display(GLContextData& contextData)
 
     /* traverse the terrain tree, update as necessary and issue drawing commands
        for active nodes */
-    MainCacheBuffer* rootBuf = 
+    MainCacheBuffer* rootBuf =
         crustaQuadCache.getMainCache().findCached(rootIndex);
     assert(rootBuf != NULL);
 
@@ -192,22 +195,16 @@ glDrawArrays(GL_POINTS, 0, TILE_RESOLUTION*TILE_RESOLUTION);
 
 #if 0
 glData->shader.disablePrograms();
-    Scope::Vertex* c = mainData.scope.corners;
     glDisable(GL_LIGHTING);
     glActiveTexture(GL_TEXTURE0);
     glDisable(GL_TEXTURE_2D);
-    glBegin(GL_QUADS);
-        glColor3f(1.0f, 0.0f, 0.0f);
-        glVertex3f(c[0][0], c[0][1], c[0][2]);
-        glColor3f(1.0f, 1.0f, 0.0f);
-        glVertex3f(c[1][0], c[1][1], c[1][2]);
-        glColor3f(0.0f, 1.0f, 0.0f);
-        glVertex3f(c[3][0], c[3][1], c[3][2]);
-        glColor3f(1.0f, 1.0f, 0.0f);
-        glVertex3f(c[2][0], c[2][1], c[2][2]);
-//        glColor3f(0.0f, 0.0f, 1.0f);
-//        glVertex3f(c[0][0], c[0][1], c[0][2]);
-    glEnd();
+    glPolygonMode(GL_FRONT, GL_LINE);
+    glPushMatrix();
+    glColor3f(0.5,0.5,0.5);
+    glTranslatef(mainData.boundingCenter[0], mainData.boundingCenter[1],
+                 mainData.boundingCenter[2]);
+    glDrawSphereIcosahedron(mainData.boundingRadius, 10);
+    glPopMatrix();
     glEnable(GL_TEXTURE_2D);
 glData->shader.useProgram();
 #endif

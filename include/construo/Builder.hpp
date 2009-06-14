@@ -1,12 +1,14 @@
 ///\todo fix GPL
 
 
+#include <construo/DynamicFilter.h>
 #include <construo/ImageFileLoader.h>
 #include <construo/ImagePatch.h>
 
 #include <construo/PixelHelpers.h>
 
 ///\todo remove
+#define USE_NEAREST_FILTERING 0
 #define DEBUG_PREPARESUBSAMPLINGDOMAIN 0
 #define DEBUG_SOURCEFINEST 0
 #define DEBUG_FLAGANCESTORSFORUPDATE 0
@@ -30,9 +32,9 @@ assert(size[0]==size[1]);
     globe = new Globe(spheroidName, tileSize);
 
 ///\todo for now hardcode the subsampling filter
-//    Filter::makePointFilter(subsamplingFilter);
+    Filter::makePointFilter(subsamplingFilter);
 //    Filter::makeTriangleFilter(subsamplingFilter);
-    Filter::makeFiveLobeLanczosFilter(subsamplingFilter);
+//    Filter::makeFiveLobeLanczosFilter(subsamplingFilter);
 
     scopeBuf          = new Scope::Scalar[tileSize[0]*tileSize[1]*3];
     sampleBuf         = new Point[tileSize[0]*tileSize[1]];
@@ -95,7 +97,11 @@ subsampleChildren(Node* node)
         }
         //write the subsampled data to the child
         Node& child = node->children[i];
-        child.treeState->file->writeTile(child.tileIndex, nodeDataBuf);
+        child.data = nodeDataBuf;
+        QuadtreeTileHeader<PixelParam> header;
+        header.reset(&child);
+        child.treeState->file->writeTile(child.tileIndex, header, child.data);
+        child.data = NULL;
     }
 }
 
@@ -257,48 +263,14 @@ assert(p[0]>=0 && p[0]<=imgSize[0]-1 && p[1]>=0 && p[1]<=imgSize[1]-1);
         for (ImgBox::Indices::iterator sIt=bIt->indices.begin();
              sIt!=bIt->indices.end(); ++sIt)
         {
-            Point& p = sampleBuf[*sIt];
-#if 0
-            /* nearest neighbor sampling */
-            int ip[2];
-            for (uint i=0; i<2; ++i)
-            {
-                double pFloor = Math::floor(p[i] + 0.5f);
-                ip[i]         = static_cast<int>(pFloor) - rectOrigin[i];
-            }
-if (!(ip[0]>=0 && ip[0]<imgSize[0] && ip[0]<rectSize[0] &&
-      ip[1]>=0 && ip[1]<imgSize[1] && ip[1]<rectSize[1]))
-    std::cout << "frak";
-            node->data[*sIt]  = rectBuffer[ip[1]*rectSize[0] + ip[0]];
-if (!(*((float*)&node->data[*sIt])>=0.0 &&
-      *((float*)&node->data[*sIt])<=9000.0))
-    std::cout << "frakawe";
+            filter::Scalar at[2] = { sampleBuf[*sIt][0], sampleBuf[*sIt][1] };
+            PixelParam& defaultValue = node->data[*sIt];
+#if USE_NEAREST_FILTERING
+            node->data[*sIt] = filter::nearestLookup(
+                rectBuffer, rectOrigin, at, rectSize, nodata, defaultValue);
 #else
-            int ip[2];
-            double d[2];
-            for(uint i=0; i<2; i++)
-            {
-                double pFloor = Math::floor(p[i]);
-                d[i]          = p[i] - pFloor;
-                ip[i]         = static_cast<int>(pFloor) - rectOrigin[i];
-                if (ip[i] == rectSize[i]-1)
-                {
-                    --ip[i];
-                    d[i] = 1.0;
-                }
-            }
-            PixelParam* base = rectBuffer + (ip[1]*rectSize[0] + ip[0]);
-            PixelParam v[4];
-            v[0] = nodata.isNodata(base[0]) ? node->data[*sIt] : base[0];
-            v[1] = nodata.isNodata(base[1]) ? node->data[*sIt] : base[1];
-            v[2] = nodata.isNodata(base[rectSize[0]])   ? node->data[*sIt] :
-                                                          base[rectSize[0]];
-            v[3] = nodata.isNodata(base[rectSize[0]+1]) ? node->data[*sIt] :
-                                                          base[rectSize[0]+1];
-
-            PixelParam  one  = (1.0-d[0])*v[0] + d[0]*v[1];
-            PixelParam  two  = (1.0-d[0])*v[2] + d[0]*v[3];
-            node->data[*sIt] = (1.0-d[1])*one  + d[1]*two;
+            node->data[*sIt] = filter::linearLookup(
+                rectBuffer, rectOrigin, at, rectSize, nodata, defaultValue);
 #endif
 #if DEBUG_SOURCEFINEST
 Visualizer::Floats scopeSample;
@@ -347,6 +319,8 @@ flagAncestorsForUpdateColor[2] = (float)rand() / RAND_MAX;
         //make sure that the parent dependent on this new data is also updated
         flagAncestorsForUpdate(node->parent);
 
+///\TODO Proper filtering will need this, but it is quite broken right now
+#if 0
         //we musn't forget to update all the adjacent non-sibling nodes either
 /**\todo DANGER: there exist valence 5 corners. Need to account for reaching 2
 different nodes on corners depending on which neighbor we traverse first. Need
@@ -365,6 +339,7 @@ to adjust getKin and its API to allow this */
             if (kin != NULL)
                 flagAncestorsForUpdate(kin);
         }
+#endif
     }
 ///\todo this is debugging code to check tree consistency
 //verifyQuadtreeFile(node);
@@ -479,7 +454,7 @@ Visualizer::show();
             patches[i]->image->getSize());
         /* exaggerate the image's resolution because our sampling is not aligned
            with the image axis */
-        imgResolution *= Point::Scalar(0.5);
+        imgResolution *= Point::Scalar(1.0/Math::sqrt(2.0));
 
         //iterate over all the spheroid's base patches to determine overlap
         for (typename Globe::BaseNodes::iterator bIt=globe->baseNodes.begin();
@@ -574,46 +549,29 @@ Note: getKin across patches seem to be broken: e.g. offset==3 returned. */
                     scale *= 0.5;
                 }
                 double step[2] = {scale/(tileSize[0]-1), scale/(tileSize[1]-1)};
-///\todo abstract out the filtering. Currently using bilinear filtering
-                double d[2];
-                uint ny=0;
+
+                filter::Scalar at[2];
+                int rectOrigin[2] = {0,0};
+                int rectSize[2]   = {tileSize[0], tileSize[1]};
+                Nodata<PixelParam> dummyNodata;
+                PixelParam dummyDefaultValue;
                 PixelParam* wbase = nodeDataBuf;
-                for (double y=nodeOff[1]*scale; ny<tileSize[1];
-                     ++ny, y+=step[1])
+
+                at[1] = nodeOff[1]*scale;
+                for (uint ny=0; ny<tileSize[1]; ++ny, at[1]+=step[1])
                 {
-                    double py = y * (tileSize[1]-1);
-                    double fy = floor(py);
-                    d[1]      = py - fy;
-                    uint iy   = static_cast<uint>(fy);
-                    if (iy == tileSize[1]-1)
+                    at[0] = nodeOff[0]*scale;
+                    for (uint nx=0; nx<tileSize[0]; ++nx,at[0]+=step[0],++wbase)
                     {
-                        --iy;
-                        d[1] = 1.0;
-                    }
-                    uint oy = iy * tileSize[0];
-
-                    uint nx=0;
-                    for (double x=nodeOff[0]*scale; nx<tileSize[0];
-                         ++nx, x+=step[0], ++wbase)
-                    {
-                        double px = x * (tileSize[0]-1);
-                        double fx = floor(px);
-                        d[0]      = px - fx;
-                        uint ix   = static_cast<uint>(fx);
-                        if (ix == tileSize[0]-1)
-                        {
-                            --ix;
-                            d[0] = 1.0;
-                        }
-
-                        PixelParam* rbase = nodeDataSampleBuf + oy + ix;
-
-                        PixelParam one = (1.0-d[0]) * rbase[0] +
-                                               d[0] * rbase[1];
-                        PixelParam two = (1.0-d[0]) * rbase[tileSize[0]] +
-                                               d[0] * rbase[tileSize[0]+1];
-
-                        *wbase = (1.0-d[1])*one + d[1]*two;
+#if USE_NEAREST_FILTERING
+                        *wbase = filter::nearestLookup(nodeDataSampleBuf,
+                            rectOrigin, at, rectSize, dummyNodata,
+                            dummyDefaultValue);
+#else
+                        *wbase = filter::linearLookup(nodeDataSampleBuf,
+                            rectOrigin, at, rectSize, dummyNodata,
+                            dummyDefaultValue);
+#endif
                     }
                 }
                 data = nodeDataBuf;

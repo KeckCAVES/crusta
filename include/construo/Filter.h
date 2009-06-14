@@ -1,14 +1,14 @@
 #ifndef _Filter_H_
 #define _Filter_H_
 
-#include <construo/GeometryTypes.h>
+#include <crusta/basics.h>
 
 BEGIN_CRUSTA
 
 class Filter
 {
 public:
-    typedef Point::Scalar Scalar;
+    typedef double Scalar;
 
     Filter();
     ~Filter();
@@ -31,7 +31,5 @@ protected:
 };
 
 END_CRUSTA
-
-#include <construo/Filter.hpp>
 
 #endif //_Filter_H_

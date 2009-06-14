@@ -1,6 +1,9 @@
 ///\todo fix FRAK'ing cmake !@#!@
 #define CONSTRUO_BUILD 1
 
+#include <Math/Constants.h>
+#include <Math/Math.h>
+
 #include <construo/Filter.h>
 
 BEGIN_CRUSTA
@@ -36,7 +39,7 @@ void Filter::
 makeTriangleFilter(Filter& filter)
 {
     filter.~Filter();
-    
+
     filter.width       = 1;
     filter.weights     = new Scalar[filter.width*2 + 1] + filter.width;
     filter.weights[-1] = Scalar(0.25);

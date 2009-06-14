@@ -5,12 +5,15 @@
 
 #include <cassert>
 
+#include <Math/Constants.h>
 #include <Misc/LargeFile.h>
 
 #include <crusta/PixelSpecs.h>
 #include <crusta/QuadtreeFileHeaders.h>
 
 #if CONSTRUO_BUILD
+#include <construo/DynamicFilter.h>
+#include <construo/Filter.h>
 #include <construo/Tree.h>
 #endif //CONSTRUO_BUILD
 
@@ -45,6 +48,10 @@ pixelMax(const DemHeight& one, const DemHeight& two)
 template <>
 struct Nodata<DemHeight>
 {
+    Nodata() : value(Math::Constants<double>::max)
+    {
+    }
+
     double value;
     bool isNodata(const DemHeight& test) const
     {
@@ -53,6 +60,79 @@ struct Nodata<DemHeight>
 };
 
 #if CONSTRUO_BUILD
+namespace filter {
+
+template <>
+inline DemHeight
+nearestLookup(const DemHeight* img, const int origin[2],
+              const Scalar at[2], const int size[2],
+              const Nodata<DemHeight>& nodata,
+              const DemHeight& defaultValue)
+{
+    int ip[2];
+    for (uint i=0; i<2; ++i)
+    {
+        Scalar pFloor = Math::floor(at[i] + Scalar(0.5));
+        ip[i]         = static_cast<int>(pFloor) - origin[i];
+    }
+    DemHeight imgValue = img[ip[1]*size[0] + ip[0]];
+    return nodata.isNodata(imgValue) ? defaultValue : imgValue;
+}
+
+template <>
+inline DemHeight
+linearLookup(const DemHeight* img, const int origin[2],
+              const Scalar at[2], const int size[2],
+              const Nodata<DemHeight>& nodata,
+              const DemHeight& defaultValue)
+{
+    int ip[2];
+    Scalar d[2];
+    for(uint i=0; i<2; ++i)
+    {
+        Scalar pFloor = Math::floor(at[i]);
+        d[i]          = at[i] - pFloor;
+        ip[i]         = static_cast<int>(pFloor) - origin[i];
+        if (ip[i] == size[i]-1)
+        {
+            --ip[i];
+            d[i] = 1.0;
+        }
+    }
+    const DemHeight* base = img + (ip[1]*size[0] + ip[0]);
+    Scalar v[4];
+    v[0] = nodata.isNodata(base[0])         ? defaultValue : base[0];
+    v[1] = nodata.isNodata(base[1])         ? defaultValue : base[1];
+    v[2] = nodata.isNodata(base[size[0]])   ? defaultValue : base[size[0]];
+    v[3] = nodata.isNodata(base[size[0]+1]) ? defaultValue : base[size[0]+1];
+
+    Scalar one  = (1.0-d[0])*v[0] + d[0]*v[1];
+    Scalar two  = (1.0-d[0])*v[2] + d[0]*v[3];
+    return DemHeight((1.0-d[1])*one  + d[1]*two);
+}
+
+} //end namespace filter
+
+template <>
+inline
+DemHeight Filter::
+lookup(DemHeight* at, uint rowLen)
+{
+    Scalar res(0);
+
+    for (int y=-width; y<=static_cast<int>(width); ++y)
+    {
+        DemHeight* atY = at + y*rowLen;
+        for (int x=-width; x<=static_cast<int>(width); ++x)
+        {
+            DemHeight* atYX = atY + x;
+            res += Scalar(*atYX) * weights[y]*weights[x];
+        }
+    }
+
+    return (DemHeight)res;
+}
+
 template <>
 class TreeState<DemHeight>
 {
