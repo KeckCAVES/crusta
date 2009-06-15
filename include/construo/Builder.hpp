@@ -1,6 +1,6 @@
 ///\todo fix GPL
 
-#include "omp.h"
+//#include "omp.h"
 
 #include <construo/DynamicFilter.h>
 #include <construo/ImageFileLoader.h>

@@ -180,14 +180,15 @@ drawNode(GLContextData& contextData, GlData* glData, QuadNodeMainData& mainData)
 
     glData->shader.setCentroid(mainData.centroid[0], mainData.centroid[1],
                                mainData.centroid[2]);
-//    glUniform3f(glData->centroidUniform, mainData.centroid[0],
-//                mainData.centroid[1], mainData.centroid[2]);
+
+//    glPolygonMode(GL_FRONT, GL_LINE);
 
     float color[3]   = {1, 1, 1};
     float ambient[3] = {1, 1, 1};
     glColor3fv(color);
     glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
+    glMaterialf(GL_FRONT, GL_SHININESS, 1.5);
     glDrawRangeElements(GL_TRIANGLE_STRIP, 0,
                         (TILE_RESOLUTION*TILE_RESOLUTION) - 1,
                         NUM_GEOMETRY_INDICES, GL_UNSIGNED_SHORT, 0);
