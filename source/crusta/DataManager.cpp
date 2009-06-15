@@ -42,7 +42,7 @@ DataManager(Polyhedron* polyhedron, const std::string& demBase,
         colorNodata = colorFiles[0]->getDefaultPixelValue();
     }
     else
-        colorNodata = TextureColor(255, 255, 255);
+        colorNodata = TextureColor(128, 128, 128);
 
     geometryBuf = new double[TILE_RESOLUTION*TILE_RESOLUTION*3];
 }
@@ -103,17 +103,17 @@ void DataManager::
 loadChild(MainCacheBuffer* parent, uint8 which, MainCacheBuffer* child)
 {
     QuadNodeMainData& parentData = parent->getData();
-    
+
     //compute the child scopes
     Scope childScopes[4];
     parentData.scope.split(childScopes);
-    
+
     QuadNodeMainData& childData = child->getData();
     childData.index     = parentData.index.down(which);
     childData.scope     = childScopes[which];
     childData.demTile   = parentData.childDemTiles[which];
     childData.colorTile = parentData.childColorTiles[which];
-    
+
     sourceDem(&parentData,   childData);
     sourceColor(&parentData, childData);
     generateGeometry(childData);
@@ -135,7 +135,7 @@ loadChildren(MainCacheBuffer* parent, MainCacheBuffer* children[4])
         child.scope     = childScopes[i];
         child.demTile   = parentData.childDemTiles[i];
         child.colorTile = parentData.childColorTiles[i];
-        
+
         sourceDem(&parentData,   child);
         sourceColor(&parentData, child);
         generateGeometry(child);
@@ -149,14 +149,14 @@ generateGeometry(QuadNodeMainData& child)
 ///\todo use average height to offset from the spheroid
     double shellRadius = SPHEROID_RADIUS;
     child.scope.getRefinement(shellRadius, TILE_RESOLUTION, geometryBuf);
-    
+
     /* compute and store the centroid here, since node-creation level generation
      of these values only happens after the data load step */
     Scope::Vertex scopeCentroid = child.scope.getCentroid(shellRadius);
     child.centroid[0] = scopeCentroid[0];
     child.centroid[1] = scopeCentroid[1];
     child.centroid[2] = scopeCentroid[2];
-    
+
     QuadNodeMainData::Vertex* v = child.geometry;
     for (double* g=geometryBuf; g<geometryBuf+TILE_RESOLUTION*TILE_RESOLUTION*3;
          g+=3, ++v)
@@ -176,17 +176,17 @@ sampleParentBase(int child, PixelParam range[2], PixelParam* dst,
         0, (TILE_RESOLUTION-1)>>1, ((TILE_RESOLUTION-1)>>1)*TILE_RESOLUTION,
         ((TILE_RESOLUTION-1)>>1)*TILE_RESOLUTION + ((TILE_RESOLUTION-1)>>1) };
     int halfSize[2] = { (TILE_RESOLUTION+1)>>1, (TILE_RESOLUTION+1)>>1 };
-    
+
     for (int y=0; y<halfSize[1]; ++y)
     {
         PixelParam* wbase = dst + y*2*TILE_RESOLUTION;
         PixelParam* rbase = src + y*TILE_RESOLUTION + offsets[child];
-        
+
         for (int x=0; x<halfSize[0]; ++x, wbase+=2, ++rbase)
         {
             range[0] = pixelMin(range[0], rbase[0]);
             range[1] = pixelMax(range[1], rbase[0]);
-            
+
             wbase[0] = rbase[0];
             if (x<halfSize[0]-1)
                 wbase[1] = pixelAvg(rbase[0], rbase[1]);
@@ -210,7 +210,7 @@ sampleParent(int child, DemHeight range[2], DemHeight* dst, DemHeight* src)
 {
     range[0] = Math::Constants<DemHeight>::max;
     range[1] = Math::Constants<DemHeight>::min;
-    
+
     sampleParentBase(child, range, dst, src);
 }
 
@@ -220,7 +220,7 @@ sampleParent(int child, TextureColor range[2], TextureColor* dst,
 {
     range[0] = TextureColor(255,255,255);
     range[1] = TextureColor(0,0,0);
-    
+
     sampleParentBase(child, range, dst, src);
 }
 
@@ -229,7 +229,7 @@ sourceDem(QuadNodeMainData* parent, QuadNodeMainData& child)
 {
     DemHeight* heights =  child.height;
     DemHeight* range   = &child.elevationRange[0];
-    
+
     if (child.demTile != DemFile::INVALID_TILEINDEX)
     {
         DemTileHeader header;
@@ -261,7 +261,7 @@ void DataManager::
 sourceColor(QuadNodeMainData* parent, QuadNodeMainData& child)
 {
     TextureColor* colors = child.color;
-    
+
     if (child.colorTile != ColorFile::INVALID_TILEINDEX)
     {
         ColorFile* file = colorFiles[child.index.patch];
