@@ -15,6 +15,10 @@ namespace GLMotif {
     class Label;
     class PopupMenu;
     class PopupWindow;
+    class TextField;
+}
+namespace Vrui {
+class Lightsource;
 }
 
 BEGIN_CRUSTA
@@ -28,6 +32,7 @@ public:
 private:
 	void produceMainMenu();
     void produceVerticalScaleDialog();
+    void produceLightingDialog();
 
     void alignSurfaceFrame(Vrui::NavTransform& surfaceFrame);
 
@@ -38,11 +43,29 @@ private:
     void changeScaleCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
 	void resetNavigationCallback(Misc::CallbackData* cbData);
 
+	void showLightingDialogCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
+	void updateSun(void);
+	void enableSunToggleCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
+	void sunAzimuthSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
+	void sunElevationSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
+
     double newVerticalScale;
 
     GLMotif::PopupMenu*   popMenu;
     GLMotif::PopupWindow* verticalScaleDialog;
 	GLMotif::Label*       verticalScaleLabel;
+
+    GLMotif::PopupWindow* lightingDialog;
+	bool enableSun; // Flag to toggle sun lightsource
+	bool* viewerHeadlightStates; // Initial enable states of all viewers' headlights
+	Vrui::Lightsource* sun; // Light source representing the sun
+	Vrui::Scalar sunAzimuth; // Azimuth of sunlight direction
+	Vrui::Scalar sunElevation; // Elevation of sunlight direction
+	GLMotif::TextField* sunAzimuthTextField;
+	GLMotif::Slider* sunAzimuthSlider;
+	GLMotif::TextField* sunElevationTextField;
+	GLMotif::Slider* sunElevationSlider;
+
 
 //- inherited from Vrui::Application
 public:
