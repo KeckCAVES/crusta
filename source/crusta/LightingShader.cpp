@@ -495,7 +495,11 @@ void LightingShader::compileShader()
 		"\
 			\n\
             /* Modulate with the texture color: */\n\
-            color *= texture2D(colorTex, coord);\n\
+            vec4 textureColor = texture2D(colorTex, coord);\n\
+            vec4 test = vec4(0.1, 0.1, 0.4);\n\
+            if (all(lessThenEqual(textureColor, test)))\n\
+                textureColor[2] += 0.4;\n\
+            color *= textureColor;\n\
 			/* Compute final vertex color: */\n\
 			gl_FrontColor=color;\n\
 			\n\
