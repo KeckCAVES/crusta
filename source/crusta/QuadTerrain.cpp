@@ -52,9 +52,10 @@ display(GLContextData& contextData)
 	glEnable(GL_CULL_FACE);
     glEnable(GL_TEXTURE_2D);
 
-    glData->shader.useProgram();
-
-    glUniform1f(glData->verticalScaleUniform, Crusta::getVerticalScale());
+    glData->shader.enable();
+    glData->shader.setTextureStep(TEXTURE_COORD_STEP);
+    glData->shader.setVerticalScale(Crusta::getVerticalScale());
+//    glUniform1f(glData->verticalScaleUniform, Crusta::getVerticalScale());
 
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -89,7 +90,7 @@ display(GLContextData& contextData)
     //restore the GL transform as it was before
     glPopMatrix();
 
-    glData->shader.disablePrograms();
+    glData->shader.disable();
 
     glPopClientAttrib();
     glPopAttrib();
@@ -177,9 +178,16 @@ drawNode(GLContextData& contextData, GlData* glData, QuadNodeMainData& mainData)
     nav *= Vrui::NavTransform::translate(centroidTranslation);
     glLoadMatrix(nav);
 
-    glUniform3f(glData->centroidUniform, mainData.centroid[0],
-                mainData.centroid[1], mainData.centroid[2]);
+    glData->shader.setCentroid(mainData.centroid[0], mainData.centroid[1],
+                               mainData.centroid[2]);
+//    glUniform3f(glData->centroidUniform, mainData.centroid[0],
+//                mainData.centroid[1], mainData.centroid[2]);
 
+    float color[3]   = {1, 1, 1};
+    float ambient[3] = {1, 1, 1};
+    glColor3fv(color);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
+    glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
     glDrawRangeElements(GL_TRIANGLE_STRIP, 0,
                         (TILE_RESOLUTION*TILE_RESOLUTION) - 1,
                         NUM_GEOMETRY_INDICES, GL_UNSIGNED_SHORT, 0);
@@ -211,7 +219,7 @@ glData->shader.useProgram();
 
 if (displayDebuggingGrid)
 {
-glData->shader.disablePrograms();
+glData->shader.disable();
     Scope::Vertex* c = mainData.scope.corners;
     glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);
@@ -231,7 +239,7 @@ glData->shader.disablePrograms();
     glEnd();
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
-glData->shader.useProgram();
+glData->shader.enable();
 }
 
 }
@@ -317,13 +325,14 @@ draw(GLContextData& contextData, GlData* glData,
 QuadTerrain::GlData::
 GlData(VideoCache& iVideoCache) :
     videoCache(iVideoCache),
-    vertexAttributeTemplate(0), indexTemplate(0), verticalScaleUniform(0),
-    centroidUniform(0)
+    vertexAttributeTemplate(0), indexTemplate(0)
+//    ,verticalScaleUniform(0), centroidUniform(0)
 {
     //initialize the static gl buffer templates
     generateVertexAttributeTemplate();
     generateIndexTemplate();
 
+#if 0
     //initialize the shader
     shader.compileVertexShader((std::string(CRUSTA_SHARE_PATH) +
                                 "/litElevation.vs").c_str());
@@ -348,9 +357,7 @@ GlData(VideoCache& iVideoCache) :
     glUniform1f(uniform, TEXTURE_COORD_STEP);
 
     shader.disablePrograms();
-
-///\todo debug, remove: makes LOD recommend very coarse
-//    lod.bias = -1.0;
+#endif
 }
 
 QuadTerrain::GlData::

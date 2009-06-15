@@ -37,15 +37,16 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 add_library(Crusta SHARED ../source/crusta/CacheRequest.cpp
                           ../source/crusta/ColorTextureSpecs.cpp
                           ../source/crusta/Crusta.cpp
-						  ../source/crusta/DataManager.cpp
+                          ../source/crusta/DataManager.cpp
                           ../source/crusta/DemSpecs.cpp
                           ../source/crusta/FocusViewEvaluator.cpp
                           ../source/crusta/FrustumVisibility.cpp
+                          ../source/crusta/LightingShader.cpp
                           ../source/crusta/LodEvaluator.cpp
                           ../source/crusta/QuadCache.cpp
                           ../source/crusta/QuadNodeData.cpp
                           ../source/crusta/QuadTerrain.cpp
-						  ../source/crusta/Scope.cpp
+                          ../source/crusta/Scope.cpp
                           ../source/crusta/TreeIndex.cpp
                           ../source/crusta/Triacontahedron.cpp
                           ../source/crusta/ViewLod.cpp)

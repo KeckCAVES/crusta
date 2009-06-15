@@ -13,6 +13,8 @@
 #include <crusta/FrustumVisibility.h>
 #include <crusta/FocusViewEvaluator.h>
 
+#include <crusta/LightingShader.h>
+
 BEGIN_CRUSTA
 
 class VideoCache;
@@ -98,6 +100,10 @@ protected:
         /** defines a triangle-string triangulation of the vertices */
         GLuint indexTemplate;
 
+#if 1
+        LightingShader shader;
+#else
+
         /** uniform relation to the vertical exaggeration */
         GLint verticalScaleUniform;
         /** uniform relating to the centroid vector to the shader for elevation
@@ -106,6 +112,7 @@ protected:
 
         /** GL shader generating textured terrain */
         GLShader shader;
+#endif
     };
 };
 

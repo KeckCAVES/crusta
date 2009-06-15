@@ -69,7 +69,11 @@ QuadtreeFile(const char* quadtreeFileName, const uint iTileSize[2]) :
 	//open existing quadtree file or create a new one
     try
     {
+#if CONSTRUO_BUILD
         quadtreeFile = new Misc::LargeFile(quadtreeFileName, "r+b");
+#else
+        quadtreeFile = new Misc::LargeFile(quadtreeFileName, "rb");
+#endif //CONSTRUO_BUILD
         //read in the header and record tile data start location
         readHeader();
         firstTileOffset = quadtreeFile->tell();
