@@ -185,7 +185,7 @@ produceLightingDialog()
 	sunElevationTextField->setValue(double(sunElevation));
 
 	sunElevationSlider=new GLMotif::Slider("SunElevationSlider",sunBox,GLMotif::Slider::HORIZONTAL,style->fontHeight*10.0f);
-	sunElevationSlider->setValueRange(0.0,90.0,1.0);
+	sunElevationSlider->setValueRange(-90.0,90.0,1.0);
 	sunElevationSlider->setValue(double(sunElevation));
 	sunElevationSlider->getValueChangedCallbacks().add(this,&CrustaApp::sunElevationSliderCallback);
 
