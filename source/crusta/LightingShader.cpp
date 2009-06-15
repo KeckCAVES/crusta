@@ -456,6 +456,16 @@ void LightingShader::compileShader()
 			\n";
 		}
 
+    vertexShaderMain+=
+        "\
+        /* Modulate with the texture color: */\n\
+        vec4 textureColor = texture2D(colorTex, coord);\n\
+        vec4 test = vec4(0.1, 0.1, 0.4, 1.0);\n\
+        if (all(lessThanEqual(textureColor, test)))\n\
+            textureColor[2] += 0.3;\n\
+        ambient *= textureColor;\n\
+        diffuse *= textureColor;\n";
+
 	/* Continue the main vertex shader: */
 	vertexShaderMain+=
 		"\
@@ -494,12 +504,6 @@ void LightingShader::compileShader()
 	vertexShaderMain+=
 		"\
 			\n\
-            /* Modulate with the texture color: */\n\
-            vec4 textureColor = texture2D(colorTex, coord);\n\
-            vec4 test = vec4(0.1, 0.1, 0.4, 1.0);\n\
-            if (all(lessThanEqual(textureColor, test)))\n\
-                textureColor[2] += 0.3;\n\
-            color *= textureColor;\n\
 			/* Compute final vertex color: */\n\
 			gl_FrontColor=color;\n\
 			\n\
