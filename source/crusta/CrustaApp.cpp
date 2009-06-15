@@ -111,7 +111,7 @@ produceVerticalScaleDialog()
     verticalScaleLabel = new GLMotif::Label("ScaleLabel", root, "1.0x");
 
     slider->setValue(0.0);
-    slider->setValueRange(-10.0, 10.0, 0.1);
+    slider->setValueRange(-5.0, 10.0, 0.05);
     slider->getValueChangedCallbacks().add(
         this, &CrustaApp::changeScaleCallback);
 
