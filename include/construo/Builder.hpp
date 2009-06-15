@@ -1,5 +1,6 @@
 ///\todo fix GPL
 
+#include "omp.h"
 
 #include <construo/DynamicFilter.h>
 #include <construo/ImageFileLoader.h>
@@ -71,12 +72,13 @@ subsampleChildren(Node* node)
     //read in the node's existing data from file
     node->treeState->file->readTile(node->tileIndex, nodeDataSampleBuf);
 
-    static const int offsets[4] = {
+    const int offsets[4] = {
         0, (tileSize[0]-1)>>1, ((tileSize[1]-1)>>1)*tileSize[0],
         ((tileSize[1]-1)>>1)*tileSize[0] + ((tileSize[0]-1)>>1) };
-    int halfSize[2] = { (tileSize[0]+1)>>1, (tileSize[1]+1)>>1 };
+    const int halfSize[2] = { (tileSize[0]+1)>>1, (tileSize[1]+1)>>1 };
     for (int i=0; i<4; ++i)
     {
+//        #pragma omp parallel for
         for (int y=0; y<halfSize[1]; ++y)
         {
             PixelParam* wbase = nodeDataBuf + y*2*tileSize[0];
@@ -192,19 +194,19 @@ void Builder<PixelParam, PolyhedronParam>::
 sourceFinest(Node* node, Patch* imgPatch, uint overlap)
 {
     ImgBoxes imgBoxes;
-    const int* imgSize               = imgPatch->image->getSize();
-    const Nodata<PixelParam>& nodata = imgPatch->image->getNodata();
-    Point::Scalar allowedBoxSize[2]  = { imgSize[0]>>1, imgSize[1]>>1 };
+    const int* imgSize                     = imgPatch->image->getSize();
+    const Nodata<PixelParam>& nodata       = imgPatch->image->getNodata();
+    const Point::Scalar allowedBoxSize[2]  = { imgSize[0]>>1, imgSize[1]>>1 };
 
     //transform all the sample points into the image space
     node->scope.getRefinement(tileSize[0], scopeBuf);
-    Scope::Scalar* curScope = scopeBuf;
 
-    for (int i=0; i<int(tileSize[0]*tileSize[1]); ++i, curScope+=3)
+    for (int i=0; i<int(tileSize[0]*tileSize[1]); ++i)
     {
         Point& p = sampleBuf[i];
 
         //convert the scope sample to a spherical one
+        const Scope::Scalar* curScope = &scopeBuf[i*3];
         p = Converter::cartesianToSpherical(
             Scope::Vertex(curScope[0], curScope[1], curScope[2]));
         //transform the sample into the image space
@@ -244,32 +246,35 @@ assert(p[0]>=0 && p[0]<=imgSize[0]-1 && p[1]>=0 && p[1]<=imgSize[1]-1);
     node->treeState->file->readTile(node->tileIndex, node->data);
 
     //go through all the image boxes and sample them
-    for (ImgBoxes::iterator bIt=imgBoxes.begin(); bIt!=imgBoxes.end(); ++bIt)
+//    #pragma omp parallel for
+    for (int box=0; box<static_cast<int>(imgBoxes.size()); ++box)
     {
+        const ImgBox& ib = imgBoxes[box];
         //read the corresponding image piece
         int rectOrigin[2];
         int rectSize[2];
         for (int i=0; i<2; i++)
         {
 ///\todo abstract the sampler assume bilinear interpolation here
-            rectOrigin[i] = static_cast<int>(Math::floor(bIt->min[i]));
-            rectSize[i]   = static_cast<int>(Math::ceil (bIt->max[i])) -
+            rectOrigin[i] = static_cast<int>(Math::floor(ib.min[i]));
+            rectSize[i]   = static_cast<int>(Math::ceil (ib.max[i])) -
                             rectOrigin[i] + 1;
         }
         PixelParam* rectBuffer = new PixelParam[rectSize[0] * rectSize[1]];
         imgPatch->image->readRectangle(rectOrigin, rectSize, rectBuffer);
 
         //sample the points
-        for (ImgBox::Indices::iterator sIt=bIt->indices.begin();
-             sIt!=bIt->indices.end(); ++sIt)
+//        #pragma omp parallel for
+        for (int i=0; i<static_cast<int>(ib.indices.size()); ++i)
         {
-            filter::Scalar at[2] = { sampleBuf[*sIt][0], sampleBuf[*sIt][1] };
-            PixelParam& defaultValue = node->data[*sIt];
+            const int& idx = ib.indices[i];
+            filter::Scalar at[2] = { sampleBuf[idx][0], sampleBuf[idx][1] };
+            PixelParam& defaultValue = node->data[idx];
 #if USE_NEAREST_FILTERING
-            node->data[*sIt] = filter::nearestLookup(
+            node->data[idx] = filter::nearestLookup(
                 rectBuffer, rectOrigin, at, rectSize, nodata, defaultValue);
 #else
-            node->data[*sIt] = filter::linearLookup(
+            node->data[idx] = filter::linearLookup(
                 rectBuffer, rectOrigin, at, rectSize, nodata, defaultValue);
 #endif
 #if DEBUG_SOURCEFINEST
@@ -484,10 +489,6 @@ prepareSubsamplingDomain(Node* node)
 Visualizer::addPrimitive(GL_LINES, node->coverage);
 Visualizer::show();
 #endif //DEBUG_PREPARESUBSAMPLINGDOMAIN
-    Node* kin     = NULL;
-
-    PixelParam* domain = domainBuf + (tileSize[1]-1)*domainSize[0] +
-                         tileSize[0]-1;
 
     /* specify the order of lower-level nodes manually such that the inner nodes
        are added last and overwrite the edge value (e.g. if one of the
@@ -498,13 +499,15 @@ Visualizer::show();
         {-1, 1}, {-1, 0}, { 2, 1}, { 2, 0}, { 0, 0}, { 1, 0}, { 0, 1}, { 1, 1}
     };
     bool dataIsAvailable[16];
-    int domainOff[2];
-    int nodeOff[2];
     for (int i=0; i<16; ++i)
     {
     //- retrieve the kin
-        nodeOff[0] = domainOff[0] = offsets[i][0];
-        nodeOff[1] = domainOff[1] = offsets[i][1];
+        Node* kin          = NULL;
+        PixelParam* domain = domainBuf + (tileSize[1]-1)*domainSize[0] +
+                             tileSize[0]-1;
+
+        int domainOff[2] = {offsets[i][0], offsets[i][1]};
+        int nodeOff[2]   = {offsets[i][0], offsets[i][1]};
         uint kinO;
         node->getKin(kin, nodeOff, true, 1, &kinO);
 #if DEBUG_PREPARESUBSAMPLINGDOMAIN
@@ -554,12 +557,13 @@ Note: getKin across patches seem to be broken: e.g. offset==3 returned. */
                 int rectOrigin[2] = {0,0};
                 int rectSize[2]   = {tileSize[0], tileSize[1]};
                 Nodata<PixelParam> dummyNodata;
-                PixelParam dummyDefaultValue;
+                PixelParam dummyDefaultValue(0);
                 PixelParam* wbase = nodeDataBuf;
 
-                at[1] = nodeOff[1]*scale;
-                for (uint ny=0; ny<tileSize[1]; ++ny, at[1]+=step[1])
+//                #pragma omp parallel for
+                for (uint ny=0; ny<tileSize[1]; ++ny)
                 {
+                    at[1] = nodeOff[1]*scale + ny*step[1];
                     at[0] = nodeOff[0]*scale;
                     for (uint nx=0; nx<tileSize[0]; ++nx,at[0]+=step[0],++wbase)
                     {
@@ -599,6 +603,7 @@ if (dataIsAvailable[i])
         int stepY[4]  = { tileSize[0], 1,  -tileSize[0], -1 };
         int startX[4] = { 0, 0, tileSize[0]-1, tileSize[0]-1 };
         int stepX[4]  = { 1,  -tileSize[1], -1, tileSize[0]};
+//        #pragma omp parallel for
         for (uint y=0; y<tileSize[1]; ++y)
         {
             PixelParam* to         = base + y*domainSize[0];
@@ -613,7 +618,7 @@ if (dataIsAvailable[i])
 /**\todo this is a temporary fix for the really bad seams at patch boundaries.
 I'm artificially extending the border data into the neighboring tiles that are
 missing data because it's on another patch (clamp_to_edge like) */
-domain = domainBuf;
+PixelParam* domain = domainBuf;
 static const int horizontalIndices[4] = {1,2,5,6};
 PixelParam* horizontalSources[4] = {
     domain +   (tileSize[1]-1)*domainSize[0] +   (tileSize[0]-1),
@@ -632,9 +637,12 @@ for (int i=0; i<4; ++i)
     if (!dataIsAvailable[horizontalIndices[i]])
     {
         PixelParam* src = horizontalSources[i];
-        PixelParam* dst = horizontalDestinations[i];
-        for (uint y=0; y<tileSize[1]-1; ++y, dst+=domainSize[0])
-            memcpy(dst, src, tileSize[0]*sizeof(PixelParam));
+//        #pragma omp parallel for
+        for (uint y=0; y<tileSize[1]-1; ++y)
+        {
+            memcpy(horizontalDestinations[i]+y*domainSize[0], src,
+                   tileSize[0]*sizeof(PixelParam));
+        }
     }
 }
 
@@ -655,9 +663,10 @@ for (int i=0; i<4; ++i)
 {
     if (!dataIsAvailable[verticalIndices[i]])
     {
-        PixelParam* src = verticalSources[i];
-        for (uint y=0; y<tileSize[1]; ++y, src+=domainSize[0])
+//        #pragma omp parallel for
+        for (uint y=0; y<tileSize[1]; ++y)
         {
+            PixelParam* src = verticalSources[i] + y*domainSize[0];
             PixelParam* dst = verticalDestinations[i] + y*domainSize[0];
             for (uint x=0; x<tileSize[0]-1; ++x, ++dst)
                 *dst = *src;
