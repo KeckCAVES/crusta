@@ -164,8 +164,10 @@ int main(int argc, char* argv[])
 
     if (buildType == UNDEFINED_BUILD)
     {
-        std::cerr << "You have to specifiy either a dem or color build type" <<
-                     std::endl;
+        std::cerr << "Usage:" << std::endl << "construo -dem | -color "
+                     "<database name> [-scale <scalar>] [-nodata " <<
+                     "<value>] [-pointsampling] [-areasampling] <input " <<
+                     "files>" << std::endl;
         return 1;
     }
 	if (spheroidName == NULL)
