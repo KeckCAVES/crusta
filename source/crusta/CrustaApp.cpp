@@ -4,6 +4,7 @@
 
 #include <Geometry/OrthogonalTransformation.h>
 #include <GLMotif/Button.h>
+#include <GLMotif/CascadeButton.h>
 #include <GLMotif/Label.h>
 #include <GLMotif/Margin.h>
 #include <GLMotif/Menu.h>
@@ -18,8 +19,9 @@
 #include <Vrui/LightsourceManager.h>
 #include <Vrui/Viewer.h>
 #include <Vrui/Vrui.h>
-#include <crusta/Crusta.h>
 
+#include <crusta/Crusta.h>
+#include <crusta/MapManager.h>
 #include <crusta/QuadTerrain.h>
 
 
@@ -115,10 +117,36 @@ produceMainMenu()
     resetNavigationButton->getSelectCallbacks().add(
         this, &CrustaApp::resetNavigationCallback);
 
+
+    produceToolSubMenu(mainMenu);
+
+
     /* Finish building the main menu: */
     mainMenu->manageChild();
 
     Vrui::setMainMenu(popMenu);
+}
+
+void CrustaApp::
+produceToolSubMenu(GLMotif::Menu* mainMenu)
+{
+    GLMotif::Popup* toolMenuPopup = new GLMotif::Popup(
+        "ToolPopup", Vrui::getWidgetManager());
+    toolMenuPopup->setTitle("Tools");
+
+    curTool = new GLMotif::RadioBox("ToolMenu", toolMenuPopup, false);
+    curTool->setOrientation(GLMotif::RowColumn::VERTICAL);
+    curTool->setNumMinorWidgets(1);
+    curTool->setSelectionMode(GLMotif::RadioBox::ALWAYS_ONE);
+
+    GLMotif::ToggleButton* cpe = new GLMotif::ToggleButton(
+        "ControlPointEditor", curTool, "Control Point Editor");
+
+    curTool->manageChild();
+    curTool->setSelectedToggle(cpe);
+
+    GLMotif::CascadeButton* toolCascade = new GLMotif::CascadeButton(
+        "ToolCascade", mainMenu, "Tools");
 }
 
 void CrustaApp::
@@ -337,18 +365,6 @@ resetNavigationCallback(Misc::CallbackData* cbData)
 
 
 void CrustaApp::
-toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
-{
-    /* Check if the new tool is a surface navigation tool: */
-    Vrui::SurfaceNavigationTool* surfaceNavigationTool=dynamic_cast<Vrui::SurfaceNavigationTool*>(cbData->tool);
-    if(surfaceNavigationTool!=0)
-           {
-           /* Set the new tool's alignment function: */
-    surfaceNavigationTool->setAlignFunction(Misc::createFunctionCall<Vrui::NavTransform&,CrustaApp>(this,&CrustaApp::alignSurfaceFrame));
-           }
-}
-
-void CrustaApp::
 frame()
 {
     Crusta::setVerticalScale(newVerticalScale);
@@ -359,6 +375,44 @@ void CrustaApp::
 display(GLContextData& contextData) const
 {
     Crusta::display(contextData);
+}
+
+
+void CrustaApp::
+toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
+{
+    /* Check if the new tool is a surface navigation tool: */
+    Vrui::SurfaceNavigationTool* surfaceNavigationTool =
+        dynamic_cast<Vrui::SurfaceNavigationTool*>(cbData->tool);
+    if (surfaceNavigationTool != NULL)
+    {
+        /* Set the new tool's alignment function: */
+        surfaceNavigationTool->setAlignFunction(
+            Misc::createFunctionCall<Vrui::NavTransform&,CrustaApp>(
+                this,&CrustaApp::alignSurfaceFrame));
+    }
+
+    //are we creating a new mapping tool
+    Vrui::LocatorTool* locator = dynamic_cast<Vrui::LocatorTool*>(cbData->tool);
+    if (tool != NULL)
+    {
+        //determine which tool to create
+        const char* toolName = curTool->getSelectedToggle()->getName();
+        if (!strcmp(toolName, "ControlPointEditor"))
+        {
+            Crusta::getMapManager()->createMapTool(
+                MapManager::MAPTOOL_CONTROLPOINTEDITOR, locator);
+        }
+    }
+}
+
+void CrustaApp::
+toolDestructionCallback(Vrui::ToolManager::ToolDestructionCallbackData* cbData)
+{
+    //are we destroying a mapping tool
+    Vrui::LocatorTool* locator = dynamic_cast<Vrui::LocatorTool*>(cbData->tool);
+    if (tool != NULL)
+        Crusta::getMapManager()->destroyMapTool(locator);
 }
 
 

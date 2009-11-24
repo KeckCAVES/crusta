@@ -34,22 +34,63 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 # Crusta shared dynamic link library containing the core crusta components
 #-------------------
 
-add_library(Crusta SHARED ../source/crusta/CacheRequest.cpp
-                          ../source/crusta/ColorTextureSpecs.cpp
-                          ../source/crusta/Crusta.cpp
-                          ../source/crusta/DataManager.cpp
-                          ../source/crusta/DemSpecs.cpp
-                          ../source/crusta/FocusViewEvaluator.cpp
-                          ../source/crusta/FrustumVisibility.cpp
-                          ../source/crusta/LightingShader.cpp
-                          ../source/crusta/LodEvaluator.cpp
-                          ../source/crusta/QuadCache.cpp
-                          ../source/crusta/QuadNodeData.cpp
-                          ../source/crusta/QuadTerrain.cpp
-                          ../source/crusta/Scope.cpp
-                          ../source/crusta/TreeIndex.cpp
-                          ../source/crusta/Triacontahedron.cpp
-                          ../source/crusta/ViewLod.cpp)
+add_library(Crusta SHARED
+    ../include/crusta/basics.h
+    ../include/crusta/CacheRequest.h
+    ../include/crusta/ColorTextureSpecs.h
+    ../include/crusta/Crusta.h
+    ../include/crusta/DataManager.h
+    ../include/crusta/DemSpecs.h
+    ../include/crusta/Ellipsoid.h
+    ../include/crusta/FocusViewEvaluator.h
+    ../include/crusta/FrustumVisibility.h
+    ../include/crusta/LightingShader.h
+    ../include/crusta/LodEvaluator.h
+    ../include/crusta/map/ControlPointEditor.h
+    ../include/crusta/map/MapManager.h
+    ../include/crusta/map/Polyline.h
+    ../include/crusta/map/Shape.h
+    ../include/crusta/PixelSpecs.h
+    ../include/crusta/Polyhedron.h
+    ../include/crusta/QuadCache.h
+    ../include/crusta/QuadCache.hpp
+    ../include/crusta/QuadNodeData.h
+    ../include/crusta/QuadNodeData.hpp
+    ../include/crusta/QuadTerrain.h
+    ../include/crusta/QuadtreeFile.h
+    ../include/crusta/QuadtreeFile.hpp
+    ../include/crusta/QuadtreeFileHeaders.h
+    ../include/crusta/QuadtreeFileSpecs.h
+    ../include/crusta/Refinement.h
+    ../include/crusta/Refinement.hpp
+    ../include/crusta/Scope.h
+    ../include/crusta/Scope.hpp
+    ../include/crusta/TreeIndex.h
+    ../include/crusta/Triacontahedron.h
+    ../include/crusta/ViewLod.h
+    ../include/crusta/VisibilityEvaluator.h
+
+    ../source/crusta/CacheRequest.cpp
+    ../source/crusta/ColorTextureSpecs.cpp
+    ../source/crusta/Crusta.cpp
+    ../source/crusta/DataManager.cpp
+    ../source/crusta/DemSpecs.cpp
+    ../source/crusta/FocusViewEvaluator.cpp
+    ../source/crusta/FrustumVisibility.cpp
+    ../source/crusta/LightingShader.cpp
+    ../source/crusta/LodEvaluator.cpp
+    ../source/crusta/map/ControlPointEditor.cpp
+    ../source/crusta/map/MapManager.cpp
+    ../source/crusta/map/Polyline.cpp
+    ../source/crusta/map/Shape.cpp
+    ../source/crusta/QuadCache.cpp
+    ../source/crusta/QuadNodeData.cpp
+    ../source/crusta/QuadTerrain.cpp
+    ../source/crusta/Scope.cpp
+    ../source/crusta/TreeIndex.cpp
+    ../source/crusta/Triacontahedron.cpp
+    ../source/crusta/ViewLod.cpp
+)
 
 vrui_set_target_properties(Crusta)
 
@@ -57,7 +98,11 @@ vrui_set_target_properties(Crusta)
 # Crusta application wrapping the core components into an executable
 #-------------------
 
-add_executable(crustaApp ../source/crusta/CrustaApp.cpp)
+add_executable(crustaApp
+    ../include/crusta/CrustaApp.h
+
+    ../source/crusta/CrustaApp.cpp
+)
 
 vrui_set_target_properties(crustaApp)
 target_link_libraries(crustaApp Crusta)
@@ -67,7 +112,11 @@ target_link_libraries(crustaApp Crusta)
 # Crusta vislet module wrapping the core components into a vislet
 #-------------------
 
-add_library(CrustaVislet MODULE ../source/crusta/CrustaVislet.cpp)
+add_library(CrustaVislet MODULE
+    ../include/crusta/CrustaVislet.h
+
+    ../source/crusta/CrustaVislet.cpp
+)
 
 vrui_set_target_properties(CrustaVislet)
 target_link_libraries(CrustaVislet Crusta)
@@ -97,22 +146,58 @@ else(APPLE)
    include_directories(${GDAL_INCLUDE_DIR})
 endif(APPLE)
 
-set(CONSTRUO_SOURCES ../source/construo/ArcInfoBinaryGridImageFile.cpp
-                     ../source/construo/Construo.cpp
-                     ../source/construo/Filter.cpp
-                     ../source/construo/GdalTransform.cpp
-                     ../source/construo/GdalImageFile.cpp
-                     ../source/construo/GeoTransform.cpp
-                     ../source/construo/ImageCoverage.cpp
-                     ../source/construo/ImageTransform.cpp
-                     ../source/construo/ImageTransformReader.cpp
-                     ../source/construo/PngImageFile.cpp
-                     ../source/construo/PpmImageFile.cpp
-                     ../source/construo/SphereCoverage.cpp
-                     ../source/construo/TpmFile.cpp
-                     ../source/construo/TpmImageFile.cpp
-                     ../source/construo/UtmTransform.cpp
-                     ../source/construo/Visualizer.cpp)
+set(CONSTRUO_SOURCES
+	../include/construo/ArcInfoBinaryGridImageFile.h
+	../include/construo/Builder.h
+	../include/construo/Builder.hpp
+	../include/construo/Converters.h
+	../include/construo/DynamicFilter.h
+	../include/construo/Filter.h
+	../include/construo/GdalImageFile.h
+	../include/construo/GdalImageFile.hpp
+	../include/construo/GdalTransform.h
+	../include/construo/GeometryTypes.h
+	../include/construo/GeoTransform.h
+	../include/construo/ImageCoverage.h
+	../include/construo/ImageFile.h
+	../include/construo/ImageFile.hpp
+	../include/construo/ImageFileLoader.h
+	../include/construo/ImageFileLoader.hpp
+	../include/construo/ImagePatch.h
+	../include/construo/ImagePatch.hpp
+	../include/construo/ImageTransform.h
+	../include/construo/ImageTransformReader.h
+	../include/construo/MagickImageFile.h
+	../include/construo/PixelHelpers.h
+	../include/construo/PngImageFile.h
+	../include/construo/PpmImageFile.h
+	../include/construo/ReiImageFile.h
+	../include/construo/Sampler.h
+	../include/construo/SphereCoverage.h
+	../include/construo/TpmFile.h
+	../include/construo/TpmImageFile.h
+	../include/construo/Tree.h
+	../include/construo/Tree.hpp
+	../include/construo/UtmTransform.h
+	../include/construo/Visualizer.h
+
+    ../source/construo/ArcInfoBinaryGridImageFile.cpp
+    ../source/construo/Construo.cpp
+    ../source/construo/Filter.cpp
+    ../source/construo/GdalTransform.cpp
+    ../source/construo/GdalImageFile.cpp
+    ../source/construo/GeoTransform.cpp
+    ../source/construo/ImageCoverage.cpp
+    ../source/construo/ImageTransform.cpp
+    ../source/construo/ImageTransformReader.cpp
+    ../source/construo/PngImageFile.cpp
+    ../source/construo/PpmImageFile.cpp
+    ../source/construo/SphereCoverage.cpp
+    ../source/construo/TpmFile.cpp
+    ../source/construo/TpmImageFile.cpp
+    ../source/construo/UtmTransform.cpp
+    ../source/construo/Visualizer.cpp
+)
 
 if(${ImageMagick_Magick++_FOUND})
 list(APPEND CONSTRUO_SOURCES ../source/construo/MagickImageFile.cpp)

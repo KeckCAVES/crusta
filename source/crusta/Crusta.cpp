@@ -5,6 +5,7 @@
 #include <Vrui/Vrui.h>
 
 #include <crusta/DataManager.h>
+#include <crusta/MapManager.h>
 #include <crusta/QuadCache.h>
 #include <crusta/QuadTerrain.h>
 #include <crusta/Triacontahedron.h>
@@ -21,6 +22,7 @@ FrameNumber Crusta::lastScaleFrame = 2;
 double Crusta::verticalScale = 1.0;
 
 DataManager* Crusta::dataMan = NULL;
+MapManager*  Crusta::mapMan  = NULL;
 
 Crusta::RenderPatches Crusta::renderPatches;
 
@@ -33,6 +35,7 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
     Triacontahedron polyhedron(SPHEROID_RADIUS);
 
     dataMan  = new DataManager(&polyhedron, demFileBase, colorFileBase);
+    mapMan   = new MapManager();
 
     uint numPatches = polyhedron.getNumPatches();
     renderPatches.resize(numPatches);
@@ -185,6 +188,12 @@ DataManager* Crusta::
 getDataManager()
 {
     return dataMan;
+}
+
+MapManager* Crusta::
+getMapManager()
+{
+    return mapMan;
 }
 
 

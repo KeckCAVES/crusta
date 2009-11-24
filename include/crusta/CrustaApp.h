@@ -13,8 +13,10 @@ class GLContextData;
 
 namespace GLMotif {
     class Label;
+    class Menu;
     class PopupMenu;
     class PopupWindow;
+    class RadioBox;
     class TextField;
 }
 namespace Vrui {
@@ -31,6 +33,7 @@ public:
 
 private:
 	void produceMainMenu();
+	void produceToolSubMenu(GLMotif::Menu* mainMenu);
     void produceVerticalScaleDialog();
     void produceLightingDialog();
 
@@ -52,6 +55,7 @@ private:
     double newVerticalScale;
 
     GLMotif::PopupMenu*   popMenu;
+    GLMotif::RadioBox*    curTool;
     GLMotif::PopupWindow* verticalScaleDialog;
 	GLMotif::Label*       verticalScaleLabel;
 
@@ -69,9 +73,12 @@ private:
 
 //- inherited from Vrui::Application
 public:
-    virtual void toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData);
     virtual void frame();
     virtual void display(GLContextData& contextData) const;
+	virtual void toolCreationCallback(
+        Vrui::ToolManager::ToolCreationCallbackData* cbData);
+	virtual void toolDestructionCallback(
+        Vrui::ToolManager::ToolDestructionCallbackData* cbData);
 };
 
 END_CRUSTA

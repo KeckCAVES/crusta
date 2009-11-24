@@ -16,6 +16,7 @@ template <typename NodeDataType>
 class CacheBuffer;
 
 class DataManager;
+class MapManager;
 class QuadNodeMainData;
 class QuadTerrain;
 
@@ -28,15 +29,15 @@ public:
     static void init(const std::string& demFileBase,
                      const std::string& colorFileBase);
     static void shutdown();
-    
+
 ///\todo fix this API. Probably would to define Crusta::Point
     /** query the height of the surface closest to the query point */
     static double getHeight(double x, double y, double z);
-    
+
     static const FrameNumber& getCurrentFrame();
     static const FrameNumber& getLastScaleFrame();
 
-    /** set the vertical exaggeration. Make sure to set this value within a 
+    /** set the vertical exaggeration. Make sure to set this value within a
         frame callback so that it doesn't change during a rendering phase */
     static void setVerticalScale(double newVerticalScale);
     /** retrieve the vertical exaggeration factor */
@@ -44,6 +45,8 @@ public:
 
     /** retrieve the data manager */
     static DataManager* getDataManager();
+    /** retrieve the map manager */
+    static MapManager* getMapManager();
 
     /** inform crusta of nodes that must be kept current */
     static void submitActives(const Actives& touched);
@@ -73,6 +76,8 @@ protected:
 
     /** the data management component */
     static DataManager* dataMan;
+    /** the mapping management component */
+    static MapManager* mapMan;
 
     /** the spheroid base patches used for rendering */
     static RenderPatches renderPatches;
