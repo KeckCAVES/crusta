@@ -26,15 +26,19 @@ public:
         Id();
         Id(int iRaw);
         Id(int iUnique, int iType, int iIndex);
+        bool operator ==(const Id& other) const;
+        bool operator !=(const Id& other) const;
 
         struct
         {
             int unique :  8;
-            int type   :  8
+            int type   :  8;
             int index  : 16;
         };
         int raw;
     };
+
+    virtual ~Shape();
 
     Id select       (const Point3& pos, double& dist);
     Id selectPoint  (const Point3& pos, double& dist);
@@ -51,12 +55,13 @@ public:
     Id previousControl(const Id& id);
     Id nextControl(const Id& id);
 
-    Point3&  getControlPoint(const Id& id);
-    Point3s& getControlPoints();
+    Point3&        getControlPoint(const Id& id);
+    Point3s&       getControlPoints();
+    const Point3s& getControlPoints() const;
 
     Id refine(const Id& id, const Point3& pos);
 
-    static const Id BAD_ID = -1;
+    static const Id BAD_ID;
 
 protected:
     Point3s controlPoints;

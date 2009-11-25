@@ -1,11 +1,17 @@
-#include <crusta/Shape.h>
+#include <crusta/map/Shape.h>
+
+#include <stdexcept>
+
+#include <Math/Constants.h>
 
 
 BEGIN_CRUSTA
+const Shape::Id Shape::BAD_ID(-1);
+
 
 Shape::Id::
 Id():
-    raw(BAD_ID)
+    raw(BAD_ID.raw)
 {}
 
 Shape::Id::
@@ -17,6 +23,24 @@ Shape::Id::
 Id(int iUnique, int iType, int iIndex) :
     unique(iUnique), type(iType), index(iIndex)
 {}
+
+bool Shape::Id::
+operator ==(const Id& other) const
+{
+    return raw == other.raw;
+}
+
+bool Shape::Id::
+operator !=(const Id& other) const
+{
+    return raw != other.raw;
+}
+
+
+Shape::
+~Shape()
+{
+}
 
 
 Shape::Id Shape::
@@ -48,7 +72,7 @@ selectPoint(const Point3& pos, double& dist)
     int numPoints = static_cast<int>(controlPoints.size());
     for (int i=0; i<numPoints; ++i)
     {
-        double newDist = Math::dist(controlPoints[i], pos);
+        double newDist = Geometry::dist(controlPoints[i], pos);
         if (newDist < dist)
         {
             retId.unique = getUnique();
@@ -85,7 +109,7 @@ selectSegment(const Point3& pos, double& dist)
         Vector3 toStart(start);
         toStart.normalize();
         seg           /= Math::sqrt(segSqrLen);
-        Vector3 normal = Math::cross(toStart, seg);
+        Vector3 normal = Geometry::cross(toStart, seg);
 
         double newDist = Vector3(pos) * normal;
         if (newDist < dist)
@@ -115,7 +139,7 @@ isValid(const Id& id)
         case CONTROL_SEGMENT:
             return id.index<numPoints-1;
         default:
-            return BAD_ID;
+            return false;
     }
 }
 
@@ -139,12 +163,13 @@ addControlPoint(const Point3& pos)
 {
     ///\todo get proper height of the control point
     controlPoints.push_back(pos);
+    return Id(getUnique(),CONTROL_POINT,static_cast<int>(controlPoints.size()));
 }
 
 bool Shape::
 moveControlPoint(const Id& id, const Point3& pos)
 {
-    if (!isValidControlPoint(id))
+    if (!isValidPoint(id))
         return false;
 
     controlPoints[id.index] = pos;
@@ -154,7 +179,7 @@ moveControlPoint(const Id& id, const Point3& pos)
 void Shape::
 removeControlPoint(const Id& id)
 {
-    if (!isValidControlPoint(id))
+    if (!isValidPoint(id))
         return;
 
     controlPoints.erase(controlPoints.begin()+id.index);
@@ -204,14 +229,20 @@ nextControl(const Id& id)
 Point3& Shape::
 getControlPoint(const Id& id)
 {
-    if (!isValidControlPoint(id))
-        return;
+    if (!isValidPoint(id))
+        throw std::runtime_error("invalid control point id");
 
     return controlPoints[id.index];
 }
 
 Point3s& Shape::
 getControlPoints()
+{
+    return controlPoints;
+}
+
+const Point3s& Shape::
+getControlPoints() const
 {
     return controlPoints;
 }

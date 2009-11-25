@@ -1,19 +1,30 @@
-#include <map/Polyline.h>
+#include <crusta/map/Polyline.h>
 
-#include <GL/GLContextData.h>
 
 BEGIN_CRUSTA
 
 
-void Polyline::Renderer::
-draw(GLContextData& contextData) const
+void PolylineTool::
+init()
 {
-    glBegin(GL_LINE_STRIP);
-        for (Ptrs::const_iterator lIt=lines->begin(); lIt!=lines->end(); ++lIt)
-        {
-            Point3s& cps = lIt->getControlPoints();
-            for (Point3s::const_iterator it=cps.begin(); it!=cps.end(); ++it)
-                glVertex3fv(it->getComponents());
-        }
-    glEnd();
+    Factory* polylineFactory = new Factory("PolylineTool", "Polyline Editor",
+        MapTool::factory, *Vrui::getToolManager());
+
+    //requires one input device
+    polylineFactory->setNumDevices(1);
+    //requires two buttons on the first (and only) input device
+    polylineFactory->setNumButtons(0,2);
+
+    Vrui::getToolManager()->addClass(polylineFactory,
+        Vrui::ToolManager::defaultToolFactoryDestructor);
 }
+
+
+const Vrui::ToolFactory* MapTool::
+getFactory() const
+{
+    return factory;
+}
+
+
+END_CRUSTA

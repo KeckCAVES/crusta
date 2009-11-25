@@ -5,7 +5,7 @@
 #include <Vrui/Vrui.h>
 
 #include <crusta/DataManager.h>
-#include <crusta/MapManager.h>
+#include <crusta/map/MapManager.h>
 #include <crusta/QuadCache.h>
 #include <crusta/QuadTerrain.h>
 #include <crusta/Triacontahedron.h>

@@ -1,8 +1,11 @@
-#include <crusta/ControlPointEditor.h>
+#include <crusta/map/ControlPointEditor.h>
+
+#include <Geometry/OrthogonalTransformation.h>
+#include <Vrui/Vrui.h>
 
 #include <crusta/Crusta.h>
-#include <crusta/MapManager.h>
-#include <crusta/Shape.h>
+#include <crusta/map/MapManager.h>
+#include <crusta/map/Shape.h>
 
 BEGIN_CRUSTA
 
@@ -15,8 +18,9 @@ ControlPointEditor(Vrui::LocatorTool* locator) :
 void ControlPointEditor::
 motionCallback(Vrui::LocatorTool::MotionCallbackData* cbData)
 {
-    Point3 pos   = cbData->currentTransformation.getTranslation();
-    Shape* shape = Crusta::getMapManager()->getSelectedShape();
+    Vector3 trans = cbData->currentTransformation.getTranslation();
+    Point3 pos(trans[0], trans[1], trans[2]);
+    Shape* shape  = Crusta::getMapManager()->getSelectedShape();
 
     if (dragging)
     {
@@ -41,7 +45,8 @@ buttonPressCallback(Vrui::LocatorTool::ButtonPressCallbackData* cbData)
 {
     MapManager* mapMan = Crusta::getMapManager();
     Shape* shape       = mapMan->getSelectedShape();
-    Point3 pos         = cbData->currentTransformation.getTranslation();
+    Vector3 trans      = cbData->currentTransformation.getTranslation();
+    Point3 pos(trans[0], trans[1], trans[2]);
 
     if (shape == NULL)
     {

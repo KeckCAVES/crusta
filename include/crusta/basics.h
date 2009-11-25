@@ -3,6 +3,10 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <vector>
+
+#include <Geometry/Point.h>
+#include <Geometry/Vector.h>
 
 #define BEGIN_CRUSTA namespace crusta {
 #define END_CRUSTA   } //namespace crusta
@@ -39,6 +43,10 @@ typedef uint        error;
     
 typedef uint64      FrameNumber;
 
+typedef Geometry::Point<double, 3> Point3;
+typedef std::vector<Point3> Point3s;
+typedef Geometry::Vector<double, 3> Vector3;
+    
 
 const uint   TILE_RESOLUTION     = 65;
 const double SPHEROID_RADIUS     = 6371000.0;

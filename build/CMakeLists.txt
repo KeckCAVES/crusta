@@ -49,6 +49,7 @@ add_library(Crusta SHARED
     ../include/crusta/map/ControlPointEditor.h
     ../include/crusta/map/MapManager.h
     ../include/crusta/map/Polyline.h
+	../include/crusta/map/PolylineRenderer.h
     ../include/crusta/map/Shape.h
     ../include/crusta/PixelSpecs.h
     ../include/crusta/Polyhedron.h
@@ -82,6 +83,7 @@ add_library(Crusta SHARED
     ../source/crusta/map/ControlPointEditor.cpp
     ../source/crusta/map/MapManager.cpp
     ../source/crusta/map/Polyline.cpp
+	../source/crusta/map/PolylineRenderer.cpp
     ../source/crusta/map/Shape.cpp
     ../source/crusta/QuadCache.cpp
     ../source/crusta/QuadNodeData.cpp

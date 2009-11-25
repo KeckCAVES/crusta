@@ -1,21 +1,23 @@
-#include <MapManager.h>
+#include <crusta/map/MapManager.h>
 
-#include <crusta/ControlPointEditor.h>
-#include <crusta/Polyline.h>
+#include <crusta/map/ControlPointEditor.h>
+#include <crusta/map/Polyline.h>
+#include <crusta/map/PolylineRenderer.h>
 
 BEGIN_CRUSTA
 
 
 MapManager::
 MapManager() :
-    selectDistance(0.001), selectedShape(NULL)
+    selectDistance(0.001), polylineRenderer(new PolylineRenderer)
 {}
 
 MapManager::
 ~MapManager()
 {
-    for (ShapesPtrs::iterator it=shapes.begin(); it!=shapes.end(); ++it)
+    for (PolylinePtrs::iterator it=polylines.begin(); it!=polylines.end(); ++it)
         delete *it;
+    delete polylineRenderer;
 }
 
 double MapManager::
@@ -24,57 +26,44 @@ getSelectDistance() const
     return selectDistance;
 }
 
-Shape* MapManager::
-getSelectedShape() const
+void MapManager::
+addPolyline(Polyline* line)
 {
-    return selectShape;
+    polylines.push_back(line);
 }
 
-Shape* MapManager::
-createShape()
+MapManager::PolylinePtrs& MapManager::
+getPolylines()
 {
-///\todo decide what to create based on the active map
-    Shape* newShape = new Polyline;
-    shapes.push_back(newShape);
-    polylines.push_back(newShape);
-    return newShape;
+    return polylines;
+}
+
+void MapManager::
+removePolyline(Polyline* line)
+{
+    for (PolylinePtrs::iterator it=polylines.begin(); it!=polylines.end(); ++it)
+    {
+        if (*it == line)
+        {
+            polylines.erase(it);
+            break;
+        }
+    }
 }
 
 
 void MapManager::
 frame()
 {
+    polylineRenderer->lines = &polylines;
 }
 
 void MapManager::
 display(GLContextData& contextData) const
 {
     //go through all the simple polylines and draw them
-
+    polylineRenderer->draw(contextData);
 }
 
-
-void MapManager::
-createMapTool(MapTool toolId, Vrui::LocatorTool* locator)
-{
-    switch (toolId)
-    {
-        case MAPTOOL_CONTROLPOINTEDITOR:
-        {
-            ControlPointEditor* cpe      = new ControlPointEditor(locator);
-            controlPointEditors[locator] = cpe;
-            break;
-        }
-
-        default:
-            return;
-    }
-}
-
-void MapManager::
-destroyMapTool(Vrui::LocatorTool* locator)
-{
-    controlPointEditors.erase(locator);
-}
 
 END_CRUSTA

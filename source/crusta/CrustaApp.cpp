@@ -10,6 +10,7 @@
 #include <GLMotif/Menu.h>
 #include <GLMotif/PopupMenu.h>
 #include <GLMotif/PopupWindow.h>
+#include <GLMotif/RadioBox.h>
 #include <GLMotif/RowColumn.h>
 #include <GLMotif/StyleSheet.h>
 #include <GLMotif/TextField.h>
@@ -17,11 +18,12 @@
 #include <GL/GLContextData.h>
 #include <Vrui/Lightsource.h>
 #include <Vrui/LightsourceManager.h>
+#include <Vrui/Tools/LocatorTool.h>
 #include <Vrui/Viewer.h>
 #include <Vrui/Vrui.h>
 
 #include <crusta/Crusta.h>
-#include <crusta/MapManager.h>
+#include <crusta/map/MapManager.h>
 #include <crusta/QuadTerrain.h>
 
 
@@ -132,7 +134,6 @@ produceToolSubMenu(GLMotif::Menu* mainMenu)
 {
     GLMotif::Popup* toolMenuPopup = new GLMotif::Popup(
         "ToolPopup", Vrui::getWidgetManager());
-    toolMenuPopup->setTitle("Tools");
 
     curTool = new GLMotif::RadioBox("ToolMenu", toolMenuPopup, false);
     curTool->setOrientation(GLMotif::RowColumn::VERTICAL);
@@ -147,6 +148,7 @@ produceToolSubMenu(GLMotif::Menu* mainMenu)
 
     GLMotif::CascadeButton* toolCascade = new GLMotif::CascadeButton(
         "ToolCascade", mainMenu, "Tools");
+    toolCascade->setPopup(toolMenuPopup);
 }
 
 void CrustaApp::
@@ -394,7 +396,7 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
 
     //are we creating a new mapping tool
     Vrui::LocatorTool* locator = dynamic_cast<Vrui::LocatorTool*>(cbData->tool);
-    if (tool != NULL)
+    if (locator != NULL)
     {
         //determine which tool to create
         const char* toolName = curTool->getSelectedToggle()->getName();
@@ -411,7 +413,7 @@ toolDestructionCallback(Vrui::ToolManager::ToolDestructionCallbackData* cbData)
 {
     //are we destroying a mapping tool
     Vrui::LocatorTool* locator = dynamic_cast<Vrui::LocatorTool*>(cbData->tool);
-    if (tool != NULL)
+    if (locator != NULL)
         Crusta::getMapManager()->destroyMapTool(locator);
 }
 

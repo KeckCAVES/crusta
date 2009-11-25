@@ -4,7 +4,7 @@
 #include <Vrui/LocatorToolAdapter.h>
 
 #include <crusta/basics.h>
-#include <crusta/Shape.h>
+#include <crusta/map/Shape.h>
 
 
 BEGIN_CRUSTA
