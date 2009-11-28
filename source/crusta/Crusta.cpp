@@ -8,6 +8,7 @@
 #include <crusta/map/MapManager.h>
 #include <crusta/QuadCache.h>
 #include <crusta/QuadTerrain.h>
+#include <crusta/Tool.h>
 #include <crusta/Triacontahedron.h>
 
 BEGIN_CRUSTA
@@ -32,10 +33,13 @@ Threads::Mutex Crusta::activesMutex;
 void Crusta::
 init(const std::string& demFileBase, const std::string& colorFileBase)
 {
+    //initialize the abstract crusta tool (adds an entry to the VRUI menu)
+    Vrui::ToolFactory* crustaTool = Tool::init(NULL);
+
     Triacontahedron polyhedron(SPHEROID_RADIUS);
 
     dataMan  = new DataManager(&polyhedron, demFileBase, colorFileBase);
-    mapMan   = new MapManager();
+    mapMan   = new MapManager(crustaTool);
 
     uint numPatches = polyhedron.getNumPatches();
     renderPatches.resize(numPatches);
@@ -218,6 +222,9 @@ frame()
 
     //process the requests from the last frame
     crustaQuadCache.getMainCache().frame();
+
+    //let the map manager update all the mapping stuff
+    mapMan->frame();
 }
 
 void Crusta::
@@ -228,6 +235,9 @@ display(GLContextData& contextData)
     {
         (*it)->display(contextData);
     }
+
+    //let the map manager draw all the mapping stuff
+    mapMan->display(contextData);
 }
 
 void Crusta::

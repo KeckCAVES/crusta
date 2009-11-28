@@ -1,6 +1,7 @@
 #ifndef _MapTool_H_
 #define _MapTool_H_
 
+#include <crusta/map/Shape.h>
 #include <crusta/Tool.h>
 
 
@@ -10,7 +11,7 @@ BEGIN_CRUSTA
 class Shape;
 
 
-class MapTool : public Tool
+class MapTool : public Vrui::Tool
 {
     friend class Vrui::GenericToolFactory<MapTool>;
 
@@ -20,9 +21,11 @@ public:
     MapTool(const Vrui::ToolFactory* iFactory,
             const Vrui::ToolInputAssignment& inputAssignment);
 
-    static void init();
+    static Vrui::ToolFactory* init(Vrui::ToolFactory* parent);
 
 protected:
+    typedef std::vector<Shape*> ShapePtrs;
+
     enum Mode
     {
         MODE_DRAGGING,
@@ -31,22 +34,27 @@ protected:
         MODE_SELECTING_SHAPE
     };
 
-    Point3 getPosition();
-    void   selectShape  (const Point3& pos);
-    void   selectControl(const Point& pos);
+    virtual Shape*    createShape();
+    virtual ShapePtrs getShapes();
 
-    Mode               mode;
-    Shape*             curShape;
-    typename Shape::Id curControl;
+    Point3 getPosition();
+    void   selectShape   (const Point3& pos);
+    void   selectControl (const Point3& pos);
+    void   addPointAtEnds(const Point3& pos);
+
+    Mode      mode;
+    Shape*    curShape;
+    Shape::Id curControl;
 
     Point3 prevPosition;
 
+private:
     static Factory* factory;
 
 //- Inherited from Vrui::Tool
 public:
     virtual const Vrui::ToolFactory* getFactory() const;
-    
+
     virtual void frame();
     virtual void buttonCallback(int deviceIndex, int buttonIndex,
                                 Vrui::InputDevice::ButtonCallbackData* cbData);
@@ -55,7 +63,5 @@ public:
 
 END_CRUSTA
 
-
-#include <crusta/map/MapTool.hpp>
 
 #endif //_MapTool_H_

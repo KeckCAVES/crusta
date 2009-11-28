@@ -48,8 +48,10 @@ add_library(Crusta SHARED
     ../include/crusta/LodEvaluator.h
     ../include/crusta/map/ControlPointEditor.h
     ../include/crusta/map/MapManager.h
+    ../include/crusta/map/MapTool.h
     ../include/crusta/map/Polyline.h
 	../include/crusta/map/PolylineRenderer.h
+	../include/crusta/map/PolylineTool.h
     ../include/crusta/map/Shape.h
     ../include/crusta/PixelSpecs.h
     ../include/crusta/Polyhedron.h
@@ -66,6 +68,7 @@ add_library(Crusta SHARED
     ../include/crusta/Refinement.hpp
     ../include/crusta/Scope.h
     ../include/crusta/Scope.hpp
+    ../include/crusta/Tool.h
     ../include/crusta/TreeIndex.h
     ../include/crusta/Triacontahedron.h
     ../include/crusta/ViewLod.h
@@ -82,13 +85,16 @@ add_library(Crusta SHARED
     ../source/crusta/LodEvaluator.cpp
     ../source/crusta/map/ControlPointEditor.cpp
     ../source/crusta/map/MapManager.cpp
+    ../source/crusta/map/MapTool.cpp
     ../source/crusta/map/Polyline.cpp
 	../source/crusta/map/PolylineRenderer.cpp
+	../source/crusta/map/PolylineTool.cpp
     ../source/crusta/map/Shape.cpp
     ../source/crusta/QuadCache.cpp
     ../source/crusta/QuadNodeData.cpp
     ../source/crusta/QuadTerrain.cpp
     ../source/crusta/Scope.cpp
+    ../source/crusta/Tool.cpp
     ../source/crusta/TreeIndex.cpp
     ../source/crusta/Triacontahedron.cpp
     ../source/crusta/ViewLod.cpp

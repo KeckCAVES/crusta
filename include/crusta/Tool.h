@@ -23,9 +23,9 @@ public:
          const Vrui::ToolInputAssignment& inputAssignment);
     virtual ~Tool();
 
-    static void init();
+    static Vrui::ToolFactory* init(Vrui::ToolFactory* parent);
 
-protected:
+private:
     static Factory* factory;
 
 //- Inherited from Vrui::Tool

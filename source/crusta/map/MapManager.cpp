@@ -1,16 +1,21 @@
 #include <crusta/map/MapManager.h>
 
 #include <crusta/map/ControlPointEditor.h>
+#include <crusta/map/MapTool.h>
 #include <crusta/map/Polyline.h>
 #include <crusta/map/PolylineRenderer.h>
+#include <crusta/map/PolylineTool.h>
 
 BEGIN_CRUSTA
 
 
 MapManager::
-MapManager() :
+MapManager(Vrui::ToolFactory* parentToolFactory) :
     selectDistance(0.001), polylineRenderer(new PolylineRenderer)
-{}
+{
+    Vrui::ToolFactory* factory = MapTool::init(parentToolFactory);
+    PolylineTool::init(factory);
+}
 
 MapManager::
 ~MapManager()

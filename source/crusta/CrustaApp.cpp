@@ -393,28 +393,6 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
             Misc::createFunctionCall<Vrui::NavTransform&,CrustaApp>(
                 this,&CrustaApp::alignSurfaceFrame));
     }
-
-    //are we creating a new mapping tool
-    Vrui::LocatorTool* locator = dynamic_cast<Vrui::LocatorTool*>(cbData->tool);
-    if (locator != NULL)
-    {
-        //determine which tool to create
-        const char* toolName = curTool->getSelectedToggle()->getName();
-        if (!strcmp(toolName, "ControlPointEditor"))
-        {
-            Crusta::getMapManager()->createMapTool(
-                MapManager::MAPTOOL_CONTROLPOINTEDITOR, locator);
-        }
-    }
-}
-
-void CrustaApp::
-toolDestructionCallback(Vrui::ToolManager::ToolDestructionCallbackData* cbData)
-{
-    //are we destroying a mapping tool
-    Vrui::LocatorTool* locator = dynamic_cast<Vrui::LocatorTool*>(cbData->tool);
-    if (locator != NULL)
-        Crusta::getMapManager()->destroyMapTool(locator);
 }
 
 

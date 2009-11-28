@@ -1,9 +1,12 @@
 #include <crusta/Tool.h>
 
+#include <Vrui/ToolManager.h>
+#include <Vrui/Vrui.h>
+
 BEGIN_CRUSTA
 
 
-Tool::Factory* factory = NULL;
+Tool::Factory* Tool::factory = NULL;
 
 
 Tool::
@@ -17,13 +20,15 @@ Tool::
 {
 }
 
-void Tool::
-init()
+Vrui::ToolFactory* Tool::
+init(Vrui::ToolFactory* parent)
 {
-    Factory* toolFactory = new Factory("CrustaTool", "Abstract Crusta Tool",
-                                       NULL, Vrui::getToolManager());
+    Factory* toolFactory = new Factory("CrustaTool", "Crusta Tool", parent,
+                                       *Vrui::getToolManager());
     Vrui::getToolManager()->addClass(toolFactory,
         Vrui::ToolManager::defaultToolFactoryDestructor);
+
+    return toolFactory;
 }
 
 

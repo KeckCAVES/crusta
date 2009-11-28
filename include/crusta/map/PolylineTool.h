@@ -7,17 +7,26 @@
 BEGIN_CRUSTA
 
 
-class PolylineTool : public MapTool<Polyline>
+class PolylineTool : public MapTool
 {
     friend class Vrui::GenericToolFactory<PolylineTool>;
 
 public:
     typedef Vrui::GenericToolFactory<PolylineTool> Factory;
 
-    static void init();
+    PolylineTool(const Vrui::ToolFactory* iFactory,
+                 const Vrui::ToolInputAssignment& inputAssignment);
+    virtual ~PolylineTool();
 
+    static Vrui::ToolFactory* init(Vrui::ToolFactory* parent);
+
+private:
+    static Factory* factory;
+
+//- Inherited from MapTool
 protected:
-    Factory* factory;
+    virtual Shape* createShape();
+    virtual ShapePtrs getShapes();
 
 //- Inherited from Vrui::Tool
 public:

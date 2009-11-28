@@ -20,8 +20,8 @@ Id(int iRaw) :
 {}
 
 Shape::Id::
-Id(int iUnique, int iType, int iIndex) :
-    unique(iUnique), type(iType), index(iIndex)
+Id(int iType, int iIndex) :
+    type(iType), index(iIndex)
 {}
 
 bool Shape::Id::
@@ -75,7 +75,6 @@ selectPoint(const Point3& pos, double& dist)
         double newDist = Geometry::dist(controlPoints[i], pos);
         if (newDist < dist)
         {
-            retId.unique = getUnique();
             retId.type   = CONTROL_POINT;
             retId.index  = i;
             dist         = newDist;
@@ -114,7 +113,6 @@ selectSegment(const Point3& pos, double& dist)
         double newDist = Vector3(pos) * normal;
         if (newDist < dist)
         {
-            retId.unique = getUnique();
             retId.type   = CONTROL_SEGMENT;
             retId.index  = i;
             dist         = newDist;
@@ -122,6 +120,26 @@ selectSegment(const Point3& pos, double& dist)
     }
 
     return retId;
+}
+
+Shape::Id Shape::
+selectExtremity(const Point3& pos, double& dist, End& end)
+{
+    double frontDist = Geometry::dist(pos, controlPoints.front());
+    double backDist  = Geometry::dist(pos, controlPoints.back());
+
+    if (frontDist < backDist)
+    {
+        dist = frontDist;
+        end  = END_FRONT;
+        return Id(CONTROL_POINT, 0);
+    }
+    else
+    {
+        dist = backDist;
+        end  = END_BACK;
+        return Id(CONTROL_POINT, controlPoints.size() - 1);
+    }
 }
 
 
@@ -159,11 +177,19 @@ isValidSegment(const Id& id)
 
 
 Shape::Id Shape::
-addControlPoint(const Point3& pos)
+addControlPoint(const Point3& pos, End end)
 {
     ///\todo get proper height of the control point
-    controlPoints.push_back(pos);
-    return Id(getUnique(),CONTROL_POINT,static_cast<int>(controlPoints.size()));
+    if (end == END_FRONT)
+    {
+        controlPoints.insert(controlPoints.begin(), pos);
+        return Id(CONTROL_POINT, 0);
+    }
+    else
+    {
+        controlPoints.push_back(pos);
+        return Id(CONTROL_POINT, static_cast<int>(controlPoints.size()));
+    }
 }
 
 bool Shape::
@@ -195,10 +221,10 @@ previousControl(const Id& id)
     switch (id.type)
     {
         case CONTROL_POINT:
-            return Id(id.unique, CONTROL_SEGMENT, id.index-1);
+            return Id(CONTROL_SEGMENT, id.index-1);
 
         case CONTROL_SEGMENT:
-            return Id(id.unique, CONTROL_POINT, id.index);
+            return Id(CONTROL_POINT, id.index);
 
         default:
             return BAD_ID;
@@ -215,10 +241,10 @@ nextControl(const Id& id)
     switch (id.type)
     {
         case CONTROL_POINT:
-            return Id(id.unique, CONTROL_SEGMENT, id.index);
+            return Id(CONTROL_SEGMENT, id.index);
 
         case CONTROL_SEGMENT:
-            return Id(id.unique, CONTROL_POINT, id.index+1);
+            return Id(CONTROL_POINT, id.index+1);
 
         default:
             return BAD_ID;
@@ -259,13 +285,6 @@ refine(const Id& id, const Point3& pos)
     controlPoints.insert(it, pos);
 
     return id;
-}
-
-
-int Shape::
-getUnique() const
-{
-    return 0;
 }
 
 

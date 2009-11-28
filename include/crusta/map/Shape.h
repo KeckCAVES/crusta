@@ -20,35 +20,40 @@ public:
         CONTROL_POINT,
         CONTROL_SEGMENT
     };
+    enum End
+    {
+        END_FRONT,
+        END_BACK
+    };
 
     union Id
     {
         Id();
         Id(int iRaw);
-        Id(int iUnique, int iType, int iIndex);
+        Id(int iType, int iIndex);
         bool operator ==(const Id& other) const;
         bool operator !=(const Id& other) const;
 
         struct
         {
-            int unique :  8;
             int type   :  8;
-            int index  : 16;
+            int index  : 24;
         };
         int raw;
     };
 
     virtual ~Shape();
 
-    Id select       (const Point3& pos, double& dist);
-    Id selectPoint  (const Point3& pos, double& dist);
-    Id selectSegment(const Point3& pos, double& dist);
+    Id select         (const Point3& pos, double& dist);
+    Id selectPoint    (const Point3& pos, double& dist);
+    Id selectSegment  (const Point3& pos, double& dist);
+    Id selectExtremity(const Point3& pos, double& dist, End& end);
 
     bool isValid       (const Id& id);
     bool isValidPoint  (const Id& id);
     bool isValidSegment(const Id& id);
 
-    virtual Id addControlPoint(const Point3& pos);
+    virtual Id addControlPoint(const Point3& pos, End end=END_BACK);
     bool moveControlPoint(const Id& id, const Point3& pos);
     virtual void removeControlPoint(const Id& id);
 
@@ -65,8 +70,6 @@ public:
 
 protected:
     Point3s controlPoints;
-
-    int getUnique() const;
 };
 
 END_CRUSTA

@@ -1,3 +1,4 @@
+#if 0
 #include <crusta/map/ControlPointEditor.h>
 
 #include <Geometry/OrthogonalTransformation.h>
@@ -94,3 +95,4 @@ buttonReleaseCallback(Vrui::LocatorTool::ButtonReleaseCallbackData* cbData)
 
 
 END_CRUSTA
+#endif

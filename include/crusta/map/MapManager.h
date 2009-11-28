@@ -7,6 +7,10 @@
 
 class GLContextData;
 
+namespace Vrui {
+    class ToolFactory;
+}
+
 
 BEGIN_CRUSTA
 
@@ -19,8 +23,8 @@ class MapManager
 {
 public:
     typedef std::vector<Polyline*> PolylinePtrs;
-    
-    MapManager();
+
+    MapManager(Vrui::ToolFactory* parentToolFactory);
     ~MapManager();
 
     double getSelectDistance() const;
