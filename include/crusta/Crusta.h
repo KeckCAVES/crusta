@@ -30,9 +30,12 @@ public:
                      const std::string& colorFileBase);
     static void shutdown();
 
-///\todo fix this API. Probably would to define Crusta::Point
+///\todo fix this API. potentially deprecate
     /** query the height of the surface closest to the query point */
     static double getHeight(double x, double y, double z);
+    /** snap the given cartesian point to the surface of the terrain (at an
+        optional offset) */
+    static Point3 snapToSurface(const Point3& pos, Scalar offset=Scalar(0));
 
     static const FrameNumber& getCurrentFrame();
     static const FrameNumber& getLastScaleFrame();

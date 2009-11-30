@@ -46,7 +46,6 @@ add_library(Crusta SHARED
     ../include/crusta/FrustumVisibility.h
     ../include/crusta/LightingShader.h
     ../include/crusta/LodEvaluator.h
-    ../include/crusta/map/ControlPointEditor.h
     ../include/crusta/map/MapManager.h
     ../include/crusta/map/MapTool.h
     ../include/crusta/map/Polyline.h
@@ -68,6 +67,7 @@ add_library(Crusta SHARED
     ../include/crusta/Refinement.hpp
     ../include/crusta/Scope.h
     ../include/crusta/Scope.hpp
+	../include/crusta/SurfaceTool.h
     ../include/crusta/Tool.h
     ../include/crusta/TreeIndex.h
     ../include/crusta/Triacontahedron.h
@@ -83,7 +83,6 @@ add_library(Crusta SHARED
     ../source/crusta/FrustumVisibility.cpp
     ../source/crusta/LightingShader.cpp
     ../source/crusta/LodEvaluator.cpp
-    ../source/crusta/map/ControlPointEditor.cpp
     ../source/crusta/map/MapManager.cpp
     ../source/crusta/map/MapTool.cpp
     ../source/crusta/map/Polyline.cpp
@@ -94,6 +93,7 @@ add_library(Crusta SHARED
     ../source/crusta/QuadNodeData.cpp
     ../source/crusta/QuadTerrain.cpp
     ../source/crusta/Scope.cpp
+	../source/crusta/SurfaceTool.cpp
     ../source/crusta/Tool.cpp
     ../source/crusta/TreeIndex.cpp
     ../source/crusta/Triacontahedron.cpp
