@@ -1,6 +1,8 @@
 #ifndef _SurfaceTool_H_
 #define _SurfaceTool_H_
 
+
+#include <Vrui/Tools/GenericToolFactory.h>
 #include <Vrui/Tools/TransformTool.h>
 
 #include <crusta/basics.h>
@@ -27,9 +29,11 @@ private:
 
 //- Inherited from Vrui::Tool
 public:
-    virtual const Vrui::ToolFacotry* getFactory() const;
+    virtual const Vrui::ToolFactory* getFactory() const;
+
     virtual void frame();
-}
+    virtual void display(GLContextData& contextData) const;
+};
 
 END_CRUSTA
 

@@ -27,6 +27,20 @@ MainCache::
 }
 
 void MainCache::
+request(const CacheRequest& req)
+{
+    //make sure merging of the requests is done one at a time
+    Threads::Mutex::Lock lock(requestMutex);
+
+    //requests cannot be duplicated so we simply append the requests
+    childRequests.push_back(req);
+
+    //request a frame to process these requests
+    if (!childRequests.empty())
+        Vrui::requestUpdate();
+}
+
+void MainCache::
 request(const CacheRequests& reqs)
 {
     //make sure merging of the requests is done one at a time

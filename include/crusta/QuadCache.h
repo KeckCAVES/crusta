@@ -90,6 +90,8 @@ public:
 
     /** process requests */
     void frame();
+    /** request data fetch/generation for a node */
+    void request(const CacheRequest& req);
     /** request data fetch/generation for a set of tree indices */
     void request(const CacheRequests& reqs);
 

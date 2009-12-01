@@ -40,13 +40,15 @@ typedef int32_t		int32;
 typedef int64_t     int64;
 
 typedef uint        error;
-    
+
 typedef uint64      FrameNumber;
 
-typedef Geometry::Point<double, 3> Point3;
-typedef std::vector<Point3> Point3s;
-typedef Geometry::Vector<double, 3> Vector3;
-    
+typedef double      Scalar;
+
+typedef Geometry::Point<Scalar, 3>  Point3;
+typedef std::vector<Point3>         Point3s;
+typedef Geometry::Vector<Scalar, 3> Vector3;
+
 
 const uint   TILE_RESOLUTION     = 65;
 const double SPHEROID_RADIUS     = 6371000.0;

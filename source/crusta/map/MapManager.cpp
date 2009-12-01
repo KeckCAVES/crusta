@@ -1,6 +1,5 @@
 #include <crusta/map/MapManager.h>
 
-#include <crusta/map/ControlPointEditor.h>
 #include <crusta/map/MapTool.h>
 #include <crusta/map/Polyline.h>
 #include <crusta/map/PolylineRenderer.h>
