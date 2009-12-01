@@ -19,12 +19,11 @@ include(${CMAKE_SOURCE_DIR}/FindVRUI.cmake)
 #-------------------
 # Target independent configuration
 #-------------------
+#set(CRUSTA_SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share")
+add_definitions(-DCRUSTA_SHARE_PATH=\"${CMAKE_INSTALL_PREFIX}/share\")
 
-set(CRUSTA_SHARE_PATH "${VRUI_SHARE_DIR}/Crusta")
-add_definitions(-DCRUSTA_SHARE_PATH=\"${CRUSTA_SHARE_PATH}\")
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../lib)
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin)
+#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../lib)
 include_directories(../include)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
@@ -49,8 +48,8 @@ add_library(Crusta SHARED
     ../include/crusta/map/MapManager.h
     ../include/crusta/map/MapTool.h
     ../include/crusta/map/Polyline.h
-	../include/crusta/map/PolylineRenderer.h
-	../include/crusta/map/PolylineTool.h
+    ../include/crusta/map/PolylineRenderer.h
+    ../include/crusta/map/PolylineTool.h
     ../include/crusta/map/Shape.h
     ../include/crusta/PixelSpecs.h
     ../include/crusta/Polyhedron.h
@@ -67,7 +66,7 @@ add_library(Crusta SHARED
     ../include/crusta/Refinement.hpp
     ../include/crusta/Scope.h
     ../include/crusta/Scope.hpp
-	../include/crusta/SurfaceTool.h
+    ../include/crusta/SurfaceTool.h
     ../include/crusta/Tool.h
     ../include/crusta/TreeIndex.h
     ../include/crusta/Triacontahedron.h
@@ -86,14 +85,14 @@ add_library(Crusta SHARED
     ../source/crusta/map/MapManager.cpp
     ../source/crusta/map/MapTool.cpp
     ../source/crusta/map/Polyline.cpp
-	../source/crusta/map/PolylineRenderer.cpp
-	../source/crusta/map/PolylineTool.cpp
+    ../source/crusta/map/PolylineRenderer.cpp
+    ../source/crusta/map/PolylineTool.cpp
     ../source/crusta/map/Shape.cpp
     ../source/crusta/QuadCache.cpp
     ../source/crusta/QuadNodeData.cpp
     ../source/crusta/QuadTerrain.cpp
     ../source/crusta/Scope.cpp
-	../source/crusta/SurfaceTool.cpp
+    ../source/crusta/SurfaceTool.cpp
     ../source/crusta/Tool.cpp
     ../source/crusta/TreeIndex.cpp
     ../source/crusta/Triacontahedron.cpp
@@ -155,39 +154,39 @@ else(APPLE)
 endif(APPLE)
 
 set(CONSTRUO_SOURCES
-	../include/construo/ArcInfoBinaryGridImageFile.h
-	../include/construo/Builder.h
-	../include/construo/Builder.hpp
-	../include/construo/Converters.h
-	../include/construo/DynamicFilter.h
-	../include/construo/Filter.h
-	../include/construo/GdalImageFile.h
-	../include/construo/GdalImageFile.hpp
-	../include/construo/GdalTransform.h
-	../include/construo/GeometryTypes.h
-	../include/construo/GeoTransform.h
-	../include/construo/ImageCoverage.h
-	../include/construo/ImageFile.h
-	../include/construo/ImageFile.hpp
-	../include/construo/ImageFileLoader.h
-	../include/construo/ImageFileLoader.hpp
-	../include/construo/ImagePatch.h
-	../include/construo/ImagePatch.hpp
-	../include/construo/ImageTransform.h
-	../include/construo/ImageTransformReader.h
-	../include/construo/MagickImageFile.h
-	../include/construo/PixelHelpers.h
-	../include/construo/PngImageFile.h
-	../include/construo/PpmImageFile.h
-	../include/construo/ReiImageFile.h
-	../include/construo/Sampler.h
-	../include/construo/SphereCoverage.h
-	../include/construo/TpmFile.h
-	../include/construo/TpmImageFile.h
-	../include/construo/Tree.h
-	../include/construo/Tree.hpp
-	../include/construo/UtmTransform.h
-	../include/construo/Visualizer.h
+    ../include/construo/ArcInfoBinaryGridImageFile.h
+    ../include/construo/Builder.h
+    ../include/construo/Builder.hpp
+    ../include/construo/Converters.h
+    ../include/construo/DynamicFilter.h
+    ../include/construo/Filter.h
+    ../include/construo/GdalImageFile.h
+    ../include/construo/GdalImageFile.hpp
+    ../include/construo/GdalTransform.h
+    ../include/construo/GeometryTypes.h
+    ../include/construo/GeoTransform.h
+    ../include/construo/ImageCoverage.h
+    ../include/construo/ImageFile.h
+    ../include/construo/ImageFile.hpp
+    ../include/construo/ImageFileLoader.h
+    ../include/construo/ImageFileLoader.hpp
+    ../include/construo/ImagePatch.h
+    ../include/construo/ImagePatch.hpp
+    ../include/construo/ImageTransform.h
+    ../include/construo/ImageTransformReader.h
+    ../include/construo/MagickImageFile.h
+    ../include/construo/PixelHelpers.h
+    ../include/construo/PngImageFile.h
+    ../include/construo/PpmImageFile.h
+    ../include/construo/ReiImageFile.h
+    ../include/construo/Sampler.h
+    ../include/construo/SphereCoverage.h
+    ../include/construo/TpmFile.h
+    ../include/construo/TpmImageFile.h
+    ../include/construo/Tree.h
+    ../include/construo/Tree.hpp
+    ../include/construo/UtmTransform.h
+    ../include/construo/Visualizer.h
 
     ../source/construo/ArcInfoBinaryGridImageFile.cpp
     ../source/construo/Construo.cpp
@@ -231,10 +230,12 @@ target_link_libraries(construo Crusta ${PNG_LIBRARIES}
 #-------------------
 
 install(TARGETS Crusta
-        LIBRARY DESTINATION ${VRUI_LIB_DIR})
+        LIBRARY DESTINATION lib)
+install(TARGETS crustaApp
+        RUNTIME DESTINATION bin)
 install(TARGETS CrustaVislet
-        LIBRARY DESTINATION ${VRUI_LIB_DIR}/VRVislets)
+        LIBRARY DESTINATION lib)
 
 #shader files
 file(GLOB CRUSTA_SHADERS ../share/*.vs ../share/*.fs ../share/*.gs)
-install(FILES ${CRUSTA_SHADERS} DESTINATION ${CRUSTA_SHARE_PATH})
+install(FILES ${CRUSTA_SHADERS} DESTINATION share)

@@ -22,35 +22,20 @@
 ###############################################################################
 
 # Confirm the vrui path
-IF(NOT VRUI_PATH)
-  MESSAGE(STATUS "VRUI_PATH not found in the cmake cache... "
-                 "checking the environment.")
-  IF(NOT "$ENV{VRUI_PATH}" STREQUAL "")
-    SET(VRUI_PATH "$ENV{VRUI_PATH}")
-    MESSAGE(STATUS "Set VRUI_PATH from the environment to "${VRUI_PATH})
-  ELSE(NOT "$ENV{VRUI_PATH}" STREQUAL "")
-    MESSAGE(FATAL_ERROR "Specify the VRUI_PATH")
-  ENDIF(NOT "$ENV{VRUI_PATH}" STREQUAL "")
-ENDIF(NOT VRUI_PATH)
+FIND_PATH(VRUI_PATH etc/Vrui.cfg
+    HINTS $ENV{VRUI_PATH}
+    PATH_SUFFIXES Vrui-1.0 VRUI Vrui vrui)
 
-IF(NOT EXISTS "${VRUI_PATH}/etc/Vrui.cfg")
-  MESSAGE(FATAL_ERROR "Can't Find ${VRUI_PATH}/etc/Vrui.cfg")
-ENDIF(NOT EXISTS "${VRUI_PATH}/etc/Vrui.cfg")
+SET(VRUI_SHARE_DIR   "${VRUI_PATH}/share"   CACHE FILEPATH "Vrui Share Path")
+SET(VRUI_INCLUDE_DIR "${VRUI_PATH}/include" CACHE FILEPATH "Vrui Include Path")
+SET(VRUI_BIN_DIR     "${VRUI_PATH}/bin"     CACHE FILEPATH "Vrui Binary Path")
 
-SET(VRUI_SHARE_DIR "${VRUI_PATH}/share")
-SET(VRUI_INCLUDE_DIR "${VRUI_PATH}/include")
-
-SET(VRUI_BIN_DIR "${VRUI_PATH}/bin")
-IF(CMAKE_SIZEOF_VOID_P EQUAL 4)
-  SET(VRUI_LIB_DIR "${VRUI_PATH}/lib")
-ELSE(CMAKE_SIZEOF_VOID_P EQUAL 4)
+EXECUTE_PROCESS(COMMAND test -d /lib64 -a ! -L /lib64 RESULT_VARIABLE ISLIB64)
+IF(ISLIB64)
   SET(VRUI_LIB_DIR "${VRUI_PATH}/lib64")
-ENDIF(CMAKE_SIZEOF_VOID_P EQUAL 4)
-
-IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  SET(VRUI_LIB_DIR "${VRUI_LIB_DIR}/debug")
-  SET(VRUI_BIN_DIR "${VRUI_BIN_DIR}/debug")
-ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+ELSE(ISLIB64)
+  SET(VRUI_LIB_DIR "${VRUI_PATH}/lib")
+ENDIF(ISLIB64)
 
 SET(VRUI_LIB_NAMES Misc Plugins Realtime Comm Math Geometry GLWrappers
                    GLSupport GLXSupport GLGeometry GLMotif Images Sound
@@ -61,12 +46,13 @@ FOREACH(name ${VRUI_LIB_NAMES})
                PATHS ${VRUI_LIB_DIR}
                NO_DEFAULT_PATH)
   IF(A_VRUI_LIB)
-    SET(VRUI_LIBRARIES ${VRUI_LIBRARIES} ${A_VRUI_LIB})
+    SET(VRUI_LIBRARIES_TEMP ${VRUI_LIBRARIES_TEMP} ${A_VRUI_LIB})
     UNSET(A_VRUI_LIB CACHE)
   ELSE(A_VRUI_LIB)
     MESSAGE(FATAL_ERROR "Can't find " ${name} " vrui library.")
   ENDIF(A_VRUI_LIB)
 ENDFOREACH(name)
+SET(VRUI_LIBRARIES ${VRUI_LIBRARIES_TEMP} CACHE FILEPATH "Vrui Libraries")
 
 # Dependencies
 FIND_PACKAGE(X11 REQUIRED)
