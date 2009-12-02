@@ -1,5 +1,6 @@
 #include <crusta/map/Shape.h>
 
+#include <cassert>
 #include <stdexcept>
 
 #include <Math/Constants.h>
@@ -44,14 +45,14 @@ Shape::
 
 
 Shape::Id Shape::
-select(const Point3& pos, double& dist)
+select(const Point3& pos, double& dist, double pointBias)
 {
     double pointDist;
     Id pointId = selectPoint(pos, pointDist);
     double segmentDist;
     Id segmentId = selectSegment(pos, segmentDist);
 
-    if (pointDist <= segmentDist)
+    if (pointDist*pointBias <= segmentDist)
     {
         dist = pointDist;
         return pointId;
@@ -110,7 +111,7 @@ selectSegment(const Point3& pos, double& dist)
         seg           /= Math::sqrt(segSqrLen);
         Vector3 normal = Geometry::cross(toStart, seg);
 
-        double newDist = Vector3(pos) * normal;
+        double newDist = abs(Vector3(pos) * normal);
         if (newDist < dist)
         {
             retId.type   = CONTROL_SEGMENT;
@@ -188,7 +189,7 @@ addControlPoint(const Point3& pos, End end)
     else
     {
         controlPoints.push_back(pos);
-        return Id(CONTROL_POINT, static_cast<int>(controlPoints.size()));
+        return Id(CONTROL_POINT, static_cast<int>(controlPoints.size()-1));
     }
 }
 
@@ -215,16 +216,19 @@ removeControlPoint(const Id& id)
 Shape::Id Shape::
 previousControl(const Id& id)
 {
-    if (id==BAD_ID || id.index==0)
-        return BAD_ID;
-
     switch (id.type)
     {
         case CONTROL_POINT:
-            return Id(CONTROL_SEGMENT, id.index-1);
+            if (id.index>0)
+                return Id(CONTROL_SEGMENT, id.index-1);
+            else
+                return BAD_ID;
 
         case CONTROL_SEGMENT:
-            return Id(CONTROL_POINT, id.index);
+            if (id.index>=0)
+                return Id(CONTROL_POINT, id.index);
+            else
+                return BAD_ID;
 
         default:
             return BAD_ID;
@@ -281,10 +285,11 @@ refine(const Id& id, const Point3& pos)
         return BAD_ID;
 
     Id end = nextControl(id);
-    Point3s::iterator it = controlPoints.begin() + id.index;
+    assert(isValidPoint(end));
+    Point3s::iterator it = controlPoints.begin() + end.index;
     controlPoints.insert(it, pos);
 
-    return id;
+    return end;
 }
 
 

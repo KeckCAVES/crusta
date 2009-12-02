@@ -44,7 +44,7 @@ public:
 
     virtual ~Shape();
 
-    Id select         (const Point3& pos, double& dist);
+    Id select         (const Point3& pos, double& dist, double pointBias=1.0);
     Id selectPoint    (const Point3& pos, double& dist);
     Id selectSegment  (const Point3& pos, double& dist);
     Id selectExtremity(const Point3& pos, double& dist, End& end);

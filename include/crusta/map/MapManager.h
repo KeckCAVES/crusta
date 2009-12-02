@@ -27,7 +27,8 @@ public:
     MapManager(Vrui::ToolFactory* parentToolFactory);
     ~MapManager();
 
-    double getSelectDistance() const;
+    Scalar getSelectDistance() const;
+    Scalar getPointSelectionBias() const;
 
     void addPolyline(Polyline* line);
     PolylinePtrs& getPolylines();
@@ -37,7 +38,8 @@ public:
     void display(GLContextData& contextData) const;
 
 protected:
-    double selectDistance;
+    Scalar selectDistance;
+    Scalar pointSelectionBias;
 
     PolylinePtrs      polylines;
     PolylineRenderer* polylineRenderer;

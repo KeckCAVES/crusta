@@ -56,6 +56,8 @@ public:
     virtual const Vrui::ToolFactory* getFactory() const;
 
     virtual void frame();
+    virtual void display(GLContextData& contextData) const;
+
     virtual void buttonCallback(int deviceIndex, int buttonIndex,
                                 Vrui::InputDevice::ButtonCallbackData* cbData);
 };

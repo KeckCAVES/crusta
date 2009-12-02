@@ -84,8 +84,8 @@ frame()
 void SurfaceTool::
 display(GLContextData& contextData) const
 {
-//    Vrui::NavTransform physicalFrame = transformedDevice->getTransformation();
-    Vrui::NavTransform physicalFrame = input.getDevice(0)->getTransformation();
+    Vrui::NavTransform physicalFrame = transformedDevice->getTransformation();
+//    Vrui::NavTransform physicalFrame = input.getDevice(0)->getTransformation();
     Vrui::NavTransform modelFrame    =
         Vrui::getInverseNavigationTransformation() * physicalFrame;
 
@@ -102,8 +102,8 @@ display(GLContextData& contextData) const
 #endif
 
     GLint activeTexture;
-    glPushAttrib(GL_ENABLE_BIT);
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+    glPushAttrib(GL_ENABLE_BIT);
 
     glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);

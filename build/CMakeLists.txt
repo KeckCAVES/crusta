@@ -11,19 +11,13 @@ endif(APPLE)
 #-------------------
 # Include VRUI variables and macros
 #-------------------
-
-#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR} )
-#find_package(VRUI)
-include(${CMAKE_SOURCE_DIR}/FindVRUI.cmake)
+find_package(VRUI REQUIRED HINTS ${CMAKE_SOURCE_DIR})
 
 #-------------------
 # Target independent configuration
 #-------------------
-#set(CRUSTA_SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share")
-add_definitions(-DCRUSTA_SHARE_PATH=\"${CMAKE_INSTALL_PREFIX}/share\")
-
-#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin)
-#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../lib)
+set(CRUSTA_SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share/crusta")
+add_definitions(-DCRUSTA_SHARE_PATH=\"${CRUSTA_SHARE_PATH}\")
 include_directories(../include)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
@@ -238,4 +232,4 @@ install(TARGETS CrustaVislet
 
 #shader files
 file(GLOB CRUSTA_SHADERS ../share/*.vs ../share/*.fs ../share/*.gs)
-install(FILES ${CRUSTA_SHADERS} DESTINATION share)
+install(FILES ${CRUSTA_SHADERS} DESTINATION ${CRUSTA_SHARE_PATH})

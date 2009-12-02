@@ -1,8 +1,11 @@
 #include <crusta/map/MapTool.h>
 
 #include <cassert>
+///\todo remove
+#include <iostream>
 
 #include <Geometry/OrthogonalTransformation.h>
+#include <GL/GLTransformationWrappers.h>
 #include <Math/Constants.h>
 #include <Vrui/ToolManager.h>
 #include <Vrui/Vrui.h>
@@ -83,16 +86,18 @@ void MapTool::
 selectControl(const Point3& pos)
 {
     curControl = Shape::BAD_ID;
-
     assert(curShape != NULL);
+
+    MapManager* mapMan = Crusta::getMapManager();
     double distance;
-    Shape::Id control = curShape->select(pos, distance);
+    Shape::Id control = curShape->select(pos, distance,
+                                         mapMan->getPointSelectionBias());
 
     if (control == Shape::BAD_ID)
         return;
 
     double threshold = 1.0 / Vrui::getNavigationTransformation().getScaling();
-    threshold       *= Crusta::getMapManager()->getSelectDistance();
+    threshold       *= mapMan->getSelectDistance();
     if (distance > threshold)
         return;
 
@@ -135,6 +140,7 @@ frame()
             {
                 curControl = Shape::BAD_ID;
                 mode       = MODE_SELECTING_CONTROL;
+std::cout << "frame: MODE_DRAGGING -> MODE_SELECTING_CONTROL" << std::endl;
             }
             break;
         }
@@ -157,6 +163,69 @@ frame()
 }
 
 void MapTool::
+display(GLContextData& contextData) const
+{
+    if (curShape==NULL || curControl==Shape::BAD_ID)
+        return;
+
+    GLint activeTexture;
+    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+    GLdouble depthRange[2];
+    glGetDoublev(GL_DEPTH_RANGE, depthRange);
+
+    glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_POINT_BIT);
+    glPushMatrix();
+    glMultMatrix(Vrui::getNavigationTransformation());
+
+    glDisable(GL_LIGHTING);
+    glActiveTexture(GL_TEXTURE0);
+    glDisable(GL_TEXTURE_2D);
+    glDepthRange(0.0, 0.0);
+
+    glLineWidth(3.0);
+    glPointSize(4.0);
+
+    switch (curControl.type)
+    {
+        case Shape::CONTROL_POINT:
+        {
+            const Point3& p = curShape->getControlPoint(curControl);
+
+            glColor3f(0.9f, 0.6f, 0.3f);
+            glBegin(GL_POINTS);
+            glVertex3f(p[0], p[1], p[2]);
+            glEnd();
+
+            break;
+        }
+
+        case Shape::CONTROL_SEGMENT:
+        {
+            Shape::Id si    = curShape->previousControl(curControl);
+            const Point3& s = curShape->getControlPoint(si);
+            Shape::Id ei    = curShape->nextControl(curControl);
+            const Point3& e = curShape->getControlPoint(ei);
+
+            glColor3f(0.6f, 0.55f, 0.2f);
+            glBegin(GL_LINES);
+            glVertex3f(s[0], s[1], s[2]);
+            glVertex3f(e[0], e[1], e[2]);
+            glEnd();
+
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    glPopMatrix();
+    glPopAttrib();
+    glDepthRange(depthRange[0], depthRange[1]);
+    glActiveTexture(activeTexture);
+}
+
+void MapTool::
 buttonCallback(int deviceIndex, int buttonIndex,
                Vrui::InputDevice::ButtonCallbackData* cbData)
 {
@@ -173,6 +242,7 @@ buttonCallback(int deviceIndex, int buttonIndex,
                     curShape   = createShape();
                     curControl = curShape->addControlPoint(pos);
                     mode       = MODE_DRAGGING;
+std::cout << "MODE_IDLE -> MODE_DRAGGING" << std::endl;
                     break;
                 }
 
@@ -188,6 +258,7 @@ buttonCallback(int deviceIndex, int buttonIndex,
                         //make sure to update the rendering of the control hints
                     }
                     mode = MODE_DRAGGING;
+std::cout << "MODE_SELECTING_CONTROL -> MODE_DRAGGING" << std::endl;
                     break;
                 }
 
@@ -204,7 +275,8 @@ buttonCallback(int deviceIndex, int buttonIndex,
                 {
                     selectShape(pos);
                     mode = MODE_SELECTING_SHAPE;
-                    break;
+ std::cout << "MODE_IDLE,MODE_SELECTING_CONTROL -> MODE_SELECTING_SHAPE" << std::endl;
+                   break;
                 }
 
                 default:
@@ -221,6 +293,7 @@ buttonCallback(int deviceIndex, int buttonIndex,
                 case MODE_DRAGGING:
                 {
                     mode = MODE_SELECTING_CONTROL;
+std::cout << "MODE_DRAGGING -> MODE_SELECTING_CONTROL" << std::endl;
                     break;
                 }
 
@@ -235,9 +308,15 @@ buttonCallback(int deviceIndex, int buttonIndex,
                 case MODE_SELECTING_SHAPE:
                 {
                     if (curShape != NULL)
+                    {
                         mode = MODE_SELECTING_CONTROL;
+std::cout << "MODE_SELECTING_SHAPE -> MODE_SELECTING_CONTROL" << std::endl;
+                    }
                     else
+                    {
                         mode = MODE_IDLE;
+std::cout << "MODE_SELECTING_SHAPE -> MODE_IDLE" << std::endl;
+                    }
                     break;
                 }
 

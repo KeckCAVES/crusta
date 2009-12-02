@@ -12,6 +12,14 @@ BEGIN_CRUSTA
 void PolylineRenderer::
 draw(GLContextData& contextData) const
 {
+    GLint activeTexture;
+    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+    glPushAttrib(GL_ENABLE_BIT);
+
+    glDisable(GL_LIGHTING);
+    glActiveTexture(GL_TEXTURE0);
+    glDisable(GL_TEXTURE_2D);
+
     for (Ptrs::const_iterator lIt=lines->begin(); lIt!=lines->end(); ++lIt)
     {
         const Point3s& cps = (*lIt)->getControlPoints();
@@ -32,6 +40,9 @@ draw(GLContextData& contextData) const
             glVertex3f((*it)[0], (*it)[1], (*it)[2]);
         glEnd();
     }
+
+    glPopAttrib();
+    glActiveTexture(activeTexture);
 }
 
 

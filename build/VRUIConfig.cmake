@@ -21,6 +21,8 @@
 ###############################################################################
 ###############################################################################
 
+SET(VRUI_USE_DEBUG FALSE CACHE BOOL "Use debug Vrui library")
+
 # Confirm the vrui path
 FIND_PATH(VRUI_PATH etc/Vrui.cfg
     HINTS $ENV{VRUI_PATH}
@@ -30,12 +32,16 @@ SET(VRUI_SHARE_DIR   "${VRUI_PATH}/share"   CACHE FILEPATH "Vrui Share Path")
 SET(VRUI_INCLUDE_DIR "${VRUI_PATH}/include" CACHE FILEPATH "Vrui Include Path")
 SET(VRUI_BIN_DIR     "${VRUI_PATH}/bin"     CACHE FILEPATH "Vrui Binary Path")
 
-EXECUTE_PROCESS(COMMAND test -d /lib64 -a ! -L /lib64 RESULT_VARIABLE ISLIB64)
-IF(ISLIB64)
+IF(IS_DIRECTORY "${VRUI_PATH}/lib64")
   SET(VRUI_LIB_DIR "${VRUI_PATH}/lib64")
-ELSE(ISLIB64)
+ELSE(IS_DIRECTORY "${VRUI_PATH}/lib64")
   SET(VRUI_LIB_DIR "${VRUI_PATH}/lib")
-ENDIF(ISLIB64)
+ENDIF(IS_DIRECTORY "${VRUI_PATH}/lib64")
+
+IF(VRUI_USE_DEBUG)
+  SET(VRUI_BIN_DIR "${VRUI_BIN_DIR}/debug")
+  SET(VRUI_LIB_DIR "${VRUI_LIB_DIR}/debug")
+ENDIF(VRUI_USE_DEBUG)
 
 SET(VRUI_LIB_NAMES Misc Plugins Realtime Comm Math Geometry GLWrappers
                    GLSupport GLXSupport GLGeometry GLMotif Images Sound
