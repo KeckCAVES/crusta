@@ -9,6 +9,8 @@
 
 BEGIN_CRUSTA
 
+class Crusta;
+
 /** stores the main RAM view-independent data of the terrain that can be shared
     between multiple view-dependent trees */
 struct QuadNodeMainData
@@ -20,10 +22,10 @@ struct QuadNodeMainData
 
     /** compute the bounding sphere. It is dependent on the vertical scale,
         so this method is a convinient API for such updates */
-    void computeBoundingSphere();
+    void computeBoundingSphere(Scalar verticalScale);
     /** compute the various "cached values" (e.g. bounding sphere, centroid,
         etc.) */
-    void init();
+    void init(Scalar verticalScale);
 
     /** 3D vertex data for the node's flat-sphere geometry */
     Vertex* geometry;
@@ -90,13 +92,13 @@ public:
 
     /** check to see if the semi-dynamic data of the buffer is current and can
         be used without an update */
-    bool isCurrent();
+    bool isCurrent(Crusta* crusta);
     
     /** check to see if the buffer is valid */
     bool isValid();
 
     /** confirm use of the buffer for the current frame */
-    void touch();
+    void touch(Crusta* crusta);
     /** invalidate a buffer */
     void invalidate();
     /** pin the element in the cache such that it cannot be swaped out */

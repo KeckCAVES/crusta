@@ -7,8 +7,8 @@ BEGIN_CRUSTA
 
 template <typename BufferType>
 CacheUnit<BufferType>::
-CacheUnit(uint size) :
-    sortFrameNumber(0)
+CacheUnit(uint size, Crusta* iCrusta) :
+    CrustaComponent(iCrusta), sortFrameNumber(0)
 {
     //fill the cache with buffers with no valid content
     for (uint i=0; i<size; ++i)
@@ -80,7 +80,7 @@ getBuffer(const TreeIndex& index, bool* existed)
         lruBuf = lruCached.back();
         lruCached.pop_back();
         //verify that the buffer hasn't been touch during this frame
-        if (lruBuf.buffer->getFrameNumber() >= Crusta::getCurrentFrame())
+        if (lruBuf.buffer->getFrameNumber() >= crusta->getCurrentFrame())
             lruBuf.buffer = NULL;
     }
 
@@ -123,7 +123,7 @@ void CacheUnit<BufferType>::
 refreshLru()
 {
     //update the LRU view if necessary
-    if (sortFrameNumber != Crusta::getCurrentFrame())
+    if (sortFrameNumber != crusta->getCurrentFrame())
     {
         lruCached.clear();
         for (typename BufferPtrMap::const_iterator it=cached.begin();
@@ -131,7 +131,7 @@ refreshLru()
         {
             /* don't add the buffer used during the last frame, since they will
                be the data of the starting approximation */
-            if (it->second->getFrameNumber() < (Crusta::getCurrentFrame()-1))
+            if (it->second->getFrameNumber() < (crusta->getCurrentFrame()-1))
                 lruCached.push_back(IndexedBuffer(it->first, it->second));
         }
         std::sort(lruCached.begin(), lruCached.end(),
@@ -139,7 +139,7 @@ refreshLru()
 
         DEBUG_OUT(6, "RefreshLRU%u: frame %u last sort %u\n",
                   (unsigned int)cached.size(),
-                  (unsigned int)Crusta::getCurrentFrame(),
+                  (unsigned int)crusta->getCurrentFrame(),
                   (unsigned int)sortFrameNumber);
         for (typename IndexedBuffers::const_iterator it=lruCached.begin();
              it!=lruCached.end(); ++it)
@@ -163,7 +163,7 @@ for (typename IndexedBuffers::reverse_iterator it=lruCached.rbegin();
     }
 }
 DEBUG_END
-        sortFrameNumber = Crusta::getCurrentFrame();
+        sortFrameNumber = crusta->getCurrentFrame();
     }
 }
 

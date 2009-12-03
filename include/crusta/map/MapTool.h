@@ -11,7 +11,7 @@ BEGIN_CRUSTA
 class Shape;
 
 
-class MapTool : public Vrui::Tool
+class MapTool : public Tool
 {
     friend class Vrui::GenericToolFactory<MapTool>;
 

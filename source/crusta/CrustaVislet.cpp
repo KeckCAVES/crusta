@@ -73,13 +73,16 @@ CrustaVislet(int numArguments, const char* const arguments[])
         if (strcmp(arguments[i], "-color")==0)
             colorName = std::string(arguments[++i]);
     }
-    Crusta::init(demName, colorName);
+
+    crusta = new Crusta();
+    crusta->init(demName, colorName);
 }
 
 CrustaVislet::
 ~CrustaVislet()
 {
-    Crusta::shutdown();
+    crusta->shutdown();
+    delete crusta;
 }
 
 Vrui::VisletFactory* CrustaVislet::
@@ -91,13 +94,13 @@ getFactory() const
 void CrustaVislet::
 frame()
 {
-    Crusta::frame();
+    crusta->frame();
 }
 
 void CrustaVislet::
 display(GLContextData& contextData) const
 {
-    Crusta::display(contextData);
+    crusta->display(contextData);
 }
 
 

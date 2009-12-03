@@ -7,8 +7,8 @@
 #include <GL/GLObject.h>
 #include <GL/GLShader.h>
 
-#include <crusta/basics.h>
 #include <crusta/CacheRequest.h>
+#include <crusta/CrustaComponent.h>
 
 #include <crusta/FrustumVisibility.h>
 #include <crusta/FocusViewEvaluator.h>
@@ -29,10 +29,10 @@ class VideoCache;
     only one thread per context, this eliminates the need for exclusive access
     to the trees.
 */
-class QuadTerrain : public GLObject
+class QuadTerrain : public GLObject, public CrustaComponent
 {
 public:
-    QuadTerrain(uint8 patch, const Scope& scope);
+    QuadTerrain(uint8 patch, const Scope& scope, Crusta* iCrusta);
 
     /** diplay has several functions:
         1. evaluate the current active set (as it is view-dependent)

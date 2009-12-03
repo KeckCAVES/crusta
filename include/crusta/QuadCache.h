@@ -20,6 +20,7 @@
 #include <Threads/Thread.h>
 
 #include <crusta/CacheRequest.h>
+#include <crusta/CrustaComponent.h>
 #include <crusta/QuadNodeData.h>
 #include <crusta/TreeIndex.h>
 
@@ -33,14 +34,16 @@
     #define PortableTable stdext::hash_map
 #endif
 
+
 BEGIN_CRUSTA
+
 
 /** underlying LRU cache functionality */
 template <typename BufferType>
-class CacheUnit
+class CacheUnit : public CrustaComponent
 {
 public:
-    CacheUnit(uint size);
+    CacheUnit(uint size, Crusta* iCrusta);
     ~CacheUnit();
 
     /** find a buffer within the cached set. Returns NULL if not found. */
@@ -85,7 +88,7 @@ protected:
 class MainCache : public CacheUnit<MainCacheBuffer>
 {
 public:
-    MainCache(uint size);
+    MainCache(uint size, Crusta* iCrusta);
     ~MainCache();
 
     /** process requests */
@@ -135,7 +138,7 @@ protected:
 class VideoCache : public CacheUnit<VideoCacheBuffer>
 {
 public:
-    VideoCache(uint size);
+    VideoCache(uint size, Crusta* iCrusta);
 
     /** retrieve the temporary video buffer that can be used for streaming
         data */
@@ -148,7 +151,7 @@ protected:
 class Cache : public GLObject
 {
 public:
-    Cache(uint mainSize, uint videoSize);
+    Cache(uint mainSize, uint videoSize, Crusta* iCrusta);
 
     /** retrieve the main memory cache unit */
     MainCache& getMainCache();
@@ -158,6 +161,8 @@ public:
 protected:
     /** needed during initContext, specified during construction */
     uint videoCacheSize;
+    /** needed during initContext, specified during construction */
+    Crusta* crustaInstance;
     /** the main memory cache unit */
     MainCache mainCache;
 
@@ -168,14 +173,12 @@ public:
 protected:
     struct GlData : public GLObject::DataItem
     {
-        GlData(uint size);
+        GlData(uint size, Crusta* crustaInstance);
 
         /** the video memory cache unit for the GL context */
         VideoCache videoCache;
     };
 };
-
-extern Cache crustaQuadCache;
 
 END_CRUSTA
 

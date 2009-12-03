@@ -2,6 +2,7 @@
 
 #include <Comm/MulticastPipe.h>
 #include <Geometry/OrthogonalTransformation.h>
+#include <Vrui/InputGraphManager.h>
 #include <Vrui/ToolManager.h>
 #include <Vrui/Vrui.h>
 
@@ -15,7 +16,7 @@ SurfaceTool::Factory* SurfaceTool::factory = NULL;
 SurfaceTool::
 SurfaceTool(const Vrui::ToolFactory* iFactory,
             const Vrui::ToolInputAssignment& inputAssignment) :
-    Vrui::TransformTool(iFactory, inputAssignment)
+    Vrui::TransformTool(iFactory, inputAssignment), CrustaComponent(NULL)
 {
 }
 
@@ -46,6 +47,16 @@ init()
 }
 
 
+void SurfaceTool::
+initialize()
+{
+    //initialize the base tool
+    TransformTool::initialize();
+    //disable the transformed device's glyph
+    Vrui::InputGraphManager* igMan = Vrui::getInputGraphManager();
+    igMan->getInputDeviceGlyph(transformedDevice).disable();
+}
+
 const Vrui::ToolFactory* SurfaceTool::
 getFactory() const
 {
@@ -55,44 +66,50 @@ getFactory() const
 void SurfaceTool::
 frame()
 {
-    Vrui::InputDevice* device = input.getDevice(0);
+    Vrui::InputDevice* dev = input.getDevice(0);
 
-    //transform the physical frame to navigation space
-    Vrui::NavTransform physicalFrame = device->getTransformation();
-    Vrui::NavTransform modelFrame    =
-        Vrui::getInverseNavigationTransformation() * physicalFrame;
-
-    //align the model frame to the surface
-    Point3 surfacePoint;
-    if (Vrui::isMaster())
+    if (transformEnabled)
     {
-        surfacePoint =
-            Crusta::snapToSurface(modelFrame.getOrigin());
+        //transform the physical frame to navigation space
+        Vrui::NavTransform physicalFrame = dev->getTransformation();
+        Vrui::NavTransform modelFrame    =
+            Vrui::getInverseNavigationTransformation() * physicalFrame;
+
+        //align the model frame to the surface
+        Point3 surfacePoint;
+        if (Vrui::isMaster())
+        {
+            surfacePoint =
+                crusta->snapToSurface(modelFrame.getOrigin());
+        }
+        else
+            Vrui::getMainPipe()->read<Point3>(surfacePoint);
+
+        modelFrame = Vrui::NavTransform(Vector3(surfacePoint),
+            modelFrame.getRotation(), modelFrame.getScaling());
+
+        //transform the aligned frame back to physical space
+        physicalFrame = Vrui::getNavigationTransformation() * modelFrame;
+        transformedDevice->setTransformation(Vrui::TrackerState(
+            physicalFrame.getTranslation(), physicalFrame.getRotation()));
     }
     else
-        Vrui::getMainPipe()->read<Point3>(surfacePoint);
-
-    modelFrame = Vrui::NavTransform(Vector3(surfacePoint),
-        modelFrame.getRotation(), modelFrame.getScaling());
-
-    //transform the aligned frame back to physical space
-    physicalFrame = Vrui::getNavigationTransformation() * modelFrame;
-    transformedDevice->setTransformation(Vrui::TrackerState(
-        physicalFrame.getTranslation(), physicalFrame.getRotation()));
+    {
+        transformedDevice->setTransformation(dev->getTransformation());
+        transformedDevice->setDeviceRayDirection(dev->getDeviceRayDirection());
+    }
 }
 
 void SurfaceTool::
 display(GLContextData& contextData) const
 {
-    Vrui::NavTransform physicalFrame = transformedDevice->getTransformation();
-//    Vrui::NavTransform physicalFrame = input.getDevice(0)->getTransformation();
-    Vrui::NavTransform modelFrame    =
-        Vrui::getInverseNavigationTransformation() * physicalFrame;
+    Vrui::NavTransform frame = transformedDevice->getTransformation();
+//    Vrui::NavTransform frame = input.getDevice(0)->getTransformation();
 
-    Point3 o = modelFrame.getOrigin();
-    Point3 x = o + 10000.0*modelFrame.getDirection(0);
-    Point3 y = o + 10000.0*modelFrame.getDirection(1);
-    Point3 z = o + 10000.0*modelFrame.getDirection(2);
+    Point3 o = frame.getOrigin();
+    Point3 x = o + frame.getDirection(0);
+    Point3 y = o + frame.getDirection(1);
+    Point3 z = o + frame.getDirection(2);
 
 #if 0
     o = Point3(0,0,0);
@@ -112,9 +129,9 @@ display(GLContextData& contextData) const
 
     glBegin(GL_LINES);
         glColor3f(1.0, 0.0, 0.0);
-        glVertex3f(0,0,0);
+//        glVertex3f(0,0,0);
         glVertex3f(o[0], o[1], o[2]);
-//        glVertex3f(x[0], x[1], x[2]);
+        glVertex3f(x[0], x[1], x[2]);
         glColor3f(0.0, 1.0, 0.0);
         glVertex3f(o[0], o[1], o[2]);
         glVertex3f(y[0], y[1], y[2]);

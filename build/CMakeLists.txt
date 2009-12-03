@@ -31,7 +31,9 @@ add_library(Crusta SHARED
     ../include/crusta/basics.h
     ../include/crusta/CacheRequest.h
     ../include/crusta/ColorTextureSpecs.h
+	../include/crusta/CompositeShader.h
     ../include/crusta/Crusta.h
+	../include/crusta/CrustaComponent.h
     ../include/crusta/DataManager.h
     ../include/crusta/DemSpecs.h
     ../include/crusta/Ellipsoid.h
@@ -69,6 +71,7 @@ add_library(Crusta SHARED
 
     ../source/crusta/CacheRequest.cpp
     ../source/crusta/ColorTextureSpecs.cpp
+	../source/crusta/CompositeShader.cpp
     ../source/crusta/Crusta.cpp
     ../source/crusta/DataManager.cpp
     ../source/crusta/DemSpecs.cpp

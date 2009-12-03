@@ -1,5 +1,6 @@
 #include <crusta/Crusta.h>
 
+#include <GL/Extensions/GLEXTFramebufferObject.h>
 #include <GL/GLContextData.h>
 #include <GL/GLTransformationWrappers.h>
 #include <Vrui/Vrui.h>
@@ -14,23 +15,6 @@
 
 BEGIN_CRUSTA
 
-/* start the frame counting at 2 because initialization code uses unsigneds that
-   are initialized with 0. Thus if crustaFrameNumber starts at 0, the init code
-   wouldn't be able to retrieve any cache buffers since all the buffers of the
-   current and previous frame are locked */
-FrameNumber Crusta::currentFrame   = 2;
-FrameNumber Crusta::lastScaleFrame = 2;
-
-double Crusta::verticalScale = 1.0;
-
-DataManager* Crusta::dataMan = NULL;
-MapManager*  Crusta::mapMan  = NULL;
-
-Crusta::RenderPatches Crusta::renderPatches;
-
-Crusta::Actives Crusta::actives;
-Threads::Mutex Crusta::activesMutex;
-
 void Crusta::
 init(const std::string& demFileBase, const std::string& colorFileBase)
 {
@@ -39,15 +23,25 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
     //initialize the surface transformation tool
     SurfaceTool::init();
 
+    /* start the frame counting at 2 because initialization code uses unsigneds
+    that are initialized with 0. Thus if crustaFrameNumber starts at 0, the
+    init code wouldn't be able to retrieve any cache buffers since all the
+    buffers of the current and previous frame are locked */
+    currentFrame    = 2;
+    lastScaleFrame  = 2;
+    verticalScale   = 1.0;
+    bufSize[0] = bufSize[1] = Math::Constants<int>::max;
+
     Triacontahedron polyhedron(SPHEROID_RADIUS);
 
-    dataMan  = new DataManager(&polyhedron, demFileBase, colorFileBase);
+    cache    = new Cache(8192, 4096, this);
+    dataMan  = new DataManager(&polyhedron, demFileBase, colorFileBase, this);
     mapMan   = new MapManager(crustaTool);
 
     uint numPatches = polyhedron.getNumPatches();
     renderPatches.resize(numPatches);
     for (uint i=0; i<numPatches; ++i)
-        renderPatches[i] = new QuadTerrain(i, polyhedron.getScope(i));
+        renderPatches[i] = new QuadTerrain(i, polyhedron.getScope(i), this);
 }
 
 void Crusta::
@@ -58,6 +52,9 @@ shutdown()
     {
         delete *it;
     }
+    delete mapMan;
+    delete dataMan;
+    delete cache;
 }
 
 double Crusta::
@@ -71,7 +68,7 @@ getHeight(double x, double y, double z)
     for (int patch=0; patch<static_cast<int>(renderPatches.size()); ++patch)
     {
         //grab specification of the patch
-        nodeBuf = crustaQuadCache.getMainCache().findCached(TreeIndex(patch));
+        nodeBuf = cache->getMainCache().findCached(TreeIndex(patch));
         assert(nodeBuf != NULL);
         node = &nodeBuf->getData();
 
@@ -106,7 +103,7 @@ getHeight(double x, double y, double z)
             //find child
             TreeIndex childIndex      = node->index.down(i);
             MainCacheBuffer* childBuf =
-                crustaQuadCache.getMainCache().findCached(childIndex);
+                cache->getMainCache().findCached(childIndex);
             if (childBuf == NULL)
                 missingChildren.push_back(CacheRequest(0, nodeBuf, i));
             else if (childBuf->getData().scope.contains(p))
@@ -121,7 +118,7 @@ getHeight(double x, double y, double z)
         if (!missingChildren.empty())
         {
             //request the missing and stop traversal
-            crustaQuadCache.getMainCache().request(missingChildren);
+            cache->getMainCache().request(missingChildren);
             break;
         }
     }
@@ -175,7 +172,7 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     for (int patch=0; patch<static_cast<int>(renderPatches.size()); ++patch)
     {
         //grab specification of the patch
-        nodeBuf = crustaQuadCache.getMainCache().findCached(TreeIndex(patch));
+        nodeBuf = cache->getMainCache().findCached(TreeIndex(patch));
         assert(nodeBuf != NULL);
         node = &nodeBuf->getData();
 
@@ -216,7 +213,7 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
         }
 
         //try to grab the child for evaluation
-        MainCache& mainCache      = crustaQuadCache.getMainCache();
+        MainCache& mainCache      = cache->getMainCache();
         TreeIndex childIndex      = node->index.down(childId);
         MainCacheBuffer* childBuf = mainCache.findCached(childIndex);
         if (childBuf == NULL)
@@ -278,13 +275,13 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
 }
 
 const FrameNumber& Crusta::
-getCurrentFrame()
+getCurrentFrame() const
 {
     return currentFrame;
 }
 
 const FrameNumber& Crusta::
-getLastScaleFrame()
+getLastScaleFrame() const
 {
     return lastScaleFrame;
 }
@@ -297,19 +294,25 @@ setVerticalScale(double newVerticalScale)
 }
 
 double Crusta::
-getVerticalScale()
+getVerticalScale() const
 {
     return verticalScale;
 }
 
+Cache* Crusta::
+getCache() const
+{
+    return cache;
+}
+
 DataManager* Crusta::
-getDataManager()
+getDataManager() const
 {
     return dataMan;
 }
 
 MapManager* Crusta::
-getMapManager()
+getMapManager() const
 {
     return mapMan;
 }
@@ -335,7 +338,7 @@ frame()
     confirmActives();
 
     //process the requests from the last frame
-    crustaQuadCache.getMainCache().frame();
+    cache->getMainCache().frame();
 
     //let the map manager update all the mapping stuff
     mapMan->frame();
@@ -344,26 +347,125 @@ frame()
 void Crusta::
 display(GLContextData& contextData)
 {
+    GlData* glData = contextData.retrieveDataItem<GlData>(this);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->frameBuf);
+
     for (RenderPatches::const_iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
     {
         (*it)->display(contextData);
     }
 
+    GLint activeTexture;
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
+    glPushAttrib(GL_TEXTURE_BIT);
+
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, glData->colorBuf);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, glData->depthBuf);
+
+    glData->compositeShader.apply();
+
     //let the map manager draw all the mapping stuff
     mapMan->display(contextData);
+
+    glPopAttrib();
+    glActiveTexture(activeTexture);
 }
+
+
+Crusta::GlData::
+GlData()
+{
+    glGenTextures(1, &colorBuf);
+    glBindTexture(GL_TEXTURE_2D, colorBuf);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    
+    
+    glGenTextures(1, &depthBuf);
+    glBindTexture(GL_TEXTURE_2D, depthBuf);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    
+    glGenFramebuffersEXT(1, &frameBuf);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frameBuf);
+    
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
+                              GL_TEXTURE_2D, colorBuf, 0);
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
+                              GL_TEXTURE_2D, depthBuf, 0);
+    
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+}
+
+Crusta::GlData::
+~GlData()
+{
+    glDeleteTextures(1, &colorBuf);
+    glDeleteTextures(1, &depthBuf);
+    glDeleteFramebuffersEXT(1, &frameBuf);
+}
+
 
 void Crusta::
 confirmActives()
 {
     for (Actives::iterator it=actives.begin(); it!=actives.end(); ++it)
     {
-        if (!(*it)->isCurrent())
-            (*it)->getData().computeBoundingSphere();
-        (*it)->touch();
+        if (!(*it)->isCurrent(this))
+            (*it)->getData().computeBoundingSphere(getVerticalScale());
+        (*it)->touch(this);
     }
     actives.clear();
+}
+
+
+void Crusta::
+prepareBuffers(GlData* glData)
+{
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+    if (viewport[2]!=bufSize[0] || viewport[3]!=bufSize[1])
+    {
+        glBindTexture(GL_TEXTURE_2D, glData->colorBuf);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport[2],
+                     viewport[3], 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+        glBindTexture(GL_TEXTURE_2D, glData->depthBuf);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, viewport[2],
+                     viewport[3], 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+
+        bufSize[0] = viewport[2];
+        bufSize[1] = viewport[3];
+    }
+
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearDepth(1.0f);
+
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->frameBuf);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void Crusta::
+initContext(GLContextData& contextData) const
+{
+    if (!GLEXTFramebufferObject::isSupported())
+    {
+        Misc::throwStdErr("Crusta::initContext: required framebuffer object"
+                          "extension is not supported");
+    }
+
+    GLEXTFramebufferObject::initExtension();
+
+    GlData* glData = new GlData;
+    contextData.addDataItem(this, glData);
 }
 
 

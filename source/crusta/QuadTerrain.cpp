@@ -27,10 +27,10 @@ static const float TEXTURE_COORD_END   = 1.0 - TEXTURE_COORD_START;
 bool QuadTerrain::displayDebuggingGrid = false;
 
 QuadTerrain::
-QuadTerrain(uint8 patch, const Scope& scope) :
-    rootIndex(patch)
+QuadTerrain(uint8 patch, const Scope& scope, Crusta* iCrusta) :
+    CrustaComponent(iCrusta), rootIndex(patch)
 {
-    Crusta::getDataManager()->loadRoot(TreeIndex(patch), scope);
+    crusta->getDataManager()->loadRoot(TreeIndex(patch), scope);
 }
 
 
@@ -54,8 +54,8 @@ display(GLContextData& contextData)
 
     glData->shader.enable();
     glData->shader.setTextureStep(TEXTURE_COORD_STEP);
-    glData->shader.setVerticalScale(Crusta::getVerticalScale());
-//    glUniform1f(glData->verticalScaleUniform, Crusta::getVerticalScale());
+    glData->shader.setVerticalScale(crusta->getVerticalScale());
+//    glUniform1f(glData->verticalScaleUniform, crusta->getVerticalScale());
 
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -82,7 +82,7 @@ display(GLContextData& contextData)
     /* traverse the terrain tree, update as necessary and issue drawing commands
        for active nodes */
     MainCacheBuffer* rootBuf =
-        crustaQuadCache.getMainCache().findCached(rootIndex);
+        crusta->getCache()->getMainCache().findCached(rootIndex);
     assert(rootBuf != NULL);
 
     draw(contextData, glData, visibility, lod, rootBuf, actives, dataRequests);
@@ -100,8 +100,8 @@ display(GLContextData& contextData)
     glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
 
     //merge the data requests and active sets
-    crustaQuadCache.getMainCache().request(dataRequests);
-    Crusta::submitActives(actives);
+    crusta->getCache()->getMainCache().request(dataRequests);
+    crusta->submitActives(actives);
 }
 
 const QuadNodeVideoData& QuadTerrain::
@@ -113,14 +113,14 @@ prepareGlData(GlData* glData, QuadNodeMainData& mainData)
     if (existed)
     {
         //if there was already a match in the cache, just use that data
-        videoBuf->touch();
+        videoBuf->touch(crusta);
         return videoBuf->getData();
     }
     else
     {
         //in any case the data has to be transfered from main memory
         if (videoBuf)
-            videoBuf->touch();
+            videoBuf->touch(crusta);
         else
             videoBuf = glData->videoCache.getStreamBuffer();
 
@@ -278,7 +278,7 @@ draw(GLContextData& contextData, GlData* glData,
             {
                 for (int i=0; i<4; ++i)
                 {
-                    children[i] = crustaQuadCache.getMainCache().findCached(
+                    children[i] = crusta->getCache()->getMainCache().findCached(
                         mainData.index.down(i));
                     if (children[i] == NULL)
                     {
@@ -295,7 +295,7 @@ draw(GLContextData& contextData, GlData* glData,
                 {
                     if (!children[i]->isValid())
                         allgood = false;
-                    else if (!children[i]->isCurrent())
+                    else if (!children[i]->isCurrent(crusta))
                     {
                         //"request" it for update
                         actives.push_back(children[i]);
@@ -459,7 +459,7 @@ void QuadTerrain::
 initContext(GLContextData& contextData) const
 {
     //allocate the context dependent data
-    GlData* glData = new GlData(crustaQuadCache.getVideoCache(contextData));
+    GlData* glData = new GlData(crusta->getCache()->getVideoCache(contextData));
     //commit the context data
     contextData.addDataItem(this, glData);
 }

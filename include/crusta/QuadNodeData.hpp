@@ -22,9 +22,9 @@ getData()
 
 template <typename NodeDataType>
 bool CacheBuffer<NodeDataType>::
-isCurrent()
+isCurrent(Crusta* crusta)
 {
-    return frameNumber >= Crusta::getLastScaleFrame();
+    return frameNumber >= crusta->getLastScaleFrame();
 }
 
 template <typename NodeDataType>
@@ -36,9 +36,9 @@ isValid()
 
 template <typename NodeDataType>
 void CacheBuffer<NodeDataType>::
-touch()
+touch(Crusta* crusta)
 {
-    frameNumber = std::max(frameNumber, Crusta::getCurrentFrame());
+    frameNumber = std::max(frameNumber, crusta->getCurrentFrame());
 }
 
 template <typename NodeDataType>

@@ -2,6 +2,8 @@
 #define _MapManager_H_
 
 
+#include <GL/gl.h>
+
 #include <crusta/basics.h>
 
 

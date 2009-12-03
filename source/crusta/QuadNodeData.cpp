@@ -34,11 +34,10 @@ QuadNodeMainData::
 }
 
 void QuadNodeMainData::
-computeBoundingSphere()
+computeBoundingSphere(Scalar verticalScale)
 {
-    DemHeight avgElevation = (elevationRange[0] + elevationRange[1]) *
-                             DemHeight(0.5);
-    avgElevation *= Crusta::getVerticalScale();
+    DemHeight avgElevation = (elevationRange[0] + elevationRange[1]);
+    avgElevation          *= DemHeight(0.5)* verticalScale;
     
     boundingCenter = scope.getCentroid(SPHEROID_RADIUS + avgElevation);
     
@@ -48,8 +47,8 @@ computeBoundingSphere()
         for (int j=0; j<2; ++j)
         {
             Scope::Vertex corner = scope.corners[i];
-            Scope::Scalar norm = Scope::Scalar(SPHEROID_RADIUS);
-            norm += elevationRange[j]*Crusta::getVerticalScale();
+            Scope::Scalar norm   = Scope::Scalar(SPHEROID_RADIUS);
+            norm += elevationRange[j]*verticalScale;
             norm /= sqrt(corner[0]*corner[0] + corner[1]*corner[1] +
                          corner[2]*corner[2]);
             Scope::Vertex toCorner;
@@ -64,7 +63,7 @@ computeBoundingSphere()
 }
 
 void QuadNodeMainData::
-init()
+init(Scalar verticalScale)
 {
     //compute the centroid on the average elevation (see split)
     Scope::Vertex scopeCentroid = scope.getCentroid(SPHEROID_RADIUS);
@@ -72,7 +71,7 @@ init()
     centroid[1] = scopeCentroid[1];
     centroid[2] = scopeCentroid[2];
     
-    computeBoundingSphere();
+    computeBoundingSphere(verticalScale);
 }
 
 

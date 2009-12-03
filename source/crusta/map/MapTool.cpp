@@ -22,7 +22,7 @@ MapTool::Factory* MapTool::factory = NULL;
 MapTool::
 MapTool(const Vrui::ToolFactory* iFactory,
         const Vrui::ToolInputAssignment& inputAssignment) :
-    Vrui::Tool(iFactory, inputAssignment), mode(MODE_IDLE), curShape(NULL),
+    Tool(iFactory, inputAssignment), mode(MODE_IDLE), curShape(NULL),
     prevPosition(Math::Constants<Point3::Scalar>::max)
 {
 }
@@ -68,7 +68,7 @@ selectShape(const Point3& pos)
     ShapePtrs shapes = getShapes();
 
     double distance = 1.0 / Vrui::getNavigationTransformation().getScaling();
-    distance       *= Crusta::getMapManager()->getSelectDistance();
+    distance       *= crusta->getMapManager()->getSelectDistance();
 
     for (ShapePtrs::iterator it=shapes.begin(); it!=shapes.end(); ++it)
     {
@@ -88,7 +88,7 @@ selectControl(const Point3& pos)
     curControl = Shape::BAD_ID;
     assert(curShape != NULL);
 
-    MapManager* mapMan = Crusta::getMapManager();
+    MapManager* mapMan = crusta->getMapManager();
     double distance;
     Shape::Id control = curShape->select(pos, distance,
                                          mapMan->getPointSelectionBias());

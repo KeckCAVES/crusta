@@ -47,7 +47,7 @@ Shape* PolylineTool::
 createShape()
 {
     Polyline* newLine = new Polyline;
-    Crusta::getMapManager()->addPolyline(newLine);
+    crusta->getMapManager()->addPolyline(newLine);
 
     return newLine;
 }
@@ -56,7 +56,7 @@ PolylineTool::ShapePtrs PolylineTool::
 getShapes()
 {
     MapManager::PolylinePtrs& polylines =
-        Crusta::getMapManager()->getPolylines();
+        crusta->getMapManager()->getPolylines();
 
     int numPolylines = static_cast<int>(polylines.size());
     ShapePtrs shapes;

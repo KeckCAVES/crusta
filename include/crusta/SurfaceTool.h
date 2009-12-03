@@ -5,13 +5,13 @@
 #include <Vrui/Tools/GenericToolFactory.h>
 #include <Vrui/Tools/TransformTool.h>
 
-#include <crusta/basics.h>
+#include <crusta/CrustaComponent.h>
 
 
 BEGIN_CRUSTA
 
 
-class SurfaceTool : public Vrui::TransformTool
+class SurfaceTool : public Vrui::TransformTool, public CrustaComponent
 {
     friend class Vrui::GenericToolFactory<SurfaceTool>;
 
@@ -29,6 +29,7 @@ private:
 
 //- Inherited from Vrui::Tool
 public:
+    virtual void initialize();
     virtual const Vrui::ToolFactory* getFactory() const;
 
     virtual void frame();

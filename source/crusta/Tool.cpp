@@ -12,7 +12,7 @@ Tool::Factory* Tool::factory = NULL;
 Tool::
 Tool(const Vrui::ToolFactory* factory,
      const Vrui::ToolInputAssignment& inputAssignment) :
-    Vrui::Tool(factory, inputAssignment)
+     Vrui::Tool(factory, inputAssignment), CrustaComponent(NULL)
 {
 }
 Tool::

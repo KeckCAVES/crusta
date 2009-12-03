@@ -4,7 +4,7 @@
 
 #include <Vrui/Tools/GenericToolFactory.h>
 
-#include <crusta/basics.h>
+#include <crusta/CrustaComponent.h>
 
 
 BEGIN_CRUSTA
@@ -12,7 +12,7 @@ BEGIN_CRUSTA
 
 class Tool;
 
-class Tool : public Vrui::Tool
+class Tool : public Vrui::Tool, public CrustaComponent
 {
     friend class Vrui::GenericToolFactory<Tool>;
 

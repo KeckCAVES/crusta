@@ -23,7 +23,11 @@ namespace Vrui {
 class Lightsource;
 }
 
+
 BEGIN_CRUSTA
+
+
+class Crusta;
 
 class CrustaApp : public Vrui::Application
 {
@@ -70,6 +74,8 @@ private:
 	GLMotif::TextField* sunElevationTextField;
 	GLMotif::Slider* sunElevationSlider;
 
+    /** the crusta instance */
+    Crusta* crusta;
 
 //- inherited from Vrui::Application
 public:

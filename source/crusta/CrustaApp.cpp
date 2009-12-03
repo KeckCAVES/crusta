@@ -50,7 +50,8 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
         if (strcmp(argv[i], "-color")==0)
             colorName = std::string(argv[++i]);
     }
-    Crusta::init(demName, colorName);
+    crusta = new Crusta;
+    crusta->init(demName, colorName);
 
 	/* Create the sun lightsource: */
 	sun=Vrui::getLightsourceManager()->createLightsource(false);
@@ -76,7 +77,8 @@ CrustaApp::
 	delete[] viewerHeadlightStates;
     delete verticalScaleDialog;
 
-    Crusta::shutdown();
+    crusta->shutdown();
+    delete crusta;
 }
 
 void CrustaApp::
@@ -235,7 +237,7 @@ alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
         lonLat = Vrui::Point::origin;
     else
         lonLat = geoid.cartesianToGeodetic(origin);
-    lonLat[2] = Crusta::getHeight(origin[0], origin[1], origin[2]);
+    lonLat[2] = crusta->getHeight(origin[0], origin[1], origin[2]);
 
     Geometry::Geoid<double>::Frame frame = geoid.geodeticToCartesianFrame(lonLat);
     surfaceFrame = Vrui::NavTransform(frame.getTranslation(), frame.getRotation(), surfaceFrame.getScaling());
@@ -369,14 +371,14 @@ resetNavigationCallback(Misc::CallbackData* cbData)
 void CrustaApp::
 frame()
 {
-    Crusta::setVerticalScale(newVerticalScale);
-    Crusta::frame();
+    crusta->setVerticalScale(newVerticalScale);
+    crusta->frame();
 }
 
 void CrustaApp::
 display(GLContextData& contextData) const
 {
-    Crusta::display(contextData);
+    crusta->display(contextData);
 }
 
 
@@ -393,6 +395,12 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
             Misc::createFunctionCall<Vrui::NavTransform&,CrustaApp>(
                 this,&CrustaApp::alignSurfaceFrame));
     }
+
+    CrustaComponent* component = dynamic_cast<CrustaComponent*>(cbData->tool);
+    if (component != NULL)
+        component->setupComponent(crusta);
+
+    Vrui::Application::toolCreationCallback(cbData);
 }
 
 

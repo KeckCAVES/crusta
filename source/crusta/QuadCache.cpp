@@ -8,11 +8,9 @@
 
 BEGIN_CRUSTA
 
-Cache crustaQuadCache(8192, 4096);
-
 MainCache::
-MainCache(uint size) :
-    CacheUnit<MainCacheBuffer>(size), maxFetchRequests(16)
+MainCache(uint size, Crusta* iCrusta) :
+    CacheUnit<MainCacheBuffer>(size, iCrusta), maxFetchRequests(16)
 {
     //start the fetching thread
     fetchThread.start(this, &MainCache::fetchThreadFunc);
@@ -85,7 +83,7 @@ frame()
         fetch.child->touch();
 
         //fetch the data
-        Crusta::getDataManager()->loadChild(
+        crusta->getDataManager()->loadChild(
             fetch.parent, fetch.which, fetch.child);
     }
     childRequests.clear();
@@ -146,9 +144,9 @@ frame()
          it!=fetchResults.end(); ++it)
     {
         it->parent->pin(false);
-        it->parent->touch();
+        it->parent->touch(crusta);
         it->child->pin(false);
-        it->child->touch();
+        it->child->touch(crusta);
 
         DEBUG_OUT(1, "MainCache::frame: request for Index %s:%d processed\n",
                   it->parent->getData().index.med_str().c_str(), it->which);
@@ -198,7 +196,7 @@ fetchThreadFunc()
         }
 
         //fetch it
-        Crusta::getDataManager()->loadChild(
+        crusta->getDataManager()->loadChild(
             fetch->parent, fetch->which, fetch->child);
     }
 
@@ -207,8 +205,8 @@ fetchThreadFunc()
 
 
 VideoCache::
-VideoCache(uint size) :
-    CacheUnit<VideoCacheBuffer>(size), streamBuffer(TILE_RESOLUTION)
+VideoCache(uint size, Crusta* iCrusta) :
+    CacheUnit<VideoCacheBuffer>(size, iCrusta), streamBuffer(TILE_RESOLUTION)
 {
 }
 
@@ -220,8 +218,9 @@ getStreamBuffer()
 
 
 Cache::
-Cache(uint mainSize, uint videoSize) :
-    videoCacheSize(videoSize), mainCache(mainSize)
+Cache(uint mainSize, uint videoSize, Crusta* iCrusta) :
+    videoCacheSize(videoSize), crustaInstance(iCrusta),
+    mainCache(mainSize, iCrusta)
 {
 }
 
@@ -242,13 +241,13 @@ getVideoCache(GLContextData& contextData)
 void Cache::
 initContext(GLContextData& contextData) const
 {
-    GlData* glData = new GlData(videoCacheSize);
+    GlData* glData = new GlData(videoCacheSize, crustaInstance);
     contextData.addDataItem(this, glData);
 }
 
 Cache::GlData::
-GlData(uint size) :
-    videoCache(size)
+GlData(uint size, Crusta* crustaInstance) :
+    videoCache(size, crustaInstance)
 {
 }
 

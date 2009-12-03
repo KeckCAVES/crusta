@@ -1,21 +1,24 @@
 #ifndef _DataManager_H_
 #define _DataManager_H_
 
+#include <crusta/CrustaComponent.h>
 #include <crusta/QuadtreeFileSpecs.h>
 #include <crusta/QuadNodeData.h>
 
+
 BEGIN_CRUSTA
 
+class Crusta;
 class Polyhedron;
 
-class DataManager
+class DataManager : public CrustaComponent
 {
 public:
     typedef std::vector<DemFile*>   DemFiles;
     typedef std::vector<ColorFile*> ColorFiles;
 
     DataManager(Polyhedron* polyhedron, const std::string& demBase,
-                const std::string& colorBase);
+                const std::string& colorBase, Crusta* iCrusta);
     ~DataManager();
 
     /** check if DEM data is available from the manager */

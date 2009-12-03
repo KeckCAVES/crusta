@@ -4,6 +4,7 @@
 
 #include <Math/Constants.h>
 
+#include <crusta/Crusta.h>
 #include <crusta/Polyhedron.h>
 #include <crusta/QuadCache.h>
 
@@ -11,7 +12,8 @@ BEGIN_CRUSTA
 
 DataManager::
 DataManager(Polyhedron* polyhedron, const std::string& demBase,
-            const std::string& colorBase)
+            const std::string& colorBase, Crusta* iCrusta) :
+    CrustaComponent(iCrusta)
 {
     uint resolution[2] = { TILE_RESOLUTION, TILE_RESOLUTION };
     uint numPatches = polyhedron->getNumPatches();
@@ -76,7 +78,7 @@ void DataManager::
 loadRoot(TreeIndex rootIndex, const Scope& scope)
 {
     bool existed = false;
-    MainCacheBuffer* rootBuf = crustaQuadCache.getMainCache().getBuffer(
+    MainCacheBuffer* rootBuf = crusta->getCache()->getMainCache().getBuffer(
         rootIndex, &existed);
     if (existed)
         return;
@@ -254,7 +256,7 @@ sourceDem(QuadNodeMainData* parent, QuadNodeMainData& child)
                 heights[i] = demNodata;
         }
     }
-    child.init();
+    child.init(crusta->getVerticalScale());
 }
 
 void DataManager::
