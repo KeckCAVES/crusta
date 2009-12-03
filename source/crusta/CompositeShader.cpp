@@ -18,7 +18,7 @@ void main()\n\
 {\n\
     vec2 coords  = gl_FragCoord.xy * rcpWindowSize;\n\
     gl_FragColor = texture2D(colorTex, coords);\n\
-    //gl_FragDepth = texture2D(depthTex, coords).r;\n\
+    gl_FragDepth = texture2D(depthTex, coords).r;\n\
 }\
 ";
 
@@ -30,15 +30,15 @@ CompositeShader()
     linkShader();
 
     useProgram();
-    
+
     GLint uniform;
     uniform = getUniformLocation("colorTex");
     glUniform1i(uniform, 0);
     uniform = getUniformLocation("depthTex");
     glUniform1i(uniform, 1);
-    
+
     rcpWindowSizeUniform = getUniformLocation("rcpWindowSize");
-    
+
     disablePrograms();
 }
 
@@ -62,8 +62,8 @@ apply()
     glPushMatrix();
     glLoadIdentity();
 
-#if 1
-    glActiveTexture(GL_TEXTURE1);
+#if 0
+    glActiveTexture(GL_TEXTURE0);
     glEnable(GL_TEXTURE_2D);
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f, 0.0f);

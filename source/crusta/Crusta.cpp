@@ -5,6 +5,7 @@
 #include <GL/GLTransformationWrappers.h>
 #include <Vrui/Vrui.h>
 
+#include <crusta/checkGl.h>
 #include <crusta/DataManager.h>
 #include <crusta/map/MapManager.h>
 #include <crusta/QuadCache.h>
@@ -347,14 +348,18 @@ frame()
 void Crusta::
 display(GLContextData& contextData)
 {
+    CHECK_GLA
+
     GlData* glData = contextData.retrieveDataItem<GlData>(this);
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->frameBuf);
+    prepareBuffers(glData);
+    CHECK_GLA
 
     for (RenderPatches::const_iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
     {
         (*it)->display(contextData);
     }
+    CHECK_GLA
 
     GLint activeTexture;
     glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
@@ -365,14 +370,18 @@ display(GLContextData& contextData)
     glBindTexture(GL_TEXTURE_2D, glData->colorBuf);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, glData->depthBuf);
+    CHECK_GLA
 
     glData->compositeShader.apply();
+    CHECK_GLA
 
     //let the map manager draw all the mapping stuff
     mapMan->display(contextData);
+    CHECK_GLA
 
     glPopAttrib();
     glActiveTexture(activeTexture);
+    CHECK_GLA
 }
 
 
@@ -385,23 +394,25 @@ GlData()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    
-    
+    CHECK_GLA
+
     glGenTextures(1, &depthBuf);
     glBindTexture(GL_TEXTURE_2D, depthBuf);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    
+    CHECK_GLA
+
     glGenFramebuffersEXT(1, &frameBuf);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frameBuf);
-    
+
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
                               GL_TEXTURE_2D, colorBuf, 0);
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
                               GL_TEXTURE_2D, depthBuf, 0);
-    
+    CHECK_GLA
+
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
@@ -441,6 +452,11 @@ prepareBuffers(GlData* glData)
         glBindTexture(GL_TEXTURE_2D, glData->depthBuf);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, viewport[2],
                      viewport[3], 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+        CHECK_GLA
+
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->frameBuf);
+        GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+        assert(status == GL_FRAMEBUFFER_COMPLETE_EXT);
 
         bufSize[0] = viewport[2];
         bufSize[1] = viewport[3];
@@ -451,6 +467,7 @@ prepareBuffers(GlData* glData)
 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->frameBuf);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    CHECK_GLA
 }
 
 void Crusta::
