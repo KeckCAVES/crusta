@@ -348,11 +348,13 @@ frame()
 void Crusta::
 display(GLContextData& contextData)
 {
+#if 0
     CHECK_GLA
 
     GlData* glData = contextData.retrieveDataItem<GlData>(this);
     prepareBuffers(glData);
     CHECK_GLA
+#endif
 
     for (RenderPatches::const_iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
@@ -361,6 +363,7 @@ display(GLContextData& contextData)
     }
     CHECK_GLA
 
+#if 0
     GLint activeTexture;
     glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
     glPushAttrib(GL_TEXTURE_BIT);
@@ -374,14 +377,16 @@ display(GLContextData& contextData)
 
     glData->compositeShader.apply();
     CHECK_GLA
-
+#endif
     //let the map manager draw all the mapping stuff
     mapMan->display(contextData);
     CHECK_GLA
 
+#if 0
     glPopAttrib();
     glActiveTexture(activeTexture);
     CHECK_GLA
+#endif
 }
 
 

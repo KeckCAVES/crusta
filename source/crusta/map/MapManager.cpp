@@ -73,7 +73,7 @@ void MapManager::
 display(GLContextData& contextData) const
 {
     //go through all the simple polylines and draw them
-    polylineRenderer->draw(contextData);
+    polylineRenderer->display(contextData);
 }
 
 
