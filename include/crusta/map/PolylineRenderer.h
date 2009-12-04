@@ -35,15 +35,21 @@ protected:
         GLuint depthTex;
         GLuint blitFbo;
 
+        GLuint controlPointTex;
+        GLuint tangentTex;
+        
         GLShader shader;
 
         GLint rcpWindowSizeUniform;
+
+        GLint numSegmentsUniform;
         /** the size of the current depth texture */
         int depthTexSize[2];
     };
 
     /** reads the content of the default depth buffer into the depth texture */
     void readDepthBuffer(GlData* glData) const;
+    void prepareLineData(GlData* glData) const;
 
 //- inherited from GLObject
 public:
