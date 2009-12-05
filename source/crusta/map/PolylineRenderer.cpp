@@ -20,6 +20,7 @@ void main() {\n\
 ";
 
 static const char* polylineFP = "\
+uniform vec2      windowPos;\n\
 uniform vec2      rcpWindowSize;\n\
 uniform sampler2D depthTex;\n\
 \n\
@@ -30,24 +31,47 @@ uniform float lineCoordStep;\n\
 uniform sampler1D controlPointTex;\n\
 uniform sampler1D tangentTex;\n\
 \n\
+vec3 unproject(in vec2 fragCoord)\n\
+{\n\
+    vec2 texCoord = (fragCoord - windowPos) * rcpWindowSize;\n\
+    gl_FragDepth  = texture2D(depthTex, texCoord).r;\n\
+\n\
+    vec4 tmp;\n\
+    tmp.xy = (texCoord * 2.0) - 1.0;\n\
+    tmp.z  = gl_FragDepth*2.0 - 1.0;\n\
+    tmp.w  = 1.0;\n\
+\n\
+    tmp   = gl_ModelViewProjectionMatrixInverse * tmp;\n\
+    tmp.w = 1.0 / tmp.w;\n\
+    return tmp.xyz * tmp.w;\n\
+}\n\
+\n\
 void main()\n\
 {\n\
-    vec2 coords  = gl_FragCoord.xy * rcpWindowSize;\n\
+//gl_FragColor.xyz = normalize(texture1D(controlPointTex, lineStartCoord).rgb);\n\
+//gl_FragColor.a = 1.0;\n\
+//return;\n\
+    vec3 pos = unproject(gl_FragCoord.xy);\n\
 \n\
-    //regenerate the 3D position of the fragment\n\
-    float depth = texture2D(depthTex, coords).r;\n\
-    vec4 pos    = vec4(coords.x, coords.y, depth, 1.0);\n\
-    pos         = gl_ModelViewProjectionMatrixInverse * pos;\n\
+//gl_FragColor.xyz = vec3(length(pos) / 7371000.0);\n\
+//gl_FragColor.xyz = normalize(pos);\n\
+//gl_FragColor.a = 1.0;\n\
+//return;\n\
 \n\
     //walk all the line segments and process their contribution\n\
     vec4 color   = vec4(0.0, 0.0, 0.0, 0.0);\n\
     float coord  = lineStartCoord;\n\
     vec4 startCP = texture1D(controlPointTex, coord);\n\
 \n\
+//gl_FragColor.xyz = normalize(startCP.xyz);\n\
+//gl_FragColor.a = 1.0;\n\
+//return;\n\
+\n\
+\n\
     vec4 endCP = vec4(0.0);\n\
     for (int i=0; i<numSegments; ++i, startCP=endCP)\n\
     {\n\
-        vec3 toPos = pos.xyz - startCP.xyz;\n\
+        vec3 toPos = pos - startCP.xyz;\n\
 \n\
         coord           = coord + lineCoordStep;\n\
         endCP           = texture1D(controlPointTex, coord);\n\
@@ -66,7 +90,7 @@ void main()\n\
 \n\
         //compute the v coordinate along the tangent\n\
         toPos   = startCP.xyz + u*startToEnd;\n\
-        toPos   = pos.xyz - toPos;\n\
+        toPos   = pos - toPos;\n\
         sqrLen  = dot(tangent, tangent);\n\
         float v = dot(toPos, tangent) / sqrLen;\n\
 \n\
@@ -79,7 +103,6 @@ void main()\n\
     }\n\
 \n\
     gl_FragColor = color;\n\
-    gl_FragDepth = depth;\n\
 }\
 ";
 
@@ -94,8 +117,13 @@ display(GLContextData& contextData) const
 
     GlData* glData = contextData.retrieveDataItem<GlData>(this);
     readDepthBuffer(glData);
-    
-#if 1
+    int numSegments = prepareLineData(glData);
+
+    glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+#if 0
     GLint matrixMode;
     glGetIntegerv(GL_MATRIX_MODE, &matrixMode);
 
@@ -107,7 +135,6 @@ display(GLContextData& contextData) const
     glPushMatrix();
     glLoadIdentity();
 
-#if 0
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, glData->depthTex);
     glEnable(GL_TEXTURE_2D);
@@ -117,16 +144,26 @@ display(GLContextData& contextData) const
         glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f, -1.0f, 0.0f);
         glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f,  1.0f, 0.0f);
     glEnd();
+
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(matrixMode);
 #else
     glData->shader.useProgram();
 
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
-    float rcpSize[2] = { 1.0f/viewport[2], 1.0f/viewport[3] };
-    glUniform2f(glData->rcpWindowSizeUniform, rcpSize[0], rcpSize[1]);
+    glUniform2f(glData->windowPosUniform,viewport[0],viewport[1]);
+    glUniform2f(glData->rcpWindowSizeUniform,1.0f/viewport[2],1.0f/viewport[3]);
+    glUniform1i(glData->numSegmentsUniform, numSegments);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, glData->depthTex);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_1D, glData->controlPointTex);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_1D, glData->tangentTex);
 
     glBegin(GL_QUADS);
         glVertex3f(-1.0f,  1.0f, 0.0f);
@@ -137,14 +174,6 @@ display(GLContextData& contextData) const
 
     glData->shader.disablePrograms();
 #endif
-
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(matrixMode);
-#endif
-
-    glPushAttrib(GL_ENABLE_BIT);
 
     glDisable(GL_LIGHTING);
     glActiveTexture(GL_TEXTURE0);
@@ -185,8 +214,6 @@ GlData()
     glBindTexture(GL_TEXTURE_2D, depthTex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     CHECK_GLA
 
     glGenFramebuffersEXT(1, &blitFbo);
@@ -199,12 +226,12 @@ GlData()
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
     static const int lineTexSize = 512;
-    
+
     glGenTextures(1, &controlPointTex);
     glBindTexture(GL_TEXTURE_1D, controlPointTex);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, lineTexSize, 0,
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F, lineTexSize, 0,
                  GL_RGBA, GL_FLOAT, NULL);
     CHECK_GLA
 
@@ -212,7 +239,7 @@ GlData()
     glBindTexture(GL_TEXTURE_1D, tangentTex);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB, lineTexSize, 0,
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB32F, lineTexSize, 0,
                  GL_RGB, GL_FLOAT, NULL);
     CHECK_GLA
 
@@ -234,12 +261,13 @@ GlData()
     uniform = shader.getUniformLocation("tangentTex");
     glUniform1i(uniform, 2);
 
-    uniform = shader.getUniformLocation("lineStartCoord");
     float lineCoordStep = 1.0f / lineTexSize;
-    glUniform1f(uniform, lineCoordStep);
     uniform = shader.getUniformLocation("lineCoordStep");
+    glUniform1f(uniform, lineCoordStep);
+    uniform = shader.getUniformLocation("lineStartCoord");
     glUniform1f(uniform, 0.5f * lineCoordStep);
 
+    windowPosUniform      = shader.getUniformLocation("windowPos");
     rcpWindowSizeUniform  = shader.getUniformLocation("rcpWindowSize");
     numSegmentsUniform    = shader.getUniformLocation("numSegments");
 
@@ -312,23 +340,23 @@ readDepthBuffer(GlData* glData) const
     CHECK_GLA
 }
 
-void PolylineRenderer::
+int PolylineRenderer::
 prepareLineData(GlData* glData) const
 {
     const Point3s& lineCps = lines->front()->getControlPoints();
 
-    int numSegments = static_cast<int>(lineCps.size()) - 1;
-    if (numSegments<=0)
-        return;
+    int numCPs = static_cast<int>(lineCps.size());
+    if (numCPs<2)
+        return 0;
 
     float lineWidth = 1.0f / Vrui::getNavigationTransformation().getScaling();
-    lineWidth *= 0.001f;
-    
+    lineWidth *= 0.1f;
+
     typedef float CP[4];
     typedef float Tangent[3];
 
-    CP* cps = new CP[numSegments+1];
-    Tangent* tans = new Tangent[numSegments+1];
+    CP* cps = new CP[numCPs];
+    Tangent* tans = new Tangent[numCPs];
 
     float prevLen = 0.0f;
     CP* cp = cps;
@@ -349,8 +377,7 @@ prepareLineData(GlData* glData) const
     ++tan;
 
     int prev = 0;
-    int cur  = 1;
-    for (int i=0; i<numSegments; ++i, ++prev, ++cur, ++cp, ++tan)
+    for (int cur=1; cur<numCPs; ++cur, ++prev, ++cp, ++tan)
     {
         const Point3& prevP = lineCps[prev];
         const Point3& curP  = lineCps[cur];
@@ -360,11 +387,11 @@ prepareLineData(GlData* glData) const
         (*cp)[2] = curP[2];
         prevLen  = prevLen + Geometry::dist(curP, prevP);
         (*cp)[3] = prevLen;
-        
+
         tanVec = Geometry::cross(Vector3(prevP), Vector3(curP));
         tanVec.normalize();
         tanVec *= lineWidth;
-        
+
         (*tan)[0] = tanVec[0];
         (*tan)[1] = tanVec[1];
         (*tan)[2] = tanVec[2];
@@ -372,18 +399,18 @@ prepareLineData(GlData* glData) const
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_1D, glData->controlPointTex);
-    glTexSubImage1D(GL_TEXTURE_1D, 0, 0, numSegments,
-                    GL_RGBA, GL_FLOAT, cps);
+    glTexSubImage1D(GL_TEXTURE_1D, 0, 0, numCPs, GL_RGBA, GL_FLOAT, cps);
     CHECK_GLA
 
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_1D, glData->tangentTex);
-    glTexSubImage1D(GL_TEXTURE_1D, 0, 0, numSegments,
-                    GL_RGB, GL_FLOAT, tans);
+    glTexSubImage1D(GL_TEXTURE_1D, 0, 0, numCPs, GL_RGB, GL_FLOAT, tans);
     CHECK_GLA
 
     delete[] cps;
     delete[] tans;
+
+    return numCPs-1;
 }
 
 

@@ -10,7 +10,7 @@ BEGIN_CRUSTA
 
 MapManager::
 MapManager(Vrui::ToolFactory* parentToolFactory) :
-    selectDistance(0.005), pointSelectionBias(0.25),
+    selectDistance(0.01), pointSelectionBias(0.25),
     polylineRenderer(new PolylineRenderer)
 {
     Vrui::ToolFactory* factory = MapTool::init(parentToolFactory);

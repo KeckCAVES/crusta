@@ -37,9 +37,10 @@ protected:
 
         GLuint controlPointTex;
         GLuint tangentTex;
-        
+
         GLShader shader;
 
+        GLint windowPosUniform;
         GLint rcpWindowSizeUniform;
 
         GLint numSegmentsUniform;
@@ -49,7 +50,7 @@ protected:
 
     /** reads the content of the default depth buffer into the depth texture */
     void readDepthBuffer(GlData* glData) const;
-    void prepareLineData(GlData* glData) const;
+    int  prepareLineData(GlData* glData) const;
 
 //- inherited from GLObject
 public:
