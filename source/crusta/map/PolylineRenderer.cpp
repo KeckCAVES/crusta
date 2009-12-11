@@ -35,6 +35,9 @@ vec3 unproject(in vec2 fragCoord)\n\
 {\n\
     vec2 texCoord = (fragCoord - windowPos) * rcpWindowSize;\n\
     gl_FragDepth  = texture2D(depthTex, texCoord).r;\n\
+gl_FragColor.xyz = vec3(gl_FragDepth);\n\
+gl_FragColor.a = 1.0;\n\
+return vec3(1.0);\n\
 \n\
     vec4 tmp;\n\
     tmp.xy = (texCoord * 2.0) - 1.0;\n\
@@ -52,6 +55,7 @@ void main()\n\
 //gl_FragColor.a = 1.0;\n\
 //return;\n\
     vec3 pos = unproject(gl_FragCoord.xy);\n\
+return;\n\
 \n\
 //gl_FragColor.xyz = vec3(length(pos) / 7371000.0);\n\
 //gl_FragColor.xyz = normalize(pos);\n\
@@ -133,33 +137,6 @@ display(GLContextData& contextData) const
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-#if 0
-    GLint matrixMode;
-    glGetIntegerv(GL_MATRIX_MODE, &matrixMode);
-
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, glData->depthTex);
-    glEnable(GL_TEXTURE_2D);
-    glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f, 0.0f);
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, -1.0f, 0.0f);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f, -1.0f, 0.0f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f,  1.0f, 0.0f);
-    glEnd();
-
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(matrixMode);
-#else
     glData->shader.useProgram();
 
     GLint viewport[4];
@@ -183,7 +160,6 @@ display(GLContextData& contextData) const
     glEnd();
 
     glData->shader.disablePrograms();
-#endif
 
     glDisable(GL_LIGHTING);
     glActiveTexture(GL_TEXTURE0);
@@ -226,6 +202,7 @@ GlData()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     CHECK_GLA
 
+#ifndef __APPLE__
     glGenFramebuffersEXT(1, &blitFbo);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, blitFbo);
 
@@ -234,6 +211,7 @@ GlData()
     CHECK_GLA
 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+#endif //__APPLE__
 
     static const int lineTexSize = 512;
 
@@ -241,7 +219,7 @@ GlData()
     glBindTexture(GL_TEXTURE_1D, controlPointTex);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F, lineTexSize, 0,
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F_ARB, lineTexSize, 0,
                  GL_RGBA, GL_FLOAT, NULL);
     CHECK_GLA
 
@@ -249,7 +227,7 @@ GlData()
     glBindTexture(GL_TEXTURE_1D, tangentTex);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB32F, lineTexSize, 0,
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB32F_ARB, lineTexSize, 0,
                  GL_RGB, GL_FLOAT, NULL);
     CHECK_GLA
 
@@ -287,8 +265,10 @@ GlData()
 PolylineRenderer::GlData::
 ~GlData()
 {
-    glDeleteTextures(1, &depthTex);
+#ifndef __APPLE__
     glDeleteFramebuffersEXT(1, &blitFbo);
+#endif //__APPLE__
+    glDeleteTextures(1, &depthTex);
 }
 
 
@@ -296,10 +276,24 @@ void PolylineRenderer::
 readDepthBuffer(GlData* glData) const
 {
     CHECK_GLA
-
+    
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
+    
+#ifdef __APPLE__
+    GLfloat* depthBuf = new GLfloat[viewport[2]*viewport[3]];
+    glReadPixels(0, 0, viewport[2], viewport[3], GL_DEPTH_COMPONENT,
+                 GL_FLOAT, depthBuf);
+    CHECK_GLA
 
+    glBindTexture(GL_TEXTURE_2D, glData->depthTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32,
+                 viewport[2], viewport[3], 0,
+                 GL_DEPTH_COMPONENT, GL_FLOAT, depthBuf);
+    CHECK_GLA
+
+    delete[] depthBuf;
+#else
     GLint drawFrame;
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING_EXT, &drawFrame);
     GLint drawBuffer;
@@ -348,6 +342,7 @@ readDepthBuffer(GlData* glData) const
     CHECK_GLA
     glReadBuffer(readBuffer);
     CHECK_GLA
+#endif //__APPLE__
 }
 
 int PolylineRenderer::
