@@ -83,6 +83,13 @@ void main()\n\
 \n\
         if (u<0.0 || u>1.0)\n\
             continue;\n\
+#if 0\n\
+vec4 fromc1 = vec4(0.0, 1.0, 0.0, 1.0);\n\
+vec4 toc1   = vec4(1.0, 0.0, 0.0, 1.0);\n\
+float a1    = numSegments<2 ? 1.0 : float(i) / float(numSegments-1);\n\
+color       = a1*fromc1 + (1.0-a1)*toc1;\n\
+continue;\n\
+#endif\n\
 \n\
         //fetch the tangent\n\
         vec3 tangent = texture1D(tangentTex, coord -\n\
@@ -99,7 +106,10 @@ void main()\n\
 \n\
         //acculumate the contribution\n\
 //        v = v*0.5 + 0.5;\n\
-        color = vec4(0.0, 1.0, 0.0, 1.0);\n\
+vec4 fromc = vec4(0.0, 1.0, 0.0, 1.0);\n\
+vec4 toc   = vec4(1.0, 0.0, 0.0, 1.0);\n\
+float a    = numSegments<2 ? 1.0 : float(i) / float(numSegments-1);\n\
+        color = a*fromc + (1.0-a)*toc;\n\
     }\n\
 \n\
     gl_FragColor = color;\n\

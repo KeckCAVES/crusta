@@ -104,19 +104,11 @@ void SurfaceTool::
 display(GLContextData& contextData) const
 {
     Vrui::NavTransform frame = transformedDevice->getTransformation();
-//    Vrui::NavTransform frame = input.getDevice(0)->getTransformation();
 
     Point3 o = frame.getOrigin();
     Point3 x = o + frame.getDirection(0);
     Point3 y = o + frame.getDirection(1);
     Point3 z = o + frame.getDirection(2);
-
-#if 0
-    o = Point3(0,0,0);
-    x = Point3(1,0,0);
-    y = Point3(0,1,0);
-    z = Point3(0,0,1);
-#endif
 
     GLint activeTexture;
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
@@ -129,7 +121,6 @@ display(GLContextData& contextData) const
 
     glBegin(GL_LINES);
         glColor3f(1.0, 0.0, 0.0);
-//        glVertex3f(0,0,0);
         glVertex3f(o[0], o[1], o[2]);
         glVertex3f(x[0], x[1], x[2]);
         glColor3f(0.0, 1.0, 0.0);

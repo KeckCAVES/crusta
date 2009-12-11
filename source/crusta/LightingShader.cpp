@@ -398,12 +398,12 @@ void LightingShader::compileShader()
         \n\
         uniform float texStep;\n\
         uniform float verticalScale;\n\
-        uniform vec3  centroid;\n\
+        uniform vec3  center;\n\
         \n\
         vec3 surfacePoint(in vec2 coords)\n\
         {\n\
             vec3 res      = texture2D(geometryTex, coords).rgb;\n\
-            vec3 dir      = normalize(centroid + res);\n\
+            vec3 dir      = normalize(center + res);\n\
             float height  = texture2D(heightTex, coords).r;\n\
             height       *= verticalScale;\n\
             res          += height * dir;\n\
@@ -553,7 +553,7 @@ void LightingShader::compileShader()
     //get the location of the other uniforms
     textureStepUniform  =glGetUniformLocationARB(programObject,"texStep");
     verticalScaleUniform=glGetUniformLocationARB(programObject,"verticalScale");
-    centroidUniform     =glGetUniformLocationARB(programObject,"centroid");
+    centroidUniform     =glGetUniformLocationARB(programObject,"center");
 
     glUseProgramObjectARB(0);
 }
