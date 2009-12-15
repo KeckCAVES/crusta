@@ -231,6 +231,8 @@ install(TARGETS Crusta
         LIBRARY DESTINATION lib)
 install(TARGETS crustaApp
         RUNTIME DESTINATION bin)
+install(TARGETS construo
+        RUNTIME DESTINATION bin)
 install(TARGETS CrustaVislet
         LIBRARY DESTINATION lib)
 
