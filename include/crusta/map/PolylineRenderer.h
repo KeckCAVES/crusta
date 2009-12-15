@@ -35,7 +35,7 @@ protected:
         GLuint depthTex;
 #ifndef __APPLE__
         GLuint blitFbo;
-#endif __APPLE__
+#endif //__APPLE__
 
         GLuint controlPointTex;
         GLuint tangentTex;

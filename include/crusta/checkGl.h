@@ -17,7 +17,6 @@ class CheckGl
 public:
 	static bool print(int line, const char* file)
 	{
-#ifndef NDEBUG
 		GLenum r = glGetError();
 		if (r != GL_NO_ERROR)
 		{
@@ -26,12 +25,10 @@ public:
 			fflush(stderr);
 			return false;
 		}
-#endif //NDEBUG
 		return true;
 	}
 	static void except(int line, const char* file)
 	{
-#ifndef NDEBUG
 		GLenum r = glGetError();
 		if (r != GL_NO_ERROR)
 		{
@@ -39,13 +36,18 @@ public:
                               line);
 		}
 	}
-#endif //NDEBUG
 };
 
 END_CRUSTA
 
+#ifndef NDEBUG
 #define CHECK_GL crusta::CheckGl::print(__LINE__, __FILE__);
 #define CHECK_GLE crusta::CheckGl::except(__LINE__, __FILE__);
 #define CHECK_GLA {bool r=crusta::CheckGl::print(__LINE__, __FILE__);assert(r);}
+#else
+#define CHECK_GL
+#define CHECK_GLE
+#define CHECK_GLA
+#endif //NDEBUG
 
 #endif //_checkGl_H_

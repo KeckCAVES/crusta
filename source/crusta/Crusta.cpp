@@ -460,8 +460,8 @@ prepareBuffers(GlData* glData)
         CHECK_GLA
 
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->frameBuf);
-        GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-        assert(status == GL_FRAMEBUFFER_COMPLETE_EXT);
+        assert(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) ==
+               GL_FRAMEBUFFER_COMPLETE_EXT);
 
         bufSize[0] = viewport[2];
         bufSize[1] = viewport[3];

@@ -370,8 +370,8 @@ Spheroid(const std::string& baseName, const uint tileResolution[2])
         {
             neighbors[n]    = &baseNodes[connectivity[n][0]];
             orientations[n] = connectivity[n][1];
-            node->setNeighbors(neighbors, orientations);
         }
+        node->setNeighbors(neighbors, orientations);
     }
 
 ///\todo remove

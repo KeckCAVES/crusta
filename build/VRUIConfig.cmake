@@ -28,6 +28,10 @@ FIND_PATH(VRUI_PATH etc/Vrui.cfg
     HINTS $ENV{VRUI_PATH}
     PATH_SUFFIXES Vrui-1.0 VRUI Vrui vrui)
 
+IF(NOT VRUI_PATH)
+    MESSAGE(FATAL_ERROR "Could not resolve the path to VRUI")
+ENDIF(NOT VRUI_PATH)
+
 SET(VRUI_SHARE_DIR   "${VRUI_PATH}/share")
 SET(VRUI_INCLUDE_DIR "${VRUI_PATH}/include")
 SET(VRUI_BIN_DIR     "${VRUI_PATH}/bin")

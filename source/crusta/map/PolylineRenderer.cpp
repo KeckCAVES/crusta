@@ -318,8 +318,8 @@ readDepthBuffer(GlData* glData) const
         glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, glData->blitFbo);
         CHECK_GLA
         glDrawBuffer(GL_NONE);
-        GLenum status = glCheckFramebufferStatusEXT(GL_DRAW_FRAMEBUFFER_EXT);
-        assert(status == GL_FRAMEBUFFER_COMPLETE_EXT);
+        assert(glCheckFramebufferStatusEXT(GL_DRAW_FRAMEBUFFER_EXT) ==
+               GL_FRAMEBUFFER_COMPLETE_EXT);
     }
 
     glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, drawFrame);

@@ -459,7 +459,7 @@ Visualizer::show();
             patches[i]->image->getSize());
         /* exaggerate the image's resolution because our sampling is not aligned
            with the image axis */
-        imgResolution *= Point::Scalar(1.0/Math::sqrt(2.0));
+        imgResolution *= Point::Scalar(Math::sqrt(2.0));
 
         //iterate over all the spheroid's base patches to determine overlap
         for (typename Globe::BaseNodes::iterator bIt=globe->baseNodes.begin();
