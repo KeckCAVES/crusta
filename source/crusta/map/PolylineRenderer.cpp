@@ -35,9 +35,9 @@ vec3 unproject(in vec2 fragCoord)\n\
 {\n\
     vec2 texCoord = (fragCoord - windowPos) * rcpWindowSize;\n\
     gl_FragDepth  = texture2D(depthTex, texCoord).r;\n\
-gl_FragColor.xyz = vec3(gl_FragDepth);\n\
-gl_FragColor.a = 1.0;\n\
-return vec3(1.0);\n\
+//gl_FragColor.xyz = vec3(gl_FragDepth);\n\
+//gl_FragColor.a = 1.0;\n\
+//return vec3(1.0);\n\
 \n\
     vec4 tmp;\n\
     tmp.xy = (texCoord * 2.0) - 1.0;\n\
@@ -55,7 +55,9 @@ void main()\n\
 //gl_FragColor.a = 1.0;\n\
 //return;\n\
     vec3 pos = unproject(gl_FragCoord.xy);\n\
-return;\n\
+//gl_FragColor.xyz = normalize(pos);\n\
+//gl_FragColor.a = 1.0;\n\
+//return;\n\
 \n\
 //gl_FragColor.xyz = vec3(length(pos) / 7371000.0);\n\
 //gl_FragColor.xyz = normalize(pos);\n\
@@ -87,6 +89,8 @@ return;\n\
 \n\
         if (u<0.0 || u>1.0)\n\
             continue;\n\
+color = vec4(u);\n\
+continue;\n\
 #if 0\n\
 vec4 fromc1 = vec4(0.0, 1.0, 0.0, 1.0);\n\
 vec4 toc1   = vec4(1.0, 0.0, 0.0, 1.0);\n\

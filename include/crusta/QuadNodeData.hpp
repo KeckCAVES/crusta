@@ -24,7 +24,7 @@ template <typename NodeDataType>
 bool CacheBuffer<NodeDataType>::
 isCurrent(Crusta* crusta)
 {
-    return frameNumber >= crusta->getLastScaleFrame();
+    return frameNumber > crusta->getLastScaleFrame();
 }
 
 template <typename NodeDataType>

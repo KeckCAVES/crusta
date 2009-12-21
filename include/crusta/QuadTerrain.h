@@ -40,8 +40,10 @@ public:
         3. issue the drawing commands for the active set */
     void display(GLContextData& contextData);
 
-    /** display debugging grid or not */
-    static bool displayDebuggingGrid;
+/** display bounding spheres for debugging purposes or not */
+static bool displayDebuggingBoundingSpheres;
+/** display debugging grid or not */
+static bool displayDebuggingGrid;
 
 protected:
     struct GlData;
@@ -100,19 +102,7 @@ protected:
         /** defines a triangle-string triangulation of the vertices */
         GLuint indexTemplate;
 
-#if 1
         LightingShader shader;
-#else
-
-        /** uniform relation to the vertical exaggeration */
-        GLint verticalScaleUniform;
-        /** uniform relating to the centroid vector to the shader for elevation
-            extrusion */
-        GLint centroidUniform;
-
-        /** GL shader generating textured terrain */
-        GLShader shader;
-#endif
     };
 };
 

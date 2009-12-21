@@ -93,6 +93,9 @@ protected:
 
     /** the vertical scale to be applied to all surface elevations */
     double verticalScale;
+    /** the vertical scale that has been externally set. Buffers the scales
+        changes up to the next frame call */
+    double newVerticalScale;
 
     /** the cache management component */
     Cache* cache;

@@ -6,7 +6,9 @@
 #include <Geometry/OrthogonalTransformation.h>
 #include <GL/GLTransformationWrappers.h>
 #include <Vrui/DisplayState.h>
+#include <Vrui/ViewSpecification.h>
 #include <Vrui/Vrui.h>
+#include <Vrui/VRWindow.h>
 
 #include <crusta/CacheRequest.h>
 #include <crusta/Crusta.h>
@@ -24,7 +26,8 @@ static const float TEXTURE_COORD_STEP  = 1.0 / TILE_RESOLUTION;
 static const float TEXTURE_COORD_START = TEXTURE_COORD_STEP * 0.5;
 static const float TEXTURE_COORD_END   = 1.0 - TEXTURE_COORD_START;
 
-bool QuadTerrain::displayDebuggingGrid = false;
+bool QuadTerrain::displayDebuggingBoundingSpheres = false;
+bool QuadTerrain::displayDebuggingGrid            = false;
 
 QuadTerrain::
 QuadTerrain(uint8 patch, const Scope& scope, Crusta* iCrusta) :
@@ -33,6 +36,84 @@ QuadTerrain(uint8 patch, const Scope& scope, Crusta* iCrusta) :
     crusta->getDataManager()->loadRoot(TreeIndex(patch), scope);
 }
 
+
+static GLFrustum<Scalar>
+getFrustumFromVrui(GLContextData& contextData)
+{
+    const Vrui::DisplayState& displayState = Vrui::getDisplayState(contextData);
+    Vrui::ViewSpecification viewSpec =
+        displayState.window->calcViewSpec(displayState.eyeIndex);
+    Vrui::NavTransform inv = Vrui::getInverseNavigationTransformation();
+
+    GLFrustum<Scalar> frustum;
+#if 1
+    for (int i=0; i<8; ++i)
+        frustum.setFrustumVertex(i,inv.transform(viewSpec.getFrustumVertex(i)));
+
+	/* Calculate the six frustum face planes: */
+	Vector3 fv10 = frustum.getFrustumVertex(1) - frustum.getFrustumVertex(0);
+	Vector3 fv20 = frustum.getFrustumVertex(2) - frustum.getFrustumVertex(0);
+	Vector3 fv40 = frustum.getFrustumVertex(4) - frustum.getFrustumVertex(0);
+	Vector3 fv67 = frustum.getFrustumVertex(6) - frustum.getFrustumVertex(7);
+	Vector3 fv57 = frustum.getFrustumVertex(5) - frustum.getFrustumVertex(7);
+	Vector3 fv37 = frustum.getFrustumVertex(3) - frustum.getFrustumVertex(7);
+
+    Vrui::Plane planes[8];
+	planes[0] = Vrui::Plane(Geometry::cross(fv40,fv20),
+                            frustum.getFrustumVertex(0));
+	planes[1] = Vrui::Plane(Geometry::cross(fv57,fv37),
+                            frustum.getFrustumVertex(7));
+	planes[2] = Vrui::Plane(Geometry::cross(fv10,fv40),
+                            frustum.getFrustumVertex(0));
+	planes[3] = Vrui::Plane(Geometry::cross(fv37,fv67),
+                            frustum.getFrustumVertex(7));
+	planes[4] = Vrui::Plane(Geometry::cross(fv20,fv10),
+                            frustum.getFrustumVertex(0));
+	planes[5] = Vrui::Plane(Geometry::cross(fv67,fv57),
+                            frustum.getFrustumVertex(7));
+                    
+    Scalar screenArea = Geometry::mag(planes[4].getNormal());
+	for(int i=0; i<6; ++i)
+		planes[i].normalize();
+	
+    for (int i=0; i<6; ++i)
+        frustum.setFrustumPlane(i, planes[i]);
+
+	/* Use the frustum near plane as the screen plane: */
+    frustum.setScreenEye(planes[4], inv.transform(viewSpec.getEye()));
+	
+	/* Get viewport size from OpenGL: */
+	GLint viewport[4];
+	glGetIntegerv(GL_VIEWPORT,viewport);
+	
+	/* Calculate the inverse pixel size: */
+	frustum.setPixelSize(Math::sqrt((Scalar(viewport[2])*Scalar(viewport[3]))/screenArea));
+#else
+    for (int i=0; i<8; ++i)
+        frustum.setFrustumVertex(i,inv.transform(viewSpec.getFrustumVertex(i)));
+    for (int i=0; i<6; ++i)
+    {
+        Vrui::Plane plane = viewSpec.getFrustumPlane(i);
+        frustum.setFrustumPlane(i, plane.transform(inv));
+    }
+
+    Vrui::Plane screenPlane = viewSpec.getScreenPlane();
+    frustum.setScreenEye(screenPlane.transform(inv),
+                         inv.transform(viewSpec.getEye()));
+
+
+    Vector3 fv10 = frustum.getFrustumVertex(1) - frustum.getFrustumVertex(0);
+    Vector3 fv20 = frustum.getFrustumVertex(2) - frustum.getFrustumVertex(0);
+
+    const int* vSize  = viewSpec.getViewportSize();
+    Scalar screenArea = Geometry::mag(Geometry::cross(fv20,fv10));
+    Scalar pixelSize  = Math::sqrt((vSize[0]*vSize[1]) / screenArea);
+
+    frustum.setPixelSize(pixelSize);
+#endif
+
+    return frustum;
+}
 
 void QuadTerrain::
 display(GLContextData& contextData)
@@ -62,7 +143,7 @@ display(GLContextData& contextData)
 
     //setup the evaluators
     FrustumVisibility visibility;
-    visibility.frustum.setFromGL();
+    visibility.frustum = getFrustumFromVrui(contextData);
     FocusViewEvaluator lod;
     lod.frustum = visibility.frustum;
     lod.setFocusFromDisplay();
@@ -202,30 +283,42 @@ glVertexPointer(3, GL_FLOAT, 0, node->mainBuffer->getData().geometry);
 glDrawArrays(GL_POINTS, 0, TILE_RESOLUTION*TILE_RESOLUTION);
 #endif
 
-#if 0
-glData->shader.disablePrograms();
+if (displayDebuggingBoundingSpheres)
+{
+glData->shader.disable();
+    GLint activeTexture;
+    glPushAttrib(GL_ENABLE_BIT || GL_POLYGON_BIT);
+    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+
     glDisable(GL_LIGHTING);
     glActiveTexture(GL_TEXTURE0);
     glDisable(GL_TEXTURE_2D);
     glPolygonMode(GL_FRONT, GL_LINE);
     glPushMatrix();
-    glColor3f(0.5,0.5,0.5);
+    glColor3f(0.5f,0.5f,0.5f);
     glTranslatef(mainData.boundingCenter[0], mainData.boundingCenter[1],
                  mainData.boundingCenter[2]);
-    glDrawSphereIcosahedron(mainData.boundingRadius, 10);
+    glDrawSphereIcosahedron(mainData.boundingRadius, 2);
+
     glPopMatrix();
-    glEnable(GL_TEXTURE_2D);
-glData->shader.useProgram();
-#endif
+    glPopAttrib();
+    glActiveTexture(activeTexture);
+glData->shader.enable();
+}
 
 if (displayDebuggingGrid)
 {
 glData->shader.disable();
-    Scope::Vertex* c = mainData.scope.corners;
+    GLint activeTexture;
+    glPushAttrib(GL_ENABLE_BIT);
+    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+
     glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);
     glActiveTexture(GL_TEXTURE0);
     glDisable(GL_TEXTURE_2D);
+
+    Point3* c = mainData.scope.corners;
     glBegin(GL_LINE_STRIP);
         glColor3f(1.0f, 0.0f, 0.0f);
         glVertex3f(c[0][0], c[0][1], c[0][2]);
@@ -238,8 +331,9 @@ glData->shader.disable();
         glColor3f(0.0f, 0.0f, 1.0f);
         glVertex3f(c[0][0], c[0][1], c[0][2]);
     glEnd();
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_TEXTURE_2D);
+
+    glPopAttrib();
+    glActiveTexture(activeTexture);
 glData->shader.enable();
 }
 
@@ -327,38 +421,10 @@ QuadTerrain::GlData::
 GlData(VideoCache& iVideoCache) :
     videoCache(iVideoCache),
     vertexAttributeTemplate(0), indexTemplate(0)
-//    ,verticalScaleUniform(0), centroidUniform(0)
 {
     //initialize the static gl buffer templates
     generateVertexAttributeTemplate();
     generateIndexTemplate();
-
-#if 0
-    //initialize the shader
-    shader.compileVertexShader((std::string(CRUSTA_SHARE_PATH) +
-                                "/litElevation.vs").c_str());
-    shader.compileFragmentShader((std::string(CRUSTA_SHARE_PATH) +
-                                  "/elevation.fs").c_str());
-    shader.linkShader();
-    shader.useProgram();
-
-    verticalScaleUniform =
-        shader.getUniformLocation("verticalScale");
-    glUniform1f(verticalScaleUniform, 1);
-    centroidUniform = shader.getUniformLocation("centroid");
-
-    GLint uniform;
-    uniform = shader.getUniformLocation("geometryTex");
-    glUniform1i(uniform, 0);
-    uniform = shader.getUniformLocation("heightTex");
-    glUniform1i(uniform, 1);
-    uniform = shader.getUniformLocation("colorTex");
-    glUniform1i(uniform, 2);
-    uniform = shader.getUniformLocation("texStep");
-    glUniform1f(uniform, TEXTURE_COORD_STEP);
-
-    shader.disablePrograms();
-#endif
 }
 
 QuadTerrain::GlData::

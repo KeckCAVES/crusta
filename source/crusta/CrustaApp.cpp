@@ -99,6 +99,13 @@ produceMainMenu()
     showVerticalScaleToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::showVerticalScaleCallback);
 
+    /* Create a button to toogle display of the debugging sphere: */
+    GLMotif::ToggleButton* debugSpheresToggle = new GLMotif::ToggleButton(
+        "DebugSpheresToggle", mainMenu, "Debug Spheres");
+    debugSpheresToggle->setToggle(false);
+    debugSpheresToggle->getValueChangedCallbacks().add(
+        this, &CrustaApp::debugSpheresCallback);
+
     /* Create a button to toogle display of the debugging grid: */
     GLMotif::ToggleButton* debugGridToggle = new GLMotif::ToggleButton(
         "DebugGridToggle", mainMenu, "Debug Grid");
@@ -258,6 +265,12 @@ showVerticalScaleCallback(
 }
 
 void CrustaApp::
+debugSpheresCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+{
+    QuadTerrain::displayDebuggingBoundingSpheres = cbData->set;
+}
+
+void CrustaApp::
 debugGridCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 {
     QuadTerrain::displayDebuggingGrid = cbData->set;
@@ -266,7 +279,8 @@ debugGridCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 void CrustaApp::
 changeScaleCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
-    newVerticalScale = pow(10, cbData->value);
+    double newVerticalScale = pow(10, cbData->value);
+    crusta->setVerticalScale(newVerticalScale);
 
     std::ostringstream oss;
     oss.precision(2);
@@ -371,7 +385,6 @@ resetNavigationCallback(Misc::CallbackData* cbData)
 void CrustaApp::
 frame()
 {
-    crusta->setVerticalScale(newVerticalScale);
     crusta->frame();
 }
 

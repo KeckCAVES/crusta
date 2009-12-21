@@ -28,14 +28,15 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
     that are initialized with 0. Thus if crustaFrameNumber starts at 0, the
     init code wouldn't be able to retrieve any cache buffers since all the
     buffers of the current and previous frame are locked */
-    currentFrame    = 2;
-    lastScaleFrame  = 2;
-    verticalScale   = 1.0;
+    currentFrame     = 2;
+    lastScaleFrame   = 2;
+    verticalScale    = 0.0;
+    newVerticalScale = 1.0;
     bufSize[0] = bufSize[1] = Math::Constants<int>::max;
 
     Triacontahedron polyhedron(SPHEROID_RADIUS);
 
-    cache    = new Cache(8192, 4096, this);
+    cache    = new Cache(4096, 1024, this);
     dataMan  = new DataManager(&polyhedron, demFileBase, colorFileBase, this);
     mapMan   = new MapManager(crustaTool);
 
@@ -288,10 +289,9 @@ getLastScaleFrame() const
 }
 
 void Crusta::
-setVerticalScale(double newVerticalScale)
+setVerticalScale(double nVerticalScale)
 {
-    verticalScale  = newVerticalScale;
-    lastScaleFrame = currentFrame;
+    newVerticalScale = nVerticalScale;
 }
 
 double Crusta::
@@ -330,6 +330,13 @@ submitActives(const Actives& touched)
 void Crusta::
 frame()
 {
+    //check for scale changes since the last frame
+    if (verticalScale  != newVerticalScale)
+    {
+        verticalScale  = newVerticalScale;
+        lastScaleFrame = currentFrame;
+    }
+
     ++currentFrame;
 
     DEBUG_OUT(8, "\n\n\n--------------------------------------\n%u\n\n\n",
