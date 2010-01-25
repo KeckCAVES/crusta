@@ -4,10 +4,6 @@ cmake_policy(SET CMP0011 NEW)
 
 project(CRUSTA)
 
-if(APPLE)
-add_definitions(-D__DARWIN__)
-endif(APPLE)
-
 #-------------------
 # Include VRUI variables and macros
 #-------------------

@@ -4,6 +4,9 @@
 #ifdef __GNUC__
     #if __GNUC__ > 3 && __GNUC_MINOR__ > 0
         #include <tr1/unordered_map>
+        /* to get around the inclusion of <cmath> from above undef'ing all the
+           <math.h> macros and defining corresponding functions in std:: */
+        using namespace std;
     #else
         #include <ext/hash_map>
     #endif
