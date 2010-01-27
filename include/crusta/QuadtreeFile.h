@@ -61,7 +61,7 @@ public:
 #endif //CONSTRUO_BUILD
 
         ///size of an individual image tile
-        uint tileSize[2];
+        uint32 tileSize[2];
         ///default pixel value to use for out-of-bounds tiles
         Pixel defaultPixelValue;
         ///the biggest tile index (relates to the number of tiles stored)
@@ -82,7 +82,7 @@ public:
     ///returns the pixel value for out-of-bounds tiles
 	const Pixel& getDefaultPixelValue() const;
     ///returns size of an individual image tile
-	const uint* getTileSize() const;
+	const uint32* getTileSize() const;
     ///return the number of tiles stored in the hierarchy
     TileIndex getNumTiles() const;
     ///retrieve the default value filled data buffer

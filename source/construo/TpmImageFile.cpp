@@ -60,8 +60,8 @@ readRectangle(const int rectOrigin[2], const int rectSize[2],
 	/* Lock the image file (no sense in multithreading at this point): */
 	Threads::Mutex::Lock lock(tpmFileMutex);
 
-    assert(rectOrigin[0]>=0 && rectOrigin[0]+rectSize[0]<size[0]);
-    assert(rectOrigin[1]>=0 && rectOrigin[1]+rectSize[1]<size[1]);
+    assert(rectOrigin[0]>=0 && rectOrigin[0]+rectSize[0]<=size[0]);
+    assert(rectOrigin[1]>=0 && rectOrigin[1]+rectSize[1]<=size[1]);
 
     TpmFile::Card ro[2];
     TpmFile::Card rs[2];

@@ -40,11 +40,7 @@ void QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::Header::
 read(Misc::LargeFile* quadtreeFile)
 {
     quadtreeFile->rewind();
-///\todo BROKEN!!! don't use size_t to write to disk.
-uint64 tileSize64[2];
-    quadtreeFile->read(tileSize64, 2);
-tileSize[0] = tileSize64[0];
-tileSize[1] = tileSize64[1];
+    quadtreeFile->read(tileSize, 2);
     quadtreeFile->read(defaultPixelValue);
     quadtreeFile->read(maxTileIndex);
 }
@@ -55,9 +51,7 @@ void QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::Header::
 write(Misc::LargeFile* quadtreeFile)
 {
     quadtreeFile->rewind();
-///\todo BROKEN!!! don't use size_t to write to disk.
-uint64 tileSize64[2] = { tileSize[0], tileSize[1] };
-    quadtreeFile->write(tileSize64, 2);
+    quadtreeFile->write(tileSize, 2);
     quadtreeFile->write(defaultPixelValue);
     quadtreeFile->write(maxTileIndex);
 }
@@ -170,7 +164,7 @@ getDefaultPixelValue(void) const
 }
 
 template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
-const uint* QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+const uint32* QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
 getTileSize() const
 {
     return header.tileSize;

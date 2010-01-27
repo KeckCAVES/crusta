@@ -179,7 +179,7 @@ public:
 
 ///\todo OpenMP this
             assert(node->treeState!=NULL && node->treeState->file!=NULL);
-            const uint* tileSize = node->treeState->file->getTileSize();
+            const uint32* tileSize = node->treeState->file->getTileSize();
             for(uint i=1; i<tileSize[0]*tileSize[1]; ++i)
 			{
                 range[0] = std::min(range[0], tile[i]);

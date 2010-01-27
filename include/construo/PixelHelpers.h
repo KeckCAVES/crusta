@@ -23,8 +23,8 @@ relativeToAverageElevation<DemHeight>(
     TreeNode<DemHeight>* node, const QuadtreeTileHeader<DemHeight>& header)
 {
     DemHeight average = (header.range[0] + header.range[1]) * DemHeight(0.5);
-    
-    const uint* tileSize = node->treeState->file->getTileSize();
+
+    const uint32* tileSize = node->treeState->file->getTileSize();
     for (DemHeight* h=node->data; h<node->data+tileSize[0]*tileSize[1]; ++h)
         *h -= average;
 }
