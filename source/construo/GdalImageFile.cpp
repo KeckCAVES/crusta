@@ -17,13 +17,21 @@ GdalDemImageFile(const char* imageFileName) :
 
     //try to retrieve the nodata value from the band
     nodata.value = band->GetNoDataValue();
+
+    //output the no-data value
+    std::cout << "Internal nodata value:\n" << nodata.value << "\n";
 }
 
 void GdalDemImageFile::
 setNodata(const std::string& nodataString)
 {
-    std::istringstream iss(nodataString);
-    iss >> nodata.value;
+    if (!nodataString.empty())
+    {
+        std::istringstream iss(nodataString);
+        iss >> nodata.value;
+
+        std::cout << "Forced nodata value:\n" << nodata.value << "\n";
+    }
 }
 
 void GdalDemImageFile::
@@ -71,8 +79,14 @@ assert(rectOrigin[i]+rectSize[i]-1 < size[i]);
 void GdalColorImageFile::
 setNodata(const std::string& nodataString)
 {
-    std::istringstream iss(nodataString);
-    iss >> nodata.value[0] >> nodata.value[1] >> nodata.value[2];
+    if (!nodataString.empty())
+    {
+        std::istringstream iss(nodataString);
+        iss >> nodata.value[0] >> nodata.value[1] >> nodata.value[2];
+
+        std::cout << "Forced nodata value:\n(" << nodata.value[0] << ", "
+                  << nodata.value[1] << ", " << nodata.value[2] << ")\n";
+    }
 }
 
 GdalColorImageFile::
@@ -91,6 +105,10 @@ GdalColorImageFile(const char* imageFileName) :
 
     for (int i=0; i<3; ++i)
         nodata.value[i] = bands[i]->GetNoDataValue();
+
+    //output the no-data value
+    std::cout << "Internal nodata value:\n(" << nodata.value[0] << ", "
+              << nodata.value[1] << ", " << nodata.value[2] << ")\n";
 }
 
 void GdalColorImageFile::
