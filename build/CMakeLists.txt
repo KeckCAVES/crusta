@@ -12,8 +12,6 @@ find_package(VRUI REQUIRED HINTS ${CMAKE_SOURCE_DIR})
 #-------------------
 # Target independent configuration
 #-------------------
-set(CRUSTA_SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share/crusta")
-add_definitions(-DCRUSTA_SHARE_PATH=\"${CRUSTA_SHARE_PATH}\")
 include_directories(../include)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
@@ -99,14 +97,14 @@ vrui_set_target_properties(Crusta)
 # Crusta application wrapping the core components into an executable
 #-------------------
 
-add_executable(crustaApp
+add_executable(crusta
     ../include/crusta/CrustaApp.h
 
     ../source/crusta/CrustaApp.cpp
 )
 
-vrui_set_target_properties(crustaApp)
-target_link_libraries(crustaApp Crusta)
+vrui_set_target_properties(crusta)
+target_link_libraries(crusta Crusta)
 
 
 #-------------------
@@ -136,9 +134,6 @@ find_package(PNG)
 add_definitions(${PNG_DEFINITIONS})
 include_directories(${PNG_INCLUDE_DIR})
 
-find_package(ImageMagick COMPONENTS Magick++)
-include_directories(${ImageMagick_Magick++_INCLUDE_DIRS})
-
 #GDAL
 if(APPLE)
    find_library(GDAL_LIBRARY GDAL)
@@ -147,7 +142,7 @@ else(APPLE)
    include_directories(${GDAL_INCLUDE_DIR})
 endif(APPLE)
 
-set(CONSTRUO_SOURCES
+add_executable(construo
     ../include/construo/ArcInfoBinaryGridImageFile.h
     ../include/construo/Builder.h
     ../include/construo/Builder.hpp
@@ -200,13 +195,6 @@ set(CONSTRUO_SOURCES
     ../source/construo/Visualizer.cpp
 )
 
-if(${ImageMagick_Magick++_FOUND})
-list(APPEND CONSTRUO_SOURCES ../source/construo/MagickImageFile.cpp)
-add_definitions(-DCONSTRUO_USE_IMAGEMAGICK)
-endif(${ImageMagick_Magick++_FOUND})
-
-add_executable(construo ${CONSTRUO_SOURCES})
-
 #cmake fraking sucks if you don't follow their directory structure!!!!
 #set_target_properties(construo PROPERTIES
 #                               COMPILE_DEFINITIONS "CONSTRUO_BUILD")
@@ -214,24 +202,11 @@ add_executable(construo ${CONSTRUO_SOURCES})
 vrui_set_target_properties(construo)
 
 target_link_libraries(construo Crusta ${PNG_LIBRARIES}
-                               ${ImageMagick_Magick++_LIBRARIES}
-                               ${GDAL_LIBRARY})
-
-
+                                      ${GDAL_LIBRARY})
 
 #-------------------
 # Crusta installation
 #-------------------
 
-install(TARGETS Crusta
-        LIBRARY DESTINATION lib)
-install(TARGETS crustaApp
-        RUNTIME DESTINATION bin)
-install(TARGETS construo
-        RUNTIME DESTINATION bin)
-install(TARGETS CrustaVislet
-        LIBRARY DESTINATION lib)
-
-#shader files
-file(GLOB CRUSTA_SHADERS ../share/*.vs ../share/*.fs ../share/*.gs)
-install(FILES ${CRUSTA_SHADERS} DESTINATION ${CRUSTA_SHARE_PATH})
+install(TARGETS Crusta  crusta construo CrustaVislet
+        DESTINATION .)
