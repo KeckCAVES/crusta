@@ -116,6 +116,13 @@ loadChild(MainCacheBuffer* parent, uint8 which, MainCacheBuffer* child)
     childData.demTile   = parentData.childDemTiles[which];
     childData.colorTile = parentData.childColorTiles[which];
 
+    //clear the old quadtreefile tile indices
+    for (int i=0; i<4; ++i)
+    {
+        childData.childDemTiles[i]   = DemFile::INVALID_TILEINDEX;
+        childData.childColorTiles[i] = ColorFile::INVALID_TILEINDEX;
+    }
+
     sourceDem(&parentData,   childData);
     sourceColor(&parentData, childData);
     generateGeometry(childData);
