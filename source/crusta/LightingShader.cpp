@@ -416,15 +416,16 @@ void LightingShader::compileShader()
 			vec3 normalEc;\n\
 			vec4 ambient,diffuse,specular;\n\
 			vec4 color;\n\
-            vec2 coord    = gl_Vertex.xy;\n\
-            vec3 me       = surfacePoint(coord);\n\
+            vec2 coord = gl_Vertex.xy;\n\
+            vec3 me    = surfacePoint(coord);\n\
             \n\
             vec3 up    = surfacePoint(vec2(coord.x, coord.y + texStep));\n\
             vec3 down  = surfacePoint(vec2(coord.x, coord.y - texStep));\n\
             vec3 left  = surfacePoint(vec2(coord.x - texStep, coord.y));\n\
             vec3 right = surfacePoint(vec2(coord.x + texStep, coord.y));\n\
             \n\
-            vec3 normal   = cross((right - left), (up - down));\n\
+            vec3 normal = cross((right - left), (up - down));\n\
+            normal      = normalize(normal);\n\
 			\n\
 			/* Compute the vertex position in eye coordinates: */\n\
 			vertexEc = gl_ModelViewMatrix * vec4(me, 1.0);\n\
@@ -460,9 +461,6 @@ void LightingShader::compileShader()
         "\
         /* Modulate with the texture color: */\n\
         vec4 textureColor = texture2D(colorTex, coord);\n\
-        vec4 test = vec4(0.07, 0.07, 0.3, 1.0);\n\
-        if (all(lessThanEqual(textureColor, test)))\n\
-            textureColor[2] += 0.3;\n\
         ambient *= textureColor;\n\
         diffuse *= textureColor;\n";
 

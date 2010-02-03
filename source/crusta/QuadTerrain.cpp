@@ -264,12 +264,16 @@ drawNode(GLContextData& contextData, GlData* glData, QuadNodeMainData& mainData)
 
 //    glPolygonMode(GL_FRONT, GL_LINE);
 
-    float color[3]   = {1, 1, 1};
-    float ambient[3] = {1, 1, 1};
-    glColor3fv(color);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
-    glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
-    glMaterialf(GL_FRONT, GL_SHININESS, 1.5);
+    static const float ambient[4]  = {0.4, 0.4, 0.4, 1.0};
+    static const float diffuse[4]  = {1.0, 1.0, 1.0, 1.0};
+    static const float specular[4] = {0.3, 0.3, 0.3, 1.0};
+    static const float emission[4] = {0.0, 0.0, 0.0, 1.0};
+    static const float shininess   = 55.0;
+    glMaterialfv(GL_FRONT, GL_AMBIENT,   ambient);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE,   diffuse);
+    glMaterialfv(GL_FRONT, GL_SPECULAR,  specular);
+    glMaterialfv(GL_FRONT, GL_EMISSION,  emission);
+    glMaterialf (GL_FRONT, GL_SHININESS, shininess);
     glDrawRangeElements(GL_TRIANGLE_STRIP, 0,
                         (TILE_RESOLUTION*TILE_RESOLUTION) - 1,
                         NUM_GEOMETRY_INDICES, GL_UNSIGNED_SHORT, 0);
