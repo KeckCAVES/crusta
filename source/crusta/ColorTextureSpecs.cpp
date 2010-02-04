@@ -3,6 +3,6 @@
 BEGIN_CRUSTA
 
 const TextureColor
-QuadtreeTileHeader<TextureColor>::defaultPixelValue = TextureColor(0);
+QuadtreeTileHeader<TextureColor>::defaultPixelValue = TextureColor(255,255,255);
 
 END_CRUSTA

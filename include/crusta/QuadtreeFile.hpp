@@ -97,6 +97,7 @@ QuadtreeFile(const char* quadtreeFileName, const uint iTileSize[2]) :
         //set the tile size
         for (int i=0; i<2; ++i)
             header.tileSize[i] = iTileSize[i];
+        header.defaultPixelValue = TileHeader::defaultPixelValue;
 
         //reserve header space and record tile data start location
         writeHeader();
@@ -117,7 +118,7 @@ QuadtreeFile(const char* quadtreeFileName, const uint iTileSize[2]) :
     uint numPixels = header.tileSize[0]*header.tileSize[1];
     blank = new Pixel[numPixels];
     for (Pixel* cur=blank; cur<(blank+numPixels); ++cur)
-        *cur = TileHeader::defaultPixelValue;
+        *cur = header.defaultPixelValue;
 }
 
 template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
@@ -151,7 +152,10 @@ setDefaultPixelValue(
 	const typename QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
     Pixel& newDefaultPixelValue)
 {
-	header.defaultPixelValue = newDefaultPixelValue;
+    header.defaultPixelValue = newDefaultPixelValue;
+    uint numPixels = header.tileSize[0]*header.tileSize[1];
+    for (Pixel* cur=blank; cur<(blank+numPixels); ++cur)
+        *cur = header.defaultPixelValue;
 }
 #endif //CONSTRUO_BUILD
 

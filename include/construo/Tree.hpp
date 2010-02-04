@@ -348,7 +348,7 @@ Spheroid(const std::string& baseName, const uint tileResolution[2])
         if (file->getNumTiles() == 0)
         {
             //the new root must have index 0
-            node->tileIndex = file->appendTile();
+            node->tileIndex = file->appendTile(true);
             assert(node->tileIndex==0 && file->getNumTiles()==1);
         }
     }
