@@ -9,6 +9,7 @@ project(CRUSTA)
 #-------------------
 find_package(VRUI REQUIRED HINTS ${CMAKE_SOURCE_DIR})
 
+
 #-------------------
 # Target independent configuration
 #-------------------
@@ -17,11 +18,20 @@ include_directories(../include)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
+#GDAL
+if(APPLE)
+   find_library(GDAL_LIBRARY GDAL)
+else(APPLE)
+   find_package(GDAL)
+   include_directories(${GDAL_INCLUDE_DIR})
+endif(APPLE)
+
+
 #-------------------
 # Crusta shared dynamic link library containing the core crusta components
 #-------------------
 
-add_library(Crusta SHARED
+add_library(CrustaCore SHARED
     ../include/crusta/basics.h
     ../include/crusta/CacheRequest.h
     ../include/crusta/checkGl.h
@@ -91,7 +101,8 @@ add_library(Crusta SHARED
     ../source/crusta/ViewLod.cpp
 )
 
-vrui_set_target_properties(Crusta)
+vrui_set_target_properties(CrustaCore)
+target_link_libraries(CrustaCore ${GDAL_LIBRARY})
 
 #-------------------
 # Crusta application wrapping the core components into an executable
@@ -104,7 +115,7 @@ add_executable(crusta
 )
 
 vrui_set_target_properties(crusta)
-target_link_libraries(crusta Crusta)
+target_link_libraries(crusta CrustaCore)
 
 
 #-------------------
@@ -118,7 +129,7 @@ add_library(CrustaVislet MODULE
 )
 
 vrui_set_target_properties(CrustaVislet)
-target_link_libraries(CrustaVislet Crusta)
+target_link_libraries(CrustaVislet CrustaCore)
 
 if(APPLE)
 set_target_properties(CrustaVislet PROPERTIES
@@ -133,14 +144,6 @@ endif(APPLE)
 find_package(PNG)
 add_definitions(${PNG_DEFINITIONS})
 include_directories(${PNG_INCLUDE_DIR})
-
-#GDAL
-if(APPLE)
-   find_library(GDAL_LIBRARY GDAL)
-else(APPLE)
-   find_package(GDAL)
-   include_directories(${GDAL_INCLUDE_DIR})
-endif(APPLE)
 
 add_executable(construo
     ../include/construo/ArcInfoBinaryGridImageFile.h
@@ -201,12 +204,12 @@ add_executable(construo
 
 vrui_set_target_properties(construo)
 
-target_link_libraries(construo Crusta ${PNG_LIBRARIES}
-                                      ${GDAL_LIBRARY})
+target_link_libraries(construo CrustaCore ${PNG_LIBRARIES}
+                                          ${GDAL_LIBRARY})
 
 #-------------------
 # Crusta installation
 #-------------------
 
-install(TARGETS Crusta  crusta construo CrustaVislet
+install(TARGETS CrustaCore  crusta construo CrustaVislet
         DESTINATION .)

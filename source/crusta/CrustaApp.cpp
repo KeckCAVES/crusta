@@ -2,9 +2,17 @@
 
 #include <sstream>
 
+#if __APPLE__
+#include <GDAL/ogr_api.h>
+#include <GDAL/ogrsf_frmts.h>
+#else
+#include <ogr_api.h>
+#include <ogrsf_frmts.h>
+#endif
+
 #include <Geometry/OrthogonalTransformation.h>
-#include <GLMotif/Button.h>
 #include <GLMotif/CascadeButton.h>
+#include <GLMotif/DropdownBox.h>
 #include <GLMotif/Label.h>
 #include <GLMotif/Margin.h>
 #include <GLMotif/Menu.h>
@@ -59,11 +67,15 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
 
 	/* Save all viewers' headlight enable states: */
 	for(int i=0;i<Vrui::getNumViewers();++i)
-		viewerHeadlightStates[i]=true; // Temporary hack; should be Vrui::getViewer(i)->getHeadlight().isEnabled();
+	{
+		viewerHeadlightStates[i] =
+            Vrui::getViewer(i)->getHeadlight().isEnabled();
+	}
 
     produceMainMenu();
     produceVerticalScaleDialog();
     produceLightingDialog();
+    produceMappingDialog();
 
     resetNavigationCallback(NULL);
 }
@@ -71,11 +83,9 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
 CrustaApp::
 ~CrustaApp()
 {
-    delete lightingDialog;
     delete popMenu;
 	/* Delete the viewer headlight states: */
 	delete[] viewerHeadlightStates;
-    delete verticalScaleDialog;
 
     crusta->shutdown();
     delete crusta;
@@ -99,12 +109,19 @@ produceMainMenu()
     showVerticalScaleToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::showVerticalScaleCallback);
 
-    /* Create a button to toogle display of the debugging sphere: */
-    GLMotif::ToggleButton* debugSpheresToggle = new GLMotif::ToggleButton(
-        "DebugSpheresToggle", mainMenu, "Debug Spheres");
-    debugSpheresToggle->setToggle(false);
-    debugSpheresToggle->getValueChangedCallbacks().add(
-        this, &CrustaApp::debugSpheresCallback);
+    /* Create a button to toogle display of the lighting dialog: */
+    GLMotif::ToggleButton* lightingToggle = new GLMotif::ToggleButton(
+        "LightingToggle", mainMenu, "Light Settings");
+    lightingToggle->setToggle(false);
+    lightingToggle->getValueChangedCallbacks().add(
+        this, &CrustaApp::showLightingDialogCallback);
+
+    /* Create a button to toogle display of the mapping dialog: */
+    GLMotif::ToggleButton* mappingToggle = new GLMotif::ToggleButton(
+        "MappingToggle", mainMenu, "Mapping Options");
+    mappingToggle->setToggle(false);
+    mappingToggle->getValueChangedCallbacks().add(
+        this, &CrustaApp::showMappingDialogCallback);
 
     /* Create a button to toogle display of the debugging grid: */
     GLMotif::ToggleButton* debugGridToggle = new GLMotif::ToggleButton(
@@ -113,12 +130,12 @@ produceMainMenu()
     debugGridToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::debugGridCallback);
 
-    /* Create a button to toogle display of the lighting dialog: */
-    GLMotif::ToggleButton* lightingToggle = new GLMotif::ToggleButton(
-        "LightingToggle", mainMenu, "Light Settings");
-    lightingToggle->setToggle(false);
-    lightingToggle->getValueChangedCallbacks().add(
-        this, &CrustaApp::showLightingDialogCallback);
+    /* Create a button to toogle display of the debugging sphere: */
+    GLMotif::ToggleButton* debugSpheresToggle = new GLMotif::ToggleButton(
+        "DebugSpheresToggle", mainMenu, "Debug Spheres");
+    debugSpheresToggle->setToggle(false);
+    debugSpheresToggle->getValueChangedCallbacks().add(
+        this, &CrustaApp::debugSpheresCallback);
 
     /* Create a button: */
     GLMotif::Button* resetNavigationButton = new GLMotif::Button(
@@ -233,6 +250,33 @@ produceLightingDialog()
 }
 
 void CrustaApp::
+produceMappingDialog()
+{
+    mappingDialog = new GLMotif::PopupWindow(
+        "MappingDialog", Vrui::getWidgetManager(), "Mapping Control");
+    GLMotif::RowColumn* root = new GLMotif::RowColumn(
+        "MappingRoot", mappingDialog, false);
+    GLMotif::Button* load = new GLMotif::Button("LoadButton", root, "Load");
+    load->getSelectCallbacks().add(this, &CrustaApp::loadMappingCallback);
+    GLMotif::Button* save = new GLMotif::Button("SaveButton", root, "Save");
+    save->getSelectCallbacks().add(this, &CrustaApp::saveMappingCallback);
+
+    OGRSFDriverRegistrar* ogrRegistrar = OGRSFDriverRegistrar::GetRegistrar();
+    int numDrivers = ogrRegistrar->GetDriverCount();
+    std::vector<std::string> formats;
+    for (int i=0; i<numDrivers; ++i)
+    {
+        OGRSFDriver* driver = ogrRegistrar->GetDriver(i);
+        formats.push_back(std::string(driver->GetName()));
+    }
+
+    mapFormat = new GLMotif::DropdownBox("MapFormatDrop", root, formats);
+
+    root->setNumMinorWidgets(3);
+    root->manageChild();
+}
+
+void CrustaApp::
 alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
 {
 /* Do whatever to the surface frame, but don't change its scale factor: */
@@ -254,26 +298,17 @@ void CrustaApp::
 showVerticalScaleCallback(
     GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 {
-    if(cbData->set)
-    {
-        const Vrui::NavTransform& nav = Vrui::getNavigationTransformation();
-        Vrui::popupPrimaryWidget(
-            verticalScaleDialog, nav.transform(Vrui::getDisplayCenter()));
-    }
-    else
-        Vrui::popdownPrimaryWidget(verticalScaleDialog);
-}
-
-void CrustaApp::
-debugSpheresCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
-{
-    QuadTerrain::displayDebuggingBoundingSpheres = cbData->set;
-}
-
-void CrustaApp::
-debugGridCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
-{
-    QuadTerrain::displayDebuggingGrid = cbData->set;
+	if(cbData->set)
+	{
+		//open the dialog at the same position as the main menu:
+		Vrui::getWidgetManager()->popupPrimaryWidget(verticalScaleDialog,
+            Vrui::getWidgetManager()->calcWidgetTransformation(popMenu));
+	}
+	else
+	{
+		//close the dialog
+		Vrui::popdownPrimaryWidget(verticalScaleDialog);
+	}
 }
 
 void CrustaApp::
@@ -288,17 +323,19 @@ changeScaleCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
     verticalScaleLabel->setLabel(oss.str().c_str());
 }
 
+
 void CrustaApp::
 showLightingDialogCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 {
 	if(cbData->set)
 	{
-		/* Open the render dialog at the same position as the main menu: */
-		Vrui::getWidgetManager()->popupPrimaryWidget(lightingDialog,Vrui::getWidgetManager()->calcWidgetTransformation(popMenu));
+		//open the dialog at the same position as the main menu:
+		Vrui::getWidgetManager()->popupPrimaryWidget(lightingDialog,
+            Vrui::getWidgetManager()->calcWidgetTransformation(popMenu));
 	}
 	else
 	{
-		/* Close the render dialog: */
+		//close the dialog:
 		Vrui::popdownPrimaryWidget(lightingDialog);
 	}
 }
@@ -372,6 +409,75 @@ void CrustaApp::sunElevationSliderCallback(GLMotif::Slider::ValueChangedCallback
 	Vrui::requestUpdate();
 }
 
+
+
+void CrustaApp::
+showMappingDialogCallback(
+    GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+{
+	if(cbData->set)
+	{
+		//open the dialog at the same position as the main menu:
+		Vrui::getWidgetManager()->popupPrimaryWidget(mappingDialog,
+            Vrui::getWidgetManager()->calcWidgetTransformation(popMenu));
+	}
+	else
+	{
+		//close the dialog
+		Vrui::popdownPrimaryWidget(mappingDialog);
+	}
+}
+
+void CrustaApp::
+loadMappingCallback(GLMotif::Button::SelectCallbackData*)
+{
+    GLMotif::FileSelectionDialog* mapFileDialog =
+        new GLMotif::FileSelectionDialog(Vrui::getWidgetManager(),
+                                         "Load Map File", 0, NULL);
+    mapFileDialog->getOKCallbacks().add(this,
+        &CrustaApp::loadMapFileOKCallback);
+    mapFileDialog->getCancelCallbacks().add(this,
+        &CrustaApp::loadMapFileCancelCallback);
+    Vrui::getWidgetManager()->popupPrimaryWidget(mapFileDialog,
+        Vrui::getWidgetManager()->calcWidgetTransformation(mappingDialog));
+}
+
+void CrustaApp::
+saveMappingCallback(GLMotif::Button::SelectCallbackData*)
+{
+    int selected = mapFormat->getSelectedItem();
+    crusta->getMapManager()->save("CrustaMap", mapFormat->getItem(selected));
+}
+
+void CrustaApp::
+loadMapFileOKCallback(GLMotif::FileSelectionDialog::OKCallbackData* cbData)
+{
+	//load the selected map file
+    crusta->getMapManager()->load(cbData->selectedFileName.c_str());
+	//destroy the file selection dialog
+	Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
+}
+
+void CrustaApp::
+loadMapFileCancelCallback(GLMotif::FileSelectionDialog::CancelCallbackData* cbData)
+{
+	//destroy the file selection dialog
+	Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
+}
+
+
+
+void CrustaApp::
+debugGridCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+{
+    QuadTerrain::displayDebuggingGrid = cbData->set;
+}
+
+void CrustaApp::
+debugSpheresCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+{
+    QuadTerrain::displayDebuggingBoundingSpheres = cbData->set;
+}
 
 void CrustaApp::
 resetNavigationCallback(Misc::CallbackData* cbData)

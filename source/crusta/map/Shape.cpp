@@ -180,7 +180,6 @@ isValidSegment(const Id& id)
 Shape::Id Shape::
 addControlPoint(const Point3& pos, End end)
 {
-    ///\todo get proper height of the control point
     if (end == END_FRONT)
     {
         controlPoints.insert(controlPoints.begin(), pos);

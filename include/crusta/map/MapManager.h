@@ -1,7 +1,6 @@
 #ifndef _MapManager_H_
 #define _MapManager_H_
 
-
 #include <GL/gl.h>
 
 #include <crusta/basics.h>
@@ -28,6 +27,14 @@ public:
 
     MapManager(Vrui::ToolFactory* parentToolFactory);
     ~MapManager();
+
+    /** Destroy all the current map features */
+    void deleteAllShapes();
+
+    /** Load a new mapping dataset */
+    void load(const char* filename);
+    /** Save the current mapping dataset */
+    void save(const char* filename, const char* format);
 
     Scalar getSelectDistance() const;
     Scalar getPointSelectionBias() const;
