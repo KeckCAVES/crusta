@@ -3,7 +3,9 @@
 #include <Geometry/OrthogonalTransformation.h>
 #include <GL/gl.h>
 #include <GL/GLContextData.h>
+#include <GL/GLTransformationWrappers.h>
 #include <Math/Constants.h>
+#include <Vrui/DisplayState.h>
 #include <Vrui/Vrui.h>
 
 #include <crusta/checkGl.h>
@@ -130,6 +132,80 @@ display(GLContextData& contextData) const
     if (lines->size()<1)
         return;
 
+#if 1
+    GLint activeTexture;
+    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+    glActiveTexture(GL_TEXTURE0);
+    
+    glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_POINT_BIT |
+                 GL_LINE_BIT   | GL_POLYGON_BIT);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
+    glEnable(GL_POLYGON_OFFSET_LINE);
+    glEnable(GL_POLYGON_OFFSET_POINT);
+    
+    glPolygonOffset(1.0f, 50.0f);
+
+    //compute the centroids
+    int numLines = static_cast<int>(lines->size());
+    Point3s centroids;
+    centroids.resize(numLines, Point3(0,0,0));
+    for (int i=0; i<numLines; ++i)
+    {
+        const Point3s& cps   = (*lines)[i]->getControlPoints();
+        int numPoints = static_cast<int>(cps.size());
+        for (int j=0; j<numPoints; ++j)
+        {
+            for (int k=0; k<3; ++k)
+                centroids[i][k] += cps[j][k];
+        }
+        double norm = 1.0 / numPoints;
+        for (int k=0; k<3; ++k)
+            centroids[i][k] *= norm;
+    }
+
+    glLineWidth(2.0);
+    glPointSize(3.0);
+    for (int i=0; i<numLines; ++i)
+    {
+        glPushMatrix();
+        Vrui::Vector centroidTranslation(centroids[i][0], centroids[i][1],
+                                         centroids[i][2]);
+        Vrui::NavTransform nav =
+            Vrui::getDisplayState(contextData).modelviewNavigational;
+        nav *= Vrui::NavTransform::translate(centroidTranslation);
+        glLoadMatrix(nav);
+        
+        const Point3s& cps = (*lines)[i]->getControlPoints();
+        if (cps.size() > 1)
+        {
+            glColor3f(0.8f, 0.7f, 0.5f);
+            glBegin(GL_LINE_STRIP);
+            for (Point3s::const_iterator it=cps.begin(); it!=cps.end(); ++it)
+            {
+                glVertex3f((*it)[0] - centroids[i][0],
+                           (*it)[1] - centroids[i][1],
+                           (*it)[2] - centroids[i][2]);
+            }
+            glEnd();
+        }
+
+        glColor3f(0.3f, 0.9f, 0.5f);
+        glBegin(GL_POINTS);
+        for (Point3s::const_iterator it=cps.begin(); it!=cps.end(); ++it)
+        {
+            glVertex3f((*it)[0] - centroids[i][0],
+                       (*it)[1] - centroids[i][1],
+                       (*it)[2] - centroids[i][2]);
+        }
+        glEnd();
+
+        glPopMatrix();
+    }
+
+    glPopAttrib();
+    glActiveTexture(activeTexture);
+#else
     GLint activeTexture;
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
 
@@ -192,6 +268,7 @@ display(GLContextData& contextData) const
 
     glPopAttrib();
     glActiveTexture(activeTexture);
+#endif
 }
 
 

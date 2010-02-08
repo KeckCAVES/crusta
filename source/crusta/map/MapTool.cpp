@@ -67,17 +67,17 @@ selectShape(const Point3& pos)
 
     ShapePtrs shapes = getShapes();
 
-    double distance = 1.0 / Vrui::getNavigationTransformation().getScaling();
-    distance       *= crusta->getMapManager()->getSelectDistance();
+    double threshold = 1.0 / Vrui::getNavigationTransformation().getScaling();
+    threshold       *= crusta->getMapManager()->getSelectDistance();
 
     for (ShapePtrs::iterator it=shapes.begin(); it!=shapes.end(); ++it)
     {
-        double dist;
-        Shape::Id control = (*it)->select(pos, dist);
-        if (control!=Shape::BAD_ID && dist<=distance)
+        double distance;
+        Shape::Id control = (*it)->select(pos, distance);
+        if (control!=Shape::BAD_ID && distance<=threshold)
         {
-            curShape = *it;
-            distance = dist;
+            curShape  = *it;
+            threshold = distance;
         }
     }
 }
@@ -270,6 +270,17 @@ std::cout << "MODE_SELECTING_CONTROL -> MODE_DRAGGING" << std::endl;
         {
             switch (mode)
             {
+                case MODE_DRAGGING:
+                {
+                    assert(curControl!=Shape::BAD_ID &&
+                           curControl.type==Shape::CONTROL_POINT);
+
+                    curShape->removeControlPoint(curControl);
+                    curControl = Shape::BAD_ID;
+                    mode       = MODE_SELECTING_CONTROL;
+                    break;
+                }
+
                 case MODE_IDLE:
                 case MODE_SELECTING_CONTROL:
                 {

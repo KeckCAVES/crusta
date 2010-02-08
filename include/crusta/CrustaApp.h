@@ -40,7 +40,6 @@ public:
 
 private:
 	void produceMainMenu();
-	void produceToolSubMenu(GLMotif::Menu* mainMenu);
     void produceVerticalScaleDialog();
     void produceLightingDialog();
     void produceMappingDialog();

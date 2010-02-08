@@ -146,35 +146,10 @@ produceMainMenu()
         this, &CrustaApp::resetNavigationCallback);
 
 
-    produceToolSubMenu(mainMenu);
-
-
     /* Finish building the main menu: */
     mainMenu->manageChild();
 
     Vrui::setMainMenu(popMenu);
-}
-
-void CrustaApp::
-produceToolSubMenu(GLMotif::Menu* mainMenu)
-{
-    GLMotif::Popup* toolMenuPopup = new GLMotif::Popup(
-        "ToolPopup", Vrui::getWidgetManager());
-
-    curTool = new GLMotif::RadioBox("ToolMenu", toolMenuPopup, false);
-    curTool->setOrientation(GLMotif::RowColumn::VERTICAL);
-    curTool->setNumMinorWidgets(1);
-    curTool->setSelectionMode(GLMotif::RadioBox::ALWAYS_ONE);
-
-    GLMotif::ToggleButton* cpe = new GLMotif::ToggleButton(
-        "ControlPointEditor", curTool, "Control Point Editor");
-
-    curTool->manageChild();
-    curTool->setSelectedToggle(cpe);
-
-    GLMotif::CascadeButton* toolCascade = new GLMotif::CascadeButton(
-        "ToolCascade", mainMenu, "Tools");
-    toolCascade->setPopup(toolMenuPopup);
 }
 
 void CrustaApp::
@@ -381,7 +356,8 @@ enableSunToggleCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 	Vrui::requestUpdate();
 }
 
-void CrustaApp::sunAzimuthSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
+void CrustaApp::
+sunAzimuthSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
 	/* Update the sun azimuth angle: */
 	sunAzimuth=Vrui::Scalar(cbData->value);
@@ -395,7 +371,8 @@ void CrustaApp::sunAzimuthSliderCallback(GLMotif::Slider::ValueChangedCallbackDa
 	Vrui::requestUpdate();
 }
 
-void CrustaApp::sunElevationSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
+void CrustaApp::
+sunElevationSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
 	/* Update the sun elevation angle: */
 	sunElevation=Vrui::Scalar(cbData->value);
@@ -459,7 +436,8 @@ loadMapFileOKCallback(GLMotif::FileSelectionDialog::OKCallbackData* cbData)
 }
 
 void CrustaApp::
-loadMapFileCancelCallback(GLMotif::FileSelectionDialog::CancelCallbackData* cbData)
+loadMapFileCancelCallback(
+    GLMotif::FileSelectionDialog::CancelCallbackData* cbData)
 {
 	//destroy the file selection dialog
 	Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);

@@ -355,9 +355,9 @@ frame()
 void Crusta::
 display(GLContextData& contextData)
 {
-#if 0
     CHECK_GLA
 
+#if 0
     GlData* glData = contextData.retrieveDataItem<GlData>(this);
     prepareBuffers(glData);
     CHECK_GLA
@@ -367,8 +367,8 @@ display(GLContextData& contextData)
          it!=renderPatches.end(); ++it)
     {
         (*it)->display(contextData);
+        CHECK_GLA
     }
-    CHECK_GLA
 
 #if 0
     GLint activeTexture;

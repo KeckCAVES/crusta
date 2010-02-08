@@ -103,36 +103,35 @@ frame()
 void SurfaceTool::
 display(GLContextData& contextData) const
 {
-    Vrui::NavTransform frame = transformedDevice->getTransformation();
+    Vrui::NavTransform original    = input.getDevice(0)->getTransformation();
+    Vrui::NavTransform transformed = transformedDevice->getTransformation();
 
-    Point3 o = frame.getOrigin();
-    Point3 x = o + frame.getDirection(0);
-    Point3 y = o + frame.getDirection(1);
-    Point3 z = o + frame.getDirection(2);
+    //transform the physical frames to navigation space
+    original    = Vrui::getInverseNavigationTransformation() * original;
+    transformed = Vrui::getInverseNavigationTransformation() * transformed;
+    
+    Point3 oPos = original.getOrigin();
+    Point3 tPos = transformed.getOrigin();
 
-    GLint activeTexture;
-    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
-    glPushAttrib(GL_ENABLE_BIT);
+    if (Geometry::dist(oPos, tPos) > -9000)
+    {
+        GLint activeTexture;
+        glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+        glActiveTexture(GL_TEXTURE0);
 
-    glDisable(GL_LIGHTING);
-    glDisable(GL_DEPTH_TEST);
-    glActiveTexture(GL_TEXTURE0);
-    glDisable(GL_TEXTURE_2D);
+        glPushAttrib(GL_ENABLE_BIT);
+        glDisable(GL_LIGHTING);
+        glDisable(GL_TEXTURE_2D);
 
-    glBegin(GL_LINES);
-        glColor3f(1.0, 0.0, 0.0);
-        glVertex3f(o[0], o[1], o[2]);
-        glVertex3f(x[0], x[1], x[2]);
-        glColor3f(0.0, 1.0, 0.0);
-        glVertex3f(o[0], o[1], o[2]);
-        glVertex3f(y[0], y[1], y[2]);
-        glColor3f(0.0, 0.0, 1.0);
-        glVertex3f(o[0], o[1], o[2]);
-        glVertex3f(z[0], z[1], z[2]);
-    glEnd();
+        glBegin(GL_LINES);
+            glColor3f(1.0, 0.0, 0.0);
+            glVertex3dv(oPos.getComponents());
+            glVertex3dv(tPos.getComponents());
+        glEnd();
 
-    glPopAttrib();
-    glActiveTexture(activeTexture);
+        glPopAttrib();
+        glActiveTexture(activeTexture);
+    }
 }
 
 
