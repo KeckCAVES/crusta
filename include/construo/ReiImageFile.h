@@ -5,6 +5,8 @@
 
 #include <cstdio>
 
+#include <Misc/ThrowStdErr.h>
+
 #include <construo/ImageFile.h>
 #include <crusta/DemSpecs.h>
 
@@ -20,7 +22,9 @@ public:
 	ReiImageFile(const char* imageFileName)
     {
         file = fopen(imageFileName, "rb");
-        fread(size, 2, sizeof(int), file);
+        size_t sizeRead = fread(size, 2, sizeof(int), file);
+        if (sizeRead != 2*sizeof(int))
+            Misc::throwStdErr("ReiImageFile: Invalid ReiImage %s",imageFileName);
 #if 0
 Pixel* all = new Pixel[size[0]*size[1]];
 uint allOrig[2] = { 0, 0 };
@@ -77,7 +81,9 @@ public:
         for (int i=min[1]; i<max[1]; ++i)
         {
             fseek(file, src, SEEK_SET);
-            fread(dst, readWidth, sizeof(Pixel), file);
+            size_t sizeRead = fread(dst, readWidth, sizeof(Pixel), file);
+            if (sizeRead != sizeof(Pixel))
+                Misc::throwStdErr("ReiImageFile:readRectangle: unexpected end");
             dst += rectSize[0];
             src += rowWidth;
         }
