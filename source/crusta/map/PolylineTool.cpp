@@ -1,5 +1,7 @@
 #include <crusta/map/PolylineTool.h>
 
+#include <cassert>
+
 #include <Vrui/ToolManager.h>
 #include <Vrui/Vrui.h>
 
@@ -39,7 +41,9 @@ init(Vrui::ToolFactory* parent)
     Vrui::getToolManager()->addClass(polylineFactory,
         Vrui::ToolManager::defaultToolFactoryDestructor);
 
-    return polylineFactory;
+    PolylineTool::factory = polylineFactory;
+
+    return PolylineTool::factory;
 }
 
 
@@ -50,6 +54,14 @@ createShape()
     crusta->getMapManager()->addPolyline(newLine);
 
     return newLine;
+}
+
+void PolylineTool::
+deleteShape(Shape* shape)
+{
+    Polyline* line = dynamic_cast<Polyline*>(shape);
+    assert(line != NULL);
+    crusta->getMapManager()->removePolyline(line);
 }
 
 PolylineTool::ShapePtrs PolylineTool::

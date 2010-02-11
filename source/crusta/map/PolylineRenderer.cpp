@@ -137,12 +137,11 @@ display(GLContextData& contextData) const
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
     glActiveTexture(GL_TEXTURE0);
     
-    glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_POINT_BIT |
-                 GL_LINE_BIT   | GL_POLYGON_BIT);
+    glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_LINE_BIT |
+                 GL_POLYGON_BIT);
     glDisable(GL_LIGHTING);
     glDisable(GL_TEXTURE_2D);
     glEnable(GL_POLYGON_OFFSET_LINE);
-    glEnable(GL_POLYGON_OFFSET_POINT);
     
     glPolygonOffset(1.0f, 50.0f);
 
@@ -165,7 +164,6 @@ display(GLContextData& contextData) const
     }
 
     glLineWidth(2.0);
-    glPointSize(3.0);
     for (int i=0; i<numLines; ++i)
     {
         glPushMatrix();
@@ -189,16 +187,6 @@ display(GLContextData& contextData) const
             }
             glEnd();
         }
-
-        glColor3f(0.3f, 0.9f, 0.5f);
-        glBegin(GL_POINTS);
-        for (Point3s::const_iterator it=cps.begin(); it!=cps.end(); ++it)
-        {
-            glVertex3f((*it)[0] - centroids[i][0],
-                       (*it)[1] - centroids[i][1],
-                       (*it)[2] - centroids[i][2]);
-        }
-        glEnd();
 
         glPopMatrix();
     }

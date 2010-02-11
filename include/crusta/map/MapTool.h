@@ -35,6 +35,7 @@ protected:
     };
 
     virtual Shape*    createShape();
+    virtual void      deleteShape(Shape* shape);
     virtual ShapePtrs getShapes();
 
     Point3 getPosition();

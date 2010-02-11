@@ -1,13 +1,12 @@
 #include <crusta/map/MapTool.h>
 
 #include <cassert>
-///\todo remove
-#include <iostream>
 
 #include <Geometry/OrthogonalTransformation.h>
 #include <GL/GLTransformationWrappers.h>
 #include <Math/Constants.h>
 #include <Vrui/ToolManager.h>
+#include <Vrui/DisplayState.h>
 #include <Vrui/Vrui.h>
 
 #include <crusta/Crusta.h>
@@ -35,7 +34,9 @@ init(Vrui::ToolFactory* parent)
     Vrui::getToolManager()->addClass(mapFactory,
         Vrui::ToolManager::defaultToolFactoryDestructor);
 
-    return mapFactory;
+    MapTool::factory = mapFactory;
+
+    return MapTool::factory;
 }
 
 
@@ -43,6 +44,10 @@ Shape* MapTool::
 createShape()
 {
     return NULL;
+}
+void MapTool::
+deleteShape(Shape* shape)
+{
 }
 MapTool::ShapePtrs MapTool::
 getShapes()
@@ -140,7 +145,6 @@ frame()
             {
                 curControl = Shape::BAD_ID;
                 mode       = MODE_SELECTING_CONTROL;
-std::cout << "frame: MODE_DRAGGING -> MODE_SELECTING_CONTROL" << std::endl;
             }
             break;
         }
@@ -165,7 +169,7 @@ std::cout << "frame: MODE_DRAGGING -> MODE_SELECTING_CONTROL" << std::endl;
 void MapTool::
 display(GLContextData& contextData) const
 {
-    if (curShape==NULL || curControl==Shape::BAD_ID)
+    if (curShape == NULL)
         return;
 
     GLint activeTexture;
@@ -174,49 +178,85 @@ display(GLContextData& contextData) const
     glGetDoublev(GL_DEPTH_RANGE, depthRange);
 
     glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_POINT_BIT);
-    glPushMatrix();
-    glMultMatrix(Vrui::getNavigationTransformation());
 
     glDisable(GL_LIGHTING);
     glActiveTexture(GL_TEXTURE0);
     glDisable(GL_TEXTURE_2D);
     glDepthRange(0.0, 0.0);
 
-    glLineWidth(3.0);
-    glPointSize(4.0);
-
-    switch (curControl.type)
+    //compute the centroids
+    Point3 centroid;
+    const Point3s& cps = curShape->getControlPoints();
+    int numPoints      = static_cast<int>(cps.size());
+    for (int i=0; i<numPoints; ++i)
     {
-        case Shape::CONTROL_POINT:
+        for (int j=0; j<3; ++j)
+            centroid[j] += cps[i][j];
+    }
+    double norm = 1.0 / numPoints;
+    for (int j=0; j<3; ++j)
+        centroid[j] *= norm;
+
+    glPushMatrix();
+
+    Vrui::Vector centroidTranslation(centroid[0], centroid[1],
+                                     centroid[2]);
+    Vrui::NavTransform nav =
+        Vrui::getDisplayState(contextData).modelviewNavigational;
+    nav *= Vrui::NavTransform::translate(centroidTranslation);
+    glLoadMatrix(nav);
+
+    //draw the control points of the current shape
+    glPointSize(4.0f);
+    glColor3f(0.3f, 0.5f, 1.0f);
+    glBegin(GL_POINTS);
+    for (int i=0; i<numPoints; ++i)
+    {
+        glVertex3f(cps[i][0] - centroid[0],
+                   cps[i][1] - centroid[1],
+                   cps[i][2] - centroid[2]);
+    }
+    glEnd();
+
+    //draw the current control element
+    glLineWidth(5.0);
+    glPointSize(6.0);
+
+    if (curControl != Shape::BAD_ID)
+    {
+        switch (curControl.type)
         {
-            const Point3& p = curShape->getControlPoint(curControl);
+            case Shape::CONTROL_POINT:
+            {
+                const Point3& p = curShape->getControlPoint(curControl);
 
-            glColor3f(0.9f, 0.6f, 0.3f);
-            glBegin(GL_POINTS);
-            glVertex3f(p[0], p[1], p[2]);
-            glEnd();
+                glColor3f(0.3f, 0.9f, 0.5f);
+                glBegin(GL_POINTS);
+                glVertex3f(p[0]-centroid[0], p[1]-centroid[1], p[2]-centroid[2]);
+                glEnd();
 
-            break;
+                break;
+            }
+
+            case Shape::CONTROL_SEGMENT:
+            {
+                Shape::Id si    = curShape->previousControl(curControl);
+                const Point3& s = curShape->getControlPoint(si);
+                Shape::Id ei    = curShape->nextControl(curControl);
+                const Point3& e = curShape->getControlPoint(ei);
+
+                glColor3f(0.3f, 0.9f, 0.5f);
+                glBegin(GL_LINES);
+                glVertex3f(s[0]-centroid[0], s[1]-centroid[1], s[2]-centroid[2]);
+                glVertex3f(e[0]-centroid[0], e[1]-centroid[1], e[2]-centroid[2]);
+                glEnd();
+
+                break;
+            }
+
+            default:
+                break;
         }
-
-        case Shape::CONTROL_SEGMENT:
-        {
-            Shape::Id si    = curShape->previousControl(curControl);
-            const Point3& s = curShape->getControlPoint(si);
-            Shape::Id ei    = curShape->nextControl(curControl);
-            const Point3& e = curShape->getControlPoint(ei);
-
-            glColor3f(0.6f, 0.55f, 0.2f);
-            glBegin(GL_LINES);
-            glVertex3f(s[0], s[1], s[2]);
-            glVertex3f(e[0], e[1], e[2]);
-            glEnd();
-
-            break;
-        }
-
-        default:
-            break;
     }
 
     glPopMatrix();
@@ -242,7 +282,6 @@ buttonCallback(int deviceIndex, int buttonIndex,
                     curShape   = createShape();
                     curControl = curShape->addControlPoint(pos);
                     mode       = MODE_DRAGGING;
-std::cout << "MODE_IDLE -> MODE_DRAGGING" << std::endl;
                     break;
                 }
 
@@ -258,7 +297,17 @@ std::cout << "MODE_IDLE -> MODE_DRAGGING" << std::endl;
                         //make sure to update the rendering of the control hints
                     }
                     mode = MODE_DRAGGING;
-std::cout << "MODE_SELECTING_CONTROL -> MODE_DRAGGING" << std::endl;
+                    break;
+                }
+
+                case MODE_SELECTING_SHAPE:
+                {
+                    if (curShape != NULL)
+                    {
+                        deleteShape(curShape);
+                        curShape = NULL;
+                        curControl = Shape::BAD_ID;
+                    }
                     break;
                 }
 
@@ -276,6 +325,11 @@ std::cout << "MODE_SELECTING_CONTROL -> MODE_DRAGGING" << std::endl;
                            curControl.type==Shape::CONTROL_POINT);
 
                     curShape->removeControlPoint(curControl);
+                    if (curShape->getControlPoints().empty())
+                    {
+                        deleteShape(curShape);
+                        curShape = NULL;
+                    }
                     curControl = Shape::BAD_ID;
                     mode       = MODE_SELECTING_CONTROL;
                     break;
@@ -286,7 +340,6 @@ std::cout << "MODE_SELECTING_CONTROL -> MODE_DRAGGING" << std::endl;
                 {
                     selectShape(pos);
                     mode = MODE_SELECTING_SHAPE;
- std::cout << "MODE_IDLE,MODE_SELECTING_CONTROL -> MODE_SELECTING_SHAPE" << std::endl;
                    break;
                 }
 
@@ -304,7 +357,6 @@ std::cout << "MODE_SELECTING_CONTROL -> MODE_DRAGGING" << std::endl;
                 case MODE_DRAGGING:
                 {
                     mode = MODE_SELECTING_CONTROL;
-std::cout << "MODE_DRAGGING -> MODE_SELECTING_CONTROL" << std::endl;
                     break;
                 }
 
@@ -321,12 +373,10 @@ std::cout << "MODE_DRAGGING -> MODE_SELECTING_CONTROL" << std::endl;
                     if (curShape != NULL)
                     {
                         mode = MODE_SELECTING_CONTROL;
-std::cout << "MODE_SELECTING_SHAPE -> MODE_SELECTING_CONTROL" << std::endl;
                     }
                     else
                     {
                         mode = MODE_IDLE;
-std::cout << "MODE_SELECTING_SHAPE -> MODE_IDLE" << std::endl;
                     }
                     break;
                 }

@@ -36,14 +36,16 @@ init()
     Factory* surfaceFactory = new Factory("SurfaceTool", "Crusta Surface",
         transformToolFactory, *Vrui::getToolManager());
 
-///\todo fix the number of buttons and valuators, for now hack in 2
 	surfaceFactory->setNumDevices(1);
-	surfaceFactory->setNumButtons(0, 2);
+	surfaceFactory->setNumButtons(0, transformToolFactory->getNumButtons());
+	surfaceFactory->setNumValuators(0, transformToolFactory->getNumValuators());
 
     Vrui::getToolManager()->addClass(surfaceFactory,
         Vrui::ToolManager::defaultToolFactoryDestructor);
 
-    return surfaceFactory;
+    SurfaceTool::factory = surfaceFactory;
+
+    return SurfaceTool::factory;
 }
 
 
@@ -79,8 +81,9 @@ frame()
         Point3 surfacePoint;
         if (Vrui::isMaster())
         {
-            surfacePoint =
-                crusta->snapToSurface(modelFrame.getOrigin());
+            surfacePoint = crusta->snapToSurface(modelFrame.getOrigin());
+			if (Vrui::getMainPipe() != NULL)
+                Vrui::getMainPipe()->write<Point3>(surfacePoint);
         }
         else
             Vrui::getMainPipe()->read<Point3>(surfacePoint);
@@ -106,14 +109,10 @@ display(GLContextData& contextData) const
     Vrui::NavTransform original    = input.getDevice(0)->getTransformation();
     Vrui::NavTransform transformed = transformedDevice->getTransformation();
 
-    //transform the physical frames to navigation space
-    original    = Vrui::getInverseNavigationTransformation() * original;
-    transformed = Vrui::getInverseNavigationTransformation() * transformed;
-    
     Point3 oPos = original.getOrigin();
     Point3 tPos = transformed.getOrigin();
 
-    if (Geometry::dist(oPos, tPos) > -9000)
+    if (Geometry::dist(oPos, tPos) < 1.0)
     {
         GLint activeTexture;
         glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
