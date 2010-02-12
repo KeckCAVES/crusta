@@ -47,21 +47,60 @@ init(Vrui::ToolFactory* parent)
 }
 
 
-Shape* PolylineTool::
-createShape()
+void PolylineTool::
+createShape(Shape*& shape, Shape::Id& control, const Point3& pos)
 {
     Polyline* newLine = new Polyline;
     crusta->getMapManager()->addPolyline(newLine);
 
-    return newLine;
+    shape = newLine;
+
+    //lines must have at least two control points
+    shape->addControlPoint(pos);
+    control = shape->addControlPoint(pos);
 }
 
 void PolylineTool::
-deleteShape(Shape* shape)
+deleteShape(Shape*& shape, Shape::Id& control)
 {
     Polyline* line = dynamic_cast<Polyline*>(shape);
     assert(line != NULL);
     crusta->getMapManager()->removePolyline(line);
+    shape   = NULL;
+    control = Shape::BAD_ID;
+}
+
+void PolylineTool::
+removeControl(Shape*& shape, Shape::Id& control)
+{
+    assert(shape!=NULL && control!=Shape::BAD_ID);
+
+    switch (control.type)
+    {
+        case Shape::CONTROL_POINT:
+        {
+            shape->removeControlPoint(control);
+            control = Shape::BAD_ID;
+            break;
+        }
+        case Shape::CONTROL_SEGMENT:
+        {
+            /**NOTE: this relies on the implementation of removeControlPoint to
+            keep Ids valid for existing controls before the deleted one! */
+            shape->removeControlPoint(shape->nextControl(control));
+            shape->removeControlPoint(shape->previousControl(control));
+            control = Shape::BAD_ID;
+            break;
+        }
+        default:
+            break;
+    }
+    //delete the polyline if there aren't at least two control points left
+    if (shape->getControlPoints().size() < 2)
+    {
+        deleteShape(shape, control);
+        shape = NULL;
+    }
 }
 
 PolylineTool::ShapePtrs PolylineTool::

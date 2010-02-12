@@ -40,15 +40,56 @@ init(Vrui::ToolFactory* parent)
 }
 
 
-Shape* MapTool::
-createShape()
+void MapTool::
+createShape(Shape*& shape, Shape::Id& control, const Point3&)
 {
-    return NULL;
+    shape   = NULL;
+    control = Shape::BAD_ID;
 }
 void MapTool::
-deleteShape(Shape* shape)
+deleteShape(Shape*& shape, Shape::Id& control)
 {
+    shape   = NULL;
+    control = Shape::BAD_ID;
 }
+void MapTool::
+addControlPoint(Shape*& shape, Shape::Id& control, const Point3& pos)
+{
+    assert(shape != NULL);
+
+    //if we have no valid control then we want to extend the line
+    if (control == Shape::BAD_ID)
+    {
+        double distance;
+        Shape::End end;
+        shape->selectExtremity(pos, distance, end);
+
+        control = shape->addControlPoint(pos, end);
+    }
+    else
+    {
+        switch (control.type)
+        {
+///\todo for now only support refinement
+            case Shape::CONTROL_SEGMENT:
+                control = shape->refine(control, pos);
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+void MapTool::
+removeControl(Shape*& shape, Shape::Id& control)
+{
+    assert(shape != NULL);
+
+    //the default implementation can only remove control points
+    if (control!=Shape::BAD_ID && control.type==Shape::CONTROL_POINT)
+        shape->removeControlPoint(control);
+}
+
 MapTool::ShapePtrs MapTool::
 getShapes()
 {
@@ -141,6 +182,7 @@ frame()
         case MODE_DRAGGING:
         {
             assert(curShape != NULL);
+///\todo defer moving the control point to specialized implementations
             if (!curShape->moveControlPoint(curControl, pos))
             {
                 curControl = Shape::BAD_ID;
@@ -279,23 +321,15 @@ buttonCallback(int deviceIndex, int buttonIndex,
             {
                 case MODE_IDLE:
                 {
-                    curShape   = createShape();
-                    curControl = curShape->addControlPoint(pos);
-                    mode       = MODE_DRAGGING;
+                    createShape(curShape, curControl, pos);
+                    mode = MODE_DRAGGING;
                     break;
                 }
 
                 case MODE_SELECTING_CONTROL:
                 {
                     selectControl(pos);
-                    if (curControl==Shape::BAD_ID)
-                        addPointAtEnds(pos);
-
-                    if (curControl.type == Shape::CONTROL_SEGMENT)
-                    {
-                        curControl = curShape->refine(curControl, pos);
-                        //make sure to update the rendering of the control hints
-                    }
+                    addControlPoint(curShape, curControl, pos);
                     mode = MODE_DRAGGING;
                     break;
                 }
@@ -304,9 +338,7 @@ buttonCallback(int deviceIndex, int buttonIndex,
                 {
                     if (curShape != NULL)
                     {
-                        deleteShape(curShape);
-                        curShape = NULL;
-                        curControl = Shape::BAD_ID;
+                        deleteShape(curShape, curControl);
                     }
                     break;
                 }
@@ -321,17 +353,11 @@ buttonCallback(int deviceIndex, int buttonIndex,
             {
                 case MODE_DRAGGING:
                 {
-                    assert(curControl!=Shape::BAD_ID &&
-                           curControl.type==Shape::CONTROL_POINT);
-
-                    curShape->removeControlPoint(curControl);
-                    if (curShape->getControlPoints().empty())
-                    {
-                        deleteShape(curShape);
-                        curShape = NULL;
-                    }
-                    curControl = Shape::BAD_ID;
-                    mode       = MODE_SELECTING_CONTROL;
+                    removeControl(curShape, curControl);
+                    if (curShape == NULL)
+                        mode = MODE_IDLE;
+                    else
+                        mode = MODE_SELECTING_CONTROL;
                     break;
                 }
 
