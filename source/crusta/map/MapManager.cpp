@@ -143,11 +143,7 @@ save(const char* filename, const char* format)
     }
 
     OGRSpatialReference crustaSys;
-    crustaSys.SetGeogCS("Crusta World Coordinate System", "WGS_1984",
-                        "Crusta WGS84 Spheroid",
-                        SRS_WGS84_SEMIMAJOR, SRS_WGS84_INVFLATTENING,
-                        "Greenwich", 0.0,
-                        SRS_UA_RADIAN, 1.0);
+    crustaSys.SetWellKnownGeogCS("WGS84");
 
     OGRLayer* layer = source->CreateLayer("Crusta_Polylines", &crustaSys,
                                           wkbLineString25D);

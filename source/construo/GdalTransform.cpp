@@ -66,11 +66,7 @@ GdalTransform(const char* projectionFileName)
     }
 
     OGRSpatialReference worldSys;
-    worldSys.SetGeogCS("Crusta World Coordinate System", "WGS_1984",
-                       "Crusta WGS84 Spheroid",
-                       SRS_WGS84_SEMIMAJOR, SRS_WGS84_INVFLATTENING,
-                       "Greenwich", 0.0,
-                       SRS_UA_RADIAN, 1.0);
+    worldSys.SetWellKnownGeogCS("WGS84");
 
     geoToWorld = OGRCreateCoordinateTransformation(&geoSys, &worldSys);
     if (geoToWorld == NULL)
