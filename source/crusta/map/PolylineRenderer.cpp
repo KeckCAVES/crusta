@@ -91,7 +91,7 @@ void main()\n\
 \n\
         if (u<0.0 || u>1.0)\n\
             continue;\n\
-color = vec4(u);\n\
+color = vec4(0.0, 1.0, 0.0, 1.0);//(u);\n\
 continue;\n\
 #if 0\n\
 vec4 fromc1 = vec4(0.0, 1.0, 0.0, 1.0);\n\
@@ -132,13 +132,52 @@ display(GLContextData& contextData) const
     if (lines->size()<1)
         return;
 
-#if 1
     GLint activeTexture;
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
-    glActiveTexture(GL_TEXTURE0);
-    
+
     glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_LINE_BIT |
                  GL_POLYGON_BIT);
+
+#if 1
+    GlData* glData = contextData.retrieveDataItem<GlData>(this);
+    readDepthBuffer(glData);
+    int numSegments = prepareLineData(glData);
+
+    if (numSegments > 0)
+    {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        glData->shader.useProgram();
+
+        GLint viewport[4];
+        glGetIntegerv(GL_VIEWPORT, viewport);
+        glUniform2f(glData->windowPosUniform, viewport[0], viewport[1]);
+        glUniform2f(glData->rcpWindowSizeUniform,
+                    1.0f/viewport[2], 1.0f/viewport[3]);
+        glUniform1i(glData->numSegmentsUniform, numSegments);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, glData->depthTex);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_1D, glData->controlPointTex);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_1D, glData->tangentTex);
+
+        glBegin(GL_QUADS);
+            glVertex3f(-1.0f,  1.0f, 0.0f);
+            glVertex3f(-1.0f, -1.0f, 0.0f);
+            glVertex3f( 1.0f, -1.0f, 0.0f);
+            glVertex3f( 1.0f,  1.0f, 0.0f);
+        glEnd();
+
+        glData->shader.disablePrograms();
+    }
+#endif
+
+#if 1
+    glActiveTexture(GL_TEXTURE0);
+    
     glDisable(GL_LIGHTING);
     glDisable(GL_TEXTURE_2D);
     glEnable(GL_POLYGON_OFFSET_LINE);
@@ -190,73 +229,10 @@ display(GLContextData& contextData) const
 
         glPopMatrix();
     }
-
-    glPopAttrib();
-    glActiveTexture(activeTexture);
-#else
-    GLint activeTexture;
-    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
-
-    GlData* glData = contextData.retrieveDataItem<GlData>(this);
-    readDepthBuffer(glData);
-    int numSegments = prepareLineData(glData);
-
-    glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glData->shader.useProgram();
-
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    glUniform2f(glData->windowPosUniform,viewport[0],viewport[1]);
-    glUniform2f(glData->rcpWindowSizeUniform,1.0f/viewport[2],1.0f/viewport[3]);
-    glUniform1i(glData->numSegmentsUniform, numSegments);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, glData->depthTex);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_1D, glData->controlPointTex);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_1D, glData->tangentTex);
-
-    glBegin(GL_QUADS);
-        glVertex3f(-1.0f,  1.0f, 0.0f);
-        glVertex3f(-1.0f, -1.0f, 0.0f);
-        glVertex3f( 1.0f, -1.0f, 0.0f);
-        glVertex3f( 1.0f,  1.0f, 0.0f);
-    glEnd();
-
-    glData->shader.disablePrograms();
-
-    glDisable(GL_LIGHTING);
-    glActiveTexture(GL_TEXTURE0);
-    glDisable(GL_TEXTURE_2D);
-
-    for (Ptrs::const_iterator lIt=lines->begin(); lIt!=lines->end(); ++lIt)
-    {
-        const Point3s& cps = (*lIt)->getControlPoints();
-        if (cps.size() < 2)
-            continue;
-        glBegin(GL_LINE_STRIP);
-        for (Point3s::const_iterator it=cps.begin(); it!=cps.end(); ++it)
-            glVertex3f((*it)[0], (*it)[1], (*it)[2]);
-        glEnd();
-    }
-
-///\todo remove
-    for (Ptrs::const_iterator lIt=lines->begin(); lIt!=lines->end(); ++lIt)
-    {
-        const Point3s& cps = (*lIt)->getControlPoints();
-        glBegin(GL_POINTS);
-        for (Point3s::const_iterator it=cps.begin(); it!=cps.end(); ++it)
-            glVertex3f((*it)[0], (*it)[1], (*it)[2]);
-        glEnd();
-    }
-
-    glPopAttrib();
-    glActiveTexture(activeTexture);
 #endif
+
+    glPopAttrib();
+    glActiveTexture(activeTexture);
 }
 
 

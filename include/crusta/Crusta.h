@@ -9,7 +9,6 @@
 #include <Threads/Mutex.h>
 
 #include <crusta/basics.h>
-#include <crusta/CompositeShader.h>
 
 class GLContextData;
 
@@ -66,20 +65,20 @@ protected:
     {
         GlData();
         ~GlData();
-        
-        GLuint colorBuf;
-        GLuint depthBuf;
+
         GLuint frameBuf;
-        
-        CompositeShader compositeShader;
+        GLuint attachments[2]; ///< color, depth and stencil
+        GLuint terrainAttributesTex;
     };
 
     /** make sure the bounding objects used for visibility and LOD checks are
         up-to-date wrt to the vertical scale */
     void confirmActives();
 
-    /** prepares the rendering buffers for a new frame */
-    void prepareBuffers(GlData* glData);
+    /** prepare the offscreen framebuffer, i.e. copy current framebuffer */
+    void prepareFrameBuffer(GlData* glData);
+    /** commit the offscreen framebuffer to the default one */
+    void commitFrameBuffer(GlData* glData);
 
     /** keep track of the number of frames processed. Used, for example, by the
         cache to perform LRU that is aware of currently active nodes (the ones
@@ -113,8 +112,8 @@ protected:
     /** guarantee serial manipulation of the set of active nodes */
     Threads::Mutex activesMutex;
 
-    /** the size of the current depth buffer */
-    int bufSize[2];
+    /** the size of the current terrain attributes texture/buffer */
+    int bufferSize[2];
 
 //- inherited from GLObject
 public:

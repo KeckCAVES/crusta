@@ -32,7 +32,7 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
     lastScaleFrame   = 2;
     verticalScale    = 0.0;
     newVerticalScale = 1.0;
-    bufSize[0] = bufSize[1] = Math::Constants<int>::max;
+    bufferSize[0] = bufferSize[1] = Math::Constants<int>::max;
 
     Triacontahedron polyhedron(SPHEROID_RADIUS);
 
@@ -357,11 +357,16 @@ display(GLContextData& contextData)
 {
     CHECK_GLA
 
-#if 0
     GlData* glData = contextData.retrieveDataItem<GlData>(this);
-    prepareBuffers(glData);
+    prepareFrameBuffer(glData);
     CHECK_GLA
-#endif
+
+    glPushAttrib(GL_STENCIL_BUFFER_BIT);
+    glEnable(GL_STENCIL_TEST);
+
+    //draw the terrain
+    glStencilFunc(GL_ALWAYS, 1, 1);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
     for (RenderPatches::const_iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
@@ -370,60 +375,61 @@ display(GLContextData& contextData)
         CHECK_GLA
     }
 
-#if 0
-    GLint activeTexture;
-    glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
-    glPushAttrib(GL_TEXTURE_BIT);
-
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, glData->colorBuf);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, glData->depthBuf);
-    CHECK_GLA
-
-    glData->compositeShader.apply();
-    CHECK_GLA
-#endif
     //let the map manager draw all the mapping stuff
+    glStencilFunc(GL_EQUAL, 1, 1);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
     mapMan->display(contextData);
     CHECK_GLA
 
-#if 0
     glPopAttrib();
-    glActiveTexture(activeTexture);
+
+    //commit the frame buffer to the on-screen one
+    commitFrameBuffer(glData);
     CHECK_GLA
-#endif
 }
 
 
 Crusta::GlData::
 GlData()
 {
-    glGenTextures(1, &colorBuf);
-    glBindTexture(GL_TEXTURE_2D, colorBuf);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glGenRenderbuffersEXT(2, attachments);
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, attachments[0]);
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA, 1,1);
+    CHECK_GLA
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, attachments[1]);
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH24_STENCIL8_EXT, 1,1);
     CHECK_GLA
 
-    glGenTextures(1, &depthBuf);
-    glBindTexture(GL_TEXTURE_2D, depthBuf);
+    glGenTextures(1, &terrainAttributesTex);
+    glBindTexture(GL_TEXTURE_2D, terrainAttributesTex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     CHECK_GLA
 
     glGenFramebuffersEXT(1, &frameBuf);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frameBuf);
-
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
-                              GL_TEXTURE_2D, colorBuf, 0);
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
-                              GL_TEXTURE_2D, depthBuf, 0);
     CHECK_GLA
+
+    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
+                                 GL_RENDERBUFFER_EXT, attachments[0]);
+    CHECK_GLA
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT1_EXT,
+                              GL_TEXTURE_2D, terrainAttributesTex, 0);
+    CHECK_GLA
+    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
+                                 GL_RENDERBUFFER_EXT, attachments[1]);
+    CHECK_GLA
+    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT,
+                                 GL_RENDERBUFFER_EXT, attachments[1]);
+    CHECK_GLA
+
+    assert(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) ==
+           GL_FRAMEBUFFER_COMPLETE_EXT);
 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
@@ -431,8 +437,8 @@ GlData()
 Crusta::GlData::
 ~GlData()
 {
-    glDeleteTextures(1, &colorBuf);
-    glDeleteTextures(1, &depthBuf);
+    glDeleteRenderbuffersEXT(3, attachments);
+    glDeleteTextures(1, &terrainAttributesTex);
     glDeleteFramebuffersEXT(1, &frameBuf);
 }
 
@@ -451,35 +457,74 @@ confirmActives()
 
 
 void Crusta::
-prepareBuffers(GlData* glData)
+prepareFrameBuffer(GlData* glData)
 {
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
 
-    if (viewport[2]!=bufSize[0] || viewport[3]!=bufSize[1])
+    if (viewport[2]!=bufferSize[0] || viewport[3]!=bufferSize[1])
     {
-        glBindTexture(GL_TEXTURE_2D, glData->colorBuf);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport[2],
-                     viewport[3], 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-        glBindTexture(GL_TEXTURE_2D, glData->depthBuf);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, viewport[2],
-                     viewport[3], 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+        bufferSize[0] = viewport[2];
+        bufferSize[1] = viewport[3];
+
+        glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, glData->attachments[0]);
+        glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA,
+                                 bufferSize[0], bufferSize[1]);
+        CHECK_GLA
+        glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, glData->attachments[1]);
+        glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH24_STENCIL8_EXT,
+                                 bufferSize[0], bufferSize[1]);
+        CHECK_GLA
+        glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+
+        glBindTexture(GL_TEXTURE_2D, glData->terrainAttributesTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bufferSize[0], bufferSize[1], 0,
+                     GL_RGBA, GL_UNSIGNED_BYTE, 0);
         CHECK_GLA
 
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->frameBuf);
         assert(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) ==
                GL_FRAMEBUFFER_COMPLETE_EXT);
-
-        bufSize[0] = viewport[2];
-        bufSize[1] = viewport[3];
     }
 
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClearDepth(1.0f);
+    //copy the content of the default frame buffer
+    glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, 0);
+    glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, glData->frameBuf);
+    CHECK_GLA
+
+    glBlitFramebufferEXT(0, 0, bufferSize[0], bufferSize[1],
+                         0, 0, bufferSize[0], bufferSize[1],
+                         GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    CHECK_GLA
 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->frameBuf);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    //clear the stencil and terrain attributes
+    glDrawBuffer(GL_COLOR_ATTACHMENT1_EXT);
+    glClearColor(1,0, 1.0, 1.0);
+    glClearStencil(0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     CHECK_GLA
+
+    static const GLenum bufs[2] = { GL_COLOR_ATTACHMENT0_EXT,
+                                    GL_COLOR_ATTACHMENT1_EXT };
+    glDrawBuffers(2, bufs);
+    CHECK_GLA
+}
+
+void Crusta::
+commitFrameBuffer(GlData *glData)
+{
+    glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, glData->frameBuf);
+    glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
+    CHECK_GLA
+
+    glBlitFramebufferEXT(0, 0, bufferSize[0], bufferSize[1],
+                         0, 0, bufferSize[0], bufferSize[1],
+                         GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    CHECK_GLA
+
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
 void Crusta::
