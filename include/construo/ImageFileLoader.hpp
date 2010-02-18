@@ -31,12 +31,6 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <construo/ArcInfoBinaryGridImageFile.h>
 #include <construo/GdalImageFile.h>
 #include <construo/GeometryTypes.h>
-#if CONSTRUO_USE_IMAGEMAGICK
-#include <construo/MagickImageFile.h>
-#endif //CONSTRUO_USE_IMAGEMAGICK
-#include <construo/PpmImageFile.h>
-#include <construo/PngImageFile.h>
-#include <construo/ReiImageFile.h>
 #include <construo/TpmImageFile.h>
 
 #include <crusta/ColorTextureSpecs.h>
@@ -52,7 +46,6 @@ template <>
 ImageFile<DemHeight>* ImageFileLoader<DemHeight>::
 loadImageFile(const char* fileName)
 {
-#if 1
     if (Misc::hasCaseExtension(fileName, ".tpm"))
     {
         return new TpmDemImageFile(fileName);
@@ -61,39 +54,6 @@ loadImageFile(const char* fileName)
     {
         return new GdalDemImageFile(fileName);
     }
-#else
-	/* Find the file name's extension: */
-	const char* extPtr=0;
-	for(const char* ifnPtr=fileName;*ifnPtr!='\0';++ifnPtr)
-    {
-		if(*ifnPtr=='.')
-			extPtr=ifnPtr;
-    }
-
-	/* Distinguish between supported image file types based on the extension: */
-	ImageFile<DemHeight>* result=0;
-	if(extPtr==0)
-    {
-		/* Create and return an Arc/Info binary grid image file: */
-		std::cout<<"Loading DEM image file "<<fileName<<"..."<<std::flush;
-		result=new ArcInfoBinaryGridImageFile(fileName);
-		std::cout<<" done"<<std::endl;
-    }
-    else if (strcasecmp(extPtr, ".rei")==0)
-    {
-        /* Create and return a REI image file: */
-        std::cout<<"Loading REI image file "<<fileName<<"..."<<std::flush;
-        result=new ReiImageFile(fileName);
-		std::cout<<" done"<<std::endl;
-    }
-	else
-    {
-		Misc::throwStdErr("ImageFileLoader::loadImageFile: File name %s has an "
-                          "unrecognized extension",fileName);
-    }
-
-	return result;
-#endif
 }
 
 /*************************************************
@@ -104,7 +64,6 @@ template <>
 ImageFile<TextureColor>* ImageFileLoader<TextureColor>::
 loadImageFile(const char* fileName)
 {
-#if 1
     if (Misc::hasCaseExtension(fileName, ".tpm"))
     {
         return new TpmColorImageFile(fileName);
@@ -113,51 +72,6 @@ loadImageFile(const char* fileName)
     {
         return new GdalColorImageFile(fileName);
     }
-#else
-	/* Find the file name's extension: */
-	const char* extPtr=0;
-	for(const char* ifnPtr=fileName;*ifnPtr!='\0';++ifnPtr)
-    {
-		if(*ifnPtr=='.')
-			extPtr=ifnPtr;
-    }
-	if(extPtr==0)
-    {
-		Misc::throwStdErr("ImageFileLoader::loadImageFile: File name %s does "
-                          "not have an extension",fileName);
-    }
-
-	/* Distinguish between supported image file types based on the extension: */
-	ImageFile<TextureColor>* result=0;
-	if(strcasecmp(extPtr,".ppm")==0)
-    {
-		/* Create and return a PPM image file: */
-		std::cout<<"Loading color image file "<<fileName<<"..."<<std::flush;
-		result=new PpmImageFile(fileName);
-		std::cout<<" done"<<std::endl;
-    }
-	else if(strcasecmp(extPtr,".png")==0)
-    {
-		/* Create and return a PNG image file: */
-		std::cout<<"Loading color image file "<<fileName<<"..."<<std::flush;
-		result=new PngImageFile(fileName);
-		std::cout<<" done"<<std::endl;
-    }
-	else
-    {
-#if CONSTRUO_USE_IMAGEMAGICK
-		/* If nothing else works, use ImageMagick to load the image: */
-		std::cout<<"Loading color image file "<<fileName<<"..."<<std::flush;
-		result=new MagickImageFile(fileName);
-		std::cout<<" done"<<std::endl;
-#else
-		Misc::throwStdErr("ImageFileLoader::loadImageFile: File name %s has an "
-                          "unrecognized extension",fileName);
-#endif //CONSTRUO_USE_IMAGEMAGICK
-    }
-
-	return result;
-#endif
 }
 
 END_CRUSTA

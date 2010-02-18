@@ -141,10 +141,6 @@ endif(APPLE)
 # Construo application
 #-------------------
 
-find_package(PNG)
-add_definitions(${PNG_DEFINITIONS})
-include_directories(${PNG_INCLUDE_DIR})
-
 add_executable(construo
     ../include/construo/ArcInfoBinaryGridImageFile.h
     ../include/construo/Builder.h
@@ -166,11 +162,7 @@ add_executable(construo
     ../include/construo/ImagePatch.hpp
     ../include/construo/ImageTransform.h
     ../include/construo/ImageTransformReader.h
-    ../include/construo/MagickImageFile.h
     ../include/construo/PixelHelpers.h
-    ../include/construo/PngImageFile.h
-    ../include/construo/PpmImageFile.h
-    ../include/construo/ReiImageFile.h
     ../include/construo/Sampler.h
     ../include/construo/SphereCoverage.h
     ../include/construo/TpmFile.h
@@ -189,8 +181,6 @@ add_executable(construo
     ../source/construo/ImageCoverage.cpp
     ../source/construo/ImageTransform.cpp
     ../source/construo/ImageTransformReader.cpp
-    ../source/construo/PngImageFile.cpp
-    ../source/construo/PpmImageFile.cpp
     ../source/construo/SphereCoverage.cpp
     ../source/construo/TpmFile.cpp
     ../source/construo/TpmImageFile.cpp
@@ -204,8 +194,7 @@ add_executable(construo
 
 vrui_set_target_properties(construo)
 
-target_link_libraries(construo CrustaCore ${PNG_LIBRARIES}
-                                          ${GDAL_LIBRARY})
+target_link_libraries(construo CrustaCore ${GDAL_LIBRARY})
 
 #-------------------
 # Crusta installation
