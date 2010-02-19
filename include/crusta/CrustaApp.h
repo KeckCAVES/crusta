@@ -46,6 +46,8 @@ private:
 
     void alignSurfaceFrame(Vrui::NavTransform& surfaceFrame);
 
+    void useTexturedTerrainCallback(
+        GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     void showVerticalScaleCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     void changeScaleCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);

@@ -36,7 +36,6 @@ add_library(CrustaCore SHARED
     ../include/crusta/CacheRequest.h
     ../include/crusta/checkGl.h
     ../include/crusta/ColorTextureSpecs.h
-    ../include/crusta/CompositeShader.h
     ../include/crusta/Crusta.h
     ../include/crusta/CrustaComponent.h
     ../include/crusta/DataManager.h
@@ -76,7 +75,6 @@ add_library(CrustaCore SHARED
 
     ../source/crusta/CacheRequest.cpp
     ../source/crusta/ColorTextureSpecs.cpp
-    ../source/crusta/CompositeShader.cpp
     ../source/crusta/Crusta.cpp
     ../source/crusta/DataManager.cpp
     ../source/crusta/DemSpecs.cpp

@@ -102,6 +102,13 @@ produceMainMenu()
     GLMotif::Menu* mainMenu =
     new GLMotif::Menu("MainMenu",popMenu,false);
 
+    /* Create a button to toggle texturing the terrain: */
+    GLMotif::ToggleButton* texturedToggle = new GLMotif::ToggleButton(
+        "TexturedToggle", mainMenu, "Textured Terrain");
+    texturedToggle->setToggle(true);
+    texturedToggle->getValueChangedCallbacks().add(
+        this, &CrustaApp::useTexturedTerrainCallback);
+
     /* Create a button to open or hide the vertical scale adjustment dialog: */
     GLMotif::ToggleButton* showVerticalScaleToggle = new GLMotif::ToggleButton(
         "ShowVerticalScaleToggle", mainMenu, "Vertical Scale");
@@ -270,10 +277,17 @@ alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
 }
 
 void CrustaApp::
+useTexturedTerrainCallback(
+    GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+{
+    crusta->useTexturedTerrain(cbData->set);
+}
+
+void CrustaApp::
 showVerticalScaleCallback(
     GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 {
-	if(cbData->set)
+    if (cbData->set)
 	{
 		//open the dialog at the same position as the main menu:
 		Vrui::getWidgetManager()->popupPrimaryWidget(verticalScaleDialog,

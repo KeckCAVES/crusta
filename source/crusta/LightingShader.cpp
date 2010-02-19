@@ -228,6 +228,22 @@ const char* LightingShader::applyAttenuatedSpotLightTemplate=
 		}\n\
 	\n";
 
+const char* LightingShader::fetchTerrainColorAsConstant =
+"\
+    vec4 fetchTerrainColor(in vec2 coord)\n\
+    {\n\
+        return vec4(1.0); //white\n\
+    }\n\
+\n";
+
+const char* LightingShader::fetchTerrainColorFromTexture =
+"\
+    vec4 fetchTerrainColor(in vec2 coord)\n\
+    {\n\
+        return texture2D(colorTex, coord);\n\
+    }\n\
+\n";
+
 /*****************************************
 Methods of class LightingShader:
 *****************************************/
@@ -280,12 +296,14 @@ std::string LightingShader::createApplyLightFunction(const char* functionTemplat
 	return result;
 	}
 
-LightingShader::LightingShader()
-	:colorMaterial(false),
-	 lightStates(0),
-	 vertexShader(0),fragmentShader(0),
-	 programObject(0)
-	{
+LightingShader::LightingShader() :
+    mustRecompile(true),
+    colorMaterial(false),
+    useTextureForTerrainColor(true),
+    lightStates(0),
+    vertexShader(0),fragmentShader(0),
+    programObject(0)
+{
 	/* Determine the maximum number of light sources supported by the local OpenGL: */
 	glGetIntegerv(GL_MAX_LIGHTS,&maxNumLights);
 
@@ -324,10 +342,21 @@ LightingShader::~LightingShader()
 	delete[] lightStates;
 	}
 
-bool LightingShader::updateLightingState()
-	{
-	bool mustRecompile=false;
+void LightingShader::
+update()
+{
+    /* Update light states and recompile the shader if necessary: */
+    updateLightingState();
 
+    if (mustRecompile)
+    {
+        compileShader();
+        mustRecompile = false;
+    }
+}
+
+void LightingShader::updateLightingState()
+{
 	/* Check the color material flag: */
 	bool newColorMaterial=glIsEnabled(GL_COLOR_MATERIAL);
 	if(newColorMaterial!=colorMaterial)
@@ -335,7 +364,7 @@ bool LightingShader::updateLightingState()
 	colorMaterial=newColorMaterial;
 
 	for(int lightIndex=0;lightIndex<maxNumLights;++lightIndex)
-		{
+    {
 		GLenum light=GL_LIGHT0+lightIndex;
 
 		/* Get the light's enabled flag: */
@@ -345,7 +374,7 @@ bool LightingShader::updateLightingState()
 		lightStates[lightIndex].enabled=enabled;
 
 		if(enabled)
-			{
+        {
 			/* Determine the light's attenuation and spot light state: */
 			bool attenuated=false;
 			bool spotLight=false;
@@ -354,7 +383,7 @@ bool LightingShader::updateLightingState()
 			GLfloat pos[4];
 			glGetLightfv(light,GL_POSITION,pos);
 			if(pos[3]!=0.0f)
-				{
+            {
 				/* Get the light's attenuation coefficients: */
 				GLfloat att[3];
 				glGetLightfv(light,GL_CONSTANT_ATTENUATION,&att[0]);
@@ -369,7 +398,7 @@ bool LightingShader::updateLightingState()
 				GLfloat spotLightCutoff;
 				glGetLightfv(light,GL_SPOT_CUTOFF,&spotLightCutoff);
 				spotLight=spotLightCutoff<=90.0f;
-				}
+            }
 
 			if(attenuated!=lightStates[lightIndex].attenuated)
 				mustRecompile=true;
@@ -378,20 +407,18 @@ bool LightingShader::updateLightingState()
 			if(spotLight!=lightStates[lightIndex].spotLight)
 				mustRecompile=true;
 			lightStates[lightIndex].spotLight=spotLight;
-			}
-		}
-
-	return mustRecompile;
-	}
+        }
+    }
+}
 
 void LightingShader::compileShader()
 	{
+    std::string vertexShaderUniforms;
 	std::string vertexShaderFunctions;
 	std::string vertexShaderMain;
 
-	/* Create the main vertex shader starting boilerplate: */
-	vertexShaderMain+=
-		"\
+    vertexShaderUniforms +=
+    "\
         uniform sampler2D geometryTex;\n\
         uniform sampler2D heightTex;\n\
         uniform sampler2D colorTex;\n\
@@ -400,6 +427,15 @@ void LightingShader::compileShader()
         uniform float verticalScale;\n\
         uniform vec3  center;\n\
         \n\
+    ";
+
+    if (useTextureForTerrainColor)
+        vertexShaderFunctions += fetchTerrainColorFromTexture;
+    else
+        vertexShaderFunctions += fetchTerrainColorAsConstant;
+
+    vertexShaderFunctions +=
+    "\
         vec3 surfacePoint(in vec2 coords)\n\
         {\n\
             vec3 res      = texture2D(geometryTex, coords).rgb;\n\
@@ -410,6 +446,11 @@ void LightingShader::compileShader()
             return res;\n\
         }\n\
         \n\
+    ";
+
+    /* Create the main vertex shader starting boilerplate: */
+	vertexShaderMain+=
+		"\
 		void main()\n\
         {\n\
 			vec4 vertexEc;\n\
@@ -460,9 +501,9 @@ void LightingShader::compileShader()
     vertexShaderMain+=
         "\
         /* Modulate with the texture color: */\n\
-        vec4 textureColor = texture2D(colorTex, coord);\n\
-        ambient *= textureColor;\n\
-        diffuse *= textureColor;\n";
+        vec4 terrainColor = fetchTerrainColor(coord);\n\
+        ambient *= terrainColor;\n\
+        diffuse *= terrainColor;\n";
 
 	/* Continue the main vertex shader: */
 	vertexShaderMain+=
@@ -510,7 +551,9 @@ void LightingShader::compileShader()
 			}\n";
 
 	/* Compile the vertex shader: */
-	std::string vertexShaderSource=vertexShaderFunctions+vertexShaderMain;
+    std::string vertexShaderSource = vertexShaderUniforms  +
+                                     vertexShaderFunctions +
+                                     vertexShaderMain;
 	glCompileShaderFromString(vertexShader,vertexShaderSource.c_str());
 
 	/* Compile the standard fragment shader: */
@@ -558,10 +601,6 @@ void LightingShader::compileShader()
 
 void LightingShader::enable()
 	{
-	/* Update light states and recompile the shader if necessary: */
-	if(updateLightingState())
-		compileShader();
-
 	/* Enable the shader: */
 	glUseProgramObjectARB(programObject);
 	}

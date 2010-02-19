@@ -28,10 +28,11 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
     that are initialized with 0. Thus if crustaFrameNumber starts at 0, the
     init code wouldn't be able to retrieve any cache buffers since all the
     buffers of the current and previous frame are locked */
-    currentFrame     = 2;
-    lastScaleFrame   = 2;
-    verticalScale    = 0.0;
-    newVerticalScale = 1.0;
+    currentFrame      = 2;
+    lastScaleFrame    = 2;
+    isTexturedTerrain = true;
+    verticalScale     = 0.0;
+    newVerticalScale  = 1.0;
     bufSize[0] = bufSize[1] = Math::Constants<int>::max;
 
     Triacontahedron polyhedron(SPHEROID_RADIUS);
@@ -289,6 +290,12 @@ getLastScaleFrame() const
 }
 
 void Crusta::
+useTexturedTerrain(bool useTex)
+{
+    isTexturedTerrain = useTex;
+}
+
+void Crusta::
 setVerticalScale(double nVerticalScale)
 {
     newVerticalScale = nVerticalScale;
@@ -316,6 +323,13 @@ MapManager* Crusta::
 getMapManager() const
 {
     return mapMan;
+}
+
+LightingShader& Crusta::
+getTerrainShader(GLContextData& contextData)
+{
+    GlData* glData = contextData.retrieveDataItem<GlData>(this);
+    return glData->terrainShader;
 }
 
 
@@ -357,11 +371,13 @@ display(GLContextData& contextData)
 {
     CHECK_GLA
 
-#if 0
     GlData* glData = contextData.retrieveDataItem<GlData>(this);
-    prepareBuffers(glData);
-    CHECK_GLA
-#endif
+
+    glData->terrainShader.useTextureForColor(isTexturedTerrain);
+    glData->terrainShader.update();
+    glData->terrainShader.enable();
+    glData->terrainShader.setTextureStep(TILE_TEXTURE_COORD_STEP);
+    glData->terrainShader.setVerticalScale(getVerticalScale());
 
     for (RenderPatches::const_iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
@@ -370,70 +386,11 @@ display(GLContextData& contextData)
         CHECK_GLA
     }
 
-#if 0
-    GLint activeTexture;
-    glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
-    glPushAttrib(GL_TEXTURE_BIT);
+    glData->terrainShader.disable();
 
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, glData->colorBuf);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, glData->depthBuf);
-    CHECK_GLA
-
-    glData->compositeShader.apply();
-    CHECK_GLA
-#endif
     //let the map manager draw all the mapping stuff
     mapMan->display(contextData);
     CHECK_GLA
-
-#if 0
-    glPopAttrib();
-    glActiveTexture(activeTexture);
-    CHECK_GLA
-#endif
-}
-
-
-Crusta::GlData::
-GlData()
-{
-    glGenTextures(1, &colorBuf);
-    glBindTexture(GL_TEXTURE_2D, colorBuf);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    CHECK_GLA
-
-    glGenTextures(1, &depthBuf);
-    glBindTexture(GL_TEXTURE_2D, depthBuf);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    CHECK_GLA
-
-    glGenFramebuffersEXT(1, &frameBuf);
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frameBuf);
-
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
-                              GL_TEXTURE_2D, colorBuf, 0);
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
-                              GL_TEXTURE_2D, depthBuf, 0);
-    CHECK_GLA
-
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-}
-
-Crusta::GlData::
-~GlData()
-{
-    glDeleteTextures(1, &colorBuf);
-    glDeleteTextures(1, &depthBuf);
-    glDeleteFramebuffersEXT(1, &frameBuf);
 }
 
 
@@ -451,48 +408,8 @@ confirmActives()
 
 
 void Crusta::
-prepareBuffers(GlData* glData)
-{
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-
-    if (viewport[2]!=bufSize[0] || viewport[3]!=bufSize[1])
-    {
-        glBindTexture(GL_TEXTURE_2D, glData->colorBuf);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport[2],
-                     viewport[3], 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-        glBindTexture(GL_TEXTURE_2D, glData->depthBuf);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, viewport[2],
-                     viewport[3], 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-        CHECK_GLA
-
-        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->frameBuf);
-        assert(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) ==
-               GL_FRAMEBUFFER_COMPLETE_EXT);
-
-        bufSize[0] = viewport[2];
-        bufSize[1] = viewport[3];
-    }
-
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClearDepth(1.0f);
-
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->frameBuf);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    CHECK_GLA
-}
-
-void Crusta::
 initContext(GLContextData& contextData) const
 {
-    if (!GLEXTFramebufferObject::isSupported())
-    {
-        Misc::throwStdErr("Crusta::initContext: required framebuffer object"
-                          "extension is not supported");
-    }
-
-    GLEXTFramebufferObject::initExtension();
-
     GlData* glData = new GlData;
     contextData.addDataItem(this, glData);
 }

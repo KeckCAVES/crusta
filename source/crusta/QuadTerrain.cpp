@@ -13,17 +13,17 @@
 #include <crusta/CacheRequest.h>
 #include <crusta/Crusta.h>
 #include <crusta/DataManager.h>
+#include <crusta/LightingShader.h>
 #include <crusta/QuadCache.h>
 
-///\todo remove debug
+///\todo used for debugspheres
 #include <GL/GLModels.h>
 
 BEGIN_CRUSTA
 
 static const uint NUM_GEOMETRY_INDICES =
     (TILE_RESOLUTION-1)*(TILE_RESOLUTION*2 + 2) - 2;
-static const float TEXTURE_COORD_STEP  = 1.0 / TILE_RESOLUTION;
-static const float TEXTURE_COORD_START = TEXTURE_COORD_STEP * 0.5;
+static const float TEXTURE_COORD_START = TILE_TEXTURE_COORD_STEP * 0.5;
 static const float TEXTURE_COORD_END   = 1.0 - TEXTURE_COORD_START;
 
 bool QuadTerrain::displayDebuggingBoundingSpheres = false;
@@ -133,11 +133,6 @@ display(GLContextData& contextData)
 	glEnable(GL_CULL_FACE);
     glEnable(GL_TEXTURE_2D);
 
-    glData->shader.enable();
-    glData->shader.setTextureStep(TEXTURE_COORD_STEP);
-    glData->shader.setVerticalScale(crusta->getVerticalScale());
-//    glUniform1f(glData->verticalScaleUniform, crusta->getVerticalScale());
-
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
     glEnableClientState(GL_VERTEX_ARRAY);
 
@@ -170,8 +165,6 @@ display(GLContextData& contextData)
 
     //restore the GL transform as it was before
     glPopMatrix();
-
-    glData->shader.disable();
 
     glPopClientAttrib();
     glPopAttrib();
@@ -259,8 +252,9 @@ drawNode(GLContextData& contextData, GlData* glData, QuadNodeMainData& mainData)
     nav *= Vrui::NavTransform::translate(centroidTranslation);
     glLoadMatrix(nav);
 
-    glData->shader.setCentroid(mainData.centroid[0], mainData.centroid[1],
-                               mainData.centroid[2]);
+    LightingShader& shader = crusta->getTerrainShader(contextData);
+    shader.setCentroid(mainData.centroid[0], mainData.centroid[1],
+                       mainData.centroid[2]);
 
 //    glPolygonMode(GL_FRONT, GL_LINE);
 
@@ -280,16 +274,9 @@ drawNode(GLContextData& contextData, GlData* glData, QuadNodeMainData& mainData)
     glPopMatrix();
 #endif
 
-#if 0
-glBindBuffer(GL_ARRAY_BUFFER, 0);
-glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-glVertexPointer(3, GL_FLOAT, 0, node->mainBuffer->getData().geometry);
-glDrawArrays(GL_POINTS, 0, TILE_RESOLUTION*TILE_RESOLUTION);
-#endif
-
 if (displayDebuggingBoundingSpheres)
 {
-glData->shader.disable();
+shader.disable();
     GLint activeTexture;
     glPushAttrib(GL_ENABLE_BIT || GL_POLYGON_BIT);
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
@@ -307,12 +294,12 @@ glData->shader.disable();
     glPopMatrix();
     glPopAttrib();
     glActiveTexture(activeTexture);
-glData->shader.enable();
+shader.enable();
 }
 
 if (displayDebuggingGrid)
 {
-glData->shader.disable();
+shader.disable();
     GLint activeTexture;
     glPushAttrib(GL_ENABLE_BIT);
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
@@ -338,7 +325,7 @@ glData->shader.disable();
 
     glPopAttrib();
     glActiveTexture(activeTexture);
-glData->shader.enable();
+shader.enable();
 }
 
 }
@@ -451,12 +438,12 @@ generateVertexAttributeTemplate()
 
     /** generate a set of normalized texture coordinates */
     for (float y = TEXTURE_COORD_START;
-         y < (TEXTURE_COORD_END + 0.1*TEXTURE_COORD_STEP);
-         y += TEXTURE_COORD_STEP)
+         y < (TEXTURE_COORD_END + 0.1*TILE_TEXTURE_COORD_STEP);
+         y += TILE_TEXTURE_COORD_STEP)
     {
         for (float x = TEXTURE_COORD_START;
-             x < (TEXTURE_COORD_END + 0.1*TEXTURE_COORD_STEP);
-             x += TEXTURE_COORD_STEP, positions+=2)
+             x < (TEXTURE_COORD_END + 0.1*TILE_TEXTURE_COORD_STEP);
+             x += TILE_TEXTURE_COORD_STEP, positions+=2)
         {
             positions[0] = x;
             positions[1] = y;

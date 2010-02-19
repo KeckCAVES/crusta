@@ -9,7 +9,7 @@
 #include <Threads/Mutex.h>
 
 #include <crusta/basics.h>
-#include <crusta/CompositeShader.h>
+#include <crusta/LightingShader.h>
 
 class GLContextData;
 
@@ -43,6 +43,8 @@ public:
     const FrameNumber& getCurrentFrame()   const;
     const FrameNumber& getLastScaleFrame() const;
 
+    /** configure the display of the terrain to use a texture or not */
+    void useTexturedTerrain(bool useTex=true);
     /** set the vertical exaggeration. Make sure to set this value within a
         frame callback so that it doesn't change during a rendering phase */
     void setVerticalScale(double newVerticalScale);
@@ -52,6 +54,8 @@ public:
     Cache*       getCache()       const;
     DataManager* getDataManager() const;
     MapManager*  getMapManager()  const;
+
+    LightingShader& getTerrainShader(GLContextData& contextData);
 
     /** inform crusta of nodes that must be kept current */
     void submitActives(const Actives& touched);
@@ -64,14 +68,7 @@ protected:
 
     struct GlData : public GLObject::DataItem
     {
-        GlData();
-        ~GlData();
-        
-        GLuint colorBuf;
-        GLuint depthBuf;
-        GLuint frameBuf;
-        
-        CompositeShader compositeShader;
+        LightingShader terrainShader;
     };
 
     /** make sure the bounding objects used for visibility and LOD checks are
@@ -91,6 +88,8 @@ protected:
         semi-static data can be verified by comparison with this number */
     FrameNumber lastScaleFrame;
 
+    /** should the terrain rendering be using textures or not */
+    bool isTexturedTerrain;
     /** the vertical scale to be applied to all surface elevations */
     double verticalScale;
     /** the vertical scale that has been externally set. Buffers the scales

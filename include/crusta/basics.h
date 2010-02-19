@@ -50,9 +50,10 @@ typedef std::vector<Point3>         Point3s;
 typedef Geometry::Vector<Scalar, 3> Vector3;
 
 
-const uint   TILE_RESOLUTION     = 65;
-const double SPHEROID_RADIUS     = 6371000.0;
-const double INV_SPHEROID_RADIUS = 1.0 / SPHEROID_RADIUS;
+static const uint   TILE_RESOLUTION          = 65;
+static const float  TILE_TEXTURE_COORD_STEP  = 1.0 / TILE_RESOLUTION;
+static const double SPHEROID_RADIUS          = 6371000.0;
+static const double INV_SPHEROID_RADIUS      = 1.0 / SPHEROID_RADIUS;
 
 END_CRUSTA
 

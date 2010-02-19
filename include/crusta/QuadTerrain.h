@@ -13,8 +13,6 @@
 #include <crusta/FrustumVisibility.h>
 #include <crusta/FocusViewEvaluator.h>
 
-#include <crusta/LightingShader.h>
-
 BEGIN_CRUSTA
 
 class VideoCache;
@@ -101,8 +99,6 @@ protected:
         GLuint vertexAttributeTemplate;
         /** defines a triangle-string triangulation of the vertices */
         GLuint indexTemplate;
-
-        LightingShader shader;
     };
 };
 
