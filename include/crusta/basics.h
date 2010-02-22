@@ -49,6 +49,8 @@ typedef Geometry::Point<Scalar, 3>  Point3;
 typedef std::vector<Point3>         Point3s;
 typedef Geometry::Vector<Scalar, 3> Vector3;
 
+typedef Geometry::Vector<float, 4>  Color;
+
 
 static const uint   TILE_RESOLUTION          = 65;
 static const float  TILE_TEXTURE_COORD_STEP  = 1.0 / TILE_RESOLUTION;

@@ -26,6 +26,16 @@ public:
         END_BACK
     };
 
+    struct Symbol
+    {
+        int   id;
+        Color color;
+
+        Symbol();
+        Symbol(int iId, const Color& iColor);
+        Symbol(int iId, float iRed, float iGreen, float iBlue);
+    };
+
     union Id
     {
         Id();
@@ -42,6 +52,7 @@ public:
         int raw;
     };
 
+    Shape();
     virtual ~Shape();
 
     Id select         (const Point3& pos, double& dist, double pointBias=1.0);
@@ -60,15 +71,19 @@ public:
     Id previousControl(const Id& id);
     Id nextControl(const Id& id);
 
+    Symbol&        getSymbol();
+    const Symbol&  getSymbol() const;
     Point3&        getControlPoint(const Id& id);
     Point3s&       getControlPoints();
     const Point3s& getControlPoints() const;
 
     Id refine(const Id& id, const Point3& pos);
 
-    static const Id BAD_ID;
+    static const Symbol DEFAULT_SYMBOL;
+    static const Id     BAD_ID;
 
 protected:
+    Symbol  symbol;
     Point3s controlPoints;
 };
 

@@ -50,13 +50,12 @@ init(Vrui::ToolFactory* parent)
 void PolylineTool::
 createShape(Shape*& shape, Shape::Id& control, const Point3& pos)
 {
-    Polyline* newLine = new Polyline;
-    crusta->getMapManager()->addPolyline(newLine);
+    MapManager* mapMan   = crusta->getMapManager();
+    Polyline* newLine    = new Polyline;
+    newLine->getSymbol() = mapMan->getActiveSymbol();
+    mapMan->addPolyline(newLine);
 
-    shape = newLine;
-
-    //lines must have at least two control points
-    shape->addControlPoint(pos);
+    shape   = newLine;
     control = shape->addControlPoint(pos);
 }
 
@@ -97,11 +96,21 @@ removeControl(Shape*& shape, Shape::Id& control)
     }
     //delete the polyline if there aren't at least two control points left
     if (shape->getControlPoints().size() < 2)
-    {
         deleteShape(shape, control);
-        shape = NULL;
-    }
 }
+
+void PolylineTool::
+unselectShape(Shape*& shape, Shape::Id& control)
+{
+    assert(shape != NULL);
+    //delete the polyline if there aren't at least two control points
+    if (shape->getControlPoints().size() < 2)
+        deleteShape(shape, control);
+
+    shape   = NULL;
+    control = Shape::BAD_ID;
+}
+
 
 PolylineTool::ShapePtrs PolylineTool::
 getShapes()

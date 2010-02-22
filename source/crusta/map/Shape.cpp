@@ -7,7 +7,26 @@
 
 
 BEGIN_CRUSTA
-const Shape::Id Shape::BAD_ID(-1);
+
+const Shape::Symbol Shape::DEFAULT_SYMBOL;
+const Shape::Id     Shape::BAD_ID(-1);
+
+
+Shape::Symbol::
+Symbol() :
+    id(0), color(0.8f, 0.7f, 0.5f)
+{}
+
+Shape::Symbol::
+Symbol(int iId, const Color& iColor) :
+    id(iId), color(iColor)
+{}
+
+Shape::Symbol::
+Symbol(int iId, float iRed, float iGreen, float iBlue) :
+    id(iId), color(iRed, iGreen, iBlue)
+{}
+
 
 
 Shape::Id::
@@ -37,6 +56,12 @@ operator !=(const Id& other) const
     return raw != other.raw;
 }
 
+
+Shape::
+Shape() :
+    symbol(DEFAULT_SYMBOL)
+{
+}
 
 Shape::
 ~Shape()
@@ -254,6 +279,18 @@ nextControl(const Id& id)
     }
 }
 
+
+Shape::Symbol& Shape::
+getSymbol()
+{
+    return symbol;
+}
+
+const Shape::Symbol& Shape::
+getSymbol() const
+{
+    return symbol;
+}
 
 Point3& Shape::
 getControlPoint(const Id& id)

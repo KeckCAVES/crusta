@@ -20,6 +20,7 @@ public:
 
     MapTool(const Vrui::ToolFactory* iFactory,
             const Vrui::ToolInputAssignment& inputAssignment);
+    ~MapTool();
 
     static Vrui::ToolFactory* init(Vrui::ToolFactory* parent);
 
@@ -40,6 +41,7 @@ protected:
     virtual void addControlPoint(Shape*& shape, Shape::Id& control,
                                  const Point3& pos);
     virtual void removeControl(Shape*& shape, Shape::Id& control);
+    virtual void unselectShape(Shape*& shape, Shape::Id& control);
 
     virtual ShapePtrs getShapes();
 
@@ -48,8 +50,8 @@ protected:
     void   selectControl (const Point3& pos);
     void   addPointAtEnds(const Point3& pos);
 
+    int       toolId;
     Mode      mode;
-    Shape*    curShape;
     Shape::Id curControl;
 
     Point3 prevPosition;
@@ -66,6 +68,10 @@ public:
 
     virtual void buttonCallback(int deviceIndex, int buttonIndex,
                                 Vrui::InputDevice::ButtonCallbackData* cbData);
+
+//- Inherited from Crusta::Component
+public:
+    virtual void setupComponent(Crusta* nCrusta);
 };
 
 

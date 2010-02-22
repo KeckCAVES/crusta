@@ -2,7 +2,6 @@
 #define _CrustaApp_H_
 
 #include <GLMotif/Button.h>
-#include <GLMotif/FileSelectionDialog.h>
 #include <GLMotif/Slider.h>
 #include <GLMotif/ToggleButton.h>
 
@@ -42,7 +41,6 @@ private:
 	void produceMainMenu();
     void produceVerticalScaleDialog();
     void produceLightingDialog();
-    void produceMappingDialog();
 
     void alignSurfaceFrame(Vrui::NavTransform& surfaceFrame);
 
@@ -61,15 +59,6 @@ private:
         GLMotif::Slider::ValueChangedCallbackData* cbData);
 	void sunElevationSliderCallback(
         GLMotif::Slider::ValueChangedCallbackData* cbData);
-
-    void showMappingDialogCallback(
-        GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
-    void loadMappingCallback(GLMotif::Button::SelectCallbackData* cbData);
-    void saveMappingCallback(GLMotif::Button::SelectCallbackData* cbData);
-	void loadMapFileOKCallback(
-        GLMotif::FileSelectionDialog::OKCallbackData* cbData);
-	void loadMapFileCancelCallback(
-        GLMotif::FileSelectionDialog::CancelCallbackData* cbData);
 
     void debugGridCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
@@ -96,9 +85,6 @@ private:
 	GLMotif::Slider* sunAzimuthSlider;
 	GLMotif::TextField* sunElevationTextField;
 	GLMotif::Slider* sunElevationSlider;
-
-    GLMotif::PopupWindow* mappingDialog;
-    GLMotif::DropdownBox* mapFormat;
 
     /** the crusta instance */
     Crusta* crusta;

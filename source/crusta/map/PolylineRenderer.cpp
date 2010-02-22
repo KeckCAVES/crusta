@@ -177,7 +177,7 @@ display(GLContextData& contextData) const
         const Point3s& cps = (*lines)[i]->getControlPoints();
         if (cps.size() > 1)
         {
-            glColor3f(0.8f, 0.7f, 0.5f);
+            glColor3fv((*lines)[i]->getSymbol().color.getComponents());
             glBegin(GL_LINE_STRIP);
             for (Point3s::const_iterator it=cps.begin(); it!=cps.end(); ++it)
             {

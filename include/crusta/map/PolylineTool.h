@@ -29,6 +29,7 @@ protected:
                              const Point3& pos);
     virtual void deleteShape(Shape*& shape, Shape::Id& control);
     virtual void removeControl(Shape*& shape, Shape::Id& control);
+    virtual void unselectShape(Shape*& shape, Shape::Id& control);
 
     virtual ShapePtrs getShapes();
 

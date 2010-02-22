@@ -13,7 +13,7 @@ class CrustaComponent
 {
 public:
     CrustaComponent(Crusta* iCrusta) : crusta(iCrusta) {}
-    void setupComponent(Crusta* nCrusta) { crusta=nCrusta; }
+    virtual void setupComponent(Crusta* nCrusta) { crusta=nCrusta; }
 
 protected:
     Crusta* crusta;

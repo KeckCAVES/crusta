@@ -21,9 +21,15 @@ MapTool::Factory* MapTool::factory = NULL;
 MapTool::
 MapTool(const Vrui::ToolFactory* iFactory,
         const Vrui::ToolInputAssignment& inputAssignment) :
-    Tool(iFactory, inputAssignment), mode(MODE_IDLE), curShape(NULL),
-    prevPosition(Math::Constants<Point3::Scalar>::max)
+    Tool(iFactory, inputAssignment), toolId(MapManager::BAD_TOOLID),
+    mode(MODE_IDLE), prevPosition(Math::Constants<Point3::Scalar>::max)
 {
+}
+
+MapTool::
+~MapTool()
+{
+    crusta->getMapManager()->unregisterMappingTool(toolId);
 }
 
 Vrui::ToolFactory* MapTool::
@@ -90,6 +96,14 @@ removeControl(Shape*& shape, Shape::Id& control)
         shape->removeControlPoint(control);
 }
 
+void MapTool::
+unselectShape(Shape*& shape, Shape::Id& control)
+{
+    shape   = NULL;
+    control = Shape::BAD_ID;
+}
+
+
 MapTool::ShapePtrs MapTool::
 getShapes()
 {
@@ -108,33 +122,45 @@ getPosition()
 void MapTool::
 selectShape(const Point3& pos)
 {
-    curShape   = NULL;
-    curControl = Shape::BAD_ID;
+    MapManager* mapMan = crusta->getMapManager();
+    Shape*& curShape = mapMan->getActiveShape(toolId);
+    Shape*  oldShape = curShape;
 
     ShapePtrs shapes = getShapes();
 
     double threshold = 1.0 / Vrui::getNavigationTransformation().getScaling();
-    threshold       *= crusta->getMapManager()->getSelectDistance();
+    threshold       *= mapMan->getSelectDistance();
 
+    bool noShapeSelected = true;
     for (ShapePtrs::iterator it=shapes.begin(); it!=shapes.end(); ++it)
     {
         double distance;
         Shape::Id control = (*it)->select(pos, distance);
         if (control!=Shape::BAD_ID && distance<=threshold)
         {
-            curShape  = *it;
-            threshold = distance;
+            curShape        = *it;
+            threshold       = distance;
+            noShapeSelected = false;
         }
     }
+
+    if (noShapeSelected && curShape!=NULL)
+        unselectShape(curShape, curControl);
+
+    //inform the manager that the active shape has changed
+    if (curShape != oldShape)
+        mapMan->updateActiveShape(toolId);
 }
 
 void MapTool::
 selectControl(const Point3& pos)
 {
-    curControl = Shape::BAD_ID;
+    MapManager* mapMan = crusta->getMapManager();
+    Shape*& curShape   = mapMan->getActiveShape(toolId);
     assert(curShape != NULL);
 
-    MapManager* mapMan = crusta->getMapManager();
+    curControl = Shape::BAD_ID;
+
     double distance;
     Shape::Id control = curShape->select(pos, distance,
                                          mapMan->getPointSelectionBias());
@@ -155,6 +181,7 @@ addPointAtEnds(const Point3& pos)
 {
     double distance;
     Shape::End end;
+    Shape*& curShape = crusta->getMapManager()->getActiveShape(toolId);
     curShape->selectExtremity(pos, distance, end);
 
     curControl = curShape->addControlPoint(pos, end);
@@ -181,6 +208,7 @@ frame()
     {
         case MODE_DRAGGING:
         {
+            Shape*& curShape = crusta->getMapManager()->getActiveShape(toolId);
             assert(curShape != NULL);
 ///\todo defer moving the control point to specialized implementations
             if (!curShape->moveControlPoint(curControl, pos))
@@ -211,6 +239,7 @@ frame()
 void MapTool::
 display(GLContextData& contextData) const
 {
+    Shape*& curShape = crusta->getMapManager()->getActiveShape(toolId);
     if (curShape == NULL)
         return;
 
@@ -312,6 +341,8 @@ buttonCallback(int deviceIndex, int buttonIndex,
                Vrui::InputDevice::ButtonCallbackData* cbData)
 {
     Point3 pos = getPosition();
+
+    Shape*& curShape = crusta->getMapManager()->getActiveShape(toolId);
 
     if (cbData->newButtonState)
     {
@@ -415,5 +446,11 @@ buttonCallback(int deviceIndex, int buttonIndex,
 }
 
 
+void MapTool::
+setupComponent(Crusta* nCrusta)
+{
+    CrustaComponent::setupComponent(nCrusta);
+    toolId = crusta->getMapManager()->registerMappingTool();
+}
 
 END_CRUSTA
