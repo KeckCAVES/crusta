@@ -112,25 +112,26 @@ display(GLContextData& contextData) const
     Point3 oPos = original.getOrigin();
     Point3 tPos = transformed.getOrigin();
 
+    GLint activeTexture;
+    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+    glActiveTexture(GL_TEXTURE0);
+
+    glPushAttrib(GL_ENABLE_BIT);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
+
     if (Geometry::dist(oPos, tPos) < 1.0)
-    {
-        GLint activeTexture;
-        glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
-        glActiveTexture(GL_TEXTURE0);
+        glColor3f(0.3f, 0.6f, 0.1f);
+    else
+        glColor3f(0.3f, 0.0f, 0.0f);
 
-        glPushAttrib(GL_ENABLE_BIT);
-        glDisable(GL_LIGHTING);
-        glDisable(GL_TEXTURE_2D);
+    glBegin(GL_LINES);
+        glVertex3dv(oPos.getComponents());
+        glVertex3dv(tPos.getComponents());
+    glEnd();
 
-        glBegin(GL_LINES);
-            glColor3f(1.0, 0.0, 0.0);
-            glVertex3dv(oPos.getComponents());
-            glVertex3dv(tPos.getComponents());
-        glEnd();
-
-        glPopAttrib();
-        glActiveTexture(activeTexture);
-    }
+    glPopAttrib();
+    glActiveTexture(activeTexture);
 }
 
 
