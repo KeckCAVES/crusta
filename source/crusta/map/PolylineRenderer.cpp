@@ -137,8 +137,8 @@ display(GLContextData& contextData) const
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
     glActiveTexture(GL_TEXTURE0);
     
-    glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_LINE_BIT |
-                 GL_POLYGON_BIT);
+    glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
+                 GL_LINE_BIT | GL_POLYGON_BIT);
     glDisable(GL_LIGHTING);
     glDisable(GL_TEXTURE_2D);
     glEnable(GL_POLYGON_OFFSET_LINE);
@@ -178,6 +178,41 @@ display(GLContextData& contextData) const
         if (cps.size() > 1)
         {
             glColor3fv((*lines)[i]->getSymbol().color.getComponents());
+            glBegin(GL_LINE_STRIP);
+            for (Point3s::const_iterator it=cps.begin(); it!=cps.end(); ++it)
+            {
+                glVertex3f((*it)[0] - centroids[i][0],
+                           (*it)[1] - centroids[i][1],
+                           (*it)[2] - centroids[i][2]);
+            }
+            glEnd();
+        }
+
+        glPopMatrix();
+    }
+
+    //display hidden lines
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glDepthFunc(GL_GREATER);
+
+    glLineWidth(1.0);
+    for (int i=0; i<numLines; ++i)
+    {
+        glPushMatrix();
+        Vrui::Vector centroidTranslation(centroids[i][0], centroids[i][1],
+                                         centroids[i][2]);
+        Vrui::NavTransform nav =
+            Vrui::getDisplayState(contextData).modelviewNavigational;
+        nav *= Vrui::NavTransform::translate(centroidTranslation);
+        glLoadMatrix(nav);
+
+        const Point3s& cps = (*lines)[i]->getControlPoints();
+        if (cps.size() > 1)
+        {
+            Color symbolColor = (*lines)[i]->getSymbol().color;
+            symbolColor[3] = 0.33f;
+            glColor4fv(symbolColor.getComponents());
             glBegin(GL_LINE_STRIP);
             for (Point3s::const_iterator it=cps.begin(); it!=cps.end(); ++it)
             {
