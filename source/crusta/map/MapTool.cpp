@@ -222,7 +222,16 @@ frame()
 
         case MODE_SELECTING_CONTROL:
         {
-            selectControl(pos);
+            Shape*& curShape = crusta->getMapManager()->getActiveShape(toolId);
+            if (curShape == NULL)
+            {
+                curControl = Shape::BAD_ID;
+                mode       = MODE_IDLE;
+            }
+            else
+            {
+                selectControl(pos);
+            }
             break;
         }
 
