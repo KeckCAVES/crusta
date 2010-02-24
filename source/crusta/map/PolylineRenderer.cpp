@@ -9,6 +9,7 @@
 #include <Vrui/Vrui.h>
 
 #include <crusta/checkGl.h>
+#include <crusta/Crusta.h>
 #include <crusta/map/Polyline.h>
 
 
@@ -126,6 +127,12 @@ float a    = numSegments<2 ? 1.0 : float(i) / float(numSegments-1);\n\
 }\
 ";
 
+PolylineRenderer::
+PolylineRenderer(Crusta* iCrusta) :
+    CrustaComponent(iCrusta)
+{
+}
+
 void PolylineRenderer::
 display(GLContextData& contextData) const
 {
@@ -145,25 +152,35 @@ display(GLContextData& contextData) const
     
     glPolygonOffset(1.0f, 50.0f);
 
-    //compute the centroids
+    //compute the vertically scaled control points and centroids for display
     int numLines = static_cast<int>(lines->size());
     Point3s centroids;
     centroids.resize(numLines, Point3(0,0,0));
+    std::vector<Point3s> controlPoints;
+    controlPoints.resize(numLines);
+
     for (int i=0; i<numLines; ++i)
     {
-        const Point3s& cps   = (*lines)[i]->getControlPoints();
-        int numPoints = static_cast<int>(cps.size());
+        const Point3s& cps = (*lines)[i]->getControlPoints();
+        int numPoints      = static_cast<int>(cps.size());
+        controlPoints[i].resize(numPoints);
         for (int j=0; j<numPoints; ++j)
         {
+            Point3 point = crusta->mapToScaledGlobe(cps[j]);
             for (int k=0; k<3; ++k)
-                centroids[i][k] += cps[j][k];
+            {
+                controlPoints[i][j][k] = point[k];
+                centroids[i][k]       += point[k];
+            }
         }
         double norm = 1.0 / numPoints;
         for (int k=0; k<3; ++k)
             centroids[i][k] *= norm;
     }
 
-    glLineWidth(2.0);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+
     for (int i=0; i<numLines; ++i)
     {
         glPushMatrix();
@@ -174,54 +191,37 @@ display(GLContextData& contextData) const
         nav *= Vrui::NavTransform::translate(centroidTranslation);
         glLoadMatrix(nav);
         
-        const Point3s& cps = (*lines)[i]->getControlPoints();
-        if (cps.size() > 1)
+        const Point3s& cps = controlPoints[i];
+        if (cps.size() < 1)
+            continue;
+
+        //draw visible lines
+        glDepthFunc(GL_LEQUAL);
+        glLineWidth(2.0);
+        Color symbolColor = (*lines)[i]->getSymbol().color;
+        glColor4fv(symbolColor.getComponents());
+        glBegin(GL_LINE_STRIP);
+        for (Point3s::const_iterator it=cps.begin(); it!=cps.end(); ++it)
         {
-            glColor3fv((*lines)[i]->getSymbol().color.getComponents());
-            glBegin(GL_LINE_STRIP);
-            for (Point3s::const_iterator it=cps.begin(); it!=cps.end(); ++it)
-            {
-                glVertex3f((*it)[0] - centroids[i][0],
-                           (*it)[1] - centroids[i][1],
-                           (*it)[2] - centroids[i][2]);
-            }
-            glEnd();
+            glVertex3f((*it)[0] - centroids[i][0],
+                       (*it)[1] - centroids[i][1],
+                       (*it)[2] - centroids[i][2]);
         }
+        glEnd();
 
-        glPopMatrix();
-    }
-
-    //display hidden lines
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_BLEND);
-    glDepthFunc(GL_GREATER);
-
-    glLineWidth(1.0);
-    for (int i=0; i<numLines; ++i)
-    {
-        glPushMatrix();
-        Vrui::Vector centroidTranslation(centroids[i][0], centroids[i][1],
-                                         centroids[i][2]);
-        Vrui::NavTransform nav =
-            Vrui::getDisplayState(contextData).modelviewNavigational;
-        nav *= Vrui::NavTransform::translate(centroidTranslation);
-        glLoadMatrix(nav);
-
-        const Point3s& cps = (*lines)[i]->getControlPoints();
-        if (cps.size() > 1)
+        //display hidden lines
+        glDepthFunc(GL_GREATER);
+        glLineWidth(1.0);
+        symbolColor[3] *= 0.33f;
+        glColor4fv(symbolColor.getComponents());
+        glBegin(GL_LINE_STRIP);
+        for (Point3s::const_iterator it=cps.begin(); it!=cps.end(); ++it)
         {
-            Color symbolColor = (*lines)[i]->getSymbol().color;
-            symbolColor[3] = 0.33f;
-            glColor4fv(symbolColor.getComponents());
-            glBegin(GL_LINE_STRIP);
-            for (Point3s::const_iterator it=cps.begin(); it!=cps.end(); ++it)
-            {
-                glVertex3f((*it)[0] - centroids[i][0],
-                           (*it)[1] - centroids[i][1],
-                           (*it)[2] - centroids[i][2]);
-            }
-            glEnd();
+            glVertex3f((*it)[0] - centroids[i][0],
+                       (*it)[1] - centroids[i][1],
+                       (*it)[2] - centroids[i][2]);
         }
+        glEnd();
 
         glPopMatrix();
     }

@@ -9,6 +9,7 @@
 #include <GLMotif/ListBox.h>
 #include <GLMotif/ToggleButton.h>
 
+#include <crusta/CrustaComponent.h>
 #include <crusta/map/Shape.h>
 
 
@@ -30,12 +31,12 @@ class Polyline;
 class PolylineRenderer;
 
 
-class MapManager
+class MapManager : public CrustaComponent
 {
 public:
     typedef std::vector<Polyline*> PolylinePtrs;
 
-    MapManager(Vrui::ToolFactory* parentToolFactory);
+    MapManager(Vrui::ToolFactory* parentToolFactory, Crusta* iCrusta);
     ~MapManager();
 
     /** Destroy all the current map features */

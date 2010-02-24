@@ -33,9 +33,9 @@ BEGIN_CRUSTA
 
 
 MapManager::
-MapManager(Vrui::ToolFactory* parentToolFactory) :
-    selectDistance(0.2), pointSelectionBias(0.1),
-    polylineRenderer(new PolylineRenderer)
+MapManager(Vrui::ToolFactory* parentToolFactory, Crusta* iCrusta) :
+    CrustaComponent(iCrusta), selectDistance(0.2), pointSelectionBias(0.1),
+    polylineRenderer(new PolylineRenderer(iCrusta))
 {
     Vrui::ToolFactory* factory = MapTool::init(parentToolFactory);
     PolylineTool::init(factory);

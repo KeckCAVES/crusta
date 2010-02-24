@@ -14,7 +14,7 @@ const Shape::Id     Shape::BAD_ID(-1);
 
 Shape::Symbol::
 Symbol() :
-    id(0), color(0.8f, 0.7f, 0.5f)
+    id(0), color(0.8f, 0.7f, 0.5f, 1.0f)
 {}
 
 Shape::Symbol::

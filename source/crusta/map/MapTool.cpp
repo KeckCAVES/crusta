@@ -201,6 +201,7 @@ frame()
 {
     //handle motion
     Point3 pos = getPosition();
+    pos = crusta->mapToUnscaledGlobe(pos);
     if (pos == prevPosition)
         return;
 
@@ -257,10 +258,13 @@ display(GLContextData& contextData) const
 
     //compute the centroids
     Point3 centroid;
-    const Point3s& cps = curShape->getControlPoints();
-    int numPoints      = static_cast<int>(cps.size());
+    const Point3s& controlPoints = curShape->getControlPoints();
+    int numPoints                = static_cast<int>(controlPoints.size());
+    Point3s cps;
+    cps.resize(numPoints);
     for (int i=0; i<numPoints; ++i)
     {
+        cps[i] = crusta->mapToScaledGlobe(controlPoints[i]);
         for (int j=0; j<3; ++j)
             centroid[j] += cps[i][j];
     }
@@ -299,7 +303,8 @@ display(GLContextData& contextData) const
         {
             case Shape::CONTROL_POINT:
             {
-                const Point3& p = curShape->getControlPoint(curControl);
+                Point3 p = curShape->getControlPoint(curControl);
+                p        = crusta->mapToScaledGlobe(p);
 
                 glColor3f(0.3f, 0.9f, 0.5f);
                 glBegin(GL_POINTS);
@@ -311,10 +316,12 @@ display(GLContextData& contextData) const
 
             case Shape::CONTROL_SEGMENT:
             {
-                Shape::Id si    = curShape->previousControl(curControl);
-                const Point3& s = curShape->getControlPoint(si);
-                Shape::Id ei    = curShape->nextControl(curControl);
-                const Point3& e = curShape->getControlPoint(ei);
+                Shape::Id si = curShape->previousControl(curControl);
+                Point3 s     = curShape->getControlPoint(si);
+                s            = crusta->mapToScaledGlobe(s);
+                Shape::Id ei = curShape->nextControl(curControl);
+                Point3 e     = curShape->getControlPoint(ei);
+                e            = crusta->mapToScaledGlobe(e);
 
                 glColor3f(0.3f, 0.9f, 0.5f);
                 glBegin(GL_LINES);
@@ -341,6 +348,7 @@ buttonCallback(int deviceIndex, int buttonIndex,
                Vrui::InputDevice::ButtonCallbackData* cbData)
 {
     Point3 pos = getPosition();
+    pos        = crusta->mapToUnscaledGlobe(pos);
 
     Shape*& curShape = crusta->getMapManager()->getActiveShape(toolId);
 

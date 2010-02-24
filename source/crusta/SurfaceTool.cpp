@@ -81,7 +81,12 @@ frame()
         Point3 surfacePoint;
         if (Vrui::isMaster())
         {
-            surfacePoint = crusta->snapToSurface(modelFrame.getOrigin());
+            surfacePoint = modelFrame.getOrigin();
+            //snapping is done radially, no need to map to the unscaled globe
+            surfacePoint = crusta->snapToSurface(surfacePoint);
+            //the returned point is relative to the unscaled globe
+            surfacePoint = crusta->mapToScaledGlobe(surfacePoint);
+
 			if (Vrui::getMainPipe() != NULL)
                 Vrui::getMainPipe()->write<Point3>(surfacePoint);
         }

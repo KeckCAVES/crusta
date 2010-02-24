@@ -51,6 +51,13 @@ public:
     /** retrieve the vertical exaggeration factor */
     double getVerticalScale() const;
 
+    /** map a 3D cartesian point specified wrt an unscaled globe representation
+        to the corresponding point in a scaled representation */
+    Point3 mapToScaledGlobe(const Point3& pos);
+    /** map a 3D cartesian point specified on a scaled globe representation to
+        the corresponding point in an unscaled representation */
+    Point3 mapToUnscaledGlobe(const Point3& pos);
+
     Cache*       getCache()       const;
     DataManager* getDataManager() const;
     MapManager*  getMapManager()  const;

@@ -39,7 +39,7 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
 
     cache    = new Cache(4096, 1024, this);
     dataMan  = new DataManager(&polyhedron, demFileBase, colorFileBase, this);
-    mapMan   = new MapManager(crustaTool);
+    mapMan   = new MapManager(crustaTool, this);
 
     uint numPatches = polyhedron.getNumPatches();
     renderPatches.resize(numPatches);
@@ -162,7 +162,6 @@ getHeight(double x, double y, double z)
 //- sample the cell
 ///\todo sample properly. For now just return the height of the corner
     double height = node->height[offset[1]*TILE_RESOLUTION + offset[0]];
-    height       *= Crusta::getVerticalScale();
     return height;
 }
 
@@ -269,12 +268,12 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
 //- sample the cell
 ///\todo sample properly. For now just return the height of the corner
     Scalar height = node->height[offset[1]*TILE_RESOLUTION + offset[0]];
-    height       += elevationOffset;
-    height       *= Crusta::getVerticalScale();
+    height       += SPHEROID_RADIUS + elevationOffset;
 
-    Vector3 toCorner = Vector3(scope.corners[0]);
-    toCorner.normalize();
-    return scope.corners[0] + height*toCorner;
+    Vector3 toPos = Vector3(pos);
+    toPos.normalize();
+    toPos *= height;
+    return Point3(toPos[0], toPos[1], toPos[2]);
 }
 
 const FrameNumber& Crusta::
@@ -305,6 +304,34 @@ double Crusta::
 getVerticalScale() const
 {
     return verticalScale;
+}
+
+Point3 Crusta::
+mapToScaledGlobe(const Point3& pos)
+{
+    Vector3 toPoint(pos[0], pos[1], pos[2]);
+    Vector3 onSurface(toPoint);
+    onSurface.normalize();
+    onSurface *= SPHEROID_RADIUS;
+    toPoint   -= onSurface;
+    toPoint   *= verticalScale;
+    toPoint   += onSurface;
+
+    return Point3(toPoint[0], toPoint[1], toPoint[2]);
+}
+
+Point3 Crusta::
+mapToUnscaledGlobe(const Point3& pos)
+{
+    Vector3 toPoint(pos[0], pos[1], pos[2]);
+    Vector3 onSurface(toPoint);
+    onSurface.normalize();
+    onSurface *= SPHEROID_RADIUS;
+    toPoint   -= onSurface;
+    toPoint   /= verticalScale;
+    toPoint   += onSurface;
+
+    return Point3(toPoint[0], toPoint[1], toPoint[2]);
 }
 
 Cache* Crusta::

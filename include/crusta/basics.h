@@ -48,6 +48,7 @@ typedef double      Scalar;
 typedef Geometry::Point<Scalar, 3>  Point3;
 typedef std::vector<Point3>         Point3s;
 typedef Geometry::Vector<Scalar, 3> Vector3;
+typedef std::vector<Vector3>        Vector3s;
 
 typedef Geometry::Vector<float, 4>  Color;
 

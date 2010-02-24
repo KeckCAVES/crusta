@@ -230,18 +230,20 @@ void CrustaApp::
 alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
 {
 /* Do whatever to the surface frame, but don't change its scale factor: */
+    Point3 origin = surfaceFrame.getOrigin();
+    if (origin == Point3::origin)
+        origin = Point3(0.0, 1.0, 0.0);
+
+    origin = crusta->snapToSurface(origin);
+    origin = crusta->mapToScaledGlobe(origin);
+
+    //misuse the Geoid just to build a surface tangent frame
     Geometry::Geoid<double> geoid(SPHEROID_RADIUS, 0.0);
-
-    Vrui::Point origin = surfaceFrame.getOrigin();
-    Vrui::Point lonLat;
-    if (origin == Vrui::Point::origin)
-        lonLat = Vrui::Point::origin;
-    else
-        lonLat = geoid.cartesianToGeodetic(origin);
-    lonLat[2] = crusta->getHeight(origin[0], origin[1], origin[2]);
-
-    Geometry::Geoid<double>::Frame frame = geoid.geodeticToCartesianFrame(lonLat);
-    surfaceFrame = Vrui::NavTransform(frame.getTranslation(), frame.getRotation(), surfaceFrame.getScaling());
+    Point3 lonLatEle = geoid.cartesianToGeodetic(origin);
+    Geometry::Geoid<double>::Frame frame =
+        geoid.geodeticToCartesianFrame(lonLatEle);
+    surfaceFrame = Vrui::NavTransform(
+        frame.getTranslation(), frame.getRotation(), surfaceFrame.getScaling());
 }
 
 void CrustaApp::
