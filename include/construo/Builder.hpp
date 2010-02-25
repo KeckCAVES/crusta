@@ -12,6 +12,7 @@
 #define USE_NEAREST_FILTERING 0
 #define DEBUG_PREPARESUBSAMPLINGDOMAIN 0
 #define DEBUG_SOURCEFINEST 0
+#define DEBUG_SOURCEFINEST_SHOW_TEXELS 0
 #define DEBUG_FLAGANCESTORSFORUPDATE 0
 #if DEBUG_FLAGANCESTORSFORUPDATE
 static float flagAncestorsForUpdateColor[3];
@@ -33,9 +34,9 @@ assert(size[0]==size[1]);
     globe = new Globe(spheroidName, tileSize);
 
 ///\todo for now hardcode the subsampling filter
-    Filter::makePointFilter(subsamplingFilter);
+//    Filter::makePointFilter(subsamplingFilter);
 //    Filter::makeTriangleFilter(subsamplingFilter);
-//    Filter::makeFiveLobeLanczosFilter(subsamplingFilter);
+    Filter::makeFiveLobeLanczosFilter(subsamplingFilter);
 
     scopeBuf          = new Scope::Scalar[tileSize[0]*tileSize[1]*3];
     sampleBuf         = new Point[tileSize[0]*tileSize[1]];
@@ -280,7 +281,7 @@ assert(p[0]>=0 && p[0]<=imgSize[0]-1 && p[1]>=0 && p[1]<=imgSize[1]-1);
 #if DEBUG_SOURCEFINEST
 Visualizer::Floats scopeSample;
 scopeSample.resize(3);
-Point wp = imgPatch->transform->imageToWorld(p);
+Point wp = imgPatch->transform->imageToWorld(Point(at[0], at[1]));
 scopeSample[0] = wp[0];
 scopeSample[1] =   0.0;
 scopeSample[2] = wp[1];
@@ -356,12 +357,9 @@ updateFiner(Node* node, Patch* imgPatch, Point::Scalar imgResolution)
 {
 ///\todo remove
 #if DEBUG_SOURCEFINEST || 0
-if (node->treeIndex.level<2)
-{
 static const float covColor[3] = { 0.1f, 0.4f, 0.6f };
 Visualizer::addPrimitive(GL_LINES, node->coverage, covColor);
-Visualizer::peek();
-}
+Visualizer::show();
 #endif
 
     //check for an overlap
@@ -405,13 +403,13 @@ Visualizer::show();
     for (int i=0; i<numPatches; ++i)
     {
 ///\todo remove
-#if 0
+#if DEBUG_SOURCE_FINEST
 Visualizer::clear();
 Visualizer::addPrimitive(GL_LINES, *(patches[i]->sphereCoverage));
 Visualizer::peek();
 #endif
 
-#if DEBUG_SOURCEFINEST
+#if DEBUG_SOURCEFINEST_SHOW_TEXELS
 const int* size = patches[i]->image->getSize();
 Visualizer::Floats edges;
 edges.resize(size[0]*size[1]*4*2*3);
