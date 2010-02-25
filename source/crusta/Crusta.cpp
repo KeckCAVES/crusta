@@ -19,10 +19,10 @@ BEGIN_CRUSTA
 void Crusta::
 init(const std::string& demFileBase, const std::string& colorFileBase)
 {
-    //initialize the abstract crusta tool (adds an entry to the VRUI menu)
-    Vrui::ToolFactory* crustaTool = Tool::init(NULL);
     //initialize the surface transformation tool
     SurfaceTool::init();
+    //initialize the abstract crusta tool (adds an entry to the VRUI menu)
+    Vrui::ToolFactory* crustaTool = Tool::init(NULL);
 
     /* start the frame counting at 2 because initialization code uses unsigneds
     that are initialized with 0. Thus if crustaFrameNumber starts at 0, the
