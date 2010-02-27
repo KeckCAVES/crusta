@@ -117,9 +117,10 @@ display(GLContextData& contextData) const
     Point3 oPos = original.getOrigin();
     Point3 tPos = transformed.getOrigin();
 
-    GLint activeTexture;
-    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
-    glActiveTexture(GL_TEXTURE0);
+    //make sure that the line is always drawn
+    GLdouble depthRange[2];
+    glGetDoublev(GL_DEPTH_RANGE, depthRange);
+    glDepthRange(0.0, 0.0);
 
     glPushAttrib(GL_ENABLE_BIT);
     glDisable(GL_LIGHTING);
@@ -136,7 +137,7 @@ display(GLContextData& contextData) const
     glEnd();
 
     glPopAttrib();
-    glActiveTexture(activeTexture);
+    glDepthRange(depthRange[0], depthRange[1]);
 }
 
 
