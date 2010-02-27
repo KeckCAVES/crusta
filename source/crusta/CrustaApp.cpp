@@ -390,6 +390,8 @@ resetNavigationCallback(Misc::CallbackData* cbData)
 {
     /* Reset the Vrui navigation transformation: */
     Vrui::setNavigationTransformation(Vrui::Point(0,0,0), 1.5*SPHEROID_RADIUS);
+    Vrui::concatenateNavigationTransformation(Vrui::NavTransform::translate(
+        Vrui::Vector(0,1,0)));
 }
 
 
