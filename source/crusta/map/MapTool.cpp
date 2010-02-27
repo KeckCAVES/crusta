@@ -29,7 +29,16 @@ MapTool(const Vrui::ToolFactory* iFactory,
 MapTool::
 ~MapTool()
 {
-    crusta->getMapManager()->unregisterMappingTool(toolId);
+    MapManager* mapMan = crusta->getMapManager();
+
+    Shape*& curShape = mapMan->getActiveShape(toolId);
+    if (curShape != NULL)
+    {
+        unselectShape(curShape, curControl);
+        mapMan->updateActiveShape(toolId);
+    }
+
+    mapMan->unregisterMappingTool(toolId);
 }
 
 Vrui::ToolFactory* MapTool::
@@ -370,6 +379,7 @@ buttonCallback(int deviceIndex, int buttonIndex,
                 case MODE_IDLE:
                 {
                     createShape(curShape, curControl, pos);
+                    crusta->getMapManager()->updateActiveShape(toolId);
                     mode = MODE_DRAGGING;
                     break;
                 }

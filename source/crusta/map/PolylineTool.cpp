@@ -94,9 +94,6 @@ removeControl(Shape*& shape, Shape::Id& control)
         default:
             break;
     }
-    //delete the polyline if there aren't at least two control points left
-    if (shape->getControlPoints().size() < 2)
-        deleteShape(shape, control);
 }
 
 void PolylineTool::
