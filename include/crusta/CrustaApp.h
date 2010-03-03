@@ -9,8 +9,10 @@
 #include <Vrui/Geometry.h>
 
 #include <crusta/basics.h>
+#include <crusta/ColorMap.h>
 
 class GLContextData;
+class PaletteEditor;
 
 namespace GLMotif {
     class DropdownBox;
@@ -39,13 +41,17 @@ public:
 
 private:
 	void produceMainMenu();
+    void produceTexturingSubmenu(GLMotif::Menu* mainMenu);
     void produceVerticalScaleDialog();
     void produceLightingDialog();
 
     void alignSurfaceFrame(Vrui::NavTransform& surfaceFrame);
 
-    void useTexturedTerrainCallback(
-        GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
+    void changeTexturingModeCallback(
+        GLMotif::Button::SelectCallbackData* cbData);
+    void changeColorMapCallback(
+        GLMotif::ColorMap::ColorMapChangedCallbackData* cbData);
+    
     void showVerticalScaleCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     void changeScaleCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
@@ -59,6 +65,9 @@ private:
         GLMotif::Slider::ValueChangedCallbackData* cbData);
 	void sunElevationSliderCallback(
         GLMotif::Slider::ValueChangedCallbackData* cbData);
+
+    void showPaletteEditorCallback(
+        GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
 
     void debugGridCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
@@ -85,6 +94,8 @@ private:
 	GLMotif::Slider* sunAzimuthSlider;
 	GLMotif::TextField* sunElevationTextField;
 	GLMotif::Slider* sunElevationSlider;
+
+    PaletteEditor* paletteEditor;
 
     /** the crusta instance */
     Crusta* crusta;

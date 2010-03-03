@@ -21,6 +21,7 @@
 #include <GLMotif/RadioBox.h>
 #include <GLMotif/RowColumn.h>
 #include <GLMotif/StyleSheet.h>
+#include <GLMotif/SubMenu.h>
 #include <GLMotif/TextField.h>
 #include <GLMotif/WidgetManager.h>
 #include <GL/GLContextData.h>
@@ -32,6 +33,7 @@
 
 #include <crusta/Crusta.h>
 #include <crusta/map/MapManager.h>
+#include <crusta/PaletteEditor.h>
 #include <crusta/QuadTerrain.h>
 
 
@@ -47,7 +49,8 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     Vrui::Application(argc, argv, appDefaults),
     newVerticalScale(1.0), enableSun(false),
     viewerHeadlightStates(new bool[Vrui::getNumViewers()]),
-	sun(0),sunAzimuth(180.0),sunElevation(45.0)
+    sun(0), sunAzimuth(180.0), sunElevation(45.0),
+    paletteEditor(new PaletteEditor)
 {
     std::string demName;
     std::string colorName;
@@ -76,6 +79,12 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     produceVerticalScaleDialog();
     produceLightingDialog();
 
+    paletteEditor->getColorMapChangedCallbacks().add(
+        this, &CrustaApp::changeColorMapCallback);
+
+    GLMotif::ColorMap::ColorMapChangedCallbackData initMap(
+        paletteEditor->getColorMap());
+    changeColorMapCallback(&initMap);
     resetNavigationCallback(NULL);
 }
 
@@ -101,12 +110,8 @@ produceMainMenu()
     GLMotif::Menu* mainMenu =
     new GLMotif::Menu("MainMenu",popMenu,false);
 
-    /* Create a button to toggle texturing the terrain: */
-    GLMotif::ToggleButton* texturedToggle = new GLMotif::ToggleButton(
-        "TexturedToggle", mainMenu, "Textured Terrain");
-    texturedToggle->setToggle(true);
-    texturedToggle->getValueChangedCallbacks().add(
-        this, &CrustaApp::useTexturedTerrainCallback);
+    /* Create a submenu to toggle texturing the terrain: */
+    produceTexturingSubmenu(mainMenu);
 
     /* Create a button to open or hide the vertical scale adjustment dialog: */
     GLMotif::ToggleButton* showVerticalScaleToggle = new GLMotif::ToggleButton(
@@ -124,6 +129,13 @@ produceMainMenu()
 
     /* Inject the map management menu entries */
     crusta->getMapManager()->addMenuEntry(mainMenu);
+
+    /* Create a button to open or hide the vertical scale adjustment dialog: */
+    GLMotif::ToggleButton* showPaletteEditorToggle = new GLMotif::ToggleButton(
+        "ShowPaletteEditorToggle", mainMenu, "Palette Editor");
+    showPaletteEditorToggle->setToggle(false);
+    showPaletteEditorToggle->getValueChangedCallbacks().add(
+        this, &CrustaApp::showPaletteEditorCallback);
 
     /* Create a button to toogle display of the debugging grid: */
     GLMotif::ToggleButton* debugGridToggle = new GLMotif::ToggleButton(
@@ -152,6 +164,36 @@ produceMainMenu()
     mainMenu->manageChild();
 
     Vrui::setMainMenu(popMenu);
+}
+
+void CrustaApp::
+produceTexturingSubmenu(GLMotif::Menu* mainMenu)
+{
+    GLMotif::Popup* texturingMenuPopup =
+        new GLMotif::Popup("TexturingMenuPopup", Vrui::getWidgetManager());
+
+    GLMotif::SubMenu* texturingMenu =
+        new GLMotif::SubMenu("Texturing", texturingMenuPopup, false);
+
+    GLMotif::Button* modeButton = new GLMotif::Button(
+        "Untextured", texturingMenu, "Untextured");
+    modeButton->getSelectCallbacks().add(
+        this, &CrustaApp::changeTexturingModeCallback);
+    modeButton = new GLMotif::Button(
+        "ColorMap", texturingMenu, "Color Map");
+    modeButton->getSelectCallbacks().add(
+        this, &CrustaApp::changeTexturingModeCallback);
+    modeButton = new GLMotif::Button(
+        "Image", texturingMenu, "Image");
+    modeButton->getSelectCallbacks().add(
+        this, &CrustaApp::changeTexturingModeCallback);
+
+    texturingMenu->manageChild();
+
+    GLMotif::CascadeButton* texturingMenuCascade =
+        new GLMotif::CascadeButton("TexturingMenuCascade", mainMenu,
+                                   "Texturing Modes");
+    texturingMenuCascade->setPopup(texturingMenuPopup);
 }
 
 void CrustaApp::
@@ -246,11 +288,26 @@ alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
         frame.getTranslation(), frame.getRotation(), surfaceFrame.getScaling());
 }
 
+
 void CrustaApp::
-useTexturedTerrainCallback(
-    GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+changeTexturingModeCallback(
+    GLMotif::Button::SelectCallbackData* cbData)
 {
-    crusta->useTexturedTerrain(cbData->set);
+    const char* button = cbData->button->getName();
+    if (strcmp(button, "Untextured") == 0)
+        crusta->setTexturingMode(0);
+    else if (strcmp(button, "ColorMap") == 0)
+        crusta->setTexturingMode(1);
+    else
+        crusta->setTexturingMode(2);
+}
+
+void CrustaApp::
+changeColorMapCallback(GLMotif::ColorMap::ColorMapChangedCallbackData* cbData)
+{
+    GLColorMap* colorMap = crusta->getColorMap();
+    cbData->colorMap->exportColorMap(*colorMap);
+    crusta->touchColorMap();
 }
 
 void CrustaApp::
@@ -371,6 +428,23 @@ sunElevationSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 }
 
 
+
+void CrustaApp::
+showPaletteEditorCallback(
+    GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+{
+    if(cbData->set)
+    {
+        //open the dialog at the same position as the main menu:
+        Vrui::getWidgetManager()->popupPrimaryWidget(paletteEditor,
+            Vrui::getWidgetManager()->calcWidgetTransformation(popMenu));
+    }
+    else
+    {
+        //close the dialog:
+        Vrui::popdownPrimaryWidget(paletteEditor);
+    }
+}
 
 
 void CrustaApp::

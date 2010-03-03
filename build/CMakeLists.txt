@@ -35,6 +35,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/basics.h
     ../include/crusta/CacheRequest.h
     ../include/crusta/checkGl.h
+    ../include/crusta/ColorMap.h
     ../include/crusta/ColorTextureSpecs.h
     ../include/crusta/Crusta.h
     ../include/crusta/CrustaComponent.h
@@ -52,6 +53,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/map/PolylineRenderer.h
     ../include/crusta/map/PolylineTool.h
     ../include/crusta/map/Shape.h
+    ../include/crusta/PaletteEditor.h
     ../include/crusta/PixelSpecs.h
     ../include/crusta/Polyhedron.h
     ../include/crusta/QuadCache.h
@@ -79,6 +81,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/Visualizer.h
 
     ../source/crusta/CacheRequest.cpp
+    ../source/crusta/ColorMap.cpp
     ../source/crusta/ColorTextureSpecs.cpp
     ../source/crusta/Crusta.cpp
     ../source/crusta/CrustaVisualizer.cpp
@@ -94,6 +97,7 @@ add_library(CrustaCore SHARED
     ../source/crusta/map/PolylineRenderer.cpp
     ../source/crusta/map/PolylineTool.cpp
     ../source/crusta/map/Shape.cpp
+    ../source/crusta/PaletteEditor.cpp
     ../source/crusta/QuadCache.cpp
     ../source/crusta/QuadNodeData.cpp
     ../source/crusta/QuadTerrain.cpp

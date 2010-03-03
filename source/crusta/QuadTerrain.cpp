@@ -152,8 +152,6 @@ display(GLContextData& contextData)
     GlData* glData = contextData.retrieveDataItem<GlData>(this);
 
     //setup the GL
-    GLint activeTexture;
-    glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
     GLint arrayBuffer;
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &arrayBuffer);
     GLint elementArrayBuffer;
@@ -199,7 +197,6 @@ display(GLContextData& contextData)
     glPopClientAttrib();
     glPopAttrib();
 
-    glActiveTexture(activeTexture);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
 

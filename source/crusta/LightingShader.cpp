@@ -230,19 +230,20 @@ const char* LightingShader::applyAttenuatedSpotLightTemplate=
 
 const char* LightingShader::fetchTerrainColorAsConstant =
 "\
-    vec4 fetchTerrainColor(in vec2 coord)\n\
-    {\n\
-        return vec4(1.0); //white\n\
-    }\n\
-\n";
+    vec4 terrainColor = vec4(1.0); //white\n\
+";
+
+const char* LightingShader::fetchTerrainColorFromColorMap =
+"\
+    float e = texture2D(heightTex, coord).r;\n\
+          e = (e-minColorMapElevation) * colorMapElevationInvRange;\n\
+    vec4 terrainColor = texture1D(colorMap, e);\
+";
 
 const char* LightingShader::fetchTerrainColorFromTexture =
 "\
-    vec4 fetchTerrainColor(in vec2 coord)\n\
-    {\n\
-        return texture2D(colorTex, coord);\n\
-    }\n\
-\n";
+    vec4 terrainColor = texture2D(colorTex, coord);\
+";
 
 /*****************************************
 Methods of class LightingShader:
@@ -299,7 +300,7 @@ std::string LightingShader::createApplyLightFunction(const char* functionTemplat
 LightingShader::LightingShader() :
     mustRecompile(true),
     colorMaterial(false),
-    useTextureForTerrainColor(true),
+    texturingMode(2),
     lightStates(0),
     vertexShader(0),fragmentShader(0),
     programObject(0)
@@ -419,20 +420,18 @@ void LightingShader::compileShader()
 
     vertexShaderUniforms +=
     "\
+        uniform sampler1D colorMap;\n\
         uniform sampler2D geometryTex;\n\
         uniform sampler2D heightTex;\n\
         uniform sampler2D colorTex;\n\
         \n\
+        uniform float colorMapElevationInvRange;\n\
+        uniform float minColorMapElevation;\n\
         uniform float texStep;\n\
         uniform float verticalScale;\n\
         uniform vec3  center;\n\
         \n\
     ";
-
-    if (useTextureForTerrainColor)
-        vertexShaderFunctions += fetchTerrainColorFromTexture;
-    else
-        vertexShaderFunctions += fetchTerrainColorAsConstant;
 
     vertexShaderFunctions +=
     "\
@@ -501,7 +500,25 @@ void LightingShader::compileShader()
     vertexShaderMain+=
         "\
         /* Modulate with the texture color: */\n\
-        vec4 terrainColor = fetchTerrainColor(coord);\n\
+        \n";
+
+    switch (texturingMode)
+    {
+        case 0:
+            vertexShaderMain+=fetchTerrainColorAsConstant;
+            break;
+        case 1:
+            vertexShaderMain+=fetchTerrainColorFromColorMap;
+            break;
+        case 2:
+            vertexShaderMain+=fetchTerrainColorFromTexture;
+            break;
+        default:
+            vertexShaderMain+="vec4 terrainColor(1.0, 0.0, 0.0, 1.0);";
+    }
+
+    vertexShaderMain+=
+        "\
         ambient *= terrainColor;\n\
         diffuse *= terrainColor;\n";
 
@@ -591,7 +608,13 @@ void LightingShader::compileShader()
     glUniform1i(uniform, 1);
     uniform = glGetUniformLocationARB(programObject, "colorTex");
     glUniform1i(uniform, 2);
+    uniform = glGetUniformLocationARB(programObject, "colorMap");
+    glUniform1i(uniform, 3);
     //get the location of the other uniforms
+    colorMapElevationInvRangeUniform =
+        glGetUniformLocationARB(programObject, "colorMapElevationInvRange");
+    minColorMapElevationUniform =
+        glGetUniformLocationARB(programObject, "minColorMapElevation");
     textureStepUniform  =glGetUniformLocationARB(programObject,"texStep");
     verticalScaleUniform=glGetUniformLocationARB(programObject,"verticalScale");
     centroidUniform     =glGetUniformLocationARB(programObject,"center");

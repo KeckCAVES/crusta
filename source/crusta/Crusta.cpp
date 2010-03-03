@@ -1,6 +1,7 @@
 #include <crusta/Crusta.h>
 
 #include <GL/Extensions/GLEXTFramebufferObject.h>
+#include <GL/GLColorMap.h>
 #include <GL/GLContextData.h>
 #include <GL/GLTransformationWrappers.h>
 #include <Vrui/Vrui.h>
@@ -42,11 +43,11 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
     that are initialized with 0. Thus if crustaFrameNumber starts at 0, the
     init code wouldn't be able to retrieve any cache buffers since all the
     buffers of the current and previous frame are locked */
-    currentFrame      = 2;
-    lastScaleFrame    = 2;
-    isTexturedTerrain = true;
-    verticalScale     = 0.0;
-    newVerticalScale  = 1.0;
+    currentFrame     = 2;
+    lastScaleFrame   = 2;
+    texturingMode    = 2;
+    verticalScale    = 0.0;
+    newVerticalScale = 1.0;
     bufSize[0] = bufSize[1] = Math::Constants<int>::max;
 
     Triacontahedron polyhedron(SPHEROID_RADIUS);
@@ -69,6 +70,13 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
         globalElevationRange[1] = std::max(globalElevationRange[1],
                                            Scalar(root.elevationRange[1]));
     }
+
+    colorMapDirty = true;
+    static const int numColorMapEntries = 1024;
+    GLColorMap::Color dummyColorMap[numColorMapEntries];
+    colorMap = new GLColorMap(numColorMapEntries, dummyColorMap,
+                              GLdouble(globalElevationRange[0]),
+                              GLdouble(globalElevationRange[1]));
 }
 
 void Crusta::
@@ -429,9 +437,9 @@ getLastScaleFrame() const
 }
 
 void Crusta::
-useTexturedTerrain(bool useTex)
+setTexturingMode(int mode)
 {
-    isTexturedTerrain = useTex;
+    texturingMode = mode;
 }
 
 void Crusta::
@@ -444,6 +452,27 @@ double Crusta::
 getVerticalScale() const
 {
     return verticalScale;
+}
+
+
+GLColorMap* Crusta::
+getColorMap()
+{
+    return colorMap;
+}
+
+void Crusta::
+touchColorMap()
+{
+    colorMapDirty = true;
+}
+
+void Crusta::
+uploadColorMap(GLuint colorTex)
+{
+    glBindTexture(GL_TEXTURE_1D, colorTex);
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, colorMap->getNumEntries(), 0,
+                 GL_RGBA, GL_FLOAT, colorMap->getColors());
 }
 
 Point3 Crusta::
@@ -540,9 +569,26 @@ display(GLContextData& contextData)
 
     GlData* glData = contextData.retrieveDataItem<GlData>(this);
 
-    glData->terrainShader.useTextureForColor(isTexturedTerrain);
+    //upload a modified color map
+    if (colorMapDirty)
+    {
+        uploadColorMap(glData->colorMap);
+        colorMapDirty = false;
+    }
+
+    GLint activeTexture;
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_1D, glData->colorMap);
+
+    glData->terrainShader.setTexturingMode(texturingMode);
     glData->terrainShader.update();
     glData->terrainShader.enable();
+    glData->terrainShader.setMinColorMapElevation(
+        colorMap->getScalarRangeMin());
+    glData->terrainShader.setColorMapElevationInvRange(
+        1.0 / (colorMap->getScalarRangeMax()-colorMap->getScalarRangeMin()));
     glData->terrainShader.setTextureStep(TILE_TEXTURE_COORD_STEP);
     glData->terrainShader.setVerticalScale(getVerticalScale());
 
@@ -558,8 +604,25 @@ display(GLContextData& contextData)
     //let the map manager draw all the mapping stuff
     mapMan->display(contextData);
     CHECK_GLA
+
+    glActiveTexture(activeTexture);
 }
 
+
+Crusta::GlData::
+GlData()
+{
+    glGenTextures(1, &colorMap);
+    glBindTexture(GL_TEXTURE_1D, colorMap);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+}
+
+Crusta::GlData::
+~GlData()
+{
+    glDeleteTextures(1, &colorMap);
+}
 
 void Crusta::
 confirmActives()
