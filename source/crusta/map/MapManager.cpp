@@ -19,6 +19,7 @@
 #include <GLMotif/ScrolledListBox.h>
 #include <GLMotif/SubMenu.h>
 #include <GLMotif/WidgetManager.h>
+#include <Misc/CreateNumberedFileName.h>
 #include <Vrui/Vrui.h>
 
 #include <crusta/map/MapTool.h>
@@ -144,13 +145,9 @@ load(const char* filename)
 }
 
 void MapManager::
-save(const char* filename, const char* format)
+save(const char* fileName, const char* format)
 {
 ///\todo change all the std::cout to throwing exceptions
-    std::string fullName(filename);
-    fullName.append(".");
-    fullName.append(format);
-
     //initialize the output driver
     OGRSFDriver* driver = OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(
         format);
@@ -162,7 +159,7 @@ save(const char* filename, const char* format)
     }
 
     //create the output data sink
-    OGRDataSource* source = driver->CreateDataSource(fullName.c_str());
+    OGRDataSource* source = driver->CreateDataSource(fileName);
     if (source == NULL)
     {
         std::cout << "MapManager::Save: Error creating file: " <<
@@ -562,8 +559,12 @@ loadMapCallback(GLMotif::Button::SelectCallbackData* cbData)
 void MapManager::
 saveMapCallback(GLMotif::Button::SelectCallbackData* cbData)
 {
-    int selected = mapOutputFormat->getSelectedItem();
-    save("Crusta_Map", mapOutputFormat->getItem(selected));
+    int selected       = mapOutputFormat->getSelectedItem();
+    const char* format = mapOutputFormat->getItem(selected);
+    std::string fileName("Crusta_Map.");
+    fileName.append(format);
+    fileName = Misc::createNumberedFileName(fileName, 4);
+    save(fileName.c_str(), format);
 }
 
 void MapManager::
