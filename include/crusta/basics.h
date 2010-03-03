@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <vector>
 
+#include <Geometry/HitResult.h>
+#include <Geometry/Ray.h>
 #include <Geometry/Point.h>
 #include <Geometry/Vector.h>
 
@@ -27,6 +29,10 @@ if ((a)<=CRUSTA_BEBUG_LEVEL) fprintf(CRUSTA_DEBUG_OUTPUT_DESTINATION, b, ## args
 #else
 #define DEBUG_OUT(a, b, args...)
 #endif
+
+#if DEBUG_INTERSECT_CRAP
+extern bool DEBUG_INTERSECT;
+#endif //DEBUG_INTERSECT_CRAP
 
 typedef size_t		uint;
 
@@ -51,6 +57,9 @@ typedef Geometry::Vector<Scalar, 3> Vector3;
 typedef std::vector<Vector3>        Vector3s;
 
 typedef Geometry::Vector<float, 4>  Color;
+
+typedef Geometry::HitResult<Scalar> HitResult;
+typedef Geometry::Ray<Scalar, 3>    Ray;
 
 
 static const uint   TILE_RESOLUTION          = 65;

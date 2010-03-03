@@ -16,7 +16,8 @@ SurfaceTool::Factory* SurfaceTool::factory = NULL;
 SurfaceTool::
 SurfaceTool(const Vrui::ToolFactory* iFactory,
             const Vrui::ToolInputAssignment& inputAssignment) :
-    Vrui::TransformTool(iFactory, inputAssignment), CrustaComponent(NULL)
+    Vrui::TransformTool(iFactory, inputAssignment), CrustaComponent(NULL),
+    projectionFailed(true)
 {
 }
 
@@ -81,11 +82,28 @@ frame()
         Point3 surfacePoint;
         if (Vrui::isMaster())
         {
+#if 1
+            Ray ray(modelFrame.getOrigin(), modelFrame.getDirection(1));
+            HitResult hit = crusta->intersect(ray);
+            if (hit.isValid())
+            {
+                surfacePoint = ray(hit.getParameter());
+            }
+            else
+            {
+                transformedDevice->setTransformation(dev->getTransformation());
+                transformedDevice->setDeviceRayDirection(
+                    dev->getDeviceRayDirection());
+                projectionFailed = true;
+                return;
+            }
+#else
             surfacePoint = modelFrame.getOrigin();
             //snapping is done radially, no need to map to the unscaled globe
             surfacePoint = crusta->snapToSurface(surfacePoint);
             //the returned point is relative to the unscaled globe
             surfacePoint = crusta->mapToScaledGlobe(surfacePoint);
+#endif
 
 			if (Vrui::getMainPipe() != NULL)
                 Vrui::getMainPipe()->write<Point3>(surfacePoint);
@@ -100,44 +118,72 @@ frame()
         physicalFrame = Vrui::getNavigationTransformation() * modelFrame;
         transformedDevice->setTransformation(Vrui::TrackerState(
             physicalFrame.getTranslation(), physicalFrame.getRotation()));
+
+        projectionFailed = false;
     }
     else
     {
         transformedDevice->setTransformation(dev->getTransformation());
         transformedDevice->setDeviceRayDirection(dev->getDeviceRayDirection());
+        projectionFailed = true;
     }
 }
 
 void SurfaceTool::
 display(GLContextData& contextData) const
 {
-    Vrui::NavTransform original    = input.getDevice(0)->getTransformation();
     Vrui::NavTransform transformed = transformedDevice->getTransformation();
 
-    Point3 oPos = original.getOrigin();
-    Point3 tPos = transformed.getOrigin();
+    if (projectionFailed)
+    {
+        glPushAttrib(GL_ENABLE_BIT);
+        glDisable(GL_LIGHTING);
+        glDisable(GL_TEXTURE_2D);
 
-    //make sure that the line is always drawn
-    GLdouble depthRange[2];
-    glGetDoublev(GL_DEPTH_RANGE, depthRange);
-    glDepthRange(0.0, 0.0);
+        glColor3f(0.5f, 0.2f, 0.1f);
 
-    glPushAttrib(GL_ENABLE_BIT);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_TEXTURE_2D);
+        const Point3&  o = transformed.getOrigin();
+        Vector3 x        = 0.005*transformed.getDirection(0);
+        Vector3 z        = 0.005*transformed.getDirection(2);
 
-    if (Geometry::dist(oPos, tPos) < 1.0)
-        glColor3f(0.3f, 0.6f, 0.1f);
+        glBegin(GL_LINES);
+            glVertex3dv((o-x+z).getComponents());
+            glVertex3dv((o+x-z).getComponents());
+            glVertex3dv((o+x+z).getComponents());
+            glVertex3dv((o-x-z).getComponents());
+        glEnd();
+
+        glPopAttrib();
+    }
     else
-        glColor3f(0.3f, 0.0f, 0.0f);
+    {
+        Vrui::NavTransform original    = input.getDevice(0)->getTransformation();
 
-    glBegin(GL_LINES);
-        glVertex3dv(oPos.getComponents());
-        glVertex3dv(tPos.getComponents());
-    glEnd();
+        Point3 oPos = original.getOrigin();
+        Point3 tPos = transformed.getOrigin();
 
-    glPopAttrib();
-    glDepthRange(depthRange[0], depthRange[1]);
+        //make sure that the line is always drawn
+        GLdouble depthRange[2];
+        glGetDoublev(GL_DEPTH_RANGE, depthRange);
+        glDepthRange(0.0, 0.0);
+
+        glPushAttrib(GL_ENABLE_BIT);
+        glDisable(GL_LIGHTING);
+        glDisable(GL_TEXTURE_2D);
+
+        if (Geometry::dist(oPos, tPos) < 1.0)
+            glColor3f(0.3f, 0.6f, 0.1f);
+        else
+            glColor3f(0.3f, 0.0f, 0.0f);
+
+        glBegin(GL_LINES);
+            glVertex3dv(oPos.getComponents());
+            glVertex3dv(tPos.getComponents());
+        glEnd();
+
+        glPopAttrib();
+        glDepthRange(depthRange[0], depthRange[1]);
+    }
 }
 
 

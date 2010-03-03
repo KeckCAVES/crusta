@@ -26,6 +26,7 @@ public:
 
 private:
     static Factory* factory;
+    bool projectionFailed;
 
 //- Inherited from Vrui::Tool
 public:

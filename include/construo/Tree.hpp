@@ -5,7 +5,7 @@
 #include <construo/Converters.h>
 
 ///\todo remove
-#include <construo/Visualizer.h>
+#include <construo/ConstruoVisualizer.h>
 #include <iostream>
 
 BEGIN_CRUSTA
@@ -66,10 +66,9 @@ getKin(TreeNode*& kin, int offsets[2], bool loadMissing, int down, uint* kinO)
         *kinO = 0;
 
 if (debugGetKin) {
-Visualizer::show();
-Visualizer::clear();
-Visualizer::Floats target;
-target.resize(3);
+ConstruoVisualizer::show();
+ConstruoVisualizer::clear();
+Point3s target;
 Scope::Vertex v0(kin->scope.corners[1][0] - kin->scope.corners[0][0],
                  kin->scope.corners[1][1] - kin->scope.corners[0][1],
                  kin->scope.corners[1][2] - kin->scope.corners[0][2]);
@@ -82,10 +81,8 @@ kin->scope.corners[0][0] + s*(0.5+offsets[0])*v0[0] + s*(0.5+offsets[1])*v1[0],
 kin->scope.corners[0][1] + s*(0.5+offsets[0])*v0[1] + s*(0.5+offsets[1])*v1[1],
 kin->scope.corners[0][2] + s*(0.5+offsets[0])*v0[2] + s*(0.5+offsets[1])*v1[2]);
 Point tt = Converter::cartesianToSpherical(t);
-target[0] = tt[0];
-target[1] = 0.0;
-target[2] = tt[1];
-Visualizer::addPrimitive(GL_POINTS, target);
+target.resize(1, Point3(tt[0], 0.0, tt[1]));
+ConstruoVisualizer::addPrimitive(GL_POINTS, target);
 } //DEBUG_GETKIN
 
 //- walk up the tree until a parent node containing the requested location
@@ -95,8 +92,8 @@ Visualizer::addPrimitive(GL_POINTS, target);
            kinCoord[1]<0 || kinCoord[1]>=nodeSize)
     {
 if (debugGetKin) {
-Visualizer::addPrimitive(GL_LINES, kin->coverage);
-Visualizer::show();
+ConstruoVisualizer::addSphereCoverage(kin->coverage);
+ConstruoVisualizer::show();
 } //DEBUG_GETKIN
         //in case we have explicit neighgors we can move sideways directly
         if (kin->isExplicitNeighborNode)
@@ -179,8 +176,8 @@ Visualizer::show();
 
 //- walk down the tree honing in on the requested kin
 if (debugGetKin) {
-Visualizer::addPrimitive(GL_LINES, kin->coverage);
-Visualizer::show();
+ConstruoVisualizer::addSphereCoverage(kin->coverage);
+ConstruoVisualizer::show();
 } //DEBUG_GETKIN
     //use offsets to store the kinCoords now so that these can be returned
     offsets[0] = kinCoord[0];
@@ -209,8 +206,8 @@ Visualizer::show();
         //move on to the child node
         kin = &kin->children[childIndex];
 if (debugGetKin) {
-Visualizer::addPrimitive(GL_LINES, kin->coverage);
-Visualizer::show();
+ConstruoVisualizer::addSphereCoverage(kin->coverage);
+ConstruoVisualizer::show();
 } //DEBUG_GETKIN
     }
 
@@ -393,7 +390,7 @@ float* curVert = verts;
                 *curVert = scv[(j+k)%num][1]; ++curVert;
             }
         }
-        Visualizer::show(GL_POINTS, (i+1)*16*2*3, verts);
+        ConstruoVisualizer::show(GL_POINTS, (i+1)*16*2*3, verts);
     }
 #else
 for (uint i=0; i<numPatches; ++i)
@@ -416,7 +413,7 @@ for (uint i=0; i<numPatches; ++i)
         *curVert = baseNodes[i].scope.corners[0][k];
 }
 #endif
-Visualizer::show(GL_LINES, numVerts, verts);
+ConstruoVisualizer::show(GL_LINES, numVerts, verts);
 #endif
 }
 

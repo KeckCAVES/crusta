@@ -38,6 +38,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/ColorTextureSpecs.h
     ../include/crusta/Crusta.h
     ../include/crusta/CrustaComponent.h
+    ../include/crusta/CrustaVisualizer.h
     ../include/crusta/DataManager.h
     ../include/crusta/DemSpecs.h
     ../include/crusta/Ellipsoid.h
@@ -66,16 +67,21 @@ add_library(CrustaCore SHARED
     ../include/crusta/Refinement.hpp
     ../include/crusta/Scope.h
     ../include/crusta/Scope.hpp
+    ../include/crusta/Section.h
+    ../include/crusta/Sphere.h
     ../include/crusta/SurfaceTool.h
     ../include/crusta/Tool.h
     ../include/crusta/TreeIndex.h
     ../include/crusta/Triacontahedron.h
+    ../include/crusta/Triangle.h
     ../include/crusta/ViewLod.h
     ../include/crusta/VisibilityEvaluator.h
+    ../include/crusta/Visualizer.h
 
     ../source/crusta/CacheRequest.cpp
     ../source/crusta/ColorTextureSpecs.cpp
     ../source/crusta/Crusta.cpp
+    ../source/crusta/CrustaVisualizer.cpp
     ../source/crusta/DataManager.cpp
     ../source/crusta/DemSpecs.cpp
     ../source/crusta/FocusViewEvaluator.cpp
@@ -92,11 +98,14 @@ add_library(CrustaCore SHARED
     ../source/crusta/QuadNodeData.cpp
     ../source/crusta/QuadTerrain.cpp
     ../source/crusta/Scope.cpp
+    ../source/crusta/Sphere.cpp
+    ../source/crusta/Section.cpp
     ../source/crusta/SurfaceTool.cpp
     ../source/crusta/Tool.cpp
     ../source/crusta/TreeIndex.cpp
     ../source/crusta/Triacontahedron.cpp
     ../source/crusta/ViewLod.cpp
+    ../source/crusta/Visualizer.cpp
 )
 
 vrui_set_target_properties(CrustaCore)
@@ -143,6 +152,7 @@ add_executable(construo
     ../include/construo/ArcInfoBinaryGridImageFile.h
     ../include/construo/Builder.h
     ../include/construo/Builder.hpp
+    ../include/construo/ConstruoVisualizer.h
     ../include/construo/Converters.h
     ../include/construo/DynamicFilter.h
     ../include/construo/Filter.h
@@ -168,10 +178,10 @@ add_executable(construo
     ../include/construo/Tree.h
     ../include/construo/Tree.hpp
     ../include/construo/UtmTransform.h
-    ../include/construo/Visualizer.h
 
     ../source/construo/ArcInfoBinaryGridImageFile.cpp
     ../source/construo/Construo.cpp
+    ../source/construo/ConstruoVisualizer.cpp
     ../source/construo/Filter.cpp
     ../source/construo/GdalTransform.cpp
     ../source/construo/GdalImageFile.cpp
@@ -183,7 +193,6 @@ add_executable(construo
     ../source/construo/TpmFile.cpp
     ../source/construo/TpmImageFile.cpp
     ../source/construo/UtmTransform.cpp
-    ../source/construo/Visualizer.cpp
 )
 
 #cmake fraking sucks if you don't follow their directory structure!!!!

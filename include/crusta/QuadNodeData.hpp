@@ -21,6 +21,13 @@ getData()
 }
 
 template <typename NodeDataType>
+const NodeDataType& CacheBuffer<NodeDataType>::
+getData() const
+{
+    return data;
+}
+
+template <typename NodeDataType>
 bool CacheBuffer<NodeDataType>::
 isCurrent(Crusta* crusta)
 {

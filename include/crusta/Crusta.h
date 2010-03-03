@@ -36,9 +36,12 @@ public:
 ///\todo fix this API. potentially deprecate
     /** query the height of the surface closest to the query point */
     double getHeight(double x, double y, double z);
+///\todo potentially deprecate
     /** snap the given cartesian point to the surface of the terrain (at an
         optional offset) */
     Point3 snapToSurface(const Point3& pos, Scalar offset=Scalar(0));
+    /** intersect a ray with the crusta globe */
+    HitResult intersect(const Ray& ray) const;
 
     const FrameNumber& getCurrentFrame()   const;
     const FrameNumber& getLastScaleFrame() const;
@@ -98,10 +101,10 @@ protected:
     /** should the terrain rendering be using textures or not */
     bool isTexturedTerrain;
     /** the vertical scale to be applied to all surface elevations */
-    double verticalScale;
+    Scalar verticalScale;
     /** the vertical scale that has been externally set. Buffers the scales
         changes up to the next frame call */
-    double newVerticalScale;
+    Scalar newVerticalScale;
 
     /** the cache management component */
     Cache* cache;
@@ -119,6 +122,8 @@ protected:
     /** guarantee serial manipulation of the set of active nodes */
     Threads::Mutex activesMutex;
 
+    /** the global height range */
+    Scalar globalElevationRange[2];
     /** the size of the current depth buffer */
     int bufSize[2];
 

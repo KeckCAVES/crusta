@@ -17,7 +17,7 @@
 #if DEBUG_FLAGANCESTORSFORUPDATE
 static float flagAncestorsForUpdateColor[3];
 #endif //DEBUG_FLAGANCESTORSFORUPDATE
-#include <construo/Visualizer.h>
+#include <construo/ConstruoVisualizer.h>
 
 BEGIN_CRUSTA
 
@@ -144,8 +144,8 @@ flagAncestorsForUpdate(Node* node)
     while (node!=NULL && !node->mustBeUpdated)
     {
 #if DEBUG_FLAGANCESTORSFORUPDATE
-Visualizer::addPrimitive(GL_LINES, node->coverage, flagAncestorsForUpdateColor);
-Visualizer::show();
+ConstruoVisualizer::addPrimitive(GL_LINES, node->coverage, flagAncestorsForUpdateColor);
+ConstruoVisualizer::show();
 #endif //DEBUG_FLAGANCESTORSFORUPDATE
         node->mustBeUpdated = true;
         node = node->parent;
@@ -279,7 +279,7 @@ assert(p[0]>=0 && p[0]<=imgSize[0]-1 && p[1]>=0 && p[1]<=imgSize[1]-1);
                 rectBuffer, rectOrigin, at, rectSize, nodata, defaultValue);
 #endif
 #if DEBUG_SOURCEFINEST
-Visualizer::Floats scopeSample;
+ConstruoVisualizer::Floats scopeSample;
 scopeSample.resize(3);
 Point wp = imgPatch->transform->imageToWorld(Point(at[0], at[1]));
 scopeSample[0] = wp[0];
@@ -288,8 +288,8 @@ scopeSample[2] = wp[1];
 //static const float scopeSampleColor[3] = { 0.2f, 1.0f, 0.1f };
 float scopeSampleColor[3] = {
     (float)rand()/RAND_MAX, (float)rand()/RAND_MAX, (float)rand()/RAND_MAX };
-Visualizer::addPrimitive(GL_POINTS, scopeSample, scopeSampleColor);
-Visualizer::show();
+ConstruoVisualizer::addPrimitive(GL_POINTS, scopeSample, scopeSampleColor);
+ConstruoVisualizer::show();
 #endif //DEBUG_SOURCEFINEST
         }
         //clean up the temporary image uffer
@@ -309,8 +309,8 @@ Visualizer::show();
 #if 0
 {
 static const float color[3] = { 0.2f, 1.0f, 0.1f };
-Visualizer::addScopeRefinement(tileSize[0], scopeBuf, color);
-Visualizer::show();
+ConstruoVisualizer::addScopeRefinement(tileSize[0], scopeBuf, color);
+ConstruoVisualizer::show();
 }
 #endif
     node->data = NULL;
@@ -358,8 +358,8 @@ updateFiner(Node* node, Patch* imgPatch, Point::Scalar imgResolution)
 ///\todo remove
 #if DEBUG_SOURCEFINEST || 0
 static const float covColor[3] = { 0.1f, 0.4f, 0.6f };
-Visualizer::addPrimitive(GL_LINES, node->coverage, covColor);
-Visualizer::show();
+ConstruoVisualizer::addPrimitive(GL_LINES, node->coverage, covColor);
+ConstruoVisualizer::show();
 #endif
 
     //check for an overlap
@@ -381,7 +381,7 @@ Visualizer::show();
     }
 
     //this node has the appropriate resolution
-//Visualizer::show();
+//ConstruoVisualizer::show();
     sourceFinest(node, imgPatch, overlap);
     return node->treeIndex.level;
 }
@@ -391,10 +391,10 @@ int Builder<PixelParam, PolyhedronParam>::
 updateFinestLevels()
 {
 #if 0
-Visualizer::clear();
+ConstruoVisualizer::clear();
 for (int i=0; i<(int)patches.size(); ++i)
-    Visualizer::addPrimitive(GL_LINES, *(patches[i]->sphereCoverage));
-Visualizer::show();
+    ConstruoVisualizer::addPrimitive(GL_LINES, *(patches[i]->sphereCoverage));
+ConstruoVisualizer::show();
 #endif
 
     int depth = 0;
@@ -404,17 +404,17 @@ Visualizer::show();
     {
 ///\todo remove
 #if DEBUG_SOURCE_FINEST
-Visualizer::clear();
-Visualizer::addPrimitive(GL_LINES, *(patches[i]->sphereCoverage));
-Visualizer::peek();
+ConstruoVisualizer::clear();
+ConstruoVisualizer::addPrimitive(GL_LINES, *(patches[i]->sphereCoverage));
+ConstruoVisualizer::peek();
 #endif
 
 #if DEBUG_SOURCEFINEST_SHOW_TEXELS
 const int* size = patches[i]->image->getSize();
-Visualizer::Floats edges;
+ConstruoVisualizer::Floats edges;
 edges.resize(size[0]*size[1]*4*2*3);
 float* e = &edges[0];
-Visualizer::Floats centers;
+ConstruoVisualizer::Floats centers;
 centers.resize(size[0]*size[1]*3);
 float* c = &centers[0];
 
@@ -443,10 +443,10 @@ for (int y=0; y<size[1]; ++y)
 }
 
 static const float edgeColor[3] = { 0.9f, 0.6f, 0.2f };
-Visualizer::addPrimitive(GL_LINES, edges, edgeColor);
+ConstruoVisualizer::addPrimitive(GL_LINES, edges, edgeColor);
 static const float centerColor[3] = { 0.2f, 0.6f, 0.9f };
-Visualizer::addPrimitive(GL_POINTS, centers, centerColor);
-Visualizer::show();
+ConstruoVisualizer::addPrimitive(GL_POINTS, centers, centerColor);
+ConstruoVisualizer::show();
 #endif //show image pixels
 
         std::cout << "Adding source image " << i << " out of " << numPatches;
@@ -470,7 +470,7 @@ Visualizer::show();
             std::cout.flush();
 ///\todo this is debugging code to check tree consistency
 //verifyQuadtreeFile(&(*bIt));
-//Visualizer::show();
+//ConstruoVisualizer::show();
         }
         std::cout << " done" << std::endl;
     }
@@ -484,8 +484,8 @@ void Builder<PixelParam, PolyhedronParam>::
 prepareSubsamplingDomain(Node* node)
 {
 #if DEBUG_PREPARESUBSAMPLINGDOMAIN
-Visualizer::addPrimitive(GL_LINES, node->coverage);
-Visualizer::show();
+ConstruoVisualizer::addPrimitive(GL_LINES, node->coverage);
+ConstruoVisualizer::show();
 #endif //DEBUG_PREPARESUBSAMPLINGDOMAIN
 
     /* specify the order of lower-level nodes manually such that the inner nodes
@@ -511,8 +511,8 @@ Visualizer::show();
 #if DEBUG_PREPARESUBSAMPLINGDOMAIN
 const static float scopeRefColor[3] = { 0.3f, 0.8f, 0.3f };
 kin->scope.getRefinement(tileSize[0], scopeBuf);
-Visualizer::addScopeRefinement(tileSize[0], scopeBuf, scopeRefColor);
-Visualizer::show();
+ConstruoVisualizer::addScopeRefinement(tileSize[0], scopeBuf, scopeRefColor);
+ConstruoVisualizer::show();
 #endif //DEBUG_PREPARESUBSAMPLINGDOMAIN
 
     //- retrieve data as appropriate
@@ -757,8 +757,8 @@ updateCoarser(Node* node, int level)
 {
 #if DEBUG_PREPARESUBSAMPLINGDOMAIN
 static const float covColor[3] = { 0.1f, 0.4f, 0.6f };
-Visualizer::addPrimitive(GL_LINES, node->coverage, covColor);
-Visualizer::peek();
+ConstruoVisualizer::addPrimitive(GL_LINES, node->coverage, covColor);
+ConstruoVisualizer::peek();
 #endif
 
     //the nodes on the way must be flagged for update
@@ -814,9 +814,9 @@ updateCoarserLevels(int depth)
         for (typename Globe::BaseNodes::iterator it=globe->baseNodes.begin();
              it!=globe->baseNodes.end(); ++it)
         {
-//Visualizer::clear();
-//Visualizer::addPrimitive(GL_LINES, it->coverage);
-//Visualizer::show();
+//ConstruoVisualizer::clear();
+//ConstruoVisualizer::addPrimitive(GL_LINES, it->coverage);
+//ConstruoVisualizer::show();
             //traverse the tree and update the next level
             updateCoarser(&(*it), level);
 //verifyQuadtreeFile(&(*it));

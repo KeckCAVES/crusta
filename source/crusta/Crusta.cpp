@@ -10,11 +10,25 @@
 #include <crusta/map/MapManager.h>
 #include <crusta/QuadCache.h>
 #include <crusta/QuadTerrain.h>
+#include <crusta/Section.h>
+#include <crusta/Sphere.h>
 #include <crusta/SurfaceTool.h>
 #include <crusta/Tool.h>
 #include <crusta/Triacontahedron.h>
 
+
+#if DEBUG_INTERSECT_CRAP
+#define DEBUG_INTERSECT_PEEK 0
+#include <crusta/CrustaVisualizer.h>
+#endif //DEBUG_INTERSECT_CRAP
+
+
 BEGIN_CRUSTA
+
+#if DEBUG_INTERSECT_CRAP
+///\todo debug remove
+bool DEBUG_INTERSECT = false;
+#endif //DEBUG_INTERSECT_CRAP
 
 void Crusta::
 init(const std::string& demFileBase, const std::string& colorFileBase)
@@ -41,10 +55,20 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
     dataMan  = new DataManager(&polyhedron, demFileBase, colorFileBase, this);
     mapMan   = new MapManager(crustaTool, this);
 
+    globalElevationRange[0] =  Math::Constants<Scalar>::max;
+    globalElevationRange[1] = -Math::Constants<Scalar>::max;
+
     uint numPatches = polyhedron.getNumPatches();
     renderPatches.resize(numPatches);
     for (uint i=0; i<numPatches; ++i)
+    {
         renderPatches[i] = new QuadTerrain(i, polyhedron.getScope(i), this);
+        const QuadNodeMainData& root = renderPatches[i]->getRootNode();
+        globalElevationRange[0] = std::min(globalElevationRange[0],
+                                           Scalar(root.elevationRange[0]));
+        globalElevationRange[1] = std::max(globalElevationRange[1],
+                                           Scalar(root.elevationRange[1]));
+    }
 }
 
 void Crusta::
@@ -275,6 +299,122 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     toPos *= height;
     return Point3(toPos[0], toPos[1], toPos[2]);
 }
+
+HitResult Crusta::
+intersect(const Ray& ray) const
+{
+#if DEBUG_INTERSECT_CRAP
+if (DEBUG_INTERSECT) {
+CrustaVisualizer::clearAll();
+CrustaVisualizer::addRay(ray, 0);
+#if DEBUG_INTERSECT_PEEK
+CrustaVisualizer::peek();
+#endif //DEBUG_INTERSECT_PEEK
+//CrustaVisualizer::show("Ray");
+} //DEBUG_INTERSECT
+#endif //DEBUG_INTERSECT_CRAP
+
+    const Scalar& verticalScale = getVerticalScale();
+
+    //intersect the ray with the global outer shells to determine starting point
+    Sphere shell(Point3(0), SPHEROID_RADIUS +
+                 verticalScale*globalElevationRange[1]);
+    Scalar gin, gout;
+    bool intersects = shell.intersectRay(ray, gin, gout);
+
+    if (!intersects)
+        return HitResult();
+
+    shell.setRadius(SPHEROID_RADIUS + verticalScale*globalElevationRange[0]);
+    HitResult hit = shell.intersectRay(ray);
+    if (hit.isValid())
+        gout = hit.getParameter();
+
+#if DEBUG_INTERSECT_CRAP
+if (DEBUG_INTERSECT) {
+CrustaVisualizer::addHit(ray, HitResult(gin), 8);
+#if DEBUG_INTERSECT_PEEK
+CrustaVisualizer::peek();
+#endif //DEBUG_INTERSECT_PEEK
+} //DEBUG_INTERSECT
+#endif //DEBUG_INTERSECT_CRAP
+
+    //find the patch containing the entry point
+    Point3 entry = ray(gin);
+    const QuadTerrain*      patch = NULL;
+    const QuadNodeMainData* node  = NULL;
+    for (RenderPatches::const_iterator it=renderPatches.begin();
+         it!=renderPatches.end(); ++it)
+    {
+        node = &((*it)->getRootNode());
+        if (node->scope.contains(entry))
+        {
+            patch = *it;
+            break;
+        }
+    }
+
+    assert(patch!=NULL && node!=NULL);
+
+#if DEBUG_INTERSECT_CRAP
+if (DEBUG_INTERSECT) {
+{
+Point3s verts;
+verts.resize(2);
+verts[0] = ray(gin);
+verts[1] = ray(gout);
+CrustaVisualizer::addPrimitive(GL_POINTS, verts, 9, Color(0.2, 0.1, 0.9, 1.0));
+#if DEBUG_INTERSECT_PEEK
+CrustaVisualizer::peek();
+#endif //DEBUG_INTERSECT_PEEK
+}
+} //DEBUG_INTERSECT
+#endif //DEBUG_INTERSECT_CRAP
+
+    //traverse terrain patches until intersection or ray exit
+    Scalar tin           = gin;
+    Scalar tout          = 0;
+    int    sideIn        = -1;
+    int    sideOut       = -1;
+    int    mapSide[4][4] = {{2,3,0,1}, {1,2,3,0}, {0,1,2,3}, {3,0,1,2}};
+    Triacontahedron polyhedron(SPHEROID_RADIUS);
+#if DEBUG_INTERSECT_CRAP
+int patchesVisited = 0;
+#endif //DEBUG_INTERSECT_CRAP
+    while (true)
+    {
+        hit = patch->intersect(ray, tin, sideIn, tout, sideOut, gout);
+        if (hit.isValid())
+            break;
+
+        //move to the patch on the exit side
+        tin = tout;
+        if (tin > gout)
+            break;
+
+#if DEBUG_INTERSECT_CRAP
+const QuadTerrain* oldPatch = patch;
+#endif //DEBUG_INTERSECT_CRAP
+
+        Polyhedron::Connectivity neighbors[4];
+        polyhedron.getConnectivity(patch->getRootNode().index.patch, neighbors);
+        patch  = renderPatches[neighbors[sideOut][0]];
+        sideIn = mapSide[neighbors[sideOut][1]][sideOut];
+
+#if DEBUG_INTERSECT_CRAP
+Scalar E = 0.00001;
+int sides[4][2] = {{3,2}, {2,0}, {0,1}, {1,3}};
+const Scope& oldS = oldPatch->getRootNode().scope;
+const Scope& newS = patch->getRootNode().scope;
+assert(Geometry::dist(oldS.corners[sides[sideOut][0]], newS.corners[sides[sideIn][1]])<E);
+assert(Geometry::dist(oldS.corners[sides[sideOut][1]], newS.corners[sides[sideIn][0]])<E);
+std::cerr << "visited: " << ++patchesVisited << std::endl;
+#endif //DEBUG_INTERSECT_CRAP
+    }
+
+    return hit;
+}
+
 
 const FrameNumber& Crusta::
 getCurrentFrame() const
