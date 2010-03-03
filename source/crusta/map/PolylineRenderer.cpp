@@ -136,6 +136,7 @@ PolylineRenderer(Crusta* iCrusta) :
 void PolylineRenderer::
 display(GLContextData& contextData) const
 {
+    CHECK_GLA
     if (lines->size()<1)
         return;
 
@@ -183,6 +184,10 @@ display(GLContextData& contextData) const
 
     for (int i=0; i<numLines; ++i)
     {
+        const Point3s& cps = controlPoints[i];
+        if (cps.size() < 1)
+            continue;
+
         glPushMatrix();
         Vrui::Vector centroidTranslation(centroids[i][0], centroids[i][1],
                                          centroids[i][2]);
@@ -191,10 +196,6 @@ display(GLContextData& contextData) const
         nav *= Vrui::NavTransform::translate(centroidTranslation);
         glLoadMatrix(nav);
         
-        const Point3s& cps = controlPoints[i];
-        if (cps.size() < 1)
-            continue;
-
         //draw visible lines
         glDepthFunc(GL_LEQUAL);
         glLineWidth(2.0);
@@ -224,10 +225,12 @@ display(GLContextData& contextData) const
         glEnd();
 
         glPopMatrix();
+        CHECK_GLA
     }
 
     glPopAttrib();
     glActiveTexture(activeTexture);
+    CHECK_GLA
 #else
     GLint activeTexture;
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
