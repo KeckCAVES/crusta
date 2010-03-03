@@ -353,9 +353,9 @@ openSymbolsGroupCallback(GLMotif::Button::SelectCallbackData* cbData)
 }
 
 void MapManager::
-symbolChangedCallback(GLMotif::ListBox::ValueChangedCallbackData* cbData)
+symbolChangedCallback(GLMotif::ListBox::ItemSelectedCallbackData* cbData)
 {
-    const char* symbolName = cbData->listBox->getItem(cbData->newSelectedItem);
+    const char* symbolName = cbData->listBox->getItem(cbData->selectedItem);
     int symbolId           = symbolNameMap[symbolName];
     activeSymbol           = symbolMap[symbolId];
 
@@ -481,7 +481,7 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
                 (token + "List").c_str(), groupRoot,
                 GLMotif::ListBox::ALWAYS_ONE, 50, 15);
             symbolsGroup->showHorizontalScrollBar(true);
-            symbolsGroup->getListBox()->getValueChangedCallbacks().add(
+            symbolsGroup->getListBox()->getItemSelectedCallbacks().add(
                 this, &MapManager::symbolChangedCallback);
 
             GLMotif::Button* close = new GLMotif::Button(

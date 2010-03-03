@@ -72,7 +72,7 @@ public:
     void addMenuEntry(GLMotif::Menu* mainMenu);
     void openSymbolsGroupCallback(GLMotif::Button::SelectCallbackData* cbData);
     void symbolChangedCallback(
-        GLMotif::ListBox::ValueChangedCallbackData* cbData);
+        GLMotif::ListBox::ItemSelectedCallbackData* cbData);
     void closeSymbolsGroupCallback(GLMotif::Button::SelectCallbackData* cbData);
 
     static const int BAD_TOOLID = -1;
