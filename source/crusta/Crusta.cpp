@@ -69,6 +69,10 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
         globalElevationRange[1] = std::max(globalElevationRange[1],
                                            Scalar(root.elevationRange[1]));
     }
+/**\todo For the ray-casting we actually need min/max for the root.
+    HUGE HACK, set ranges here to some defaults */
+globalElevationRange[0] = -8000.0;
+globalElevationRange[1] = 11000.0;
 }
 
 void Crusta::

@@ -30,6 +30,7 @@ if ((a)<=CRUSTA_BEBUG_LEVEL) fprintf(CRUSTA_DEBUG_OUTPUT_DESTINATION, b, ## args
 #define DEBUG_OUT(a, b, args...)
 #endif
 
+#define DEBUG_INTERSECT_CRAP 0
 #if DEBUG_INTERSECT_CRAP
 extern bool DEBUG_INTERSECT;
 #endif //DEBUG_INTERSECT_CRAP

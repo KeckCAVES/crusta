@@ -83,7 +83,11 @@ frame()
         if (Vrui::isMaster())
         {
 #if 1
-            Ray ray(modelFrame.getOrigin(), modelFrame.getDirection(1));
+            Vrui::Vector rayDir = dev->getRayDirection();
+            rayDir = Vrui::getInverseNavigationTransformation().transform(
+                rayDir);
+
+            Ray ray(modelFrame.getOrigin(), rayDir);
             HitResult hit = crusta->intersect(ray);
             if (hit.isValid())
             {
@@ -125,7 +129,6 @@ frame()
     {
         transformedDevice->setTransformation(dev->getTransformation());
         transformedDevice->setDeviceRayDirection(dev->getDeviceRayDirection());
-        projectionFailed = true;
     }
 }
 
@@ -136,15 +139,20 @@ display(GLContextData& contextData) const
 
     if (projectionFailed)
     {
-        glPushAttrib(GL_ENABLE_BIT);
+///\todo look at ScreenLocatorTool to see how to better display this
+        glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT);
         glDisable(GL_LIGHTING);
         glDisable(GL_TEXTURE_2D);
 
+        glLineWidth(3.0);
         glColor3f(0.5f, 0.2f, 0.1f);
 
-        const Point3&  o = transformed.getOrigin();
-        Vector3 x        = 0.005*transformed.getDirection(0);
-        Vector3 z        = 0.005*transformed.getDirection(2);
+        Point3 o = transformed.getOrigin();
+        //slightly offset the origin (mouse on near plane)
+        o += 0.001 * transformedDevice->getRayDirection();
+
+        Vector3 x = 0.005*transformed.getDirection(0);
+        Vector3 z = 0.005*transformed.getDirection(2);
 
         glBegin(GL_LINES);
             glVertex3dv((o-x+z).getComponents());
@@ -184,6 +192,16 @@ display(GLContextData& contextData) const
         glPopAttrib();
         glDepthRange(depthRange[0], depthRange[1]);
     }
+}
+
+
+void SurfaceTool::
+buttonCallback(int deviceIndex, int deviceButtonIndex,
+               Vrui::InputDevice::ButtonCallbackData* cbData)
+{
+    // disable any button callback if the projection has failed.
+    if (!projectionFailed)
+        TransformTool::buttonCallback(deviceIndex, deviceButtonIndex, cbData);
 }
 
 

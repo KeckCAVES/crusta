@@ -20,7 +20,7 @@
 #include <crusta/Sphere.h>
 
 #if DEBUG_INTERSECT_CRAP
-#define DEBUG_INTERSECT_SIDES 0
+#define DEBUG_INTERSECT_SIDES 1
 #define DEBUG_INTERSECT_PEEK 0
 #include <crusta/CrustaVisualizer.h>
 #endif //DEBUG_INTERSECT_CRAP
@@ -238,6 +238,24 @@ if (sin!=-1)
     CrustaVisualizer::addPrimitive(GL_LINES, verts, -1, Color(0.4, 0.7, 0.8, 1.0));
 //    CrustaVisualizer::addPrimitive(GL_LINES, verts, 6, Color(0.4, 0.7, 0.8, 1.0));
 }
+//construct the corners of the current cell
+int tileRes = TILE_RESOLUTION;
+QuadNodeMainData::Vertex* cellV = node.geometry;
+const QuadNodeMainData::Vertex::Position* positions[4] = {
+    &(cellV->position), &((cellV+tileRes-1)->position),
+    &((cellV+(tileRes-1)*tileRes)->position), &((cellV+(tileRes-1)*tileRes + tileRes-1)->position) };
+Vector3 cellCorners[4];
+for (int i=0; i<4; ++i)
+{
+    for (int j=0; j<3; ++j)
+        cellCorners[i][j] = (*(positions[i]))[j] + node.centroid[j];
+    Vector3 extrude(cellCorners[i]);
+    extrude.normalize();
+    extrude *= node.elevationRange[0] * crusta->getVerticalScale();
+    cellCorners[i] += extrude;
+}
+CrustaVisualizer::addTriangle(Triangle(cellCorners[0], cellCorners[3], cellCorners[2]), 4, Color(0.9, 0.6, 0.7, 1.0));
+CrustaVisualizer::addTriangle(Triangle(cellCorners[0], cellCorners[1], cellCorners[3]), 3, Color(0.7, 0.6, 0.9, 1.0));
 #if DEBUG_INTERSECT_PEEK
 CrustaVisualizer::peek();
 #endif //DEBUG_INTERSECT_PEEK
@@ -252,12 +270,14 @@ CrustaVisualizer::show("Entered new node");
         {
             Section section(*(corners[i][0]), *(corners[i][1]));
 #if DEBUG_INTERSECT_CRAP
+if (DEBUG_INTERSECT) {
 #if DEBUG_INTERSECT_SIDES
 CrustaVisualizer::addSection(section, 5);
 #if DEBUG_INTERSECT_PEEK
 CrustaVisualizer::peek();
 #endif //DEBUG_INTERSECT_PEEK
 #endif //DEBUG_INTERSECT_SIDES
+} //DEBUG_INTERSECT
 #endif //DEBUG_INTERSECT_CRAP
             HitResult hit = section.intersectRay(ray);
             Scalar hitParam  = hit.getParameter();
@@ -278,9 +298,11 @@ CrustaVisualizer::show("Exit search on node");
         }
     }
 #if DEBUG_INTERSECT_CRAP
+if (DEBUG_INTERSECT) {
 #if DEBUG_INTERSECT_SIDES
 CrustaVisualizer::clear(5);
 #endif //DEBUG_INTERSECT_SIDES
+} //DEBUG_INTERSECT
 #endif //DEBUG_INTERSECT_CRAP
 
     const Scalar& verticalScale = crusta->getVerticalScale();
@@ -462,7 +484,8 @@ CrustaVisualizer::show("Traversing leaf node");
 
 //- locate the cell intersected on the boundary
     int tileRes = TILE_RESOLUTION;
-    int cellX, cellY;
+    int cellX = 0;
+    int cellY = 0;
     if (side == -1)
     {
         Point3 pos = ray(param);
@@ -502,6 +525,7 @@ CrustaVisualizer::show("Traversing leaf node");
             }
         }
 #if DEBUG_INTERSECT_CRAP
+if (DEBUG_INTERSECT) {
 //** verify cell
 {
 Scalar verticalScale = crusta->getVerticalScale();
@@ -549,8 +573,13 @@ for (int i=0; i<4; ++i)
     }
     else
     {
-        if (!hit.isValid() || Math::abs(hitParam-param)>Scalar(0.00001))
+        if (!hit.isValid() || Math::abs(hitParam-param)>Scalar(0.0001))
+        {
+            std::cerr << "hit is: " << hit.isValid() << std::endl <<
+                      "hitParam " << hitParam << " param " << param <<
+                      " diff " << Math::abs(hitParam-param) << std::endl;
             badEntry = true;
+        }
     }
 }
 if (badEntry || newParam == Math::Constants<Scalar>::max)
@@ -565,6 +594,7 @@ if (badEntry || newParam == Math::Constants<Scalar>::max)
     CrustaVisualizer::show("Bad cell entry");
 }
 }
+} //DEBUG_INTERSECT
 #endif //DEBUG_INTERSECT_CRAP
     }
     else
@@ -594,14 +624,16 @@ CrustaVisualizer::show("Busted Entry");
 
         switch (side)
         {
-            case 0: cellX = edgeIndex; cellY = tileRes-2; break;
-            case 1: cellX = 0;         cellY = edgeIndex; break;
-            case 2: cellX = edgeIndex; cellY = 0;         break;
-            case 3: cellX = tileRes-2; cellY = edgeIndex; break;
+            case 0:  cellX = edgeIndex; cellY = tileRes-2; break;
+            case 1:  cellX = 0;         cellY = edgeIndex; break;
+            case 2:  cellX = edgeIndex; cellY = 0;         break;
+            case 3:  cellX = tileRes-2; cellY = edgeIndex; break;
+            default: assert(false);
         }
 
 #if DEBUG_INTERSECT_CRAP
 //** verify cell
+if (DEBUG_INTERSECT) {
 {
 Scalar verticalScale = crusta->getVerticalScale();
 int offset = cellY*tileRes + cellX;
@@ -648,8 +680,13 @@ for (int i=0; i<4; ++i)
     }
     else
     {
-        if (!hit.isValid() || Math::abs(hitParam-param)>Scalar(0.00001))
+        if (!hit.isValid() || Math::abs(hitParam-param)>Scalar(0.0001))
+        {
+            std::cerr << "hit is: " << hit.isValid() << std::endl <<
+                      "hitParam " << hitParam << " param " << param <<
+                      " diff " << Math::abs(hitParam-param) << std::endl;
             badEntry = true;
+        }
     }
 }
 if (badEntry || newParam == Math::Constants<Scalar>::max)
@@ -672,6 +709,7 @@ if (badEntry || newParam == Math::Constants<Scalar>::max)
     CrustaVisualizer::show("Bad cell entry");
 }
 }
+} //DEBUG_INTERSECT
 #endif //DEBUG_INTERSECT_CRAP
     }
 
@@ -793,6 +831,7 @@ CrustaVisualizer::show("Exit search on cell");
         if (param == Math::Constants<Scalar>::max)
         {
 #if DEBUG_INTERSECT_CRAP
+if (DEBUG_INTERSECT) {
 CrustaVisualizer::addScope(leaf.scope);
 CrustaVisualizer::addRay(ray);
 CrustaVisualizer::addHit(ray, HitResult(oldParam));
@@ -807,7 +846,8 @@ else
     CrustaVisualizer::addSection(Section(*(segments[i][0]), *(segments[i][1])));
 }
 std::cerr << "traversedCells: " << traversedCells << std::endl;
-CrustaVisualizer::show("Early exit Cell");
+//CrustaVisualizer::show("Early exit Cell");
+} //DEBUG_INTERSECT
 #endif //DEBUG_INTERSECT_CRAP
 
             return HitResult();
