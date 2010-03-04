@@ -49,6 +49,12 @@ vec3 unproject(in vec2 fragCoord)\n\
     return tmp.xyz * tmp.w;\n\
 }\n\
 \n\
+vec4 getControlPoint(in float coord)\n\
+{\n\
+    vec4 ret = texture1D(controlPointTex, coord);\n\
+    return ret;\n\
+}\n\
+\n\
 void main()\n\
 {\n\
     vec3 pos = unproject(gl_FragCoord.xy);\n\
@@ -56,14 +62,14 @@ void main()\n\
     //walk all the line segments and process their contribution\n\
     vec4 color      = vec4(0.0, 0.0, 0.0, 0.0);\n\
     float coord     = lineStartCoord;\n\
-    vec4 startCP    = texture1D(controlPointTex, coord);\n\
+    vec4 startCP    = getControlPoint(coord);\n\
 \n\
     vec4 endCP = vec4(0.0);\n\
     for (int i=0; i<numSegments; ++i, startCP=endCP, coord+=lineCoordStep)\n\
     {\n\
         vec3 toPos = pos - startCP.xyz;\n\
 \n\
-        endCP           = texture1D(controlPointTex, coord+lineCoordStep);\n\
+        endCP           = getControlPoint(coord+lineCoordStep);\n\
         vec3 startToEnd = endCP.xyz - startCP.xyz;\n\
 \n\
         //compute the u coordinate along the segment\n\
@@ -127,6 +133,15 @@ display(GLContextData& contextData) const
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+        const Point3f& centroid = lines->front()->getCentroid();
+
+        glPushMatrix();
+        Vrui::Vector centroidTranslation(centroid[0], centroid[1], centroid[2]);
+        Vrui::NavTransform nav =
+            Vrui::getDisplayState(contextData).modelviewNavigational;
+        nav *= Vrui::NavTransform::translate(centroidTranslation);
+        glLoadMatrix(nav);
+
         glData->shader.useProgram();
 
         GLint viewport[4];
@@ -151,6 +166,9 @@ display(GLContextData& contextData) const
         glEnd();
 
         glData->shader.disablePrograms();
+
+        glPopMatrix();
+        CHECK_GLA
     }
 
     glActiveTexture(GL_TEXTURE0);
@@ -415,7 +433,8 @@ readDepthBuffer(GlData* glData) const
 int PolylineRenderer::
 prepareLineData(GlData* glData) const
 {
-    const Point3s& lineCps = lines->front()->getControlPoints();
+    const Point3s&  lineCps    = lines->front()->getControlPoints();
+    const Point3fs& lineRelCps = lines->front()->getRelativeControlPoints();
 
     int numCPs = static_cast<int>(lineCps.size());
     if (numCPs<2)
@@ -441,9 +460,9 @@ prepareLineData(GlData* glData) const
         const Point3& nextP = lineCps[next];
 
         //first point of the segment
-        (*cp)[0] = curP[0];
-        (*cp)[1] = curP[1];
-        (*cp)[2] = curP[2];
+        (*cp)[0] = lineRelCps[cur][0];
+        (*cp)[1] = lineRelCps[cur][1];
+        (*cp)[2] = lineRelCps[cur][2];
         (*cp)[3] = length;
 
         curTan = Geometry::cross(Vector3(curP), Vector3(nextP));
@@ -458,9 +477,9 @@ prepareLineData(GlData* glData) const
     }
 
     //last control point
-    (*cp)[0] = lineCps.back()[0];
-    (*cp)[1] = lineCps.back()[1];
-    (*cp)[2] = lineCps.back()[2];
+    (*cp)[0] = lineRelCps.back()[0];
+    (*cp)[1] = lineRelCps.back()[1];
+    (*cp)[2] = lineRelCps.back()[2];
     (*cp)[3] = length;
 
     (*tan)[0] = curTan[0];

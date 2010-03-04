@@ -65,7 +65,7 @@ public:
     bool isValidSegment(const Id& id);
 
     virtual Id addControlPoint(const Point3& pos, End end=END_BACK);
-    bool moveControlPoint(const Id& id, const Point3& pos);
+    virtual bool moveControlPoint(const Id& id, const Point3& pos);
     virtual void removeControlPoint(const Id& id);
 
     Id previousControl(const Id& id);

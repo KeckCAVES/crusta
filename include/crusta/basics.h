@@ -53,7 +53,9 @@ typedef uint64      FrameNumber;
 typedef double      Scalar;
 
 typedef Geometry::Point<Scalar, 3>  Point3;
+typedef Geometry::Point<float, 3>   Point3f;
 typedef std::vector<Point3>         Point3s;
+typedef std::vector<Point3f>        Point3fs;
 typedef Geometry::Vector<Scalar, 3> Vector3;
 typedef std::vector<Vector3>        Vector3s;
 
