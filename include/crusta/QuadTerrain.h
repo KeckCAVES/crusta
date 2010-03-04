@@ -13,8 +13,6 @@
 #include <crusta/FrustumVisibility.h>
 #include <crusta/FocusViewEvaluator.h>
 
-#include <crusta/LightingShader.h>
-
 BEGIN_CRUSTA
 
 class VideoCache;
@@ -34,6 +32,13 @@ class QuadTerrain : public GLObject, public CrustaComponent
 public:
     QuadTerrain(uint8 patch, const Scope& scope, Crusta* iCrusta);
 
+    /** query the patch's root node data */
+    const QuadNodeMainData& getRootNode() const;
+
+    /** ray patch intersection */
+    HitResult intersect(const Ray& ray, Scalar tin, int sin,
+                        Scalar& tout, int& sout, const Scalar gout) const;
+
     /** diplay has several functions:
         1. evaluate the current active set (as it is view-dependent)
         2. issue requests for loading in new nodes (from splits or merges)
@@ -47,6 +52,14 @@ static bool displayDebuggingGrid;
 
 protected:
     struct GlData;
+
+    /** ray patch traversal function for inner nodes of the quadtree */
+    HitResult intersectNode(MainCacheBuffer* nodeBuf, const Ray& ray,
+                            Scalar tin, int sin, Scalar& tout, int& sout,
+                            const Scalar gout) const;
+    /** ray patch traversal function for leaf nodes of the quadtree */
+    HitResult intersectLeaf(const QuadNodeMainData& leaf, const Ray& ray,
+                            Scalar param, int side, const Scalar gout) const;
 
     /** make sure the required GL data for drawing is available. In case a
         buffer cannot be associated with the specified node (cache is full),
@@ -101,8 +114,6 @@ protected:
         GLuint vertexAttributeTemplate;
         /** defines a triangle-string triangulation of the vertices */
         GLuint indexTemplate;
-
-        LightingShader shader;
     };
 };
 

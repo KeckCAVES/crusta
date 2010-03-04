@@ -21,9 +21,24 @@ MapTool::Factory* MapTool::factory = NULL;
 MapTool::
 MapTool(const Vrui::ToolFactory* iFactory,
         const Vrui::ToolInputAssignment& inputAssignment) :
-    Tool(iFactory, inputAssignment), mode(MODE_IDLE), curShape(NULL),
-    prevPosition(Math::Constants<Point3::Scalar>::max)
+    Tool(iFactory, inputAssignment), toolId(MapManager::BAD_TOOLID),
+    mode(MODE_IDLE), prevPosition(Math::Constants<Point3::Scalar>::max)
 {
+}
+
+MapTool::
+~MapTool()
+{
+    MapManager* mapMan = crusta->getMapManager();
+
+    Shape*& curShape = mapMan->getActiveShape(toolId);
+    if (curShape != NULL)
+    {
+        unselectShape(curShape, curControl);
+        mapMan->updateActiveShape(toolId);
+    }
+
+    mapMan->unregisterMappingTool(toolId);
 }
 
 Vrui::ToolFactory* MapTool::
@@ -40,15 +55,64 @@ init(Vrui::ToolFactory* parent)
 }
 
 
-Shape* MapTool::
-createShape()
+void MapTool::
+createShape(Shape*& shape, Shape::Id& control, const Point3&)
 {
-    return NULL;
+    shape   = NULL;
+    control = Shape::BAD_ID;
 }
 void MapTool::
-deleteShape(Shape* shape)
+deleteShape(Shape*& shape, Shape::Id& control)
 {
+    shape   = NULL;
+    control = Shape::BAD_ID;
 }
+void MapTool::
+addControlPoint(Shape*& shape, Shape::Id& control, const Point3& pos)
+{
+    assert(shape != NULL);
+
+    //if we have no valid control then we want to extend the line
+    if (control == Shape::BAD_ID)
+    {
+        double distance;
+        Shape::End end;
+        shape->selectExtremity(pos, distance, end);
+
+        control = shape->addControlPoint(pos, end);
+    }
+    else
+    {
+        switch (control.type)
+        {
+///\todo for now only support refinement
+            case Shape::CONTROL_SEGMENT:
+                control = shape->refine(control, pos);
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+void MapTool::
+removeControl(Shape*& shape, Shape::Id& control)
+{
+    assert(shape != NULL);
+
+    //the default implementation can only remove control points
+    if (control!=Shape::BAD_ID && control.type==Shape::CONTROL_POINT)
+        shape->removeControlPoint(control);
+}
+
+void MapTool::
+unselectShape(Shape*& shape, Shape::Id& control)
+{
+    shape   = NULL;
+    control = Shape::BAD_ID;
+}
+
+
 MapTool::ShapePtrs MapTool::
 getShapes()
 {
@@ -67,33 +131,45 @@ getPosition()
 void MapTool::
 selectShape(const Point3& pos)
 {
-    curShape   = NULL;
-    curControl = Shape::BAD_ID;
+    MapManager* mapMan = crusta->getMapManager();
+    Shape*& curShape = mapMan->getActiveShape(toolId);
+    Shape*  oldShape = curShape;
 
     ShapePtrs shapes = getShapes();
 
     double threshold = 1.0 / Vrui::getNavigationTransformation().getScaling();
-    threshold       *= crusta->getMapManager()->getSelectDistance();
+    threshold       *= mapMan->getSelectDistance();
 
+    bool noShapeSelected = true;
     for (ShapePtrs::iterator it=shapes.begin(); it!=shapes.end(); ++it)
     {
         double distance;
         Shape::Id control = (*it)->select(pos, distance);
         if (control!=Shape::BAD_ID && distance<=threshold)
         {
-            curShape  = *it;
-            threshold = distance;
+            curShape        = *it;
+            threshold       = distance;
+            noShapeSelected = false;
         }
     }
+
+    if (noShapeSelected && curShape!=NULL)
+        unselectShape(curShape, curControl);
+
+    //inform the manager that the active shape has changed
+    if (curShape != oldShape)
+        mapMan->updateActiveShape(toolId);
 }
 
 void MapTool::
 selectControl(const Point3& pos)
 {
-    curControl = Shape::BAD_ID;
+    MapManager* mapMan = crusta->getMapManager();
+    Shape*& curShape   = mapMan->getActiveShape(toolId);
     assert(curShape != NULL);
 
-    MapManager* mapMan = crusta->getMapManager();
+    curControl = Shape::BAD_ID;
+
     double distance;
     Shape::Id control = curShape->select(pos, distance,
                                          mapMan->getPointSelectionBias());
@@ -114,6 +190,7 @@ addPointAtEnds(const Point3& pos)
 {
     double distance;
     Shape::End end;
+    Shape*& curShape = crusta->getMapManager()->getActiveShape(toolId);
     curShape->selectExtremity(pos, distance, end);
 
     curControl = curShape->addControlPoint(pos, end);
@@ -133,6 +210,7 @@ frame()
 {
     //handle motion
     Point3 pos = getPosition();
+    pos = crusta->mapToUnscaledGlobe(pos);
     if (pos == prevPosition)
         return;
 
@@ -140,7 +218,9 @@ frame()
     {
         case MODE_DRAGGING:
         {
+            Shape*& curShape = crusta->getMapManager()->getActiveShape(toolId);
             assert(curShape != NULL);
+///\todo defer moving the control point to specialized implementations
             if (!curShape->moveControlPoint(curControl, pos))
             {
                 curControl = Shape::BAD_ID;
@@ -151,7 +231,16 @@ frame()
 
         case MODE_SELECTING_CONTROL:
         {
-            selectControl(pos);
+            Shape*& curShape = crusta->getMapManager()->getActiveShape(toolId);
+            if (curShape == NULL)
+            {
+                curControl = Shape::BAD_ID;
+                mode       = MODE_IDLE;
+            }
+            else
+            {
+                selectControl(pos);
+            }
             break;
         }
 
@@ -169,7 +258,8 @@ frame()
 void MapTool::
 display(GLContextData& contextData) const
 {
-    if (curShape == NULL)
+    Shape*& curShape = crusta->getMapManager()->getActiveShape(toolId);
+    if (curShape==NULL || curShape->getControlPoints().size()<1)
         return;
 
     GLint activeTexture;
@@ -185,11 +275,14 @@ display(GLContextData& contextData) const
     glDepthRange(0.0, 0.0);
 
     //compute the centroids
-    Point3 centroid;
-    const Point3s& cps = curShape->getControlPoints();
-    int numPoints      = static_cast<int>(cps.size());
+    Point3 centroid(0);
+    const Point3s& controlPoints = curShape->getControlPoints();
+    int numPoints                = static_cast<int>(controlPoints.size());
+    Point3s cps;
+    cps.resize(numPoints);
     for (int i=0; i<numPoints; ++i)
     {
+        cps[i] = crusta->mapToScaledGlobe(controlPoints[i]);
         for (int j=0; j<3; ++j)
             centroid[j] += cps[i][j];
     }
@@ -228,7 +321,8 @@ display(GLContextData& contextData) const
         {
             case Shape::CONTROL_POINT:
             {
-                const Point3& p = curShape->getControlPoint(curControl);
+                Point3 p = curShape->getControlPoint(curControl);
+                p        = crusta->mapToScaledGlobe(p);
 
                 glColor3f(0.3f, 0.9f, 0.5f);
                 glBegin(GL_POINTS);
@@ -240,10 +334,12 @@ display(GLContextData& contextData) const
 
             case Shape::CONTROL_SEGMENT:
             {
-                Shape::Id si    = curShape->previousControl(curControl);
-                const Point3& s = curShape->getControlPoint(si);
-                Shape::Id ei    = curShape->nextControl(curControl);
-                const Point3& e = curShape->getControlPoint(ei);
+                Shape::Id si = curShape->previousControl(curControl);
+                Point3 s     = curShape->getControlPoint(si);
+                s            = crusta->mapToScaledGlobe(s);
+                Shape::Id ei = curShape->nextControl(curControl);
+                Point3 e     = curShape->getControlPoint(ei);
+                e            = crusta->mapToScaledGlobe(e);
 
                 glColor3f(0.3f, 0.9f, 0.5f);
                 glBegin(GL_LINES);
@@ -270,6 +366,9 @@ buttonCallback(int deviceIndex, int buttonIndex,
                Vrui::InputDevice::ButtonCallbackData* cbData)
 {
     Point3 pos = getPosition();
+    pos        = crusta->mapToUnscaledGlobe(pos);
+
+    Shape*& curShape = crusta->getMapManager()->getActiveShape(toolId);
 
     if (cbData->newButtonState)
     {
@@ -279,23 +378,16 @@ buttonCallback(int deviceIndex, int buttonIndex,
             {
                 case MODE_IDLE:
                 {
-                    curShape   = createShape();
-                    curControl = curShape->addControlPoint(pos);
-                    mode       = MODE_DRAGGING;
+                    createShape(curShape, curControl, pos);
+                    crusta->getMapManager()->updateActiveShape(toolId);
+                    mode = MODE_DRAGGING;
                     break;
                 }
 
                 case MODE_SELECTING_CONTROL:
                 {
                     selectControl(pos);
-                    if (curControl==Shape::BAD_ID)
-                        addPointAtEnds(pos);
-
-                    if (curControl.type == Shape::CONTROL_SEGMENT)
-                    {
-                        curControl = curShape->refine(curControl, pos);
-                        //make sure to update the rendering of the control hints
-                    }
+                    addControlPoint(curShape, curControl, pos);
                     mode = MODE_DRAGGING;
                     break;
                 }
@@ -304,9 +396,7 @@ buttonCallback(int deviceIndex, int buttonIndex,
                 {
                     if (curShape != NULL)
                     {
-                        deleteShape(curShape);
-                        curShape = NULL;
-                        curControl = Shape::BAD_ID;
+                        deleteShape(curShape, curControl);
                     }
                     break;
                 }
@@ -321,17 +411,11 @@ buttonCallback(int deviceIndex, int buttonIndex,
             {
                 case MODE_DRAGGING:
                 {
-                    assert(curControl!=Shape::BAD_ID &&
-                           curControl.type==Shape::CONTROL_POINT);
-
-                    curShape->removeControlPoint(curControl);
-                    if (curShape->getControlPoints().empty())
-                    {
-                        deleteShape(curShape);
-                        curShape = NULL;
-                    }
-                    curControl = Shape::BAD_ID;
-                    mode       = MODE_SELECTING_CONTROL;
+                    removeControl(curShape, curControl);
+                    if (curShape == NULL)
+                        mode = MODE_IDLE;
+                    else
+                        mode = MODE_SELECTING_CONTROL;
                     break;
                 }
 
@@ -389,5 +473,11 @@ buttonCallback(int deviceIndex, int buttonIndex,
 }
 
 
+void MapTool::
+setupComponent(Crusta* nCrusta)
+{
+    CrustaComponent::setupComponent(nCrusta);
+    toolId = crusta->getMapManager()->registerMappingTool();
+}
 
 END_CRUSTA

@@ -16,7 +16,8 @@ SurfaceTool::Factory* SurfaceTool::factory = NULL;
 SurfaceTool::
 SurfaceTool(const Vrui::ToolFactory* iFactory,
             const Vrui::ToolInputAssignment& inputAssignment) :
-    Vrui::TransformTool(iFactory, inputAssignment), CrustaComponent(NULL)
+    Vrui::TransformTool(iFactory, inputAssignment), CrustaComponent(NULL),
+    projectionFailed(true)
 {
 }
 
@@ -81,7 +82,33 @@ frame()
         Point3 surfacePoint;
         if (Vrui::isMaster())
         {
-            surfacePoint = crusta->snapToSurface(modelFrame.getOrigin());
+#if 1
+            Vrui::Vector rayDir = dev->getRayDirection();
+            rayDir = Vrui::getInverseNavigationTransformation().transform(
+                rayDir);
+
+            Ray ray(modelFrame.getOrigin(), rayDir);
+            HitResult hit = crusta->intersect(ray);
+            if (hit.isValid())
+            {
+                surfacePoint = ray(hit.getParameter());
+            }
+            else
+            {
+                transformedDevice->setTransformation(dev->getTransformation());
+                transformedDevice->setDeviceRayDirection(
+                    dev->getDeviceRayDirection());
+                projectionFailed = true;
+                return;
+            }
+#else
+            surfacePoint = modelFrame.getOrigin();
+            //snapping is done radially, no need to map to the unscaled globe
+            surfacePoint = crusta->snapToSurface(surfacePoint);
+            //the returned point is relative to the unscaled globe
+            surfacePoint = crusta->mapToScaledGlobe(surfacePoint);
+#endif
+
 			if (Vrui::getMainPipe() != NULL)
                 Vrui::getMainPipe()->write<Point3>(surfacePoint);
         }
@@ -95,6 +122,8 @@ frame()
         physicalFrame = Vrui::getNavigationTransformation() * modelFrame;
         transformedDevice->setTransformation(Vrui::TrackerState(
             physicalFrame.getTranslation(), physicalFrame.getRotation()));
+
+        projectionFailed = false;
     }
     else
     {
@@ -106,31 +135,73 @@ frame()
 void SurfaceTool::
 display(GLContextData& contextData) const
 {
-    Vrui::NavTransform original    = input.getDevice(0)->getTransformation();
     Vrui::NavTransform transformed = transformedDevice->getTransformation();
 
-    Point3 oPos = original.getOrigin();
-    Point3 tPos = transformed.getOrigin();
-
-    if (Geometry::dist(oPos, tPos) < 1.0)
+    if (projectionFailed)
     {
-        GLint activeTexture;
-        glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
-        glActiveTexture(GL_TEXTURE0);
+///\todo look at ScreenLocatorTool to see how to better display this
+        glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT);
+        glDisable(GL_LIGHTING);
+        glDisable(GL_TEXTURE_2D);
+
+        glLineWidth(3.0);
+        glColor3f(0.5f, 0.2f, 0.1f);
+
+        Point3 o = transformed.getOrigin();
+        //slightly offset the origin (mouse on near plane)
+        o += 0.001 * transformedDevice->getRayDirection();
+
+        Vector3 x = 0.005*transformed.getDirection(0);
+        Vector3 z = 0.005*transformed.getDirection(2);
+
+        glBegin(GL_LINES);
+            glVertex3dv((o-x+z).getComponents());
+            glVertex3dv((o+x-z).getComponents());
+            glVertex3dv((o+x+z).getComponents());
+            glVertex3dv((o-x-z).getComponents());
+        glEnd();
+
+        glPopAttrib();
+    }
+    else
+    {
+        Vrui::NavTransform original    = input.getDevice(0)->getTransformation();
+
+        Point3 oPos = original.getOrigin();
+        Point3 tPos = transformed.getOrigin();
+
+        //make sure that the line is always drawn
+        GLdouble depthRange[2];
+        glGetDoublev(GL_DEPTH_RANGE, depthRange);
+        glDepthRange(0.0, 0.0);
 
         glPushAttrib(GL_ENABLE_BIT);
         glDisable(GL_LIGHTING);
         glDisable(GL_TEXTURE_2D);
 
+        if (Geometry::dist(oPos, tPos) < 1.0)
+            glColor3f(0.3f, 0.6f, 0.1f);
+        else
+            glColor3f(0.3f, 0.0f, 0.0f);
+
         glBegin(GL_LINES);
-            glColor3f(1.0, 0.0, 0.0);
             glVertex3dv(oPos.getComponents());
             glVertex3dv(tPos.getComponents());
         glEnd();
 
         glPopAttrib();
-        glActiveTexture(activeTexture);
+        glDepthRange(depthRange[0], depthRange[1]);
     }
+}
+
+
+void SurfaceTool::
+buttonCallback(int deviceIndex, int deviceButtonIndex,
+               Vrui::InputDevice::ButtonCallbackData* cbData)
+{
+    // disable any button callback if the projection has failed.
+    if (!projectionFailed)
+        TransformTool::buttonCallback(deviceIndex, deviceButtonIndex, cbData);
 }
 
 

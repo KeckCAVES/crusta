@@ -89,6 +89,7 @@ public:
 
     /** retrieve the main memory node data from the buffer */
     NodeDataType& getData();
+    const NodeDataType& getData() const;
 
     /** check to see if the semi-dynamic data of the buffer is current and can
         be used without an update */

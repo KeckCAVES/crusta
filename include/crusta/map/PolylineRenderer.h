@@ -6,6 +6,7 @@
 #include <GL/GLShader.h>
 
 #include <crusta/basics.h>
+#include <crusta/CrustaComponent.h>
 
 
 class GLContextData;
@@ -17,10 +18,12 @@ BEGIN_CRUSTA
 class Polyline;
 
 
-class PolylineRenderer : public GLObject
+class PolylineRenderer : public CrustaComponent, public GLObject
 {
 public:
     typedef std::vector<Polyline*> Ptrs;
+
+    PolylineRenderer(Crusta* iCrusta);
 
     void display(GLContextData& contextData) const;
 

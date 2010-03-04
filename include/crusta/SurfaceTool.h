@@ -26,6 +26,7 @@ public:
 
 private:
     static Factory* factory;
+    bool projectionFailed;
 
 //- Inherited from Vrui::Tool
 public:
@@ -34,6 +35,9 @@ public:
 
     virtual void frame();
     virtual void display(GLContextData& contextData) const;
+
+    virtual void buttonCallback(int deviceIndex, int deviceButtonIndex,
+                                Vrui::InputDevice::ButtonCallbackData* cbData);
 };
 
 END_CRUSTA

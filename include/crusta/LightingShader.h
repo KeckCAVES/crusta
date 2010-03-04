@@ -53,7 +53,11 @@ class LightingShader
 	static const char* applyAttenuatedLightTemplate;
 	static const char* applySpotLightTemplate;
 	static const char* applyAttenuatedSpotLightTemplate;
+    static const char* fetchTerrainColorAsConstant;
+    static const char* fetchTerrainColorFromTexture;
+    bool mustRecompile;
 	bool colorMaterial; // Flag whether material color tracking is enabled
+    bool useTextureForTerrainColor; // Flag whether the color is fetch from a texture or is just a constant
 	int maxNumLights; // Maximum number of lights supported by local OpenGL
 	LightState* lightStates; // Array of tracking states for each OpenGL light source
 	GLhandleARB vertexShader,fragmentShader; // Handle for the vertex and fragment shaders
@@ -71,10 +75,20 @@ class LightingShader
 	~LightingShader(void);
 
 	/* Methods: */
-	bool updateLightingState(void); // Updates tracked lighting state; returns true if shader needs to be recompiled
+    void update();
+    void updateLightingState(); // Updates tracked lighting state; returns true if shader needs to be recompiled
 	void compileShader(void); // Recompiles the point-based lighting shader based on the current states of all OpenGL light sources
 	void enable(void); // Enables point-based lighting in the current OpenGL context
 	void disable(void); // Disables point-based lighting in the current OpenGL context
+
+    void useTextureForColor(bool useTex=true)
+    {
+        if (useTex != useTextureForTerrainColor)
+        {
+            useTextureForTerrainColor = useTex;
+            mustRecompile             = true;
+        }
+    }
 
     void setTextureStep(float ts)
     {

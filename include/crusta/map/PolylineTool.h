@@ -25,8 +25,12 @@ private:
 
 //- Inherited from MapTool
 protected:
-    virtual Shape* createShape();
-    virtual void   deleteShape(Shape* shape);
+    virtual void createShape(Shape*& shape, Shape::Id& control,
+                             const Point3& pos);
+    virtual void deleteShape(Shape*& shape, Shape::Id& control);
+    virtual void removeControl(Shape*& shape, Shape::Id& control);
+    virtual void unselectShape(Shape*& shape, Shape::Id& control);
+
     virtual ShapePtrs getShapes();
 
 //- Inherited from Vrui::Tool

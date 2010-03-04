@@ -1,5 +1,8 @@
 #include <crusta/map/MapManager.h>
 
+#include <fstream>
+#include <sstream>
+
 #if __APPLE__
 #include <GDAL/ogr_api.h>
 #include <GDAL/ogrsf_frmts.h>
@@ -9,6 +12,15 @@
 #endif
 
 #include <Geometry/Geoid.h>
+#include <GLMotif/CascadeButton.h>
+#include <GLMotif/Menu.h>
+#include <GLMotif/Popup.h>
+#include <GLMotif/PopupWindow.h>
+#include <GLMotif/ScrolledListBox.h>
+#include <GLMotif/SubMenu.h>
+#include <GLMotif/WidgetManager.h>
+#include <Misc/CreateNumberedFileName.h>
+#include <Vrui/Vrui.h>
 
 #include <crusta/map/MapTool.h>
 #include <crusta/map/Polyline.h>
@@ -22,12 +34,15 @@ BEGIN_CRUSTA
 
 
 MapManager::
-MapManager(Vrui::ToolFactory* parentToolFactory) :
-    selectDistance(0.2), pointSelectionBias(0.1),
-    polylineRenderer(new PolylineRenderer)
+MapManager(Vrui::ToolFactory* parentToolFactory, Crusta* iCrusta) :
+    CrustaComponent(iCrusta), selectDistance(0.2), pointSelectionBias(0.1),
+    polylineRenderer(new PolylineRenderer(iCrusta))
 {
     Vrui::ToolFactory* factory = MapTool::init(parentToolFactory);
     PolylineTool::init(factory);
+
+///\todo actually track multiple tools
+    activeShape = NULL;
 
     OGRRegisterAll();
 }
@@ -47,6 +62,9 @@ deleteAllShapes()
     for (PolylinePtrs::iterator it=polylines.begin(); it!=polylines.end(); ++it)
         delete *it;
     polylines.clear();
+
+///\todo actually track multiple tools
+    activeShape = NULL;
 }
 
 void MapManager::
@@ -72,6 +90,10 @@ load(const char* filename)
         OGRDataSource::DestroyDataSource(source);
         return;
     }
+
+    //grab the index of the symbol field from the layer
+    OGRFeatureDefn* featureDef       = layer->GetLayerDefn();
+    int             symbolFieldIndex = featureDef->GetFieldIndex("Symbol");
 
 ///\todo check the feature set of the layer here to make sure it has the needed
 
@@ -110,6 +132,10 @@ load(const char* filename)
 
                 out->addControlPoint(pos);
             }
+
+            //read in the symbol field
+            int symbolId     = feature->GetFieldAsInteger(symbolFieldIndex);
+            out->getSymbol() = symbolMap[symbolId];
         }
 
         OGRFeature::DestroyFeature(feature);
@@ -119,12 +145,10 @@ load(const char* filename)
 }
 
 void MapManager::
-save(const char* filename, const char* format)
+save(const char* fileName, const char* format)
 {
-    std::string fullName(filename);
-    fullName.append(".");
-    fullName.append(format);
-
+///\todo change all the std::cout to throwing exceptions
+    //initialize the output driver
     OGRSFDriver* driver = OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(
         format);
     if (driver == NULL)
@@ -134,7 +158,8 @@ save(const char* filename, const char* format)
         return;
     }
 
-    OGRDataSource* source = driver->CreateDataSource(fullName.c_str());
+    //create the output data sink
+    OGRDataSource* source = driver->CreateDataSource(fileName);
     if (source == NULL)
     {
         std::cout << "MapManager::Save: Error creating file: " <<
@@ -142,12 +167,13 @@ save(const char* filename, const char* format)
         return;
     }
 
+    //create a layer-field definition for outputting the symbol id
+    OGRFieldDefn fieldDef("Symbol", OFTInteger);
+
+///\todo create layers for all the different shape types to export
+    //create a (georeferenced) layer for the polylines
     OGRSpatialReference crustaSys;
-    crustaSys.SetGeogCS("Crusta World Coordinate System", "WGS_1984",
-                        "Crusta WGS84 Spheroid",
-                        SRS_WGS84_SEMIMAJOR, SRS_WGS84_INVFLATTENING,
-                        "Greenwich", 0.0,
-                        SRS_UA_RADIAN, 1.0);
+    crustaSys.SetWellKnownGeogCS("WGS84");
 
     OGRLayer* layer = source->CreateLayer("Crusta_Polylines", &crustaSys,
                                           wkbLineString25D);
@@ -155,6 +181,14 @@ save(const char* filename, const char* format)
     {
         std::cout << "MapManager::Save: Error creating the Crusta_Polylines " <<
                      "layer: " <<CPLGetLastErrorMsg() << std::endl;
+        OGRDataSource::DestroyDataSource(source);
+        return;
+    }
+
+    if (layer->CreateField(&fieldDef) != OGRERR_NONE)
+    {
+        std::cout << "MapManager::Save: Error creating the symbol Field:" <<
+                     CPLGetLastErrorMsg() << std::endl;
         OGRDataSource::DestroyDataSource(source);
         return;
     }
@@ -173,6 +207,10 @@ save(const char* filename, const char* format)
             return;
         }
 
+        //output the symbol id
+        feature->SetField("Symbol", (*in)->getSymbol().id);
+
+        //output the polyline geometry
         OGRLineString out;
         Point3s& controlPoints = (*in)->getControlPoints();
         for (Point3s::iterator cp=controlPoints.begin();
@@ -197,6 +235,50 @@ save(const char* filename, const char* format)
     }
 
     OGRDataSource::DestroyDataSource(source);
+}
+
+
+int MapManager::
+registerMappingTool()
+{
+///\todo actually track multiple tools
+    return 0;
+}
+
+void MapManager::
+unregisterMappingTool(int)
+{
+///\todo actually track multiple tools
+}
+
+Shape*& MapManager::
+getActiveShape(int toolId)
+{
+///\todo actually track multiple tools
+    return activeShape;
+}
+
+void MapManager::
+updateActiveShape(int toolId)
+{
+///\todo actually track multiple tools
+    if (activeShape == NULL)
+    {
+        mapSymbolLabel->setLabel("-");
+    }
+    else
+    {
+        Shape::Symbol& symbol   = activeShape->getSymbol();
+        std::string& symbolName = symbolReverseNameMap[symbol.id];
+        mapSymbolLabel->setLabel(symbolName.c_str());
+    }
+}
+
+
+const Shape::Symbol& MapManager::
+getActiveSymbol()
+{
+    return activeSymbol;
 }
 
 
@@ -249,6 +331,257 @@ display(GLContextData& contextData) const
 {
     //go through all the simple polylines and draw them
     polylineRenderer->display(contextData);
+}
+
+
+void MapManager::
+addMenuEntry(GLMotif::Menu* mainMenu)
+{
+    //add the control dialog
+    produceMapControlDialog(mainMenu);
+    //add the symbols submenu
+    produceMapSymbolSubMenu(mainMenu);
+}
+
+void MapManager::
+openSymbolsGroupCallback(GLMotif::Button::SelectCallbackData* cbData)
+{
+    //open the dialog at the same position as the main menu
+    Vrui::getWidgetManager()->popupPrimaryWidget(
+        symbolGroupMap[cbData->button->getName()],
+        Vrui::getWidgetManager()->calcWidgetTransformation(cbData->button));
+}
+
+void MapManager::
+symbolChangedCallback(GLMotif::ListBox::ItemSelectedCallbackData* cbData)
+{
+    const char* symbolName = cbData->listBox->getItem(cbData->selectedItem);
+    int symbolId           = symbolNameMap[symbolName];
+    activeSymbol           = symbolMap[symbolId];
+
+///\todo process the change for multiple activeShapes
+    if (activeShape != NULL)
+    {
+        activeShape->getSymbol() = activeSymbol;
+        mapSymbolLabel->setLabel(symbolName);
+    }
+}
+
+void MapManager::
+closeSymbolsGroupCallback(GLMotif::Button::SelectCallbackData* cbData)
+{
+    Vrui::popdownPrimaryWidget(symbolGroupMap[cbData->button->getName()]);
+}
+
+
+void MapManager::
+produceMapControlDialog(GLMotif::Menu* mainMenu)
+{
+//- produce the dialog
+    mapControlDialog = new GLMotif::PopupWindow(
+        "MappingDialog", Vrui::getWidgetManager(), "Mapping Control");
+    GLMotif::RowColumn* root = new GLMotif::RowColumn(
+        "MappingRoot", mapControlDialog, false);
+
+    GLMotif::RowColumn* infoRoot = new GLMotif::RowColumn(
+        "MappingInfoRoot", root, false);
+
+    new GLMotif::Label("CurSymbolText", infoRoot, "Current Shape Symbol:");
+    mapSymbolLabel = new GLMotif::Label("CurSymbolLabel", infoRoot, "-");
+    infoRoot->setNumMinorWidgets(2);
+    infoRoot->manageChild();
+
+    GLMotif::RowColumn* ioRoot = new GLMotif::RowColumn(
+        "MappingInfoRoot", root, false);
+
+    GLMotif::Button* load = new GLMotif::Button("LoadButton", ioRoot, "Load");
+    load->getSelectCallbacks().add(this, &MapManager::loadMapCallback);
+    GLMotif::Button* save = new GLMotif::Button("SaveButton", ioRoot, "Save");
+    save->getSelectCallbacks().add(this, &MapManager::saveMapCallback);
+
+    OGRSFDriverRegistrar* ogrRegistrar = OGRSFDriverRegistrar::GetRegistrar();
+    int numDrivers = ogrRegistrar->GetDriverCount();
+    std::vector<std::string> formats;
+    for (int i=0; i<numDrivers; ++i)
+    {
+        OGRSFDriver* driver = ogrRegistrar->GetDriver(i);
+        formats.push_back(std::string(driver->GetName()));
+    }
+
+    mapOutputFormat =
+        new GLMotif::DropdownBox("MapFormatDrop", ioRoot, formats);
+
+    ioRoot->setNumMinorWidgets(3);
+    ioRoot->manageChild();
+
+    root->setNumMinorWidgets(1);
+    root->manageChild();
+
+//- create the menu entry
+    GLMotif::ToggleButton* mapControlToggle = new GLMotif::ToggleButton(
+        "mapControlToggle", mainMenu, "Mapping Control");
+    mapControlToggle->setToggle(false);
+    mapControlToggle->getValueChangedCallbacks().add(
+        this, &MapManager::showMapControlDialogCallback);
+}
+
+void MapManager::
+produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
+{
+//- create the main cascade
+    GLMotif::Popup* symbolsMenuPopup =
+        new GLMotif::Popup("SymbolsMenuPopup", Vrui::getWidgetManager());
+
+    GLMotif::SubMenu* symbolsMenu =
+        new GLMotif::SubMenu("Symbols", symbolsMenuPopup, false);
+
+//- add the default crusta symbol
+    Shape::Symbol crustaDefaultSymbol;
+    symbolNameMap["Crusta Default"]              = crustaDefaultSymbol.id;
+    symbolReverseNameMap[crustaDefaultSymbol.id] = "Crusta Default";
+    symbolMap[crustaDefaultSymbol.id]            = crustaDefaultSymbol;
+
+//- parse the symbols definition file to create the symbols lists
+///\todo fix the location of the configuration file
+    std::ifstream symbolsConfig("Crusta_MapSymbols.cfg");
+    if (!symbolsConfig.good())
+        return;
+
+    GLMotif::ScrolledListBox* symbolsGroup = NULL;
+    std::string cfgLine;
+    for (std::getline(symbolsConfig, cfgLine); !symbolsConfig.eof();
+         std::getline(symbolsConfig, cfgLine))
+    {
+        if (cfgLine.empty() || cfgLine[0]=='#')
+            continue;
+
+        std::istringstream iss(cfgLine);
+        //check for a new group
+        std::string token;
+        iss >> token;
+        if (token.compare("group") == 0)
+        {
+            //read in the group name
+            iss >> token;
+
+            //create menu entry button to pop-up the group's list
+            GLMotif::Button* groupButton = new GLMotif::Button(
+                token.c_str(), symbolsMenu, token.c_str());
+            groupButton->getSelectCallbacks().add(
+                this, &MapManager::openSymbolsGroupCallback);
+
+            //create the group's popup dialog
+            GLMotif::PopupWindow*& groupDialog = symbolGroupMap[token];
+            groupDialog = new GLMotif::PopupWindow(
+                (token + "Dialog").c_str(), Vrui::getWidgetManager(),
+                (token + " Symbols").c_str());
+            GLMotif::RowColumn* groupRoot = new GLMotif::RowColumn(
+                (token + "Root").c_str(), groupDialog, false);
+            symbolsGroup = new GLMotif::ScrolledListBox(
+                (token + "List").c_str(), groupRoot,
+                GLMotif::ListBox::ALWAYS_ONE, 50, 15);
+            symbolsGroup->showHorizontalScrollBar(true);
+            symbolsGroup->getListBox()->getItemSelectedCallbacks().add(
+                this, &MapManager::symbolChangedCallback);
+
+            GLMotif::Button* close = new GLMotif::Button(
+                token.c_str(), groupRoot, "Close");
+            close->getSelectCallbacks().add(this,
+                &MapManager::closeSymbolsGroupCallback);
+
+            groupRoot->setNumMinorWidgets(1);
+            groupRoot->manageChild();
+        }
+        else
+        {
+            if (symbolsGroup == NULL)
+                continue;
+
+            iss.seekg(0, std::ios::beg);
+
+            //create a corresponding symbol
+            std::string symbolName;
+            iss >> symbolName;
+
+            Shape::Symbol symbol;
+            iss >> symbol.id >> symbol.color[0] >> symbol.color[1] >>
+                                symbol.color[2] >> symbol.color[3];
+
+            symbolNameMap[symbolName]       = symbol.id;
+            symbolReverseNameMap[symbol.id] = symbolName;
+            symbolMap[symbol.id]            = symbol;
+
+            //populate the current group
+            symbolsGroup->getListBox()->addItem(symbolName.c_str());
+        }
+    }
+
+    symbolsMenu->manageChild();
+
+    GLMotif::CascadeButton* symbolsMenuCascade =
+        new GLMotif::CascadeButton("SymbolsMenuCascade", mainMenu,
+                                   "Map Symbols");
+    symbolsMenuCascade->setPopup(symbolsMenuPopup);
+}
+
+
+void MapManager::
+showMapControlDialogCallback(
+    GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+{
+    if(cbData->set)
+    {
+        //open the dialog at the same position as the main menu:
+        Vrui::getWidgetManager()->popupPrimaryWidget(mapControlDialog,
+            Vrui::getWidgetManager()->calcWidgetTransformation(cbData->toggle));
+    }
+    else
+    {
+        //close the dialog
+        Vrui::popdownPrimaryWidget(mapControlDialog);
+    }
+}
+
+void MapManager::
+loadMapCallback(GLMotif::Button::SelectCallbackData* cbData)
+{
+    GLMotif::FileSelectionDialog* mapFileDialog =
+        new GLMotif::FileSelectionDialog(Vrui::getWidgetManager(),
+                                         "Load Map File", 0, NULL);
+    mapFileDialog->getOKCallbacks().add(this,
+        &MapManager::loadMapFileOKCallback);
+    mapFileDialog->getCancelCallbacks().add(this,
+        &MapManager::loadMapFileCancelCallback);
+    Vrui::getWidgetManager()->popupPrimaryWidget(mapFileDialog,
+        Vrui::getWidgetManager()->calcWidgetTransformation(mapControlDialog));
+}
+
+void MapManager::
+saveMapCallback(GLMotif::Button::SelectCallbackData* cbData)
+{
+    int selected       = mapOutputFormat->getSelectedItem();
+    const char* format = mapOutputFormat->getItem(selected);
+    std::string fileName("Crusta_Map.");
+    fileName.append(format);
+    fileName = Misc::createNumberedFileName(fileName, 4);
+    save(fileName.c_str(), format);
+}
+
+void MapManager::
+loadMapFileOKCallback(GLMotif::FileSelectionDialog::OKCallbackData* cbData)
+{
+    //load the selected map file
+    load(cbData->selectedFileName.c_str());
+    //destroy the file selection dialog
+    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
+}
+
+void MapManager::
+loadMapFileCancelCallback(
+    GLMotif::FileSelectionDialog::CancelCallbackData* cbData)
+{
+    //destroy the file selection dialog
+    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
 }
 
 

@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <vector>
 
+#include <Geometry/HitResult.h>
+#include <Geometry/Ray.h>
 #include <Geometry/Point.h>
 #include <Geometry/Vector.h>
 
@@ -28,6 +30,11 @@ if ((a)<=CRUSTA_BEBUG_LEVEL) fprintf(CRUSTA_DEBUG_OUTPUT_DESTINATION, b, ## args
 #define DEBUG_OUT(a, b, args...)
 #endif
 
+#define DEBUG_INTERSECT_CRAP 0
+#if DEBUG_INTERSECT_CRAP
+extern bool DEBUG_INTERSECT;
+#endif //DEBUG_INTERSECT_CRAP
+
 typedef size_t		uint;
 
 typedef uint8_t		uint8;
@@ -48,11 +55,18 @@ typedef double      Scalar;
 typedef Geometry::Point<Scalar, 3>  Point3;
 typedef std::vector<Point3>         Point3s;
 typedef Geometry::Vector<Scalar, 3> Vector3;
+typedef std::vector<Vector3>        Vector3s;
+
+typedef Geometry::Vector<float, 4>  Color;
+
+typedef Geometry::HitResult<Scalar> HitResult;
+typedef Geometry::Ray<Scalar, 3>    Ray;
 
 
-const uint   TILE_RESOLUTION     = 65;
-const double SPHEROID_RADIUS     = 6371000.0;
-const double INV_SPHEROID_RADIUS = 1.0 / 6371000.0;
+static const uint   TILE_RESOLUTION          = 65;
+static const float  TILE_TEXTURE_COORD_STEP  = 1.0 / TILE_RESOLUTION;
+static const double SPHEROID_RADIUS          = 6371000.0;
+static const double INV_SPHEROID_RADIUS      = 1.0 / SPHEROID_RADIUS;
 
 END_CRUSTA
 

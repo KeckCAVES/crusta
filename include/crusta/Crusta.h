@@ -9,6 +9,7 @@
 #include <Threads/Mutex.h>
 
 #include <crusta/basics.h>
+#include <crusta/LightingShader.h>
 
 class GLContextData;
 
@@ -35,22 +36,36 @@ public:
 ///\todo fix this API. potentially deprecate
     /** query the height of the surface closest to the query point */
     double getHeight(double x, double y, double z);
+///\todo potentially deprecate
     /** snap the given cartesian point to the surface of the terrain (at an
         optional offset) */
     Point3 snapToSurface(const Point3& pos, Scalar offset=Scalar(0));
+    /** intersect a ray with the crusta globe */
+    HitResult intersect(const Ray& ray) const;
 
     const FrameNumber& getCurrentFrame()   const;
     const FrameNumber& getLastScaleFrame() const;
 
+    /** configure the display of the terrain to use a texture or not */
+    void useTexturedTerrain(bool useTex=true);
     /** set the vertical exaggeration. Make sure to set this value within a
         frame callback so that it doesn't change during a rendering phase */
     void setVerticalScale(double newVerticalScale);
     /** retrieve the vertical exaggeration factor */
     double getVerticalScale() const;
 
+    /** map a 3D cartesian point specified wrt an unscaled globe representation
+        to the corresponding point in a scaled representation */
+    Point3 mapToScaledGlobe(const Point3& pos);
+    /** map a 3D cartesian point specified on a scaled globe representation to
+        the corresponding point in an unscaled representation */
+    Point3 mapToUnscaledGlobe(const Point3& pos);
+
     Cache*       getCache()       const;
     DataManager* getDataManager() const;
     MapManager*  getMapManager()  const;
+
+    LightingShader& getTerrainShader(GLContextData& contextData);
 
     /** inform crusta of nodes that must be kept current */
     void submitActives(const Actives& touched);
@@ -69,6 +84,8 @@ protected:
         GLuint frameBuf;
         GLuint attachments[2]; ///< color, depth and stencil
         GLuint terrainAttributesTex;
+
+        LightingShader terrainShader;
     };
 
     /** make sure the bounding objects used for visibility and LOD checks are
@@ -90,11 +107,13 @@ protected:
         semi-static data can be verified by comparison with this number */
     FrameNumber lastScaleFrame;
 
+    /** should the terrain rendering be using textures or not */
+    bool isTexturedTerrain;
     /** the vertical scale to be applied to all surface elevations */
-    double verticalScale;
+    Scalar verticalScale;
     /** the vertical scale that has been externally set. Buffers the scales
         changes up to the next frame call */
-    double newVerticalScale;
+    Scalar newVerticalScale;
 
     /** the cache management component */
     Cache* cache;
@@ -111,6 +130,9 @@ protected:
     Actives actives;
     /** guarantee serial manipulation of the set of active nodes */
     Threads::Mutex activesMutex;
+
+    /** the global height range */
+    Scalar globalElevationRange[2];
 
     /** the size of the current terrain attributes texture/buffer */
     int bufferSize[2];

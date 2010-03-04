@@ -18,16 +18,6 @@ GdalTransform() :
 GdalTransform::
 GdalTransform(const char* projectionFileName)
 {
-///\todo remove: this is my WKT generator
-#if 0
-    OGRSpatialReference outSrs;
-    outSrs.SetProjCS("Blue Marble Topograpy");
-    outSrs.SetWellKnownGeogCS("WGS84");
-//    outSrs.SetUTM( 17, TRUE );
-    outSrs.SetEquirectangular();
-    exit(5);
-#endif
-
     Misc::File file(projectionFileName, "r");
 
     OGRSpatialReference geoSys;
@@ -66,11 +56,9 @@ GdalTransform(const char* projectionFileName)
     }
 
     OGRSpatialReference worldSys;
-    worldSys.SetGeogCS("Crusta World Coordinate System", "WGS_1984",
-                       "Crusta WGS84 Spheroid",
+    worldSys.SetGeogCS("WGS 84", "WGS_1984", "WGS 84",
                        SRS_WGS84_SEMIMAJOR, SRS_WGS84_INVFLATTENING,
-                       "Greenwich", 0.0,
-                       SRS_UA_RADIAN, 1.0);
+                       "Greenwich", 0.0, SRS_UA_RADIAN, 1.0);
 
     geoToWorld = OGRCreateCoordinateTransformation(&geoSys, &worldSys);
     if (geoToWorld == NULL)
