@@ -27,6 +27,9 @@ public:
     Ptrs* lines;
 
 protected:
+    typedef Geometry::Vector<float, 3> Tangent;
+    typedef std::vector<Tangent> Tangents;
+
     struct GlData : public GLObject::DataItem
     {
         GlData();
@@ -53,6 +56,8 @@ protected:
     /** reads the content of the default depth buffer into the depth texture */
     void readDepthBuffer(GlData* glData) const;
     int  prepareLineData(GlData* glData) const;
+
+    mutable Tangents tangents;
 
 //- inherited from GLObject
 public:

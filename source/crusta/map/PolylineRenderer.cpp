@@ -37,9 +37,6 @@ vec3 unproject(in vec2 fragCoord)\n\
 {\n\
     vec2 texCoord = (fragCoord - windowPos) * rcpWindowSize;\n\
     gl_FragDepth  = texture2D(depthTex, texCoord).r;\n\
-//gl_FragColor.xyz = vec3(gl_FragDepth);\n\
-//gl_FragColor.a = 1.0;\n\
-//return vec3(1.0);\n\
 \n\
     vec4 tmp;\n\
     tmp.xy = (texCoord * 2.0) - 1.0;\n\
@@ -53,73 +50,48 @@ vec3 unproject(in vec2 fragCoord)\n\
 \n\
 void main()\n\
 {\n\
-//gl_FragColor.xyz = normalize(texture1D(controlPointTex, lineStartCoord).rgb);\n\
-//gl_FragColor.a = 1.0;\n\
-//return;\n\
     vec3 pos = unproject(gl_FragCoord.xy);\n\
-//gl_FragColor.xyz = normalize(pos);\n\
-//gl_FragColor.a = 1.0;\n\
-//return;\n\
-\n\
-//gl_FragColor.xyz = vec3(length(pos) / 7371000.0);\n\
-//gl_FragColor.xyz = normalize(pos);\n\
-//gl_FragColor.a = 1.0;\n\
-//return;\n\
 \n\
     //walk all the line segments and process their contribution\n\
-    vec4 color   = vec4(0.0, 0.0, 0.0, 0.0);\n\
-    float coord  = lineStartCoord;\n\
-    vec4 startCP = texture1D(controlPointTex, coord);\n\
-\n\
-//gl_FragColor.xyz = normalize(startCP.xyz);\n\
-//gl_FragColor.a = 1.0;\n\
-//return;\n\
-\n\
+    vec4 color      = vec4(0.0, 0.0, 0.0, 0.0);\n\
+    float coord     = lineStartCoord;\n\
+    vec4 startCP    = texture1D(controlPointTex, coord);\n\
 \n\
     vec4 endCP = vec4(0.0);\n\
-    for (int i=0; i<numSegments; ++i, startCP=endCP)\n\
+    for (int i=0; i<numSegments; ++i, startCP=endCP, coord+=lineCoordStep)\n\
     {\n\
         vec3 toPos = pos - startCP.xyz;\n\
 \n\
-        coord           = coord + lineCoordStep;\n\
-        endCP           = texture1D(controlPointTex, coord);\n\
+        endCP           = texture1D(controlPointTex, coord+lineCoordStep);\n\
         vec3 startToEnd = endCP.xyz - startCP.xyz;\n\
 \n\
         //compute the u coordinate along the segment\n\
         float sqrLen = dot(startToEnd, startToEnd);\n\
         float u      = dot(toPos, startToEnd) / sqrLen;\n\
 \n\
-        if (u<0.0 || u>1.0)\n\
-            continue;\n\
-color = vec4(0.0, 1.0, 0.0, 1.0);//(u);\n\
-continue;\n\
-#if 0\n\
-vec4 fromc1 = vec4(0.0, 1.0, 0.0, 1.0);\n\
-vec4 toc1   = vec4(1.0, 0.0, 0.0, 1.0);\n\
-float a1    = numSegments<2 ? 1.0 : float(i) / float(numSegments-1);\n\
-color       = a1*fromc1 + (1.0-a1)*toc1;\n\
-continue;\n\
-#endif\n\
+        if (u<=1.0 && u>=0.0)\n\
+        {\n\
+//color += vec4(0.0, 0.3, 0.0, 1.0);\n\
 \n\
-        //fetch the tangent\n\
-        vec3 tangent = texture1D(tangentTex, coord -\n\
-                                             (1.0-u)*lineCoordStep).rgb;\n\
+             //fetch the tangent\n\
+             vec3 tangent = texture1D(tangentTex, coord).rgb;\n\
 \n\
-        //compute the v coordinate along the tangent\n\
-        toPos   = startCP.xyz + u*startToEnd;\n\
-        toPos   = pos - toPos;\n\
-        sqrLen  = dot(tangent, tangent);\n\
-        float v = dot(toPos, tangent) / sqrLen;\n\
+             //compute the v coordinate along the tangent\n\
+             toPos   = startCP.xyz + u*startToEnd;\n\
+             toPos   = pos - toPos;\n\
+             sqrLen  = dot(tangent, tangent);\n\
+             float v = dot(toPos, tangent) / sqrLen;\n\
 \n\
-        if (v<-1.0 || v>1.0)\n\
-            continue;\n\
-\n\
-        //acculumate the contribution\n\
-//        v = v*0.5 + 0.5;\n\
+             if (v<=1.0 && v>=-1.0)\n\
+             {\n\
+                //accumulate the contribution\n\
+//                v = v*0.5 + 0.5;\n\
 vec4 fromc = vec4(0.0, 1.0, 0.0, 1.0);\n\
 vec4 toc   = vec4(1.0, 0.0, 0.0, 1.0);\n\
 float a    = numSegments<2 ? 1.0 : float(i) / float(numSegments-1);\n\
-        color = a*fromc + (1.0-a)*toc;\n\
+color      = a*fromc + (1.0-a)*toc;\n\
+            }\n\
+        }\n\
     }\n\
 \n\
     gl_FragColor = color;\n\
@@ -228,6 +200,22 @@ display(GLContextData& contextData) const
         }
 
         glPopMatrix();
+    }
+
+    if (tangents.size()>0 && lines->size()>0)
+    {
+        glLineWidth(1.0);
+        const Point3s& cps = (*lines)[0]->getControlPoints();
+        for (int i=0; i<(int)tangents.size(); ++i)
+        {
+            Point3 tip = cps[i] + 4.0*Vector3(tangents[i][0], tangents[i][1], tangents[i][2]);
+            glBegin(GL_LINES);
+            glColor3f(0.0f, 0.0f, 1.0f);
+            glVertex3dv(cps[i].getComponents());
+            glColor3f(1.0f, 1.0, 0.0f);
+            glVertex3dv(tip.getComponents());
+            glEnd();
+        }
     }
 #endif
 
@@ -400,67 +388,64 @@ prepareLineData(GlData* glData) const
         return 0;
 
     float lineWidth = 1.0f / Vrui::getNavigationTransformation().getScaling();
-    lineWidth *= 0.1f;
+    lineWidth *= 0.05f;
 
     typedef float CP[4];
-    typedef float Tangent[3];
 
+    int numSegs = numCPs-1;
     CP* cps = new CP[numCPs];
-    Tangent* tans = new Tangent[numCPs];
+    tangents.resize(numCPs);
 
-    float prevLen = 0.0f;
-    CP* cp = cps;
-    (*cp)[0] = lineCps[0][0];
-    (*cp)[1] = lineCps[0][1];
-    (*cp)[2] = lineCps[0][2];
-    (*cp)[3] = prevLen;
-    ++cp;
-
-    Vector3 tanVec = Geometry::cross(Vector3(lineCps[0]), Vector3(lineCps[1]));
-    tanVec.normalize();
-    tanVec *= lineWidth;
-
-    Tangent* tan = tans;
-    (*tan)[0] = tanVec[0];
-    (*tan)[1] = tanVec[1];
-    (*tan)[2] = tanVec[2];
-    ++tan;
-
-    int prev = 0;
-    for (int cur=1; cur<numCPs; ++cur, ++prev, ++cp, ++tan)
+    Vector3  curTan(0);
+    float    length = 0.0f;
+    int      next   = 1;
+    CP*      cp     = cps;
+    Tangent* tan    = &tangents.front();
+    for (int cur=0; cur<numCPs-1; ++cur, ++next, ++cp, ++tan)
     {
-        const Point3& prevP = lineCps[prev];
         const Point3& curP  = lineCps[cur];
+        const Point3& nextP = lineCps[next];
 
+        //first point of the segment
         (*cp)[0] = curP[0];
         (*cp)[1] = curP[1];
         (*cp)[2] = curP[2];
-        prevLen  = prevLen + Geometry::dist(curP, prevP);
-        (*cp)[3] = prevLen;
+        (*cp)[3] = length;
 
-        tanVec = Geometry::cross(Vector3(prevP), Vector3(curP));
-        tanVec.normalize();
-        tanVec *= lineWidth;
+        curTan = Geometry::cross(Vector3(curP), Vector3(nextP));
+        curTan.normalize();
+        curTan *= lineWidth;
 
-        (*tan)[0] = tanVec[0];
-        (*tan)[1] = tanVec[1];
-        (*tan)[2] = tanVec[2];
+        (*tan)[0] = curTan[0];
+        (*tan)[1] = curTan[1];
+        (*tan)[2] = curTan[2];
+
+        length += Geometry::dist(curP, nextP);
     }
+
+    //last control point
+    (*cp)[0] = lineCps.back()[0];
+    (*cp)[1] = lineCps.back()[1];
+    (*cp)[2] = lineCps.back()[2];
+    (*cp)[3] = length;
+
+    (*tan)[0] = curTan[0];
+    (*tan)[1] = curTan[1];
+    (*tan)[2] = curTan[2];
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_1D, glData->controlPointTex);
-    glTexSubImage1D(GL_TEXTURE_1D, 0, 0, numCPs, GL_RGBA, GL_FLOAT, cps);
+    glTexSubImage1D(GL_TEXTURE_1D, 0,0, numCPs, GL_RGBA, GL_FLOAT, cps);
     CHECK_GLA
 
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_1D, glData->tangentTex);
-    glTexSubImage1D(GL_TEXTURE_1D, 0, 0, numCPs, GL_RGB, GL_FLOAT, tans);
+    glTexSubImage1D(GL_TEXTURE_1D, 0,0, numCPs, GL_RGB, GL_FLOAT, &tangents[0]);
     CHECK_GLA
 
     delete[] cps;
-    delete[] tans;
 
-    return numCPs-1;
+    return numSegs;
 }
 
 
