@@ -40,6 +40,7 @@ protected:
 
         GLuint controlPointTex;
         GLuint tangentTex;
+        GLuint symbolTex;
 
         GLShader shader;
 

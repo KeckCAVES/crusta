@@ -3,6 +3,7 @@
 #include <GL/Extensions/GLEXTFramebufferObject.h>
 #include <GL/GLContextData.h>
 #include <GL/GLTransformationWrappers.h>
+#include <Misc/ThrowStdErr.h>
 #include <Vrui/Vrui.h>
 
 #include <crusta/checkGl.h>
@@ -589,6 +590,12 @@ display(GLContextData& contextData)
 Crusta::GlData::
 GlData()
 {
+    /* Check for the required OpenGL extensions: */
+    if(!GLEXTFramebufferObject::isSupported())
+            Misc::throwStdErr("Crusta: GL_EXT_framebuffer_object not supported");
+    /* Initialize the required extensions: */
+    GLEXTFramebufferObject::initExtension();
+
     glGenRenderbuffersEXT(1, &colorBuf);
     glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, colorBuf);
     glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA, 1,1);

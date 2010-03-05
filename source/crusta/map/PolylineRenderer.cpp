@@ -33,6 +33,7 @@ uniform float lineStartCoord;\n\
 uniform float lineCoordStep;\n\
 uniform sampler1D controlPointTex;\n\
 uniform sampler1D tangentTex;\n\
+uniform sampler2D symbolTex;\n\
 \n\
 vec3 unproject(in vec2 fragCoord)\n\
 {\n\
@@ -70,11 +71,11 @@ void main()\n\
         vec3 toPos = pos - startCP.xyz;\n\
 \n\
         endCP           = getControlPoint(coord+lineCoordStep);\n\
-        vec3 startToEnd = endCP.xyz - startCP.xyz;\n\
+        vec4 startToEnd = endCP - startCP;\n\
 \n\
         //compute the u coordinate along the segment\n\
-        float sqrLen = dot(startToEnd, startToEnd);\n\
-        float u      = dot(toPos, startToEnd) / sqrLen;\n\
+        float sqrLen = dot(startToEnd.xyz, startToEnd.xyz);\n\
+        float u      = dot(toPos, startToEnd.xyz) / sqrLen;\n\
 \n\
         if (u<=1.0 && u>=0.0)\n\
         {\n\
@@ -84,7 +85,7 @@ void main()\n\
              vec3 tangent = texture1D(tangentTex, coord).rgb;\n\
 \n\
              //compute the v coordinate along the tangent\n\
-             toPos   = startCP.xyz + u*startToEnd;\n\
+             toPos   = startCP.xyz + u*startToEnd.xyz;\n\
              toPos   = pos - toPos;\n\
              sqrLen  = dot(tangent, tangent);\n\
              float v = dot(toPos, tangent) / sqrLen;\n\
@@ -92,16 +93,19 @@ void main()\n\
              if (v<=1.0 && v>=-1.0)\n\
              {\n\
                 //accumulate the contribution\n\
-//                v = v*0.5 + 0.5;\n\
+                v = v*0.5 + 0.5;\n\
 vec4 fromc = vec4(0.0, 1.0, 0.0, 1.0);\n\
 vec4 toc   = vec4(1.0, 0.0, 0.0, 1.0);\n\
 float a    = numSegments<2 ? 1.0 : float(i) / float(numSegments-1);\n\
-color      = a*fromc + (1.0-a)*toc;\n\
+vec4 col   = a*fromc + (1.0-a)*toc;\n\
+u          = startCP.w + u*startToEnd.w;\n\
+col       *= texture2D(symbolTex, vec2(u,v));\n\
+color      = mix(color, col, col.w);\n\
             }\n\
         }\n\
     }\n\
 \n\
-    gl_FragColor = color;\n\
+    gl_FragColor = mix(gl_FragColor, color, color.w);\n\
 }\
 ";
 
@@ -154,6 +158,8 @@ display(GLContextData& contextData) const
         glBindTexture(GL_TEXTURE_1D, glData->controlPointTex);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_1D, glData->tangentTex);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, glData->symbolTex);
 
         glBegin(GL_QUADS);
             glVertex3f(-1.0f,  1.0f, 0.0f);
@@ -168,6 +174,7 @@ display(GLContextData& contextData) const
         CHECK_GLA
     }
 
+#if 0
     glActiveTexture(GL_TEXTURE0);
     
     glDisable(GL_LIGHTING);
@@ -266,12 +273,83 @@ display(GLContextData& contextData) const
             glEnd();
         }
     }
+#endif
 
     glPopAttrib();
     glActiveTexture(activeTexture);
     CHECK_GLA
 }
 
+
+class TargaImage
+{
+public:
+    TargaImage() : byteCount(0), pixels(NULL)
+    {
+        size[0] = size[1] = 0;
+    }
+    ~TargaImage()
+    {
+        destroy();
+    }
+
+    bool load(const char* filename)
+    {
+        FILE* file;
+        uint8 type[4];
+        uint8 info[6];
+
+        file = fopen(filename, "rb");
+        if (file == NULL)
+            return false;
+
+        fread (&type, sizeof(char), 3, file);
+        fseek (file, 12, SEEK_SET);
+        fread (&info, sizeof(char), 6, file);
+
+        //image type either 2 (color) or 3 (greyscale)
+        if (type[1]!=0 || (type[2]!=2 && type[2]!=3))
+        {
+            fclose(file);
+            return false;
+        }
+
+        size[0]   = info[0] + info[1]*256;
+        size[1]   = info[2] + info[3]*256;
+        byteCount = info[4] / 8;
+
+        if (byteCount!=3 && byteCount!=4)
+        {
+            fclose(file);
+            return false;
+        }
+
+        int imageSize = size[0]*size[1] * byteCount;
+
+        //allocate memory for image data
+        pixels = new uint8[imageSize];
+
+        //read in image data
+        fread(pixels, sizeof(uint8), imageSize, file);
+
+        //close file
+        fclose(file);
+
+        return true;
+    }
+
+    void destroy()
+    {
+        size[0] = size[1] = 0;
+        byteCount = 0;
+        delete[] pixels;
+        pixels = NULL;
+    }
+
+    int    size[2];
+    int    byteCount;
+    uint8* pixels;
+};
 
 PolylineRenderer::GlData::
 GlData()
@@ -294,6 +372,22 @@ GlData()
                  GL_RGB, GL_FLOAT, NULL);
     CHECK_GLA
 
+    TargaImage atlas;
+    if (!atlas.load("Crusta_MapSymbolAtlas.tga"))
+        assert(false);
+
+    glGenTextures(1, &symbolTex);
+    glBindTexture(GL_TEXTURE_2D, symbolTex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas.size[0], atlas.size[1], 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, atlas.pixels);
+    CHECK_GLA
+
+    atlas.destroy();
+
 ///\todo bind whatever was bound before
     glBindTexture(GL_TEXTURE_1D, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -311,6 +405,8 @@ GlData()
     glUniform1i(uniform, 2);
     uniform = shader.getUniformLocation("tangentTex");
     glUniform1i(uniform, 3);
+    uniform = shader.getUniformLocation("symbolTex");
+    glUniform1i(uniform, 4);
 
     float lineCoordStep = 1.0f / lineTexSize;
     uniform = shader.getUniformLocation("lineCoordStep");
@@ -330,6 +426,7 @@ PolylineRenderer::GlData::
 {
     glDeleteTextures(1, &controlPointTex);
     glDeleteTextures(1, &tangentTex);
+    glDeleteTextures(1, &symbolTex);
 }
 
 
@@ -343,8 +440,8 @@ prepareLineData(GlData* glData) const
     if (numCPs<2)
         return 0;
 
-    float lineWidth = 1.0f / Vrui::getNavigationTransformation().getScaling();
-    lineWidth *= 0.05f;
+    float scaleFac  = Vrui::getNavigationTransformation().getScaling();
+    float lineWidth = 0.1f / scaleFac;
 
     typedef float CP[4];
 
@@ -376,7 +473,7 @@ prepareLineData(GlData* glData) const
         (*tan)[1] = curTan[1];
         (*tan)[2] = curTan[2];
 
-        length += Geometry::dist(curP, nextP);
+        length += scaleFac*Geometry::dist(curP, nextP);
     }
 
     //last control point
