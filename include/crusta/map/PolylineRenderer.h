@@ -38,11 +38,6 @@ protected:
         GlData();
         ~GlData();
 
-        GLuint depthTex;
-#ifndef __APPLE__
-        GLuint blitFbo;
-#endif //__APPLE__
-
         GLuint controlPointTex;
         GLuint tangentTex;
 
@@ -52,12 +47,8 @@ protected:
         GLint rcpWindowSizeUniform;
 
         GLint numSegmentsUniform;
-        /** the size of the current depth texture */
-        int depthTexSize[2];
     };
 
-    /** reads the content of the default depth buffer into the depth texture */
-    void readDepthBuffer(GlData* glData) const;
     int  prepareLineData(GlData* glData) const;
 
     mutable Tangents tangents;

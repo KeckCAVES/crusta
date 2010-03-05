@@ -125,7 +125,6 @@ display(GLContextData& contextData) const
                  GL_LINE_BIT | GL_POLYGON_BIT);
 
     GlData* glData = contextData.retrieveDataItem<GlData>(this);
-    readDepthBuffer(glData);
     int numSegments = prepareLineData(glData);
 
     if (numSegments > 0)
@@ -151,11 +150,9 @@ display(GLContextData& contextData) const
                     1.0f/viewport[2], 1.0f/viewport[3]);
         glUniform1i(glData->numSegmentsUniform, numSegments);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, glData->depthTex);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_1D, glData->controlPointTex);
         glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_1D, glData->controlPointTex);
+        glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_1D, glData->tangentTex);
 
         glBegin(GL_QUADS);
@@ -279,25 +276,6 @@ display(GLContextData& contextData) const
 PolylineRenderer::GlData::
 GlData()
 {
-    depthTexSize[0] = depthTexSize[1] = Math::Constants<int>::max;
-
-    glGenTextures(1, &depthTex);
-    glBindTexture(GL_TEXTURE_2D, depthTex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    CHECK_GLA
-
-#ifndef __APPLE__
-    glGenFramebuffersEXT(1, &blitFbo);
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, blitFbo);
-
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
-                           GL_TEXTURE_2D, depthTex, 0);
-    CHECK_GLA
-
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-#endif //__APPLE__
-
     static const int lineTexSize = 512;
 
     glGenTextures(1, &controlPointTex);
@@ -330,9 +308,9 @@ GlData()
     uniform = shader.getUniformLocation("depthTex");
     glUniform1i(uniform, 0);
     uniform = shader.getUniformLocation("controlPointTex");
-    glUniform1i(uniform, 1);
-    uniform = shader.getUniformLocation("tangentTex");
     glUniform1i(uniform, 2);
+    uniform = shader.getUniformLocation("tangentTex");
+    glUniform1i(uniform, 3);
 
     float lineCoordStep = 1.0f / lineTexSize;
     uniform = shader.getUniformLocation("lineCoordStep");
@@ -350,85 +328,10 @@ GlData()
 PolylineRenderer::GlData::
 ~GlData()
 {
-#ifndef __APPLE__
-    glDeleteFramebuffersEXT(1, &blitFbo);
-#endif //__APPLE__
-    glDeleteTextures(1, &depthTex);
+    glDeleteTextures(1, &controlPointTex);
+    glDeleteTextures(1, &tangentTex);
 }
 
-
-void PolylineRenderer::
-readDepthBuffer(GlData* glData) const
-{
-    CHECK_GLA
-    
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    
-#ifdef __APPLE__
-    GLfloat* depthBuf = new GLfloat[viewport[2]*viewport[3]];
-    glReadPixels(0, 0, viewport[2], viewport[3], GL_DEPTH_COMPONENT,
-                 GL_FLOAT, depthBuf);
-    CHECK_GLA
-
-    glBindTexture(GL_TEXTURE_2D, glData->depthTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32,
-                 viewport[2], viewport[3], 0,
-                 GL_DEPTH_COMPONENT, GL_FLOAT, depthBuf);
-    CHECK_GLA
-
-    delete[] depthBuf;
-#else
-    GLint drawFrame;
-    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING_EXT, &drawFrame);
-    GLint drawBuffer;
-    glGetIntegerv(GL_DRAW_BUFFER, &drawBuffer);
-    GLint readFrame;
-    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING_EXT, &readFrame);
-    GLint readBuffer;
-    glGetIntegerv(GL_READ_BUFFER, &readBuffer);
-
-    if (viewport[2] != glData->depthTexSize[0] ||
-        viewport[3] != glData->depthTexSize[1])
-    {
-        glData->depthTexSize[0] = viewport[2];
-        glData->depthTexSize[1] = viewport[3];
-
-        glBindTexture(GL_TEXTURE_2D, glData->depthTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32,
-                     glData->depthTexSize[0], glData->depthTexSize[1], 0,
-                     GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-        CHECK_GLA
-
-        glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, glData->blitFbo);
-        CHECK_GLA
-        glDrawBuffer(GL_NONE);
-        assert(glCheckFramebufferStatusEXT(GL_DRAW_FRAMEBUFFER_EXT) ==
-               GL_FRAMEBUFFER_COMPLETE_EXT);
-    }
-
-    glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, drawFrame);
-    CHECK_GLA
-
-    glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, glData->blitFbo);
-    glDrawBuffer(GL_NONE);
-    CHECK_GLA
-
-    glBlitFramebufferEXT(0, 0, glData->depthTexSize[0], glData->depthTexSize[1],
-                         0, 0, glData->depthTexSize[0], glData->depthTexSize[1],
-                         GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-    CHECK_GLA
-
-    glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, drawFrame);
-    CHECK_GLA
-    glDrawBuffer(drawBuffer);
-    CHECK_GLA
-    glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, readFrame);
-    CHECK_GLA
-    glReadBuffer(readBuffer);
-    CHECK_GLA
-#endif //__APPLE__
-}
 
 int PolylineRenderer::
 prepareLineData(GlData* glData) const
@@ -486,12 +389,12 @@ prepareLineData(GlData* glData) const
     (*tan)[1] = curTan[1];
     (*tan)[2] = curTan[2];
 
-    glActiveTexture(GL_TEXTURE1);
+    glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_1D, glData->controlPointTex);
     glTexSubImage1D(GL_TEXTURE_1D, 0,0, numCPs, GL_RGBA, GL_FLOAT, cps);
     CHECK_GLA
 
-    glActiveTexture(GL_TEXTURE2);
+    glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_1D, glData->tangentTex);
     glTexSubImage1D(GL_TEXTURE_1D, 0,0, numCPs, GL_RGB, GL_FLOAT, &tangents[0]);
     CHECK_GLA

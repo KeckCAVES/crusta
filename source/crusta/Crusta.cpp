@@ -572,6 +572,9 @@ display(GLContextData& contextData)
     glStencilFunc(GL_EQUAL, 1, 1);
     glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, glData->depthStencilTex);
+
     mapMan->display(contextData);
     CHECK_GLA
 
@@ -586,12 +589,9 @@ display(GLContextData& contextData)
 Crusta::GlData::
 GlData()
 {
-    glGenRenderbuffersEXT(2, attachments);
-    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, attachments[0]);
+    glGenRenderbuffersEXT(1, &colorBuf);
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, colorBuf);
     glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA, 1,1);
-    CHECK_GLA
-    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, attachments[1]);
-    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH24_STENCIL8_EXT, 1,1);
     CHECK_GLA
 
     glGenTextures(1, &terrainAttributesTex);
@@ -604,21 +604,32 @@ GlData()
                  GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     CHECK_GLA
 
+    glGenTextures(1, &depthStencilTex);
+    glBindTexture(GL_TEXTURE_2D, depthStencilTex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8_EXT, 1, 1, 0,
+                 GL_DEPTH_STENCIL_EXT, GL_UNSIGNED_INT_24_8_EXT, NULL);
+    CHECK_GLA
+
     glGenFramebuffersEXT(1, &frameBuf);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frameBuf);
     CHECK_GLA
 
     glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
-                                 GL_RENDERBUFFER_EXT, attachments[0]);
+                                 GL_RENDERBUFFER_EXT, colorBuf);
     CHECK_GLA
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT1_EXT,
                               GL_TEXTURE_2D, terrainAttributesTex, 0);
     CHECK_GLA
-    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
-                                 GL_RENDERBUFFER_EXT, attachments[1]);
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
+                              GL_TEXTURE_2D, depthStencilTex, 0);
     CHECK_GLA
-    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT,
-                                 GL_RENDERBUFFER_EXT, attachments[1]);
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT,
+                              GL_TEXTURE_2D, depthStencilTex, 0);
     CHECK_GLA
 
     assert(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) ==
@@ -630,8 +641,9 @@ GlData()
 Crusta::GlData::
 ~GlData()
 {
-    glDeleteRenderbuffersEXT(3, attachments);
+    glDeleteRenderbuffersEXT(1, &colorBuf);
     glDeleteTextures(1, &terrainAttributesTex);
+    glDeleteTextures(1, &depthStencilTex);
     glDeleteFramebuffersEXT(1, &frameBuf);
 }
 
@@ -660,19 +672,21 @@ prepareFrameBuffer(GlData* glData)
         bufferSize[0] = viewport[2];
         bufferSize[1] = viewport[3];
 
-        glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, glData->attachments[0]);
+        glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, glData->colorBuf);
         glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA,
-                                 bufferSize[0], bufferSize[1]);
-        CHECK_GLA
-        glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, glData->attachments[1]);
-        glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH24_STENCIL8_EXT,
                                  bufferSize[0], bufferSize[1]);
         CHECK_GLA
         glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
 
         glBindTexture(GL_TEXTURE_2D, glData->terrainAttributesTex);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bufferSize[0], bufferSize[1], 0,
-                     GL_RGBA, GL_UNSIGNED_BYTE, 0);
+                     GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        CHECK_GLA
+
+        glBindTexture(GL_TEXTURE_2D, glData->depthStencilTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8_EXT,
+                     bufferSize[0], bufferSize[1], 0,
+                     GL_DEPTH_STENCIL_EXT, GL_UNSIGNED_INT_24_8_EXT, NULL);
         CHECK_GLA
 
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->frameBuf);
