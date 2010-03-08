@@ -542,18 +542,15 @@ void Crusta::
 display(GLContextData& contextData)
 {
     CHECK_GLA
-
+    GLint activeTexture;
+    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+    glPushAttrib(GL_TEXTURE_BIT);
+    
     GlData* glData = contextData.retrieveDataItem<GlData>(this);
     prepareFrameBuffer(glData);
     CHECK_GLA
 
-    glPushAttrib(GL_STENCIL_BUFFER_BIT);
-    glEnable(GL_STENCIL_TEST);
-
     //draw the terrain
-    glStencilFunc(GL_ALWAYS, 1, 1);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-
     glData->terrainShader.useTextureForColor(isTexturedTerrain);
     glData->terrainShader.update();
     glData->terrainShader.enable();
@@ -570,20 +567,22 @@ display(GLContextData& contextData)
     glData->terrainShader.disable();
 
     //let the map manager draw all the mapping stuff
-    glStencilFunc(GL_EQUAL, 1, 1);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, glData->depthStencilTex);
+    glBindTexture(GL_TEXTURE_2D, glData->depthTex);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, glData->terrainAttributesTex);
+    
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->colorFrame);
 
     mapMan->display(contextData);
     CHECK_GLA
 
-    glPopAttrib();
-
     //commit the frame buffer to the on-screen one
     commitFrameBuffer(glData);
     CHECK_GLA
+    
+    glPopAttrib();
+    glActiveTexture(activeTexture);
 }
 
 
@@ -611,19 +610,20 @@ GlData()
                  GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     CHECK_GLA
 
-    glGenTextures(1, &depthStencilTex);
-    glBindTexture(GL_TEXTURE_2D, depthStencilTex);
+    glGenTextures(1, &depthTex);
+    glBindTexture(GL_TEXTURE_2D, depthTex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8_EXT, 1, 1, 0,
-                 GL_DEPTH_STENCIL_EXT, GL_UNSIGNED_INT_24_8_EXT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, 1, 1, 0,
+                 GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
     CHECK_GLA
 
-    glGenFramebuffersEXT(1, &frameBuf);
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frameBuf);
+    //create the framebuffer to be used for rendering the terrain
+    glGenFramebuffersEXT(1, &colorTerrainDepthFrame);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, colorTerrainDepthFrame);
     CHECK_GLA
 
     glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
@@ -633,15 +633,25 @@ GlData()
                               GL_TEXTURE_2D, terrainAttributesTex, 0);
     CHECK_GLA
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
-                              GL_TEXTURE_2D, depthStencilTex, 0);
-    CHECK_GLA
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT,
-                              GL_TEXTURE_2D, depthStencilTex, 0);
+                              GL_TEXTURE_2D, depthTex, 0);
     CHECK_GLA
 
     assert(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) ==
            GL_FRAMEBUFFER_COMPLETE_EXT);
 
+    //create the framebuffer to be used for rendering the maps
+    glGenFramebuffersEXT(1, &colorFrame);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, colorFrame);
+    CHECK_GLA
+    
+    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
+                                 GL_RENDERBUFFER_EXT, colorBuf);
+    CHECK_GLA
+    glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
+    CHECK_GLA
+    assert(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) ==
+           GL_FRAMEBUFFER_COMPLETE_EXT);
+    
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
@@ -650,8 +660,9 @@ Crusta::GlData::
 {
     glDeleteRenderbuffersEXT(1, &colorBuf);
     glDeleteTextures(1, &terrainAttributesTex);
-    glDeleteTextures(1, &depthStencilTex);
-    glDeleteFramebuffersEXT(1, &frameBuf);
+    glDeleteTextures(1, &depthTex);
+    glDeleteFramebuffersEXT(1, &colorFrame);
+    glDeleteFramebuffersEXT(1, &colorTerrainDepthFrame);
 }
 
 
@@ -690,20 +701,22 @@ prepareFrameBuffer(GlData* glData)
                      GL_RGBA, GL_UNSIGNED_BYTE, NULL);
         CHECK_GLA
 
-        glBindTexture(GL_TEXTURE_2D, glData->depthStencilTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8_EXT,
+        glBindTexture(GL_TEXTURE_2D, glData->depthTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32,
                      bufferSize[0], bufferSize[1], 0,
-                     GL_DEPTH_STENCIL_EXT, GL_UNSIGNED_INT_24_8_EXT, NULL);
+                     GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
         CHECK_GLA
 
-        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->frameBuf);
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,
+                             glData->colorTerrainDepthFrame);
         assert(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) ==
                GL_FRAMEBUFFER_COMPLETE_EXT);
     }
 
     //copy the content of the default frame buffer
     glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, 0);
-    glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, glData->frameBuf);
+    glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT,
+                         glData->colorTerrainDepthFrame);
     CHECK_GLA
 
     glBlitFramebufferEXT(0, 0, bufferSize[0], bufferSize[1],
@@ -711,13 +724,12 @@ prepareFrameBuffer(GlData* glData)
                          GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
     CHECK_GLA
 
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->frameBuf);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->colorTerrainDepthFrame);
 
-    //clear the stencil and terrain attributes
+    //clear the terrain attributes
     glDrawBuffer(GL_COLOR_ATTACHMENT1_EXT);
-    glClearColor(1,0, 1.0, 1.0);
-    glClearStencil(0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glClearColor(1.0, 1.0, 1.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
     CHECK_GLA
 
     static const GLenum bufs[2] = { GL_COLOR_ATTACHMENT0_EXT,
@@ -729,7 +741,8 @@ prepareFrameBuffer(GlData* glData)
 void Crusta::
 commitFrameBuffer(GlData *glData)
 {
-    glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, glData->frameBuf);
+    glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT,
+                         glData->colorTerrainDepthFrame);
     glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
     CHECK_GLA
 

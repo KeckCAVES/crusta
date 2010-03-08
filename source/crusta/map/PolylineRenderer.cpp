@@ -1,6 +1,7 @@
 #include <crusta/map/PolylineRenderer.h>
 
 #include <Geometry/OrthogonalTransformation.h>
+#include <Geometry/ProjectiveTransformation.h>
 #include <GL/gl.h>
 #include <GL/GLContextData.h>
 #include <GL/GLTransformationWrappers.h>
@@ -26,6 +27,7 @@ static const char* polylineFP = "\
 uniform vec2      windowPos;\n\
 uniform vec2      rcpWindowSize;\n\
 uniform sampler2D depthTex;\n\
+uniform sampler2D terrainTex;\n\
 \n\
 uniform int numSegments;\n\
 \n\
@@ -35,17 +37,24 @@ uniform sampler1D controlPointTex;\n\
 uniform sampler1D tangentTex;\n\
 uniform sampler2D symbolTex;\n\
 \n\
+uniform mat4 inverseMVP;\n\
+\n\
+vec2 computeFragCoord(in vec2 fragCoord)\n\
+{\n\
+    return (fragCoord - windowPos) * rcpWindowSize;\n\
+}\n\
+\n\
 vec3 unproject(in vec2 fragCoord)\n\
 {\n\
-    vec2 texCoord = (fragCoord - windowPos) * rcpWindowSize;\n\
-    gl_FragDepth  = texture2D(depthTex, texCoord).r;\n\
+    gl_FragDepth  = texture2D(depthTex, fragCoord).r;\n\
 \n\
     vec4 tmp;\n\
-    tmp.xy = (texCoord * 2.0) - 1.0;\n\
+    tmp.xy = (fragCoord * 2.0) - 1.0;\n\
     tmp.z  = gl_FragDepth*2.0 - 1.0;\n\
     tmp.w  = 1.0;\n\
 \n\
-    tmp   = gl_ModelViewProjectionMatrixInverse * tmp;\n\
+//    tmp   = gl_ModelViewProjectionMatrixInverse * tmp;\n\
+    tmp = inverseMVP * tmp;\n\
     tmp.w = 1.0 / tmp.w;\n\
     return tmp.xyz * tmp.w;\n\
 }\n\
@@ -58,7 +67,12 @@ vec4 getControlPoint(in float coord)\n\
 \n\
 void main()\n\
 {\n\
-    vec3 pos = unproject(gl_FragCoord.xy);\n\
+    vec2 fragCoord = computeFragCoord(gl_FragCoord.xy);\n\
+    vec4 terrainId = texture2D(terrainTex, fragCoord);\n\
+    if (all(equal(terrainId, vec4(1.0))))\n\
+        discard;\n\
+\n\
+    vec3 pos = unproject(fragCoord);\n\
 \n\
     //walk all the line segments and process their contribution\n\
     vec4 color      = vec4(0.0, 0.0, 0.0, 0.0);\n\
@@ -79,7 +93,6 @@ void main()\n\
 \n\
         if (u<=1.0 && u>=0.0)\n\
         {\n\
-//color += vec4(0.0, 0.3, 0.0, 1.0);\n\
 \n\
              //fetch the tangent\n\
              vec3 tangent = texture1D(tangentTex, coord).rgb;\n\
@@ -126,7 +139,7 @@ display(GLContextData& contextData) const
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
 
     glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
-                 GL_LINE_BIT | GL_POLYGON_BIT);
+                 GL_LINE_BIT | GL_POLYGON_BIT | GL_TEXTURE_BIT);
 
     GlData* glData = contextData.retrieveDataItem<GlData>(this);
     int numSegments = prepareLineData(glData);
@@ -136,15 +149,6 @@ display(GLContextData& contextData) const
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        const Point3f& centroid = lines->front()->getCentroid();
-
-        glPushMatrix();
-        Vrui::Vector centroidTranslation(centroid[0], centroid[1], centroid[2]);
-        Vrui::NavTransform nav =
-            Vrui::getDisplayState(contextData).modelviewNavigational;
-        nav *= Vrui::NavTransform::translate(centroidTranslation);
-        glLoadMatrix(nav);
-
         glData->shader.useProgram();
 
         GLint viewport[4];
@@ -153,6 +157,33 @@ display(GLContextData& contextData) const
         glUniform2f(glData->rcpWindowSizeUniform,
                     1.0f/viewport[2], 1.0f/viewport[3]);
         glUniform1i(glData->numSegmentsUniform, numSegments);
+
+        //Get projection matrix from openGL
+        GLfloat proj[16];
+
+        glGetFloatv(GL_PROJECTION_MATRIX, proj);
+
+        Geometry::ProjectiveTransformation<GLfloat,3> trans;
+        trans = Geometry::ProjectiveTransformation<GLfloat,3>::fromColumnMajor(
+            proj);
+        
+        //produce modelview matrix
+        const Point3f& centroid = lines->front()->getCentroid();
+        
+        Vrui::Vector centroidTranslation(centroid[0], centroid[1], centroid[2]);
+        Vrui::NavTransform nav =
+            Vrui::getDisplayState(contextData).modelviewNavigational;
+        nav *= Vrui::NavTransform::translate(centroidTranslation);
+        
+        Geometry::ProjectiveTransformation<GLfloat,3> modl;
+        nav.writeMatrix(modl.getMatrix());
+
+        trans *= modl;
+        trans.doInvert();
+
+        glUniformMatrix4fv(glData->inverseMVPUniform, 1, true,
+                           trans.getMatrix().getEntries());
+        CHECK_GLA
 
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_1D, glData->controlPointTex);
@@ -170,7 +201,6 @@ display(GLContextData& contextData) const
 
         glData->shader.disablePrograms();
 
-        glPopMatrix();
         CHECK_GLA
     }
 
@@ -354,6 +384,8 @@ public:
 PolylineRenderer::GlData::
 GlData()
 {
+    glPushAttrib(GL_TEXTURE_BIT);
+
     static const int lineTexSize = 512;
 
     glGenTextures(1, &controlPointTex);
@@ -372,25 +404,28 @@ GlData()
                  GL_RGB, GL_FLOAT, NULL);
     CHECK_GLA
 
-    TargaImage atlas;
-    if (!atlas.load("Crusta_MapSymbolAtlas.tga"))
-        assert(false);
-
     glGenTextures(1, &symbolTex);
     glBindTexture(GL_TEXTURE_2D, symbolTex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas.size[0], atlas.size[1], 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, atlas.pixels);
+
+    TargaImage atlas;
+    if (atlas.load("Crusta_MapSymbolAtlas.tga"))
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas.size[0], atlas.size[1], 0,
+                     GL_RGBA, GL_UNSIGNED_BYTE, atlas.pixels);
+        
+        atlas.destroy();
+    }
+    else
+    {
+        float defaultTexel[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0,
+                     GL_RGBA, GL_FLOAT, defaultTexel);
+    }
     CHECK_GLA
-
-    atlas.destroy();
-
-///\todo bind whatever was bound before
-    glBindTexture(GL_TEXTURE_1D, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
 
     shader.compileVertexShaderFromString(polylineVP);
     shader.compileFragmentShaderFromString(polylineFP);
@@ -401,6 +436,8 @@ GlData()
     GLint uniform;
     uniform = shader.getUniformLocation("depthTex");
     glUniform1i(uniform, 0);
+    uniform = shader.getUniformLocation("terrainTex");
+    glUniform1i(uniform, 1);
     uniform = shader.getUniformLocation("controlPointTex");
     glUniform1i(uniform, 2);
     uniform = shader.getUniformLocation("tangentTex");
@@ -417,8 +454,11 @@ GlData()
     windowPosUniform      = shader.getUniformLocation("windowPos");
     rcpWindowSizeUniform  = shader.getUniformLocation("rcpWindowSize");
     numSegmentsUniform    = shader.getUniformLocation("numSegments");
+    inverseMVPUniform     = shader.getUniformLocation("inverseMVP");
 
     shader.disablePrograms();
+    
+    glPopAttrib();
 }
 
 PolylineRenderer::GlData::

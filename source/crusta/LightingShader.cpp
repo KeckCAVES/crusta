@@ -561,7 +561,8 @@ void LightingShader::compileShader()
 		"\
 		void main()\n\
 			{\n\
-			gl_FragColor=gl_Color;\n\
+			gl_FragData[0] = gl_Color;\n\
+            gl_FragData[1] = vec4(0.0);\n\
 			}\n";
 	glCompileShaderFromString(fragmentShader,fragmentShaderSource);
 

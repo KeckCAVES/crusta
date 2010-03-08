@@ -81,10 +81,11 @@ protected:
         GlData();
         ~GlData();
 
-        GLuint frameBuf;
+        GLuint colorTerrainDepthFrame;
+        GLuint colorFrame;
         GLuint colorBuf;
         GLuint terrainAttributesTex;
-        GLuint depthStencilTex;
+        GLuint depthTex;
 
         LightingShader terrainShader;
     };

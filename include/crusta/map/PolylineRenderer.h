@@ -48,6 +48,7 @@ protected:
         GLint rcpWindowSizeUniform;
 
         GLint numSegmentsUniform;
+        GLint inverseMVPUniform;
     };
 
     int  prepareLineData(GlData* glData) const;
