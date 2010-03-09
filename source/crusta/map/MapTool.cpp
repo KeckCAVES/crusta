@@ -56,19 +56,19 @@ init(Vrui::ToolFactory* parent)
 
 
 void MapTool::
-createShape(Shape*& shape, Shape::Id& control, const Point3&)
+createShape(Shape*& shape, Shape::ControlId& control, const Point3&)
 {
     shape   = NULL;
     control = Shape::BAD_ID;
 }
 void MapTool::
-deleteShape(Shape*& shape, Shape::Id& control)
+deleteShape(Shape*& shape, Shape::ControlId& control)
 {
     shape   = NULL;
     control = Shape::BAD_ID;
 }
 void MapTool::
-addControlPoint(Shape*& shape, Shape::Id& control, const Point3& pos)
+addControlPoint(Shape*& shape, Shape::ControlId& control, const Point3& pos)
 {
     assert(shape != NULL);
 
@@ -96,7 +96,7 @@ addControlPoint(Shape*& shape, Shape::Id& control, const Point3& pos)
 }
 
 void MapTool::
-removeControl(Shape*& shape, Shape::Id& control)
+removeControl(Shape*& shape, Shape::ControlId& control)
 {
     assert(shape != NULL);
 
@@ -106,7 +106,7 @@ removeControl(Shape*& shape, Shape::Id& control)
 }
 
 void MapTool::
-unselectShape(Shape*& shape, Shape::Id& control)
+unselectShape(Shape*& shape, Shape::ControlId& control)
 {
     shape   = NULL;
     control = Shape::BAD_ID;
@@ -144,7 +144,7 @@ selectShape(const Point3& pos)
     for (ShapePtrs::iterator it=shapes.begin(); it!=shapes.end(); ++it)
     {
         double distance;
-        Shape::Id control = (*it)->select(pos, distance);
+        Shape::ControlId control = (*it)->select(pos, distance);
         if (control!=Shape::BAD_ID && distance<=threshold)
         {
             curShape        = *it;
@@ -171,7 +171,7 @@ selectControl(const Point3& pos)
     curControl = Shape::BAD_ID;
 
     double distance;
-    Shape::Id control = curShape->select(pos, distance,
+    Shape::ControlId control = curShape->select(pos, distance,
                                          mapMan->getPointSelectionBias());
 
     if (control == Shape::BAD_ID)
@@ -334,10 +334,10 @@ display(GLContextData& contextData) const
 
             case Shape::CONTROL_SEGMENT:
             {
-                Shape::Id si = curShape->previousControl(curControl);
-                Point3 s     = curShape->getControlPoint(si);
-                s            = crusta->mapToScaledGlobe(s);
-                Shape::Id ei = curShape->nextControl(curControl);
+                Shape::ControlId si = curShape->previousControl(curControl);
+                Point3 s            = curShape->getControlPoint(si);
+                s                   = crusta->mapToScaledGlobe(s);
+                Shape::ControlId ei = curShape->nextControl(curControl);
                 Point3 e     = curShape->getControlPoint(ei);
                 e            = crusta->mapToScaledGlobe(e);
 

@@ -35,13 +35,13 @@ protected:
         MODE_SELECTING_SHAPE
     };
 
-    virtual void createShape(Shape*& shape, Shape::Id& control,
+    virtual void createShape(Shape*& shape, Shape::ControlId& control,
                              const Point3& pos);
-    virtual void deleteShape(Shape*& shape, Shape::Id& control);
-    virtual void addControlPoint(Shape*& shape, Shape::Id& control,
+    virtual void deleteShape(Shape*& shape, Shape::ControlId& control);
+    virtual void addControlPoint(Shape*& shape, Shape::ControlId& control,
                                  const Point3& pos);
-    virtual void removeControl(Shape*& shape, Shape::Id& control);
-    virtual void unselectShape(Shape*& shape, Shape::Id& control);
+    virtual void removeControl(Shape*& shape, Shape::ControlId& control);
+    virtual void unselectShape(Shape*& shape, Shape::ControlId& control);
 
     virtual ShapePtrs getShapes();
 
@@ -50,9 +50,9 @@ protected:
     void   selectControl (const Point3& pos);
     void   addPointAtEnds(const Point3& pos);
 
-    int       toolId;
-    Mode      mode;
-    Shape::Id curControl;
+    int              toolId;
+    Mode             mode;
+    Shape::ControlId curControl;
 
     Point3 prevPosition;
 

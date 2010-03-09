@@ -8,8 +8,8 @@
 
 BEGIN_CRUSTA
 
-const Shape::Symbol Shape::DEFAULT_SYMBOL;
-const Shape::Id     Shape::BAD_ID(-1);
+const Shape::Symbol    Shape::DEFAULT_SYMBOL;
+const Shape::ControlId Shape::BAD_ID(-1);
 
 
 Shape::Symbol::
@@ -29,29 +29,29 @@ Symbol(int iId, float iRed, float iGreen, float iBlue) :
 
 
 
-Shape::Id::
-Id():
+Shape::ControlId::
+ControlId():
     raw(BAD_ID.raw)
 {}
 
-Shape::Id::
-Id(int iRaw) :
+Shape::ControlId::
+ControlId(int iRaw) :
     raw(iRaw)
 {}
 
-Shape::Id::
-Id(int iType, int iIndex) :
+Shape::ControlId::
+ControlId(int iType, int iIndex) :
     type(iType), index(iIndex)
 {}
 
-bool Shape::Id::
-operator ==(const Id& other) const
+bool Shape::ControlId::
+operator ==(const ControlId& other) const
 {
     return raw == other.raw;
 }
 
-bool Shape::Id::
-operator !=(const Id& other) const
+bool Shape::ControlId::
+operator !=(const ControlId& other) const
 {
     return raw != other.raw;
 }
@@ -69,13 +69,13 @@ Shape::
 }
 
 
-Shape::Id Shape::
+Shape::ControlId Shape::
 select(const Point3& pos, double& dist, double pointBias)
 {
     double pointDist;
-    Id pointId = selectPoint(pos, pointDist);
+    ControlId pointId = selectPoint(pos, pointDist);
     double segmentDist;
-    Id segmentId = selectSegment(pos, segmentDist);
+    ControlId segmentId = selectSegment(pos, segmentDist);
 
     if (pointDist*pointBias <= segmentDist)
     {
@@ -89,11 +89,11 @@ select(const Point3& pos, double& dist, double pointBias)
     }
 }
 
-Shape::Id Shape::
+Shape::ControlId Shape::
 selectPoint(const Point3& pos, double& dist)
 {
-    Id retId = BAD_ID;
-    dist     = Math::Constants<double>::max;
+    ControlId retId = BAD_ID;
+    dist            = Math::Constants<double>::max;
 
     int numPoints = static_cast<int>(controlPoints.size());
     for (int i=0; i<numPoints; ++i)
@@ -110,11 +110,11 @@ selectPoint(const Point3& pos, double& dist)
     return retId;
 }
 
-Shape::Id Shape::
+Shape::ControlId Shape::
 selectSegment(const Point3& pos, double& dist)
 {
-    Id retId = BAD_ID;
-    dist     = Math::Constants<double>::max;
+    ControlId retId = BAD_ID;
+    dist            = Math::Constants<double>::max;
 
     int numSegments = static_cast<int>(controlPoints.size()) - 1;
     for (int i=0; i<numSegments; ++i)
@@ -148,7 +148,7 @@ selectSegment(const Point3& pos, double& dist)
     return retId;
 }
 
-Shape::Id Shape::
+Shape::ControlId Shape::
 selectExtremity(const Point3& pos, double& dist, End& end)
 {
     double frontDist = Geometry::dist(pos, controlPoints.front());
@@ -158,19 +158,19 @@ selectExtremity(const Point3& pos, double& dist, End& end)
     {
         dist = frontDist;
         end  = END_FRONT;
-        return Id(CONTROL_POINT, 0);
+        return ControlId(CONTROL_POINT, 0);
     }
     else
     {
         dist = backDist;
         end  = END_BACK;
-        return Id(CONTROL_POINT, controlPoints.size() - 1);
+        return ControlId(CONTROL_POINT, controlPoints.size() - 1);
     }
 }
 
 
 bool Shape::
-isValid(const Id& id)
+isValid(const ControlId& id)
 {
     if (id==BAD_ID)
         return false;
@@ -188,37 +188,38 @@ isValid(const Id& id)
 }
 
 bool Shape::
-isValidPoint(const Id& id)
+isValidPoint(const ControlId& id)
 {
     int numPoints = static_cast<int>(controlPoints.size());
     return id!=BAD_ID && id.type==CONTROL_POINT && id.index<numPoints;
 }
 
 bool Shape::
-isValidSegment(const Id& id)
+isValidSegment(const ControlId& id)
 {
     int numSegments = static_cast<int>(controlPoints.size()) - 1;
     return id!=BAD_ID && id.type==CONTROL_SEGMENT && id.index<numSegments;
 }
 
 
-Shape::Id Shape::
+Shape::ControlId Shape::
 addControlPoint(const Point3& pos, End end)
 {
     if (end == END_FRONT)
     {
         controlPoints.insert(controlPoints.begin(), pos);
-        return Id(CONTROL_POINT, 0);
+        return ControlId(CONTROL_POINT, 0);
     }
     else
     {
         controlPoints.push_back(pos);
-        return Id(CONTROL_POINT, static_cast<int>(controlPoints.size()-1));
+        return ControlId(CONTROL_POINT,
+                         static_cast<int>(controlPoints.size()-1));
     }
 }
 
 bool Shape::
-moveControlPoint(const Id& id, const Point3& pos)
+moveControlPoint(const ControlId& id, const Point3& pos)
 {
     if (!isValidPoint(id))
         return false;
@@ -228,7 +229,7 @@ moveControlPoint(const Id& id, const Point3& pos)
 }
 
 void Shape::
-removeControlPoint(const Id& id)
+removeControlPoint(const ControlId& id)
 {
     if (!isValidPoint(id))
         return;
@@ -237,20 +238,20 @@ removeControlPoint(const Id& id)
 }
 
 
-Shape::Id Shape::
-previousControl(const Id& id)
+Shape::ControlId Shape::
+previousControl(const ControlId& id)
 {
     switch (id.type)
     {
         case CONTROL_POINT:
             if (id.index>0)
-                return Id(CONTROL_SEGMENT, id.index-1);
+                return ControlId(CONTROL_SEGMENT, id.index-1);
             else
                 return BAD_ID;
 
         case CONTROL_SEGMENT:
             if (id.index>=0)
-                return Id(CONTROL_POINT, id.index);
+                return ControlId(CONTROL_POINT, id.index);
             else
                 return BAD_ID;
 
@@ -259,8 +260,8 @@ previousControl(const Id& id)
     }
 }
 
-Shape::Id Shape::
-nextControl(const Id& id)
+Shape::ControlId Shape::
+nextControl(const ControlId& id)
 {
     int lastPoint = static_cast<int>(controlPoints.size()) - 1;
     if (id==BAD_ID || id.index>=lastPoint)
@@ -269,10 +270,10 @@ nextControl(const Id& id)
     switch (id.type)
     {
         case CONTROL_POINT:
-            return Id(CONTROL_SEGMENT, id.index);
+            return ControlId(CONTROL_SEGMENT, id.index);
 
         case CONTROL_SEGMENT:
-            return Id(CONTROL_POINT, id.index+1);
+            return ControlId(CONTROL_POINT, id.index+1);
 
         default:
             return BAD_ID;
@@ -293,7 +294,7 @@ getSymbol() const
 }
 
 Point3& Shape::
-getControlPoint(const Id& id)
+getControlPoint(const ControlId& id)
 {
     if (!isValidPoint(id))
         throw std::runtime_error("invalid control point id");
@@ -314,13 +315,13 @@ getControlPoints() const
 }
 
 
-Shape::Id Shape::
-refine(const Id& id, const Point3& pos)
+Shape::ControlId Shape::
+refine(const ControlId& id, const Point3& pos)
 {
     if (!isValidSegment(id))
         return BAD_ID;
 
-    Id end = nextControl(id);
+    ControlId end = nextControl(id);
     assert(isValidPoint(end));
     Point3s::iterator it = controlPoints.begin() + end.index;
     controlPoints.insert(it, pos);

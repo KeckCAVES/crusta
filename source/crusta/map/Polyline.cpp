@@ -40,16 +40,16 @@ recomputeRelativePoints()
     }
 }
 
-Shape::Id Polyline::
+Shape::ControlId Polyline::
 addControlPoint(const Point3& pos, End end)
 {
-    Shape::Id ret = Shape::addControlPoint(pos, end);
+    Shape::ControlId ret = Shape::addControlPoint(pos, end);
     recomputeRelativePoints();
     return ret;
 }
 
 bool Polyline::
-moveControlPoint(const Id& id, const Point3& pos)
+moveControlPoint(const ControlId& id, const Point3& pos)
 {
     bool ret = Shape::moveControlPoint(id, pos);
     recomputeRelativePoints();
@@ -57,7 +57,7 @@ moveControlPoint(const Id& id, const Point3& pos)
 }
 
 void Polyline::
-removeControlPoint(const Id& id)
+removeControlPoint(const ControlId& id)
 {
     Shape::removeControlPoint(id);
     recomputeRelativePoints();

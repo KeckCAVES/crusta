@@ -23,9 +23,9 @@ protected:
 
 //- Inherited from Shape
 public:
-    virtual Id addControlPoint(const Point3& pos, End end=END_BACK);
-    virtual bool moveControlPoint(const Id& id, const Point3& pos);
-    virtual void removeControlPoint(const Id& id);
+    virtual ControlId addControlPoint(const Point3& pos, End end=END_BACK);
+    virtual bool moveControlPoint(const ControlId& id, const Point3& pos);
+    virtual void removeControlPoint(const ControlId& id);
 };
 
 

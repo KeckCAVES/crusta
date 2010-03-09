@@ -36,13 +36,13 @@ public:
         Symbol(int iId, float iRed, float iGreen, float iBlue);
     };
 
-    union Id
+    union ControlId
     {
-        Id();
-        Id(int iRaw);
-        Id(int iType, int iIndex);
-        bool operator ==(const Id& other) const;
-        bool operator !=(const Id& other) const;
+        ControlId();
+        ControlId(int iRaw);
+        ControlId(int iType, int iIndex);
+        bool operator ==(const ControlId& other) const;
+        bool operator !=(const ControlId& other) const;
 
         struct
         {
@@ -55,32 +55,32 @@ public:
     Shape();
     virtual ~Shape();
 
-    Id select         (const Point3& pos, double& dist, double pointBias=1.0);
-    Id selectPoint    (const Point3& pos, double& dist);
-    Id selectSegment  (const Point3& pos, double& dist);
-    Id selectExtremity(const Point3& pos, double& dist, End& end);
+    ControlId select(const Point3& pos, double& dist, double pointBias=1.0);
+    ControlId selectPoint(const Point3& pos, double& dist);
+    ControlId selectSegment(const Point3& pos, double& dist);
+    ControlId selectExtremity(const Point3& pos, double& dist, End& end);
 
-    bool isValid       (const Id& id);
-    bool isValidPoint  (const Id& id);
-    bool isValidSegment(const Id& id);
+    bool isValid(const ControlId& id);
+    bool isValidPoint(const ControlId& id);
+    bool isValidSegment(const ControlId& id);
 
-    virtual Id addControlPoint(const Point3& pos, End end=END_BACK);
-    virtual bool moveControlPoint(const Id& id, const Point3& pos);
-    virtual void removeControlPoint(const Id& id);
+    virtual ControlId addControlPoint(const Point3& pos, End end=END_BACK);
+    virtual bool moveControlPoint(const ControlId& id, const Point3& pos);
+    virtual void removeControlPoint(const ControlId& id);
 
-    Id previousControl(const Id& id);
-    Id nextControl(const Id& id);
+    ControlId previousControl(const ControlId& id);
+    ControlId nextControl(const ControlId& id);
 
     Symbol&        getSymbol();
     const Symbol&  getSymbol() const;
-    Point3&        getControlPoint(const Id& id);
+    Point3&        getControlPoint(const ControlId& id);
     Point3s&       getControlPoints();
     const Point3s& getControlPoints() const;
 
-    Id refine(const Id& id, const Point3& pos);
+    ControlId refine(const ControlId& id, const Point3& pos);
 
-    static const Symbol DEFAULT_SYMBOL;
-    static const Id     BAD_ID;
+    static const Symbol    DEFAULT_SYMBOL;
+    static const ControlId BAD_ID;
 
 protected:
     Symbol  symbol;
