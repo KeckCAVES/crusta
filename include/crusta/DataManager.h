@@ -3,7 +3,7 @@
 
 #include <crusta/CrustaComponent.h>
 #include <crusta/QuadtreeFileSpecs.h>
-#include <crusta/QuadNodeData.h>
+#include <crusta/QuadCache.h>
 
 
 BEGIN_CRUSTA

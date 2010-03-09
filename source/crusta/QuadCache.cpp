@@ -8,6 +8,32 @@
 
 BEGIN_CRUSTA
 
+MainCache::Request::
+Request() :
+    lod(0), parent(NULL), child(~0)
+{}
+
+MainCache::Request::
+Request(float iLod, MainCacheBuffer* iParent, uint8 iChild) :
+    lod(iLod), parent(iParent), child(iChild)
+{}
+
+bool MainCache::Request::
+operator ==(const Request& other) const
+{
+    /**\todo there is some danger here. Double check that I'm really only discarding
+     components of the request that are allowed to be different. So far, since
+     everything is fetched on a node basis the index is all that is needed to
+     coalesce requests */
+    return parent->getData().index == other.parent->getData().index &&
+    child == other.child;
+}
+bool MainCache::Request::
+operator <(const Request& other) const
+{
+    return Math::abs(lod) < Math::abs(other.lod);
+}
+
 MainCache::
 MainCache(uint size, Crusta* iCrusta) :
     CacheUnit<MainCacheBuffer>(size, iCrusta), maxFetchRequests(16)
@@ -25,7 +51,7 @@ MainCache::
 }
 
 void MainCache::
-request(const CacheRequest& req)
+request(const Request& req)
 {
     //make sure merging of the requests is done one at a time
     Threads::Mutex::Lock lock(requestMutex);
@@ -39,7 +65,7 @@ request(const CacheRequest& req)
 }
 
 void MainCache::
-request(const CacheRequests& reqs)
+request(const Requests& reqs)
 {
     //make sure merging of the requests is done one at a time
     Threads::Mutex::Lock lock(requestMutex);
@@ -64,7 +90,7 @@ frame()
     double endTime = Vrui::getApplicationTime() + 0.08e-3;
 
     //update as much as possible
-    for (CacheRequests::iterator it=childRequests.begin();
+    for (Requests::iterator it=childRequests.begin();
          Vrui::getApplicationTime()<endTime && it!=childRequests.end(); ++it)
     {
         FetchRequest fetch;
@@ -100,7 +126,7 @@ frame()
 
     //update as much as possible
     int numFetches = maxFetchRequests - static_cast<int>(fetchRequests.size());
-    for (CacheRequests::iterator it=childRequests.begin();
+    for (Requests::iterator it=childRequests.begin();
          numFetches>0 && Vrui::getApplicationTime()<endTime &&
          it!=childRequests.end(); ++it)
     {
@@ -129,8 +155,8 @@ frame()
             return;
         }
         //pin the buffers we obtained
-        fetch.parent->pin();
-        fetch.child->pin(true, false);
+        pin(fetch.parent);
+        pin(fetch.child, true, false);
 
         //submit the fetch request
         fetchRequests.push_back(fetch);
@@ -143,10 +169,10 @@ frame()
     for (FetchRequests::const_iterator it=fetchResults.begin();
          it!=fetchResults.end(); ++it)
     {
-        it->parent->pin(false);
-        it->parent->touch(crusta);
-        it->child->pin(false);
-        it->child->touch(crusta);
+        pin(it->parent, false);
+        touch(it->parent);
+        pin(it->child);
+        touch(it->child);
 
         DEBUG_OUT(1, "MainCache::frame: request for Index %s:%d processed\n",
                   it->parent->getData().index.med_str().c_str(), it->which);

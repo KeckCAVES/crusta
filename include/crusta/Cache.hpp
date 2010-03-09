@@ -1,9 +1,39 @@
 #include <algorithm>
 #include <iostream>
 
+#include <cassert>
+
 #include <crusta/Crusta.h>
 
 BEGIN_CRUSTA
+
+template <typename NodeDataType>
+CacheBuffer<NodeDataType>::
+CacheBuffer(uint size) :
+    frameNumber(0), data(size)
+{}
+
+template <typename NodeDataType>
+NodeDataType& CacheBuffer<NodeDataType>::
+getData()
+{
+    return data;
+}
+
+template <typename NodeDataType>
+const NodeDataType& CacheBuffer<NodeDataType>::
+getData() const
+{
+    return data;
+}
+
+template <typename NodeDataType>
+FrameNumber CacheBuffer<NodeDataType>::
+getFrameNumber() const
+{
+    return frameNumber;
+}
+
 
 template <typename BufferType>
 CacheUnit<BufferType>::
@@ -38,7 +68,7 @@ BufferType* CacheUnit<BufferType>::
 findCached(const TreeIndex& index) const
 {
     typename BufferPtrMap::const_iterator it = cached.find(index);
-    if (it!=cached.end() && it->second->isValid())
+    if (it!=cached.end() && isValid(it->second))
     {
         DEBUG_OUT(10, "Cache%u::find: found %s\n", (unsigned int)cached.size(),
                   index.med_str().c_str());
@@ -104,6 +134,44 @@ getBuffer(const TreeIndex& index, bool* existed)
 
 
 template <typename BufferType>
+bool CacheUnit<BufferType>::
+isCurrent(const BufferType* const buffer) const
+{
+    return buffer->frameNumber > crusta->getLastScaleFrame();
+}
+
+template <typename BufferType>
+bool CacheUnit<BufferType>::
+isValid(const BufferType* const buffer) const
+{
+    return buffer->frameNumber!=0 && buffer->frameNumber!=FrameNumber(~0);
+}
+
+template <typename BufferType>
+void CacheUnit<BufferType>::
+touch(BufferType* buffer) const
+{
+    buffer->frameNumber = std::max(buffer->frameNumber,
+                                   crusta->getCurrentFrame());
+}
+
+template <typename BufferType>
+void CacheUnit<BufferType>::
+invalidate(BufferType* buffer) const
+{
+    buffer->frameNumber = 0;
+}
+
+template <typename BufferType>
+void CacheUnit<BufferType>::
+pin(BufferType* buffer, bool wantPinned, bool asUsable) const
+{
+    buffer->frameNumber = wantPinned ?
+        (asUsable ? FrameNumber(~0)-1 : FrameNumber(~0)) : 0;
+}
+
+
+template <typename BufferType>
 CacheUnit<BufferType>::IndexedBuffer::
 IndexedBuffer(TreeIndex iIndex, BufferType* iBuffer) :
     index(iIndex), buffer(iBuffer)
@@ -154,7 +222,7 @@ bool encounteredNonInvalid = false;
 for (typename IndexedBuffers::reverse_iterator it=lruCached.rbegin();
      it!=lruCached.rend(); ++it)
 {
-    if (it->buffer->isValid())
+    if (isValid(it->buffer))
         encounteredNonInvalid = true;
     else if (encounteredNonInvalid)
     {

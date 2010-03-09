@@ -98,7 +98,7 @@ loadRoot(TreeIndex rootIndex, const Scope& scope)
     sourceColor(NULL,root);
     generateGeometry(root);
 
-    rootBuf->pin();
+    crusta->getCache()->getMainCache().pin(rootBuf);
 }
 
 void DataManager::

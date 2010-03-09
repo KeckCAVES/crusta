@@ -9,8 +9,6 @@
 
 BEGIN_CRUSTA
 
-class Crusta;
-
 /** stores the main RAM view-independent data of the terrain that can be shared
     between multiple view-dependent trees */
 struct QuadNodeMainData
@@ -80,49 +78,7 @@ struct QuadNodeVideoData
 
 
 
-
-template <typename NodeDataType>
-class CacheBuffer
-{
-public:
-    CacheBuffer(uint size);
-
-    /** retrieve the main memory node data from the buffer */
-    NodeDataType& getData();
-    const NodeDataType& getData() const;
-
-    /** check to see if the semi-dynamic data of the buffer is current and can
-        be used without an update */
-    bool isCurrent(Crusta* crusta);
-    
-    /** check to see if the buffer is valid */
-    bool isValid();
-
-    /** confirm use of the buffer for the current frame */
-    void touch(Crusta* crusta);
-    /** invalidate a buffer */
-    void invalidate();
-    /** pin the element in the cache such that it cannot be swaped out */
-    void pin(bool wantPinned=true, bool asUsable=true);
-    /** query the frame number of the buffer */
-    FrameNumber getFrameNumber() const;
-
-protected:
-    /** sequence number used to evaluate LRU prioritization */
-    FrameNumber frameNumber;
-    /** the actual node data */
-    NodeDataType data;
-};
-
 END_CRUSTA
 
-#include <crusta/QuadNodeData.hpp>
-
-BEGIN_CRUSTA
-
-typedef CacheBuffer<QuadNodeMainData>  MainCacheBuffer;
-typedef CacheBuffer<QuadNodeVideoData> VideoCacheBuffer;
-
-END_CRUSTA
 
 #endif //_QuadNodeData_H_

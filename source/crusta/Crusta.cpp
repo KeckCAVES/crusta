@@ -31,6 +31,93 @@ BEGIN_CRUSTA
 bool DEBUG_INTERSECT = false;
 #endif //DEBUG_INTERSECT_CRAP
 
+CrustaGlData::
+CrustaGlData()
+{
+    QuadTerrain::generateVertexAttributeTemplate(vertexAttributeTemplate);
+    QuadTerrain::generateIndexTemplate(indexTemplate);
+    
+    /* Check for the required OpenGL extensions: */
+    if(!GLEXTFramebufferObject::isSupported())
+        Misc::throwStdErr("Crusta: GL_EXT_framebuffer_object not supported");
+    /* Initialize the required extensions: */
+    GLEXTFramebufferObject::initExtension();
+    
+    glGenRenderbuffersEXT(1, &colorBuf);
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, colorBuf);
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA, 1,1);
+    CHECK_GLA
+    
+    glGenTextures(1, &terrainAttributesTex);
+    glBindTexture(GL_TEXTURE_2D, terrainAttributesTex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    CHECK_GLA
+    
+    glGenTextures(1, &depthTex);
+    glBindTexture(GL_TEXTURE_2D, depthTex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, 1, 1, 0,
+                 GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    CHECK_GLA
+    
+    //create the framebuffer to be used for rendering the terrain
+    glGenFramebuffersEXT(1, &colorTerrainDepthFrame);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, colorTerrainDepthFrame);
+    CHECK_GLA
+    
+    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
+                                 GL_RENDERBUFFER_EXT, colorBuf);
+    CHECK_GLA
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT1_EXT,
+                              GL_TEXTURE_2D, terrainAttributesTex, 0);
+    CHECK_GLA
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
+                              GL_TEXTURE_2D, depthTex, 0);
+    CHECK_GLA
+    
+    assert(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) ==
+           GL_FRAMEBUFFER_COMPLETE_EXT);
+    
+    //create the framebuffer to be used for rendering the maps
+    glGenFramebuffersEXT(1, &colorFrame);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, colorFrame);
+    CHECK_GLA
+    
+    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
+                                 GL_RENDERBUFFER_EXT, colorBuf);
+    CHECK_GLA
+    glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
+    CHECK_GLA
+    assert(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) ==
+           GL_FRAMEBUFFER_COMPLETE_EXT);
+    
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+}
+
+CrustaGlData::
+~CrustaGlData()
+{
+    glDeleteBuffers(1, &vertexAttributeTemplate);
+    glDeleteBuffers(1, &indexTemplate);
+    
+    glDeleteRenderbuffersEXT(1, &colorBuf);
+    glDeleteTextures(1, &terrainAttributesTex);
+    glDeleteTextures(1, &depthTex);
+    glDeleteFramebuffersEXT(1, &colorFrame);
+    glDeleteFramebuffersEXT(1, &colorTerrainDepthFrame);
+}
+
+
+
 void Crusta::
 init(const std::string& demFileBase, const std::string& colorFileBase)
 {
@@ -129,7 +216,7 @@ getHeight(double x, double y, double z)
             break;
 
         //try to grab the children for evaluation
-        CacheRequests missingChildren;
+        MainCache::Requests missingChildren;
         for (int i=0; i<4; ++i)
         {
             //find child
@@ -137,7 +224,7 @@ getHeight(double x, double y, double z)
             MainCacheBuffer* childBuf =
                 cache->getMainCache().findCached(childIndex);
             if (childBuf == NULL)
-                missingChildren.push_back(CacheRequest(0, nodeBuf, i));
+                missingChildren.push_back(MainCache::Request(0, nodeBuf, i));
             else if (childBuf->getData().scope.contains(p))
             {
                 //switch to the child for traversal continuation
@@ -249,7 +336,7 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
         MainCacheBuffer* childBuf = mainCache.findCached(childIndex);
         if (childBuf == NULL)
         {
-            mainCache.request(CacheRequest(0.0, nodeBuf, childId));
+            mainCache.request(MainCache::Request(0.0, nodeBuf, childId));
             break;
         }
         else
@@ -497,13 +584,6 @@ getMapManager() const
     return mapMan;
 }
 
-LightingShader& Crusta::
-getTerrainShader(GLContextData& contextData)
-{
-    GlData* glData = contextData.retrieveDataItem<GlData>(this);
-    return glData->terrainShader;
-}
-
 
 void Crusta::
 submitActives(const Actives& touched)
@@ -541,12 +621,29 @@ frame()
 void Crusta::
 display(GLContextData& contextData)
 {
+    CrustaGlData* glData = contextData.retrieveDataItem<CrustaGlData>(this);
+    glData->videoCache = &getCache()->getVideoCache(contextData);
+
+//- prepare the renderable representation
+    std::vector<QuadNodeMainData*> renderNodes;
+
+    //generate the terrain representation
+    for (RenderPatches::const_iterator it=renderPatches.begin();
+         it!=renderPatches.end(); ++it)
+    {
+        (*it)->prepareDisplay(contextData, renderNodes);
+        CHECK_GLA
+    }
+
+///\todo generate the map representation
+
+//- draw the current terrain and map data
+    //have the QuadTerrain draw the surface approximation
     CHECK_GLA
     GLint activeTexture;
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
     glPushAttrib(GL_TEXTURE_BIT);
     
-    GlData* glData = contextData.retrieveDataItem<GlData>(this);
     prepareFrameBuffer(glData);
     CHECK_GLA
 
@@ -557,13 +654,8 @@ display(GLContextData& contextData)
     glData->terrainShader.setTextureStep(TILE_TEXTURE_COORD_STEP);
     glData->terrainShader.setVerticalScale(getVerticalScale());
 
-    for (RenderPatches::const_iterator it=renderPatches.begin();
-         it!=renderPatches.end(); ++it)
-    {
-        (*it)->display(contextData);
-        CHECK_GLA
-    }
-
+    QuadTerrain::display(contextData, glData, renderNodes);
+    
     glData->terrainShader.disable();
 
     //let the map manager draw all the mapping stuff
@@ -586,101 +678,22 @@ display(GLContextData& contextData)
 }
 
 
-Crusta::GlData::
-GlData()
-{
-    /* Check for the required OpenGL extensions: */
-    if(!GLEXTFramebufferObject::isSupported())
-            Misc::throwStdErr("Crusta: GL_EXT_framebuffer_object not supported");
-    /* Initialize the required extensions: */
-    GLEXTFramebufferObject::initExtension();
-
-    glGenRenderbuffersEXT(1, &colorBuf);
-    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, colorBuf);
-    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA, 1,1);
-    CHECK_GLA
-
-    glGenTextures(1, &terrainAttributesTex);
-    glBindTexture(GL_TEXTURE_2D, terrainAttributesTex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    CHECK_GLA
-
-    glGenTextures(1, &depthTex);
-    glBindTexture(GL_TEXTURE_2D, depthTex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, 1, 1, 0,
-                 GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    CHECK_GLA
-
-    //create the framebuffer to be used for rendering the terrain
-    glGenFramebuffersEXT(1, &colorTerrainDepthFrame);
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, colorTerrainDepthFrame);
-    CHECK_GLA
-
-    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
-                                 GL_RENDERBUFFER_EXT, colorBuf);
-    CHECK_GLA
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT1_EXT,
-                              GL_TEXTURE_2D, terrainAttributesTex, 0);
-    CHECK_GLA
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
-                              GL_TEXTURE_2D, depthTex, 0);
-    CHECK_GLA
-
-    assert(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) ==
-           GL_FRAMEBUFFER_COMPLETE_EXT);
-
-    //create the framebuffer to be used for rendering the maps
-    glGenFramebuffersEXT(1, &colorFrame);
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, colorFrame);
-    CHECK_GLA
-    
-    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
-                                 GL_RENDERBUFFER_EXT, colorBuf);
-    CHECK_GLA
-    glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
-    CHECK_GLA
-    assert(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) ==
-           GL_FRAMEBUFFER_COMPLETE_EXT);
-    
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-}
-
-Crusta::GlData::
-~GlData()
-{
-    glDeleteRenderbuffersEXT(1, &colorBuf);
-    glDeleteTextures(1, &terrainAttributesTex);
-    glDeleteTextures(1, &depthTex);
-    glDeleteFramebuffersEXT(1, &colorFrame);
-    glDeleteFramebuffersEXT(1, &colorTerrainDepthFrame);
-}
-
-
 void Crusta::
 confirmActives()
 {
+    MainCache& mainCache = getCache()->getMainCache();
     for (Actives::iterator it=actives.begin(); it!=actives.end(); ++it)
     {
-        if (!(*it)->isCurrent(this))
+        if (!mainCache.isCurrent(*it))
             (*it)->getData().computeBoundingSphere(getVerticalScale());
-        (*it)->touch(this);
+        mainCache.touch(*it);
     }
     actives.clear();
 }
 
 
 void Crusta::
-prepareFrameBuffer(GlData* glData)
+prepareFrameBuffer(CrustaGlData* glData)
 {
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
@@ -739,7 +752,7 @@ prepareFrameBuffer(GlData* glData)
 }
 
 void Crusta::
-commitFrameBuffer(GlData *glData)
+commitFrameBuffer(CrustaGlData *glData)
 {
     glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT,
                          glData->colorTerrainDepthFrame);
@@ -757,7 +770,7 @@ commitFrameBuffer(GlData *glData)
 void Crusta::
 initContext(GLContextData& contextData) const
 {
-    GlData* glData = new GlData;
+    CrustaGlData* glData   = new CrustaGlData();
     contextData.addDataItem(this, glData);
 }
 

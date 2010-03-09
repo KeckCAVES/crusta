@@ -1,105 +1,57 @@
 #ifndef _QuadCache_H_
 #define _QuadCache_H_
 
-#ifdef __GNUC__
-    #if __GNUC__ > 3 && __GNUC_MINOR__ > 0
-        #include <tr1/unordered_map>
-        /* to get around the inclusion of <cmath> from above undef'ing all the
-           <math.h> macros and defining corresponding functions in std:: */
-        using namespace std;
-    #else
-        #include <ext/hash_map>
-    #endif
-#else
-    #include <hash_map>
-#endif
-
-#include <list>
-#include <vector>
 
 #include <GL/GLObject.h>
 #include <Threads/Cond.h>
 #include <Threads/Mutex.h>
 #include <Threads/Thread.h>
 
-#include <crusta/CacheRequest.h>
-#include <crusta/CrustaComponent.h>
+#include <crusta/Cache.h>
 #include <crusta/QuadNodeData.h>
-#include <crusta/TreeIndex.h>
-
-#ifdef __GNUC__
-    #if __GNUC__ > 3 && __GNUC_MINOR__ > 0
-        #define PortableTable std::tr1::unordered_map
-    #else
-        #define PortableTable __gnu_cxx::hash_map
-    #endif
-#else
-    #define PortableTable stdext::hash_map
-#endif
 
 
 BEGIN_CRUSTA
 
+typedef CacheBuffer<QuadNodeMainData>  MainCacheBuffer;
+typedef CacheBuffer<QuadNodeVideoData> VideoCacheBuffer;
 
-/** underlying LRU cache functionality */
-template <typename BufferType>
-class CacheUnit : public CrustaComponent
-{
-public:
-    CacheUnit(uint size, Crusta* iCrusta);
-    ~CacheUnit();
-
-    /** find a buffer within the cached set. Returns NULL if not found. */
-    BufferType* findCached(const TreeIndex& index) const;
-    /** request a buffer from the cache. A non-NULL buffer is returned as long
-        as all the cache slots are not not pinned (either explicitly or because
-        they are in use for the current frame). Optionally the location to a
-        boolean can be passed and getBuffer will set if the buffer was already
-        present or not at that location. */
-    BufferType* getBuffer(const TreeIndex& index, bool* existed=NULL);
-
-
-protected:
-    typedef PortableTable<TreeIndex, BufferType*, TreeIndex::hash> BufferPtrMap;
-
-    /** combines a tree index with a cache buffer when the buffer is taken
-        outside the context of the buffer map */
-    struct IndexedBuffer
-    {
-        IndexedBuffer(TreeIndex iIndex, BufferType* iBuffer);
-        bool operator >(const IndexedBuffer& other) const;
-
-        TreeIndex   index;
-        BufferType* buffer;
-    };
-    typedef std::vector<IndexedBuffer> IndexedBuffers;
-
-    /** make sure the LRU prioritized sequence of the cached buffers is up to
-        date*/
-    void refreshLru();
-
-    /** keep a record of all the buffers cached by the unit */
-    BufferPtrMap cached;
-    /** keep a LRU prioritized view of the cached buffers */
-    IndexedBuffers lruCached;
-
-    /** frame number when the last prioritization of the chached set was
-        done */
-    FrameNumber sortFrameNumber;
-};
 
 class MainCache : public CacheUnit<MainCacheBuffer>
 {
 public:
+    /** information required to process the fetch/generation of data */
+    class Request
+    {
+        friend class MainCache;
+        
+    public:
+        Request();
+        Request(float iLod, MainCacheBuffer* iParent, uint8 iChild);
+
+        bool operator ==(const Request& other) const;
+        bool operator <(const Request& other) const;
+        
+    protected:
+        /** lod value used for prioritizing the requests */
+        float lod;
+        /** pointer to the parent of the requested */
+        MainCacheBuffer* parent;
+        /** index of the child to be loaded */
+        uint8 child;
+    };
+
+    typedef std::vector<Request> Requests;
+
     MainCache(uint size, Crusta* iCrusta);
     ~MainCache();
 
     /** process requests */
     void frame();
     /** request data fetch/generation for a node */
-    void request(const CacheRequest& req);
+    void request(const Request& req);
     /** request data fetch/generation for a set of tree indices */
-    void request(const CacheRequests& reqs);
+    void request(const Requests& reqs);
 
 protected:
     struct FetchRequest
@@ -118,7 +70,7 @@ protected:
     void* fetchThreadFunc();
 
     /** keep track of pending child requests */
-    CacheRequests childRequests;
+    Requests childRequests;
 
     /** impose a limit on the number of outstanding fetch requests. This
         minimizes processing outdated requests */
@@ -171,7 +123,7 @@ protected:
 
 //- inherited from GLObject
 public:
-   	virtual void initContext(GLContextData& contextData) const;
+    virtual void initContext(GLContextData& contextData) const;
 
 protected:
     struct GlData : public GLObject::DataItem
@@ -183,8 +135,8 @@ protected:
     };
 };
 
+
 END_CRUSTA
 
-#include <crusta/QuadCache.hpp>
 
 #endif //_QuadCache_H_

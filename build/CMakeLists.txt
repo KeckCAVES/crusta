@@ -33,7 +33,8 @@ endif(APPLE)
 
 add_library(CrustaCore SHARED
     ../include/crusta/basics.h
-    ../include/crusta/CacheRequest.h
+    ../include/crusta/Cache.h
+    ../include/crusta/Cache.hpp
     ../include/crusta/checkGl.h
     ../include/crusta/ColorTextureSpecs.h
     ../include/crusta/Crusta.h
@@ -55,9 +56,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/PixelSpecs.h
     ../include/crusta/Polyhedron.h
     ../include/crusta/QuadCache.h
-    ../include/crusta/QuadCache.hpp
     ../include/crusta/QuadNodeData.h
-    ../include/crusta/QuadNodeData.hpp
     ../include/crusta/QuadTerrain.h
     ../include/crusta/QuadtreeFile.h
     ../include/crusta/QuadtreeFile.hpp
@@ -78,7 +77,6 @@ add_library(CrustaCore SHARED
     ../include/crusta/VisibilityEvaluator.h
     ../include/crusta/Visualizer.h
 
-    ../source/crusta/CacheRequest.cpp
     ../source/crusta/ColorTextureSpecs.cpp
     ../source/crusta/Crusta.cpp
     ../source/crusta/CrustaVisualizer.cpp

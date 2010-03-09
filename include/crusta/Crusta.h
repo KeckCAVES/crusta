@@ -23,6 +23,33 @@ class DataManager;
 class MapManager;
 class QuadNodeMainData;
 class QuadTerrain;
+class VideoCache;
+
+struct CrustaGlData : public GLObject::DataItem
+{
+    CrustaGlData();
+    ~CrustaGlData();
+    
+    /** store a handle to the video cache of this context for convenient
+     access */
+    VideoCache* videoCache;
+    
+    /** basic data being passed to the GL to represent a vertex. The
+     template provides simply texel-centered, normalized texture
+     coordinates that are used to address the corresponding data in the
+     geometry, elevation and color textures */
+    GLuint vertexAttributeTemplate;
+    /** defines a triangle-string triangulation of the vertices */
+    GLuint indexTemplate;
+    
+    GLuint colorTerrainDepthFrame;
+    GLuint colorFrame;
+    GLuint colorBuf;
+    GLuint terrainAttributesTex;
+    GLuint depthTex;
+    
+    LightingShader terrainShader;
+};
 
 /** Main crusta class */
 class Crusta : public GLObject
@@ -65,8 +92,6 @@ public:
     DataManager* getDataManager() const;
     MapManager*  getMapManager()  const;
 
-    LightingShader& getTerrainShader(GLContextData& contextData);
-
     /** inform crusta of nodes that must be kept current */
     void submitActives(const Actives& touched);
 
@@ -76,28 +101,14 @@ public:
 protected:
     typedef std::vector<QuadTerrain*> RenderPatches;
 
-    struct GlData : public GLObject::DataItem
-    {
-        GlData();
-        ~GlData();
-
-        GLuint colorTerrainDepthFrame;
-        GLuint colorFrame;
-        GLuint colorBuf;
-        GLuint terrainAttributesTex;
-        GLuint depthTex;
-
-        LightingShader terrainShader;
-    };
-
     /** make sure the bounding objects used for visibility and LOD checks are
         up-to-date wrt to the vertical scale */
     void confirmActives();
 
     /** prepare the offscreen framebuffer, i.e. copy current framebuffer */
-    void prepareFrameBuffer(GlData* glData);
+    void prepareFrameBuffer(CrustaGlData* glData);
     /** commit the offscreen framebuffer to the default one */
-    void commitFrameBuffer(GlData* glData);
+    void commitFrameBuffer(CrustaGlData* glData);
 
     /** keep track of the number of frames processed. Used, for example, by the
         cache to perform LRU that is aware of currently active nodes (the ones

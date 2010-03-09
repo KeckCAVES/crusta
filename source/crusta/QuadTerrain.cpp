@@ -10,7 +10,6 @@
 #include <Vrui/Vrui.h>
 #include <Vrui/VRWindow.h>
 
-#include <crusta/CacheRequest.h>
 #include <crusta/Crusta.h>
 #include <crusta/DataManager.h>
 #include <crusta/LightingShader.h>
@@ -146,11 +145,38 @@ getFrustumFromVrui(GLContextData& contextData)
 }
 
 void QuadTerrain::
-display(GLContextData& contextData)
+prepareDisplay(GLContextData& contextData, Nodes& nodes)
 {
-    //grab the context dependent active set
-    GlData* glData = contextData.retrieveDataItem<GlData>(this);
+    //setup the evaluators
+    FrustumVisibility visibility;
+    visibility.frustum = getFrustumFromVrui(contextData);
+    FocusViewEvaluator lod;
+    lod.frustum = visibility.frustum;
+    lod.setFocusFromDisplay();
 
+    /* display could be multi-threaded. Buffer all the node data requests and
+       merge them into the request list en block */
+    MainCache::Requests dataRequests;
+    /* as for requests for new data, buffer all the active node sets and submit
+       them at the end */
+    NodeBufs actives;
+
+    /* traverse the terrain tree, update as necessary and issue drawing commands
+       for active nodes */
+    MainCacheBuffer* rootBuf =
+        crusta->getCache()->getMainCache().findCached(rootIndex);
+    assert(rootBuf != NULL);
+
+    prepareDraw(visibility, lod, rootBuf, actives, nodes, dataRequests);
+
+    //merge the data requests and active sets
+    crusta->getCache()->getMainCache().request(dataRequests);
+    crusta->submitActives(actives);
+}
+
+void QuadTerrain::
+display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes)
+{
     //setup the GL
     GLint activeTexture;
     glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
@@ -166,32 +192,13 @@ display(GLContextData& contextData)
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
     glEnableClientState(GL_VERTEX_ARRAY);
 
-    //setup the evaluators
-    FrustumVisibility visibility;
-    visibility.frustum = getFrustumFromVrui(contextData);
-    FocusViewEvaluator lod;
-    lod.frustum = visibility.frustum;
-    lod.setFocusFromDisplay();
-
-    /* display could be multi-threaded. Buffer all the node data requests and
-       merge them into the request list en block */
-    CacheRequests dataRequests;
-    /* as for requests for new data, buffer all the active node sets and submit
-       them at the end */
-    std::vector<MainCacheBuffer*> actives;
-
     /* save the current openGL transform. We are going to replace it during
        traversal with a scope centroid centered one to alleviate floating point
        issues with rotating vertices far off the origin */
     glPushMatrix();
 
-    /* traverse the terrain tree, update as necessary and issue drawing commands
-       for active nodes */
-    MainCacheBuffer* rootBuf =
-        crusta->getCache()->getMainCache().findCached(rootIndex);
-    assert(rootBuf != NULL);
-
-    draw(contextData, glData, visibility, lod, rootBuf, actives, dataRequests);
+    for (Nodes::iterator it=nodes.begin(); it!=nodes.end(); ++it)
+        drawNode(contextData, glData, **it);
 
     //restore the GL transform as it was before
     glPopMatrix();
@@ -202,10 +209,90 @@ display(GLContextData& contextData)
     glActiveTexture(activeTexture);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
+}
 
-    //merge the data requests and active sets
-    crusta->getCache()->getMainCache().request(dataRequests);
-    crusta->submitActives(actives);
+
+void QuadTerrain::
+generateVertexAttributeTemplate(GLuint& vertexAttributeTemplate)
+{
+    /** allocate some temporary main memory to store the vertex attributes
+        before they are streamed to the GPU */
+    uint numTexCoords = TILE_RESOLUTION*TILE_RESOLUTION*2;
+    float* positionsInMemory = new float[numTexCoords];
+    float* positions = positionsInMemory;
+    
+    /** generate a set of normalized texture coordinates */
+    for (float y = TEXTURE_COORD_START;
+         y < (TEXTURE_COORD_END + 0.1*TILE_TEXTURE_COORD_STEP);
+         y += TILE_TEXTURE_COORD_STEP)
+    {
+        for (float x = TEXTURE_COORD_START;
+             x < (TEXTURE_COORD_END + 0.1*TILE_TEXTURE_COORD_STEP);
+             x += TILE_TEXTURE_COORD_STEP, positions+=2)
+        {
+            positions[0] = x;
+            positions[1] = y;
+        }
+    }
+    
+    //generate the vertex buffer and stream in the data
+    glGenBuffers(1, &vertexAttributeTemplate);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexAttributeTemplate);
+    glBufferData(GL_ARRAY_BUFFER, numTexCoords*sizeof(float), positionsInMemory,
+                 GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    //clean-up
+    delete[] positionsInMemory;
+}
+
+void QuadTerrain::
+generateIndexTemplate(GLuint& indexTemplate)
+{
+    /* allocate some temporary main memory to store the indices before they are
+        streamed to the GPU */
+    uint16* indicesInMemory = new uint16[NUM_GEOMETRY_INDICES];
+    
+    /* generate a sequence of indices that describe a single triangle strip that
+        zizag through the geometry a row at a time: e.g.
+        12 ...
+        |
+        10 11 13 - 14
+        9 -  7
+        | /  |
+        8  -  4 5 6
+        0  - 3
+        |  / |
+        1  - 2             */
+    int  inc        = 1;
+    uint alt        = 1;
+    uint index[2]   = {0, TILE_RESOLUTION};
+    uint16* indices = indicesInMemory;
+    for (uint b=0; b<TILE_RESOLUTION-1; ++b, inc=-inc, alt=1-alt,
+         index[0]+=TILE_RESOLUTION, index[1]+=TILE_RESOLUTION)
+    {
+        for (uint i=0; i<TILE_RESOLUTION*2;
+             ++i, index[alt]+=inc, alt=1-alt, ++indices)
+        {
+            *indices = index[alt];
+        }
+        index[0]-=inc; index[1]-=inc;
+        if (b != TILE_RESOLUTION-2)
+        {
+            for (uint i=0; i<2; ++i, ++indices)
+                *indices = index[1];
+        }
+    }
+    
+    //generate the index buffer and stream in the data
+    glGenBuffers(1, &indexTemplate);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexTemplate);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, NUM_GEOMETRY_INDICES*sizeof(uint16),
+                 indicesInMemory, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    
+    //clean-up
+    delete[] indicesInMemory;
 }
 
 
@@ -407,7 +494,7 @@ int childrenVisited = 0;
     {
         if (childBuf == NULL)
         {
-            mainCache.request(CacheRequest(0.0, nodeBuf, childId));
+            mainCache.request(MainCache::Request(0.0, nodeBuf, childId));
             return intersectLeaf(node, ray, tin, sin, gout);
         }
         else
@@ -879,24 +966,24 @@ std::cerr << "traversedCells: " << traversedCells << std::endl;
 
 
 const QuadNodeVideoData& QuadTerrain::
-prepareGlData(GlData* glData, QuadNodeMainData& mainData)
+prepareGlData(CrustaGlData* glData, QuadNodeMainData& mainData)
 {
     bool existed;
-    VideoCacheBuffer* videoBuf = glData->videoCache.getBuffer(mainData.index,
-                                                              &existed);
+    VideoCacheBuffer* videoBuf = glData->videoCache->getBuffer(mainData.index,
+                                                               &existed);
     if (existed)
     {
         //if there was already a match in the cache, just use that data
-        videoBuf->touch(crusta);
+        glData->videoCache->touch(videoBuf);
         return videoBuf->getData();
     }
     else
     {
         //in any case the data has to be transfered from main memory
         if (videoBuf)
-            videoBuf->touch(crusta);
+            glData->videoCache->touch(videoBuf);
         else
-            videoBuf = glData->videoCache.getStreamBuffer();
+            videoBuf = glData->videoCache->getStreamBuffer();
 
         const QuadNodeVideoData& videoData = videoBuf->getData();
 
@@ -924,7 +1011,8 @@ prepareGlData(GlData* glData, QuadNodeMainData& mainData)
 }
 
 void QuadTerrain::
-drawNode(GLContextData& contextData, GlData* glData, QuadNodeMainData& mainData)
+drawNode(GLContextData& contextData, CrustaGlData* glData,
+         QuadNodeMainData& mainData)
 {
 ///\todo accommodate for lazy data fetching
     const QuadNodeVideoData& data = prepareGlData(glData, mainData);
@@ -952,9 +1040,8 @@ drawNode(GLContextData& contextData, GlData* glData, QuadNodeMainData& mainData)
     nav *= Vrui::NavTransform::translate(centroidTranslation);
     glLoadMatrix(nav);
 
-    LightingShader& shader = crusta->getTerrainShader(contextData);
-    shader.setCentroid(mainData.centroid[0], mainData.centroid[1],
-                       mainData.centroid[2]);
+    glData->terrainShader.setCentroid(
+        mainData.centroid[0], mainData.centroid[1], mainData.centroid[2]);
 
 //    glPolygonMode(GL_FRONT, GL_LINE);
 
@@ -976,7 +1063,7 @@ drawNode(GLContextData& contextData, GlData* glData, QuadNodeMainData& mainData)
 
 if (displayDebuggingBoundingSpheres)
 {
-shader.disable();
+glData->terrainShader.disable();
     GLint activeTexture;
     glPushAttrib(GL_ENABLE_BIT || GL_POLYGON_BIT);
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
@@ -994,12 +1081,12 @@ shader.disable();
     glPopMatrix();
     glPopAttrib();
     glActiveTexture(activeTexture);
-shader.enable();
+glData->terrainShader.enable();
 }
 
 if (displayDebuggingGrid)
 {
-shader.disable();
+glData->terrainShader.disable();
     GLint activeTexture;
     glPushAttrib(GL_ENABLE_BIT);
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
@@ -1025,17 +1112,18 @@ shader.disable();
 
     glPopAttrib();
     glActiveTexture(activeTexture);
-shader.enable();
+glData->terrainShader.enable();
 }
 
 }
 
 void QuadTerrain::
-draw(GLContextData& contextData, GlData* glData,
-     FrustumVisibility& visibility, FocusViewEvaluator& lod,
-     MainCacheBuffer* node, std::vector<MainCacheBuffer*>& actives,
-     CacheRequests& requests)
+prepareDraw(FrustumVisibility& visibility, FocusViewEvaluator& lod,
+            MainCacheBuffer* node, NodeBufs& actives, Nodes& renders,
+            MainCache::Requests& requests)
 {
+    MainCache& mainCache = crusta->getCache()->getMainCache();
+
     //confirm current node as being active
     actives.push_back(node);
     QuadNodeMainData& mainData = node->getData();
@@ -1068,7 +1156,7 @@ draw(GLContextData& contextData, GlData* glData,
                     if (children[i] == NULL)
                     {
                         //request the data be loaded
-                        requests.push_back(CacheRequest(lodValue, node, i));
+                        requests.push_back(MainCache::Request(lodValue,node,i));
                         allgood = false;
                     }
                 }
@@ -1078,9 +1166,9 @@ draw(GLContextData& contextData, GlData* glData,
             {
                 for (int i=0; i<4; ++i)
                 {
-                    if (!children[i]->isValid())
+                    if (!mainCache.isValid(children[i]))
                         allgood = false;
-                    else if (!children[i]->isCurrent(crusta))
+                    else if (!mainCache.isCurrent(children[i]))
                     {
                         //"request" it for update
                         actives.push_back(children[i]);
@@ -1093,132 +1181,16 @@ draw(GLContextData& contextData, GlData* glData,
             {
                 for (int i=0; i<4; ++i)
                 {
-                    draw(contextData, glData, visibility, lod, children[i],
-                         actives, requests);
+                    prepareDraw(visibility, lod, children[i], actives, renders,
+                                requests);
                 }
             }
             else
-                drawNode(contextData, glData, mainData);
+                renders.push_back(&mainData);
         }
         else
-            drawNode(contextData, glData, mainData);
+            renders.push_back(&mainData);
     }
-}
-
-
-
-
-QuadTerrain::GlData::
-GlData(VideoCache& iVideoCache) :
-    videoCache(iVideoCache),
-    vertexAttributeTemplate(0), indexTemplate(0)
-{
-    //initialize the static gl buffer templates
-    generateVertexAttributeTemplate();
-    generateIndexTemplate();
-}
-
-QuadTerrain::GlData::
-~GlData()
-{
-    if (vertexAttributeTemplate != 0)
-        glDeleteBuffers(1, &vertexAttributeTemplate);
-    if (indexTemplate != 0)
-        glDeleteBuffers(1, &indexTemplate);
-}
-
-void QuadTerrain::GlData::
-generateVertexAttributeTemplate()
-{
-    /** allocate some temporary main memory to store the vertex attributes
-        before they are streamed to the GPU */
-    uint numTexCoords = TILE_RESOLUTION*TILE_RESOLUTION*2;
-    float* positionsInMemory = new float[numTexCoords];
-    float* positions = positionsInMemory;
-
-    /** generate a set of normalized texture coordinates */
-    for (float y = TEXTURE_COORD_START;
-         y < (TEXTURE_COORD_END + 0.1*TILE_TEXTURE_COORD_STEP);
-         y += TILE_TEXTURE_COORD_STEP)
-    {
-        for (float x = TEXTURE_COORD_START;
-             x < (TEXTURE_COORD_END + 0.1*TILE_TEXTURE_COORD_STEP);
-             x += TILE_TEXTURE_COORD_STEP, positions+=2)
-        {
-            positions[0] = x;
-            positions[1] = y;
-        }
-    }
-
-    //generate the vertex buffer and stream in the data
-    glGenBuffers(1, &vertexAttributeTemplate);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexAttributeTemplate);
-    glBufferData(GL_ARRAY_BUFFER, numTexCoords*sizeof(float), positionsInMemory,
-                 GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    //clean-up
-    delete[] positionsInMemory;
-}
-
-void QuadTerrain::GlData::
-generateIndexTemplate()
-{
-    /* allocate some temporary main memory to store the indices before they are
-       streamed to the GPU */
-    uint16* indicesInMemory = new uint16[NUM_GEOMETRY_INDICES];
-
-    /* generate a sequence of indices that describe a single triangle strip that
-       zizag through the geometry a row at a time: e.g.
-              12 ...
-              |
-       10 11 13 - 14
-              9 -  7
-              | /  |
-              8  -  4 5 6
-              0  - 3
-              |  / |
-              1  - 2             */
-    int  inc        = 1;
-    uint alt        = 1;
-    uint index[2]   = {0, TILE_RESOLUTION};
-    uint16* indices = indicesInMemory;
-    for (uint b=0; b<TILE_RESOLUTION-1; ++b, inc=-inc, alt=1-alt,
-         index[0]+=TILE_RESOLUTION, index[1]+=TILE_RESOLUTION)
-    {
-        for (uint i=0; i<TILE_RESOLUTION*2;
-             ++i, index[alt]+=inc, alt=1-alt, ++indices)
-        {
-            *indices = index[alt];
-        }
-        index[0]-=inc; index[1]-=inc;
-        if (b != TILE_RESOLUTION-2)
-        {
-            for (uint i=0; i<2; ++i, ++indices)
-                *indices = index[1];
-        }
-    }
-
-    //generate the index buffer and stream in the data
-    glGenBuffers(1, &indexTemplate);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexTemplate);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, NUM_GEOMETRY_INDICES*sizeof(uint16),
-                 indicesInMemory, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    //clean-up
-    delete[] indicesInMemory;
-}
-
-
-
-void QuadTerrain::
-initContext(GLContextData& contextData) const
-{
-    //allocate the context dependent data
-    GlData* glData = new GlData(crusta->getCache()->getVideoCache(contextData));
-    //commit the context data
-    contextData.addDataItem(this, glData);
 }
 
 
