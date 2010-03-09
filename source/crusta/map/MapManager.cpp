@@ -313,6 +313,7 @@ removePolyline(Polyline* line)
     {
         if (*it == line)
         {
+            delete *it;
             polylines.erase(it);
             break;
         }
