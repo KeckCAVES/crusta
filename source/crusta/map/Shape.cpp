@@ -59,7 +59,7 @@ operator !=(const ControlId& other) const
 
 Shape::
 Shape() :
-    symbol(DEFAULT_SYMBOL)
+    id(~0), symbol(DEFAULT_SYMBOL)
 {
 }
 
@@ -280,6 +280,18 @@ nextControl(const ControlId& id)
     }
 }
 
+
+IdGenerator32::Id& Shape::
+getId()
+{
+    return id;
+}
+
+const IdGenerator32::Id& Shape::
+getId() const
+{
+    return id;
+}
 
 Shape::Symbol& Shape::
 getSymbol()

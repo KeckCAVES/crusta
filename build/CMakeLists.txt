@@ -45,6 +45,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/Ellipsoid.h
     ../include/crusta/FocusViewEvaluator.h
     ../include/crusta/FrustumVisibility.h
+    ../include/crusta/IdGenerator.h
     ../include/crusta/LightingShader.h
     ../include/crusta/LodEvaluator.h
     ../include/crusta/map/MapManager.h

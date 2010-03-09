@@ -2,7 +2,7 @@
 #define _Shape_H_
 
 
-#include <crusta/basics.h>
+#include <crusta/IdGenerator.h>
 
 
 BEGIN_CRUSTA
@@ -71,11 +71,13 @@ public:
     ControlId previousControl(const ControlId& id);
     ControlId nextControl(const ControlId& id);
 
-    Symbol&        getSymbol();
-    const Symbol&  getSymbol() const;
-    Point3&        getControlPoint(const ControlId& id);
-    Point3s&       getControlPoints();
-    const Point3s& getControlPoints() const;
+    IdGenerator32::Id&       getId();
+    const IdGenerator32::Id& getId() const;
+    Symbol&                  getSymbol();
+    const Symbol&            getSymbol() const;
+    Point3&                  getControlPoint(const ControlId& id);
+    Point3s&                 getControlPoints();
+    const Point3s&           getControlPoints() const;
 
     ControlId refine(const ControlId& id, const Point3& pos);
 
@@ -83,8 +85,9 @@ public:
     static const ControlId BAD_ID;
 
 protected:
-    Symbol  symbol;
-    Point3s controlPoints;
+    IdGenerator32::Id id;
+    Symbol            symbol;
+    Point3s           controlPoints;
 };
 
 END_CRUSTA

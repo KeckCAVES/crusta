@@ -1,5 +1,6 @@
 #include <crusta/map/MapManager.h>
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 
@@ -36,7 +37,7 @@ BEGIN_CRUSTA
 MapManager::
 MapManager(Vrui::ToolFactory* parentToolFactory, Crusta* iCrusta) :
     CrustaComponent(iCrusta), selectDistance(0.2), pointSelectionBias(0.1),
-    polylineRenderer(new PolylineRenderer(iCrusta))
+    polylineIds(uint32(~0)), polylineRenderer(new PolylineRenderer(iCrusta))
 {
     Vrui::ToolFactory* factory = MapTool::init(parentToolFactory);
     PolylineTool::init(factory);
@@ -60,7 +61,10 @@ void MapManager::
 deleteAllShapes()
 {
     for (PolylinePtrs::iterator it=polylines.begin(); it!=polylines.end(); ++it)
+    {
+        polylineIds.release((*it)->getId());
         delete *it;
+    }
     polylines.clear();
 
 ///\todo actually track multiple tools
@@ -297,6 +301,7 @@ getPointSelectionBias() const
 void MapManager::
 addPolyline(Polyline* line)
 {
+    line->getId() = polylineIds.grab();
     polylines.push_back(line);
 }
 
@@ -309,14 +314,13 @@ getPolylines()
 void MapManager::
 removePolyline(Polyline* line)
 {
-    for (PolylinePtrs::iterator it=polylines.begin(); it!=polylines.end(); ++it)
+    PolylinePtrs::iterator it =
+        std::find(polylines.begin(), polylines.end(), line);
+    if (it != polylines.end())
     {
-        if (*it == line)
-        {
-            delete *it;
-            polylines.erase(it);
-            break;
-        }
+        polylineIds.release((*it)->getId());
+        delete *it;
+        polylines.erase(it);
     }
 }
 

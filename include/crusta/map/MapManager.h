@@ -102,6 +102,7 @@ protected:
     Shape*        activeShape;
     Shape::Symbol activeSymbol;
 
+    IdGenerator32     polylineIds;
     PolylinePtrs      polylines;
     PolylineRenderer* polylineRenderer;
 
