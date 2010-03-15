@@ -84,7 +84,7 @@ void main()
                  //fetch the sample
                  float sampleCoord = coord;          //first sample coord
                  coord            += lineLastSample; //last  sample coord
-                 sampleCoord       = mix(coord, sampleCoord, u);
+                 sampleCoord       = mix(sampleCoord, coord, u);
                  vec4 sample       = texture(lineDataTex, sampleCoord);
                  coord            += lineCoordStep;
 

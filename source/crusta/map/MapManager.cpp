@@ -426,7 +426,8 @@ following that use it. For now just duplicate the atlas info */
         for (LineBit::iterator lit=lineBit.begin(); lit!=lineBit.end();
              ++lit)
         {
-            Shape*       line = lit->first;
+            Polyline* line = dynamic_cast<Polyline*>(lit->first);
+            assert(line != NULL);
             CPIterators& cpis = lit->second;
 
         //- dump the line dependent data, i.e.: atlas info, number of segments
@@ -440,10 +441,6 @@ following that use it. For now just duplicate the atlas info */
 
         //- dump all the segments for the current line
             Vector3 curTan(0);
-/**\todo fix length. Needs to be a hierarchical line representation with world
-space samples. Pick the closest representatives for the node level and use
-level+1 for the samples */
-            float    length = 0.0f;
             for (CPIterators::iterator cit=cpis.begin(); cit!=cpis.end(); ++cit)
             {
                 const Point3& curP  = **cit;
@@ -454,6 +451,10 @@ level+1 for the samples */
                 Point3f nextPf(nextP[0]-centroid[0],
                                nextP[1]-centroid[1],
                                nextP[2]-centroid[2]);
+
+                Polyline::Coords::const_iterator coit = line->getCoord(*cit);
+                Scalar curC  = scaleFac * (*coit);
+                Scalar nextC = scaleFac * (*(coit+1));
 
                 //segment control points
                 lineData.push_back(Color(curPf[0], curPf[1], curPf[2], 0));
@@ -468,16 +469,18 @@ level+1 for the samples */
                 curTan *= lineWidth;
 
                 lineData.push_back(Color(curTan[0], curTan[1], curTan[2],
-                                   length));
+                                   curC));
                 ++curOffset;
 
-                length += scaleFac*Geometry::dist(curP, nextP);
                 lineData.push_back(Color(curTan[0], curTan[1], curTan[2],
-                                   length));
+                                   nextC));
                 ++curOffset;
             }
         }
     }
+
+///\todo texture size is an issue
+curOffset = std::min(curOffset, uint32(1024));
 
 //- dump the produced data into the specified texture
     GLint activeTexture;

@@ -12,14 +12,15 @@ class Polyline : public Shape
     friend class PolylineRenderer;
 
 public:
-    const Point3f&  getCentroid();
-    const Point3fs& getRelativeControlPoints();
+    typedef std::vector<Scalar> Coords;
+
+    const Coords& getCoords();
+    Coords::const_iterator getCoord(Point3s::const_iterator pit);
 
 protected:
-    void recomputeRelativePoints();
+    void recomputeCoords();
 
-    Point3f  centroid;
-    Point3fs relativeControlPoints;
+    Coords coords;
 
 //- Inherited from Shape
 public:

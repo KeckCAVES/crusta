@@ -3,40 +3,32 @@
 
 BEGIN_CRUSTA
 
-const Point3f&  Polyline::
-getCentroid()
+
+const Polyline::Coords& Polyline::
+getCoords()
 {
-    return centroid;
+    return coords;
 }
 
-const Point3fs& Polyline::
-getRelativeControlPoints()
+Polyline::Coords::const_iterator Polyline::
+getCoord(Point3s::const_iterator pit)
 {
-    return relativeControlPoints;
+    int offset = static_cast<int>(&(*pit) - &controlPoints.front());
+    return coords.begin() + offset;
 }
 
 
 void Polyline::
-recomputeRelativePoints()
+recomputeCoords()
 {
-    //compute the centroid
-    Point3 newCentroid(0);
-    int numControlPoints = static_cast<int>(controlPoints.size());
-    for (int i=0; i<numControlPoints; ++i)
+    int num = static_cast<int>(controlPoints.size());
+    coords.resize(num);
+    Scalar coord = 0.0;
+    coords[0]    = coord;
+    for (int i=1; i<num; ++i)
     {
-        for (int j=0; j<3; ++j)
-            newCentroid[j] += controlPoints[i][j];
-    }
-    Scalar invNorm = Scalar(1) / numControlPoints;
-    for (int j=0; j<3; ++j)
-        centroid[j] = newCentroid[j] * invNorm;
-
-    //compute the relative control points
-    relativeControlPoints.resize(numControlPoints);
-    for (int i=0; i<numControlPoints; ++i)
-    {
-        for (int j=0; j<3; ++j)
-            relativeControlPoints[i][j] = controlPoints[i][j] - centroid[j];
+        coord    += Geometry::dist(controlPoints[i-1], controlPoints[i]);
+        coords[i] = coord;
     }
 }
 
@@ -44,7 +36,7 @@ Shape::ControlId Polyline::
 addControlPoint(const Point3& pos, End end)
 {
     Shape::ControlId ret = Shape::addControlPoint(pos, end);
-    recomputeRelativePoints();
+    recomputeCoords();
     return ret;
 }
 
@@ -52,7 +44,7 @@ bool Polyline::
 moveControlPoint(const ControlId& id, const Point3& pos)
 {
     bool ret = Shape::moveControlPoint(id, pos);
-    recomputeRelativePoints();
+    recomputeCoords();
     return ret;
 }
 
@@ -60,7 +52,7 @@ void Polyline::
 removeControlPoint(const ControlId& id)
 {
     Shape::removeControlPoint(id);
-    recomputeRelativePoints();
+    recomputeCoords();
 }
 
 
