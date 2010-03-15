@@ -76,8 +76,7 @@ public:
     LineDataGenerator(const Nodes& iNodes);
 
     void newLine(Shape* nLine);
-    void writeToTexture(GLContextData& contextData, GLuint tex,
-                          Colors& offsets);
+    void writeToTexture(GLContextData& contextData, Colors& offsets);
 protected:
     typedef std::vector<Point3s::const_iterator> CPIterators;
     typedef std::map<Shape*, CPIterators> LineBit;
@@ -90,6 +89,7 @@ protected:
     const Nodes&   nodes;
     Shape*         curLine;
     NodeLineBitMap lineInfo;
+    Colors         lineData;
 
 //- inherited from PolylineTraversalFunctor
 public:

@@ -353,8 +353,10 @@ newLine(Shape* nLine)
 }
 
 void MapManager::LineDataGenerator::
-writeToTexture(GLContextData& contextData, GLuint tex, Colors& offsets)
+writeToTexture(GLContextData& contextData, Colors& offsets)
 {
+    static const int& lineTexSize = PolylineRenderer::lineTexSize;
+
     typedef Geometry::ProjectiveTransformation<GLfloat,3> ProjectiveXformf;
 
     static const Color symbolOriginSize[2] = { Color(0.0f, 0.0f, 1.0f, 0.5f),
@@ -363,8 +365,8 @@ writeToTexture(GLContextData& contextData, GLuint tex, Colors& offsets)
 ///\todo this needs to be tweakable
     float lineWidth = 0.1f / scaleFac;
 
-    Colors lineData;
-    uint32 curOffset = 0;
+    lineData.clear();
+    uint32 curOffset[2] = {0,0};
 
     //go through all the nodes encountered in the sequence of the original list
     for (Nodes::const_iterator onit=nodes.begin(); onit!=nodes.end(); ++onit)
@@ -383,8 +385,37 @@ writeToTexture(GLContextData& contextData, GLuint tex, Colors& offsets)
             continue;
         }
 
+        //figure out if we're going to hit the line break and break early
+        int numBits = static_cast<int>(lineBit.size());
+        int numSegs = 0;
+        for (LineBit::iterator lit=lineBit.begin(); lit!=lineBit.end();
+             ++lit)
+        {
+            numSegs += static_cast<int>(lit->second.size());
+        }
+        int numSams = 2;
+
+///\todo hardcoded 2 samples for now (just end points)
+        int texelsNeeded = 5 + numBits*2 + numSegs*(2 + numSams);
+        if (static_cast<int>(curOffset[0])+texelsNeeded >= lineTexSize)
+        {
+            //move to the next row
+            ++curOffset[1];
+            //bail if we are out of texture space
+            if (static_cast<int>(curOffset[1]) >= lineTexSize)
+            {
+                std::cerr << "Out of line data texture space" << std::endl;
+                break;
+            }
+            //pad the remaining of the current row
+            for (int i=0; i<lineTexSize-static_cast<int>(curOffset[0]); ++i)
+                lineData.push_back(Color::zero);
+            curOffset[0] = 0;
+        }
+
         //we are adding stuff for a new node, provide proper offset
-        Color off((curOffset&0xFF)/255.0f, ((curOffset>>8)&0xFF)/255.0f, 0, 0);
+        Color off((curOffset[0]&0xFF)/255.0f, ((curOffset[0]>>8)&0xFF)/255.0f,
+                  (curOffset[1]&0xFF)/255.0f, ((curOffset[1]>>8)&0xFF)/255.0f);
         offsets.push_back(off);
 
     //- dump the tile dependent data, i.e.: relative to tile transform
@@ -411,12 +442,12 @@ writeToTexture(GLContextData& contextData, GLuint tex, Colors& offsets)
 
         //dump the inverse MVP
         const ProjectiveXformf::Matrix& tm = trans.getMatrix();
-        for (int i=0; i<4; ++i, ++curOffset)
+        for (int i=0; i<4; ++i, ++curOffset[0])
             lineData.push_back(Color(tm(0,i), tm(1,i), tm(2,i), tm(3,i)));
 
         //dump the number of bits in this node
         lineData.push_back(Color(lineBit.size(), 0, 0, 0));
-        ++curOffset;
+        ++curOffset[0];
 
 /**\todo insert another level here: collections of lines that use the same
 symbol from the atlas. Then dump the atlas info and the number of lines
@@ -434,10 +465,10 @@ following that use it. For now just duplicate the atlas info */
 ///\todo for now just generate one of two symbol visuals
             int symbolId = line->getSymbol().id % 2;
             lineData.push_back(symbolOriginSize[symbolId]);
-            ++curOffset;
+            ++curOffset[0];
 
             lineData.push_back(Color(cpis.size(), 0, 0, 0));
-            ++curOffset;
+            ++curOffset[0];
 
         //- dump all the segments for the current line
             Vector3 curTan(0);
@@ -458,9 +489,9 @@ following that use it. For now just duplicate the atlas info */
 
                 //segment control points
                 lineData.push_back(Color(curPf[0], curPf[1], curPf[2], 0));
-                ++curOffset;
+                ++curOffset[0];
                 lineData.push_back(Color(nextPf[0], nextPf[1], nextPf[2], 0));
-                ++curOffset;
+                ++curOffset[0];
 
                 //samples
 ///\todo hardcoded 2 samples for now (just end points)
@@ -470,32 +501,24 @@ following that use it. For now just duplicate the atlas info */
 
                 lineData.push_back(Color(curTan[0], curTan[1], curTan[2],
                                    curC));
-                ++curOffset;
+                ++curOffset[0];
 
                 lineData.push_back(Color(curTan[0], curTan[1], curTan[2],
                                    nextC));
-                ++curOffset;
+                ++curOffset[0];
             }
         }
     }
 
-///\todo texture size is an issue
-curOffset = std::min(curOffset, uint32(1024));
-
 //- dump the produced data into the specified texture
-    GLint activeTexture;
-    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+    //figure out the subregion's size
+    //pad the remaining of the current row
+    for (int i=0; i<lineTexSize-static_cast<int>(curOffset[0]); ++i)
+        lineData.push_back(Color::zero);
 
-    glPushAttrib(GL_TEXTURE_BIT);
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_1D, tex);
-    glTexSubImage1D(GL_TEXTURE_1D, 0,0, curOffset, GL_RGBA, GL_FLOAT,
-                    lineData.front().getComponents());
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, lineTexSize, curOffset[1]+1,
+                    GL_RGBA, GL_FLOAT, lineData.front().getComponents());
     CHECK_GLA
-
-    glPopAttrib();
-    glActiveTexture(activeTexture);
 }
 
 void MapManager::LineDataGenerator::
@@ -531,7 +554,8 @@ generateLineData(GLContextData& contextData, Nodes& nodes, Colors& offsets)
 
     //generate and upload the line data
     GLuint lineDataTex = polylineRenderer->getLineDataTexture(contextData);
-    generator.writeToTexture(contextData, lineDataTex, offsets);
+    glBindTexture(GL_TEXTURE_2D, lineDataTex);
+    generator.writeToTexture(contextData, offsets);
 }
 
 void MapManager::

@@ -30,6 +30,9 @@ public:
 
     Ptrs* lines;
 
+    static const int lineTexSize;
+
+
 //protected:
     struct GlData : public GLObject::DataItem
     {
@@ -46,7 +49,7 @@ public:
 
 //- inherited from GLObject
 public:
-   	virtual void initContext(GLContextData& contextData) const;
+    virtual void initContext(GLContextData& contextData) const;
 };
 
 END_CRUSTA

@@ -8,7 +8,7 @@ uniform float lineCoordStep;
 uniform float lineLastSample;
 uniform float lineSkipSamples;
 
-uniform sampler1D lineDataTex;
+uniform sampler2D lineDataTex;
 uniform sampler2D symbolTex;
 
 
@@ -26,10 +26,10 @@ vec3 unproject(in mat4 inverseMVP, in vec2 fragCoord)
     return tmp.xyz * tmp.w;
 }
 
-vec4 read(inout float coord)
+vec4 read(inout vec2 coord)
 {
-    vec4 r = texture(lineDataTex, coord);
-    coord += lineCoordStep;
+    vec4 r   = texture(lineDataTex, coord);
+    coord.x += lineCoordStep;
     return r;
 }
 
@@ -42,8 +42,11 @@ void main()
         discard;
 
     //compute the starting coordinate of the line data for the node
-    float coord = lineStartCoord + terrainAttribute.r*255.0*lineCoordStep +
-                  terrainAttribute.g*255.0*256.0*lineCoordStep;
+    vec2 coordShift = vec2(255.0*lineCoordStep,255.0*256.0*lineCoordStep);
+    vec2 coordX = terrainAttribute.rg * coordShift;
+    vec2 coordY = terrainAttribute.ba * coordShift;
+    vec2 coord  = vec2(coordX.x + coordX.y, coordY.x + coordY.y);
+    coord      += vec2(lineStartCoord);
 
     //read in the inverse model view projection matrix
     mat4 inverseMVP;
@@ -58,11 +61,8 @@ void main()
     //walk all the line bits for the node of the fragment
     vec4 color      = vec4(0.0, 0.0, 0.0, 0.0);
     int lineBitsMax = int(read(coord).r) - 1;
-#if 1
+
     for (int i=0; i<128; ++i)
-#else
-    for (int i=0; i!=lineBitsMax; ++i)
-#endif
     {
         vec4 symbolOS = read(coord);
 
@@ -82,11 +82,11 @@ void main()
             if (u>=0.0 && u<=1.0)
             {
                  //fetch the sample
-                 float sampleCoord = coord;          //first sample coord
-                 coord            += lineLastSample; //last  sample coord
-                 sampleCoord       = mix(sampleCoord, coord, u);
-                 vec4 sample       = texture(lineDataTex, sampleCoord);
-                 coord            += lineCoordStep;
+                 vec2 sampleCoord = coord;          //first sample coord
+                 coord.x         += lineLastSample; //last  sample coord
+                 sampleCoord.x    = mix(sampleCoord.x, coord.x, u);
+                 vec4 sample      = texture(lineDataTex, sampleCoord);
+                 coord.x         += lineCoordStep;
 
                  //compute the v coordinate along the tangent
                  toPos   = startCP + u*startToEnd;
@@ -98,21 +98,17 @@ void main()
                  {
                     //accumulate the contribution
                     v = v*0.5 + 0.5;
-vec4 fromc = vec4(0.0, 1.0, 0.0, 1.0);
-vec4 toc   = vec4(1.0, 0.0, 0.0, 1.0);
-float a    = segmentsMax==0 ? 1.0 : float(j) / float(segmentsMax);
-vec4 col   = mix(toc, fromc, a);
                     vec2 symbolCoord = vec2(sample.w, v);
                     symbolCoord     *= symbolOS.ba;
                     symbolCoord     += symbolOS.rg;
-col       *= texture2D(symbolTex, symbolCoord);
-                    color = mix(color, col, col.w);
+                    vec4 symbolColor = texture(symbolTex, symbolCoord);
+                    color = mix(color, symbolColor, symbolColor.w);
                 }
             }
             else
             {
                 //simply advance to the next segment
-                coord += lineSkipSamples;
+                coord.x += lineSkipSamples;
             }
 
             if (j == segmentsMax)

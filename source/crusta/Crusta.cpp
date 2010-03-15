@@ -42,18 +42,18 @@ CrustaGlData()
 {
     QuadTerrain::generateVertexAttributeTemplate(vertexAttributeTemplate);
     QuadTerrain::generateIndexTemplate(indexTemplate);
-    
+
     /* Check for the required OpenGL extensions: */
     if(!GLEXTFramebufferObject::isSupported())
         Misc::throwStdErr("Crusta: GL_EXT_framebuffer_object not supported");
     /* Initialize the required extensions: */
     GLEXTFramebufferObject::initExtension();
-    
+
     glGenRenderbuffersEXT(1, &colorBuf);
     glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, colorBuf);
     glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA, 1,1);
     CHECK_GLA
-    
+
     glGenTextures(1, &terrainAttributesTex);
     glBindTexture(GL_TEXTURE_2D, terrainAttributesTex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -63,7 +63,7 @@ CrustaGlData()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0,
                  GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     CHECK_GLA
-    
+
     glGenTextures(1, &depthTex);
     glBindTexture(GL_TEXTURE_2D, depthTex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
@@ -74,12 +74,12 @@ CrustaGlData()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, 1, 1, 0,
                  GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
     CHECK_GLA
-    
+
     //create the framebuffer to be used for rendering the terrain
     glGenFramebuffersEXT(1, &colorTerrainDepthFrame);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, colorTerrainDepthFrame);
     CHECK_GLA
-    
+
     glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
                                  GL_RENDERBUFFER_EXT, colorBuf);
     CHECK_GLA
@@ -89,15 +89,15 @@ CrustaGlData()
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
                               GL_TEXTURE_2D, depthTex, 0);
     CHECK_GLA
-    
+
     assert(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) ==
            GL_FRAMEBUFFER_COMPLETE_EXT);
-    
+
     //create the framebuffer to be used for rendering the maps
     glGenFramebuffersEXT(1, &colorFrame);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, colorFrame);
     CHECK_GLA
-    
+
     glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
                                  GL_RENDERBUFFER_EXT, colorBuf);
     CHECK_GLA
@@ -105,7 +105,7 @@ CrustaGlData()
     CHECK_GLA
     assert(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) ==
            GL_FRAMEBUFFER_COMPLETE_EXT);
-    
+
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
@@ -114,7 +114,7 @@ CrustaGlData::
 {
     glDeleteBuffers(1, &vertexAttributeTemplate);
     glDeleteBuffers(1, &indexTemplate);
-    
+
     glDeleteRenderbuffersEXT(1, &colorBuf);
     glDeleteTextures(1, &terrainAttributesTex);
     glDeleteTextures(1, &depthTex);
@@ -694,18 +694,21 @@ display(GLContextData& contextData)
         CHECK_GLA
     }
 
+///\todo remove
+    std::cerr << "Num render nodes: " << renderNodes.size() << std::endl;
+
+    GLint activeTexture;
+    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+    glPushAttrib(GL_TEXTURE_BIT);
+
 ///\todo generate the map representation
     Colors offsets;
     mapMan->generateLineData(contextData, renderNodes, offsets);
-//    offsets.resize(renderNodes.size(), Color(1));
 
 //- draw the current terrain and map data
     //have the QuadTerrain draw the surface approximation
     CHECK_GLA
-    GLint activeTexture;
-    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
-    glPushAttrib(GL_TEXTURE_BIT);
-    
+
     prepareFrameBuffer(glData);
     CHECK_GLA
 
@@ -717,7 +720,7 @@ display(GLContextData& contextData)
     glData->terrainShader.setVerticalScale(getVerticalScale());
 
     QuadTerrain::display(contextData, glData, renderNodes, offsets);
-    
+
     glData->terrainShader.disable();
 
     //let the map manager draw all the mapping stuff
@@ -725,7 +728,7 @@ display(GLContextData& contextData)
     glBindTexture(GL_TEXTURE_2D, glData->depthTex);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, glData->terrainAttributesTex);
-    
+
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->colorFrame);
 
     mapMan->display(contextData);
@@ -734,7 +737,7 @@ display(GLContextData& contextData)
     //commit the frame buffer to the on-screen one
     commitFrameBuffer(glData);
     CHECK_GLA
-    
+
     glPopAttrib();
     glActiveTexture(activeTexture);
 }
