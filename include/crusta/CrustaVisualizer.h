@@ -20,6 +20,8 @@ public:
     static Color defaultRayColor;
     static Color defaultHitColor;
 
+    static Color defaultSideInColor;
+
     static void addScope(const Scope& s, int temp=-1,
                          const Color& color=defaultScopeColor);
     static void addSection(const Section& s, int temp=-1,
@@ -30,6 +32,9 @@ public:
                        const Color& color=defaultRayColor);
     static void addHit(const Ray& r, const HitResult& h, int temp=-1,
                        const Color& color=defaultHitColor);
+
+    static void addSideIn(const int sideIn, const Scope& s, int temp=-1,
+                          const Color& color=defaultSideInColor);
 
 //- Inherited vrom Visualizer
 public:

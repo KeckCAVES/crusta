@@ -7,6 +7,10 @@
 
 BEGIN_CRUSTA
 
+
+#define CRUSTA_CACHE_INVALID_FRAMENUMBER        FrameNumber(~0)
+#define CRUSTA_CACHE_INVALID_FRAMENUMBER_USABLE FrameNumber((~0)-1)
+
 template <typename NodeDataType>
 CacheBuffer<NodeDataType>::
 CacheBuffer(uint size) :
@@ -70,14 +74,14 @@ findCached(const TreeIndex& index) const
     typename BufferPtrMap::const_iterator it = cached.find(index);
     if (it!=cached.end() && isValid(it->second))
     {
-        DEBUG_OUT(10, "Cache%u::find: found %s\n", (unsigned int)cached.size(),
-                  index.med_str().c_str());
+CRUSTA_DEBUG_OUT(10, "Cache%u::find: found %s\n", (unsigned int)cached.size(),
+index.med_str().c_str());
         return it->second;
     }
     else
     {
-        DEBUG_OUT(9, "Cache%u::find: missed %s\n", (unsigned int)cached.size(),
-                  index.med_str().c_str());
+CRUSTA_DEBUG_OUT(9, "Cache%u::find: missed %s\n", (unsigned int)cached.size(),
+index.med_str().c_str());
         return NULL;
     }
 }
@@ -90,8 +94,8 @@ getBuffer(const TreeIndex& index, bool* existed)
     BufferType* buffer = findCached(index);
     if (buffer != NULL)
     {
-        DEBUG_OUT(10, "Cache%u::get: found %s\n", (unsigned int)cached.size(),
-                  index.med_str().c_str());
+CRUSTA_DEBUG_OUT(10, "Cache%u::get: found %s\n", (unsigned int)cached.size(),
+index.med_str().c_str());
         if (existed != NULL)
             *existed = true;
         return buffer;
@@ -117,16 +121,16 @@ getBuffer(const TreeIndex& index, bool* existed)
     //if we found a valid buffer, update the map to reflect the new association
     if (lruBuf.buffer != NULL)
     {
-        DEBUG_OUT(5, "Cache%u::get: swaped %s for %s\n",
-                  (unsigned int)cached.size(), lruBuf.index.med_str().c_str(),
-                  index.med_str().c_str());
+CRUSTA_DEBUG_OUT(5, "Cache%u::get: swaped %s for %s\n",
+(unsigned int)cached.size(), lruBuf.index.med_str().c_str(),
+index.med_str().c_str());
         cached.erase(lruBuf.index);
         cached.insert(typename BufferPtrMap::value_type(index, lruBuf.buffer));
     }
     else
     {
-        DEBUG_OUT(3, "Cache%u::get: unable to provide for %s\n",
-                  (unsigned int)cached.size(), index.med_str().c_str());
+CRUSTA_DEBUG_OUT(3, "Cache%u::get: unable to provide for %s\n",
+(unsigned int)cached.size(), index.med_str().c_str());
     }
 
     return lruBuf.buffer;
@@ -135,16 +139,24 @@ getBuffer(const TreeIndex& index, bool* existed)
 
 template <typename BufferType>
 bool CacheUnit<BufferType>::
+isActive(const BufferType* const buffer) const
+{
+    return buffer->frameNumber == crusta->getCurrentFrame();
+}
+
+template <typename BufferType>
+bool CacheUnit<BufferType>::
 isCurrent(const BufferType* const buffer) const
 {
-    return buffer->frameNumber > crusta->getLastScaleFrame();
+    return isValid(buffer) && buffer->frameNumber>=crusta->getLastScaleFrame();
 }
 
 template <typename BufferType>
 bool CacheUnit<BufferType>::
 isValid(const BufferType* const buffer) const
 {
-    return buffer->frameNumber!=0 && buffer->frameNumber!=FrameNumber(~0);
+    return buffer->frameNumber!=0 &&
+           buffer->frameNumber!=CRUSTA_CACHE_INVALID_FRAMENUMBER;
 }
 
 template <typename BufferType>
@@ -164,10 +176,17 @@ invalidate(BufferType* buffer) const
 
 template <typename BufferType>
 void CacheUnit<BufferType>::
-pin(BufferType* buffer, bool wantPinned, bool asUsable) const
+pin(BufferType* buffer, bool asUsable) const
 {
-    buffer->frameNumber = wantPinned ?
-        (asUsable ? FrameNumber(~0)-1 : FrameNumber(~0)) : 0;
+    buffer->frameNumber = asUsable ? CRUSTA_CACHE_INVALID_FRAMENUMBER_USABLE :
+                                     CRUSTA_CACHE_INVALID_FRAMENUMBER;
+}
+
+template <typename BufferType>
+void CacheUnit<BufferType>::
+unpin(BufferType* buffer) const
+{
+    buffer->frameNumber = 0;
 }
 
 
@@ -205,19 +224,18 @@ refreshLru()
         std::sort(lruCached.begin(), lruCached.end(),
                   std::greater<IndexedBuffer>());
 
-        DEBUG_OUT(6, "RefreshLRU%u: frame %u last sort %u\n",
-                  (unsigned int)cached.size(),
-                  (unsigned int)crusta->getCurrentFrame(),
-                  (unsigned int)sortFrameNumber);
+CRUSTA_DEBUG_OUT(6, "RefreshLRU%u: frame %u last sort %u\n",
+(unsigned int)cached.size(), (unsigned int)crusta->getCurrentFrame(),
+(unsigned int)sortFrameNumber);
         for (typename IndexedBuffers::const_iterator it=lruCached.begin();
              it!=lruCached.end(); ++it)
         {
-            DEBUG_OUT(6, "%s.%u ", it->index.med_str().c_str(),
-                      (unsigned int)(it->buffer->getFrameNumber()));
+CRUSTA_DEBUG_OUT(6, "%s.%u ", it->index.med_str().c_str(),
+(unsigned int)(it->buffer->getFrameNumber()));
         }
-        DEBUG_OUT(6, "\n");
+CRUSTA_DEBUG_OUT(6, "\n");
 
-DEBUG_BEGIN(1)
+CRUSTA_DEBUG(1,
 bool encounteredNonInvalid = false;
 for (typename IndexedBuffers::reverse_iterator it=lruCached.rbegin();
      it!=lruCached.rend(); ++it)
@@ -230,7 +248,7 @@ for (typename IndexedBuffers::reverse_iterator it=lruCached.rbegin();
         assert(false && "bad LRU, can't find something inbetween invalids");
     }
 }
-DEBUG_END
+)
         sortFrameNumber = crusta->getCurrentFrame();
     }
 }

@@ -18,17 +18,23 @@
 #include <crusta/Triacontahedron.h>
 
 
-#if DEBUG_INTERSECT_CRAP
-#define DEBUG_INTERSECT_PEEK 0
+///todo debug
 #include <crusta/CrustaVisualizer.h>
-#endif //DEBUG_INTERSECT_CRAP
+#define CV(x) CrustaVisualizer::x
 
 
 BEGIN_CRUSTA
 
+
+#if CRUSTA_ENABLE_DEBUG
+int CRUSTA_DEBUG_LEVEL_MIN = 100;
+int CRUSTA_DEBUG_LEVEL_MAX = 100;
+#endif //CRUSTA_ENABLE_DEBUG
+
 #if DEBUG_INTERSECT_CRAP
 ///\todo debug remove
 bool DEBUG_INTERSECT = false;
+#define DEBUG_INTERSECT_PEEK 0
 #endif //DEBUG_INTERSECT_CRAP
 
 CrustaGlData::
@@ -508,6 +514,59 @@ std::cerr << "visited: " << ++patchesVisited << std::endl;
 }
 
 
+void Crusta::
+traverseCurrentLeaves(Point3s::const_iterator start,
+                      const Point3s::const_iterator& end,
+                      PolylineTraversalFunctor& callback) const
+{
+    assert(start!=end && (start+1)!=end);
+
+    //find the patch containing the entry point
+    const Point3&           entry = *start;
+    const QuadTerrain*      patch = NULL;
+    const QuadNodeMainData* node  = NULL;
+    for (RenderPatches::const_iterator it=renderPatches.begin();
+         it!=renderPatches.end(); ++it)
+    {
+        node = &((*it)->getRootNode());
+        if (node->scope.contains(entry))
+        {
+            patch = *it;
+            break;
+        }
+    }
+
+    assert(patch!=NULL && node!=NULL);
+
+    //traverse terrain patches until intersection or ray exit
+    Ray    ray(*start, *(start+1));
+CRUSTA_DEBUG(20,
+CV(addRay(ray));
+)
+    Scalar tin           = 0;
+    Scalar tout          = 0;
+    int    sideIn        = -1;
+    int    sideOut       = -1;
+    int    mapSide[4][4] = {{2,3,0,1}, {1,2,3,0}, {0,1,2,3}, {3,0,1,2}};
+    Triacontahedron polyhedron(SPHEROID_RADIUS);
+    while (true)
+    {
+        patch->traverseCurrentLeaves(start, end, callback, ray, tin, sideIn,
+                                     tout, sideOut);
+        if (start == end)
+            break;
+
+        //move to the patch on the exit side
+        tin = tout;
+
+        Polyhedron::Connectivity neighbors[4];
+        polyhedron.getConnectivity(patch->getRootNode().index.patch, neighbors);
+        patch  = renderPatches[neighbors[sideOut][0]];
+        sideIn = mapSide[neighbors[sideOut][1]][sideOut];
+    }
+}
+
+
 const FrameNumber& Crusta::
 getCurrentFrame() const
 {
@@ -596,17 +655,17 @@ submitActives(const Actives& touched)
 void Crusta::
 frame()
 {
+    ++currentFrame;
+CRUSTA_DEBUG_OUT(8, "\n\n\n--------------------------------------\n%u\n\n\n",
+static_cast<unsigned int>(currentFrame));
+
     //check for scale changes since the last frame
     if (verticalScale  != newVerticalScale)
     {
         verticalScale  = newVerticalScale;
-        lastScaleFrame = currentFrame;
+        assert(currentFrame>0);
+        lastScaleFrame = currentFrame-1;
     }
-
-    ++currentFrame;
-
-    DEBUG_OUT(8, "\n\n\n--------------------------------------\n%u\n\n\n",
-              static_cast<unsigned int>(currentFrame));
 
     //make sure all the active nodes are current
     confirmActives();
@@ -636,6 +695,9 @@ display(GLContextData& contextData)
     }
 
 ///\todo generate the map representation
+    Colors offsets;
+    mapMan->generateLineData(contextData, renderNodes, offsets);
+//    offsets.resize(renderNodes.size(), Color(1));
 
 //- draw the current terrain and map data
     //have the QuadTerrain draw the surface approximation
@@ -654,7 +716,7 @@ display(GLContextData& contextData)
     glData->terrainShader.setTextureStep(TILE_TEXTURE_COORD_STEP);
     glData->terrainShader.setVerticalScale(getVerticalScale());
 
-    QuadTerrain::display(contextData, glData, renderNodes);
+    QuadTerrain::display(contextData, glData, renderNodes, offsets);
     
     glData->terrainShader.disable();
 
@@ -686,7 +748,6 @@ confirmActives()
     {
         if (!mainCache.isCurrent(*it))
             (*it)->getData().computeBoundingSphere(getVerticalScale());
-        mainCache.touch(*it);
     }
     actives.clear();
 }

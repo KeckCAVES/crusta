@@ -10,6 +10,7 @@
 
 #include <crusta/basics.h>
 #include <crusta/LightingShader.h>
+#include <crusta/PolylineTraversalFunctor.h>
 
 class GLContextData;
 
@@ -69,6 +70,12 @@ public:
     Point3 snapToSurface(const Point3& pos, Scalar offset=Scalar(0));
     /** intersect a ray with the crusta globe */
     HitResult intersect(const Ray& ray) const;
+
+    /** traverse the leaf nodes of the current approximation that intersect the
+        specified polyline */
+    void traverseCurrentLeaves(Point3s::const_iterator startingCP,
+                               const Point3s::const_iterator& endingCP,
+                               PolylineTraversalFunctor& callback) const;
 
     const FrameNumber& getCurrentFrame()   const;
     const FrameNumber& getLastScaleFrame() const;

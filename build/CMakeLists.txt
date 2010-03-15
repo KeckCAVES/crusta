@@ -56,6 +56,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/map/Shape.h
     ../include/crusta/PixelSpecs.h
     ../include/crusta/Polyhedron.h
+    ../include/crusta/PolylineTraversalFunctor.h
     ../include/crusta/QuadCache.h
     ../include/crusta/QuadNodeData.h
     ../include/crusta/QuadTerrain.h

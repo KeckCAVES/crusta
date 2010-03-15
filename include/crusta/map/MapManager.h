@@ -11,6 +11,7 @@
 
 #include <crusta/CrustaComponent.h>
 #include <crusta/map/Shape.h>
+#include <crusta/PolylineTraversalFunctor.h>
 
 
 class GLContextData;
@@ -29,12 +30,14 @@ BEGIN_CRUSTA
 
 class Polyline;
 class PolylineRenderer;
+class QuadNodeMainData;
 
 
 class MapManager : public CrustaComponent
 {
 public:
-    typedef std::vector<Polyline*> PolylinePtrs;
+    typedef std::vector<QuadNodeMainData*> Nodes;
+    typedef std::vector<Polyline*>         PolylinePtrs;
 
     MapManager(Vrui::ToolFactory* parentToolFactory, Crusta* iCrusta);
     ~MapManager();
@@ -65,6 +68,36 @@ public:
     void addPolyline(Polyline* line);
     PolylinePtrs& getPolylines();
     void removePolyline(Polyline* line);
+
+/** testing: generate the line data */
+class LineDataGenerator : public PolylineTraversalFunctor
+{
+public:
+    LineDataGenerator(const Nodes& iNodes);
+
+    void newLine(Shape* nLine);
+    void writeToTexture(GLContextData& contextData, GLuint tex,
+                          Colors& offsets);
+protected:
+    typedef std::vector<Point3s::const_iterator> CPIterators;
+    typedef std::map<Shape*, CPIterators> LineBit;
+
+    typedef std::map<QuadNodeMainData*, LineBit> NodeLineBitMap;
+
+    /** used to maintain the sequence of the original nodes, so as to provide
+        the same sequence for the offsets.
+        \see writeToTexture */
+    const Nodes&   nodes;
+    Shape*         curLine;
+    NodeLineBitMap lineInfo;
+
+//- inherited from PolylineTraversalFunctor
+public:
+    virtual void operator()(const Point3s::const_iterator& cp,
+                            QuadNodeMainData* node);
+};
+void generateLineData(GLContextData& contextData, Nodes& nodes,
+                      Colors& offsets);
 
     void frame();
     void display(GLContextData& contextData) const;

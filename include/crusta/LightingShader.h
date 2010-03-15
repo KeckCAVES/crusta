@@ -65,6 +65,7 @@ class LightingShader
 	GLint textureStepUniform;
 	GLint verticalScaleUniform;
 	GLint centroidUniform;
+    GLint terrainAttributeUniform;
 
 	/* Private methods: */
 	std::string createApplyLightFunction(const char* functionTemplate,int lightIndex) const;
@@ -101,6 +102,10 @@ class LightingShader
     void setCentroid(float x, float y, float z)
     {
         glUniform3f(centroidUniform, x, y, z);
+    }
+    void setTerrainAttribute(float r, float g, float b, float a)
+    {
+        glUniform4f(terrainAttributeUniform, r, g, b, a);
     }
 };
 

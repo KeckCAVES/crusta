@@ -25,35 +25,24 @@ public:
 
     PolylineRenderer(Crusta* iCrusta);
 
+    GLuint getLineDataTexture(GLContextData& contextData);
     void display(GLContextData& contextData) const;
 
     Ptrs* lines;
 
-protected:
-    typedef Geometry::Vector<float, 3> Tangent;
-    typedef std::vector<Tangent> Tangents;
-
+//protected:
     struct GlData : public GLObject::DataItem
     {
         GlData();
         ~GlData();
 
-        GLuint controlPointTex;
-        GLuint tangentTex;
+        GLuint lineDataTex;
         GLuint symbolTex;
 
         GLShader shader;
-
-        GLint windowPosUniform;
-        GLint rcpWindowSizeUniform;
-
-        GLint numSegmentsUniform;
-        GLint inverseMVPUniform;
     };
 
-    int  prepareLineData(GlData* glData) const;
-
-    mutable Tangents tangents;
+    void prepareLineData(GlData* glData) const;
 
 //- inherited from GLObject
 public:

@@ -42,6 +42,11 @@ public:
     HitResult intersect(const Ray& ray, Scalar tin, int sin,
                         Scalar& tout, int& sout, const Scalar gout) const;
 
+    /** traverse the leaf nodes of the current approximation of the patch */
+    void traverseCurrentLeaves(Point3s::const_iterator& start,
+        const Point3s::const_iterator& end, PolylineTraversalFunctor& callback,
+        Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout) const;
+
     /** prepareDiplay has several functions:
         1. evaluate the current active set (as it is view-dependent)
         2. issue requests for loading in new nodes (from splits or merges)
@@ -49,7 +54,7 @@ public:
     void prepareDisplay(GLContextData& contextData, Nodes& nodes);
     /** issues the drawing commands for the render set */
     static void display(GLContextData& contextData, CrustaGlData* glData,
-                        Nodes& nodes);
+                        Nodes& nodes, const Colors& offsets);
 
     /** generate the vertex stream template characterizing a node and
         stream it to the graphics card as a vertex buffer. This buffer
@@ -76,6 +81,15 @@ protected:
     HitResult intersectLeaf(const QuadNodeMainData& leaf, const Ray& ray,
                             Scalar param, int side, const Scalar gout) const;
 
+    void traverseCurrentLeavesNode(Point3s::const_iterator& start,
+        const Point3s::const_iterator& end, PolylineTraversalFunctor& callback,
+        MainCacheBuffer* nodeBuf, Ray& ray, Scalar tin, int sin,
+        Scalar& tout, int& sout) const;
+    void traverseCurrentLeavesLeaf(Point3s::const_iterator& start,
+        const Point3s::const_iterator& end, PolylineTraversalFunctor& callback,
+        QuadNodeMainData& leaf, Ray& ray, Scalar tin, int sin,
+        Scalar& tout, int& sout) const;
+
     /** make sure the required GL data for drawing is available. In case a
         buffer cannot be associated with the specified node (cache is full),
         then a temporary buffer is provided that has had the data streamed to
@@ -86,7 +100,7 @@ protected:
         operations to stream data from the main cache are performed at this
         point. */
     static void drawNode(GLContextData& contextData, CrustaGlData* glData,
-                         QuadNodeMainData& mainData);
+                         QuadNodeMainData& mainData, const Color& offset);
 
     /** draw the finest resolution node that are part of the currently terrain
         approximation */

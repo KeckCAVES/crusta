@@ -1,6 +1,7 @@
 #include <crusta/map/MapManager.h>
 
 #include <algorithm>
+#include <cassert>
 #include <fstream>
 #include <sstream>
 
@@ -13,6 +14,9 @@
 #endif
 
 #include <Geometry/Geoid.h>
+#include <Geometry/OrthogonalTransformation.h>
+#include <Geometry/ProjectiveTransformation.h>
+#include <GL/GLContextData.h>
 #include <GLMotif/CascadeButton.h>
 #include <GLMotif/Menu.h>
 #include <GLMotif/Popup.h>
@@ -22,13 +26,21 @@
 #include <GLMotif/WidgetManager.h>
 #include <Misc/CreateNumberedFileName.h>
 #include <Vrui/Vrui.h>
+#include <Vrui/DisplayState.h>
 
+#include <crusta/checkGl.h>
+#include <crusta/Crusta.h>
+#include <crusta/DemSpecs.h>
 #include <crusta/map/MapTool.h>
 #include <crusta/map/Polyline.h>
 #include <crusta/map/PolylineRenderer.h>
 #include <crusta/map/PolylineTool.h>
+#include <crusta/QuadNodeData.h>
 
 ///\todo remove dbg
+#if CRUSTA_ENABLE_DEBUG
+#include <crusta/Visualizer.h>
+#endif //CRUSTA_ENABLE_DEBUG
 #include <iostream>
 
 BEGIN_CRUSTA
@@ -324,6 +336,200 @@ removePolyline(Polyline* line)
     }
 }
 
+
+MapManager::LineDataGenerator::
+LineDataGenerator(const Nodes& iNodes) :
+    nodes(iNodes), curLine(NULL)
+{
+    //initialize the line data map with empty data
+    for (Nodes::const_iterator it=nodes.begin(); it!=nodes.end(); ++it)
+        lineInfo.insert(NodeLineBitMap::value_type(*it, LineBit()));
+}
+
+void MapManager::LineDataGenerator::
+newLine(Shape* nLine)
+{
+    curLine = nLine;
+}
+
+void MapManager::LineDataGenerator::
+writeToTexture(GLContextData& contextData, GLuint tex, Colors& offsets)
+{
+    typedef Geometry::ProjectiveTransformation<GLfloat,3> ProjectiveXformf;
+
+    static const Color symbolOriginSize[2] = { Color(0.0f, 0.0f, 1.0f, 0.5f),
+                                               Color(0.0f, 0.5f, 1.0f, 0.5f) };
+    float scaleFac  = Vrui::getNavigationTransformation().getScaling();
+///\todo this needs to be tweakable
+    float lineWidth = 0.1f / scaleFac;
+
+    Colors lineData;
+    uint32 curOffset = 0;
+
+    //go through all the nodes encountered in the sequence of the original list
+    for (Nodes::const_iterator onit=nodes.begin(); onit!=nodes.end(); ++onit)
+    {
+        //find the corresponding node line info data
+        NodeLineBitMap::iterator nit = lineInfo.find(*onit);
+        assert(nit != lineInfo.end());
+        QuadNodeMainData* node    = nit->first;
+        LineBit&          lineBit = nit->second;
+
+        //skip if we have no actual data for the node
+        if (lineBit.empty())
+        {
+            //flag with "empty" offset
+            offsets.push_back(Color(1));
+            continue;
+        }
+
+        //we are adding stuff for a new node, provide proper offset
+        Color off((curOffset&0xFF)/255.0f, ((curOffset>>8)&0xFF)/255.0f, 0, 0);
+        offsets.push_back(off);
+
+    //- dump the tile dependent data, i.e.: relative to tile transform
+        //Get projection matrix from openGL
+        GLfloat proj[16];
+
+        glGetFloatv(GL_PROJECTION_MATRIX, proj);
+
+        ProjectiveXformf trans =  ProjectiveXformf::fromColumnMajor(proj);
+
+        //produce modelview matrix
+        const DemHeight (&centroid)[3] = node->centroid;
+        Vrui::Vector centroidTranslation(centroid[0], centroid[1], centroid[2]);
+        Vrui::NavTransform nav =
+            Vrui::getDisplayState(contextData).modelviewNavigational;
+        nav *= Vrui::NavTransform::translate(centroidTranslation);
+
+        ProjectiveXformf modl;
+        nav.writeMatrix(modl.getMatrix());
+
+        //generate inverse modelview projective matrix
+        trans *= modl;
+        trans.doInvert();
+
+        //dump the inverse MVP
+        const ProjectiveXformf::Matrix& tm = trans.getMatrix();
+        for (int i=0; i<4; ++i, ++curOffset)
+            lineData.push_back(Color(tm(0,i), tm(1,i), tm(2,i), tm(3,i)));
+
+        //dump the number of bits in this node
+        lineData.push_back(Color(lineBit.size(), 0, 0, 0));
+        ++curOffset;
+
+/**\todo insert another level here: collections of lines that use the same
+symbol from the atlas. Then dump the atlas info and the number of lines
+following that use it. For now just duplicate the atlas info */
+
+    //- go through all the lines for that node and dump the data
+        for (LineBit::iterator lit=lineBit.begin(); lit!=lineBit.end();
+             ++lit)
+        {
+            Shape*       line = lit->first;
+            CPIterators& cpis = lit->second;
+
+        //- dump the line dependent data, i.e.: atlas info, number of segments
+///\todo for now just generate one of two symbol visuals
+            int symbolId = line->getSymbol().id % 2;
+            lineData.push_back(symbolOriginSize[symbolId]);
+            ++curOffset;
+
+            lineData.push_back(Color(cpis.size(), 0, 0, 0));
+            ++curOffset;
+
+        //- dump all the segments for the current line
+            Vector3 curTan(0);
+/**\todo fix length. Needs to be a hierarchical line representation with world
+space samples. Pick the closest representatives for the node level and use
+level+1 for the samples */
+            float    length = 0.0f;
+            for (CPIterators::iterator cit=cpis.begin(); cit!=cpis.end(); ++cit)
+            {
+                const Point3& curP  = **cit;
+                const Point3& nextP = *((*cit)+1);
+                Point3f curPf(curP[0]-centroid[0],
+                              curP[1]-centroid[1],
+                              curP[2]-centroid[2]);
+                Point3f nextPf(nextP[0]-centroid[0],
+                               nextP[1]-centroid[1],
+                               nextP[2]-centroid[2]);
+
+                //segment control points
+                lineData.push_back(Color(curPf[0], curPf[1], curPf[2], 0));
+                ++curOffset;
+                lineData.push_back(Color(nextPf[0], nextPf[1], nextPf[2], 0));
+                ++curOffset;
+
+                //samples
+///\todo hardcoded 2 samples for now (just end points)
+                curTan = Geometry::cross(Vector3(curP), Vector3(nextP));
+                curTan.normalize();
+                curTan *= lineWidth;
+
+                lineData.push_back(Color(curTan[0], curTan[1], curTan[2],
+                                   length));
+                ++curOffset;
+
+                length += scaleFac*Geometry::dist(curP, nextP);
+                lineData.push_back(Color(curTan[0], curTan[1], curTan[2],
+                                   length));
+                ++curOffset;
+            }
+        }
+    }
+
+//- dump the produced data into the specified texture
+    GLint activeTexture;
+    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+
+    glPushAttrib(GL_TEXTURE_BIT);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_1D, tex);
+    glTexSubImage1D(GL_TEXTURE_1D, 0,0, curOffset, GL_RGBA, GL_FLOAT,
+                    lineData.front().getComponents());
+    CHECK_GLA
+
+    glPopAttrib();
+    glActiveTexture(activeTexture);
+}
+
+void MapManager::LineDataGenerator::
+operator()(const Point3s::const_iterator& cp, QuadNodeMainData* node)
+{
+    assert(curLine != NULL);
+
+    //check that the node intersected is part of the set we care for
+    NodeLineBitMap::iterator it = lineInfo.find(node);
+    if (it == lineInfo.end())
+        return;
+
+    //record the control point
+    it->second[curLine].push_back(cp);
+}
+
+
+void MapManager::
+generateLineData(GLContextData& contextData, Nodes& nodes, Colors& offsets)
+{
+    //initialize the line data generator
+    LineDataGenerator generator(nodes);
+
+    //collect the info for all the lines wrt current approximation
+    for (PolylinePtrs::iterator it=polylines.begin(); it!=polylines.end();
+         ++it)
+    {
+        generator.newLine(*it);
+        const Point3s& cps = (*it)->getControlPoints();
+        if (cps.size()>1)
+            crusta->traverseCurrentLeaves(cps.begin(), cps.end(), generator);
+    }
+
+    //generate and upload the line data
+    GLuint lineDataTex = polylineRenderer->getLineDataTexture(contextData);
+    generator.writeToTexture(contextData, lineDataTex, offsets);
+}
 
 void MapManager::
 frame()

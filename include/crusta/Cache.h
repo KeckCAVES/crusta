@@ -77,8 +77,10 @@ public:
         present or not at that location. */
     BufferType* getBuffer(const TreeIndex& index, bool* existed=NULL);
 
+    /** check to see if the buffer is active in the current frame */
+    bool isActive(const BufferType* const buffer) const;
     /** check to see if the semi-dynamic data of the buffer is current and can
-     be used without an update */
+        be used without an update */
     bool isCurrent(const BufferType* const buffer) const;
     /** check to see if the buffer is valid */
     bool isValid(const BufferType* const buffer) const;
@@ -87,8 +89,10 @@ public:
     /** invalidate a buffer */
     void invalidate(BufferType* buffer) const;
     /** pin the element in the cache such that it cannot be swaped out */
-    void pin(BufferType* buffer, bool wantPinned=true, bool asUsable=true)const;
-    
+    void pin(BufferType* buffer, bool asUsable=true)const;
+    /** unpin the element in the cache (resets it to 0 frametime) */
+    void unpin(BufferType* buffer)const;
+
 protected:
     typedef PortableTable<TreeIndex, BufferType*, TreeIndex::hash> BufferPtrMap;
 

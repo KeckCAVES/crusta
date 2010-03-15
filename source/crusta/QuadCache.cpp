@@ -100,8 +100,8 @@ frame()
         fetch.child           = getBuffer(childIndex);
         if (fetch.child == NULL)
         {
-            DEBUG_OUT(2,"MainCache::frame: no more room in the cache for ");
-            DEBUG_OUT(2,"new data\n");
+CRUSTA_DEBUG_OUT(2,"MainCache::frame: no more room in the cache for ");
+CRUSTA_DEBUG_OUT(2,"new data\n");
             fetch.child->invalidate();
             childRequests.clear();
             return;
@@ -149,14 +149,14 @@ frame()
         fetch.child = getBuffer(childIndex);
         if (fetch.child == NULL)
         {
-            DEBUG_OUT(2,"MainCache::frame: no more room in the cache for ");
-            DEBUG_OUT(2,"new data\n");
+CRUSTA_DEBUG_OUT(2,"MainCache::frame: no more room in the cache for ");
+CRUSTA_DEBUG_OUT(2,"new data\n");
             childRequests.clear();
             return;
         }
         //pin the buffers we obtained
         pin(fetch.parent);
-        pin(fetch.child, true, false);
+        pin(fetch.child, false);
 
         //submit the fetch request
         fetchRequests.push_back(fetch);
@@ -169,13 +169,13 @@ frame()
     for (FetchRequests::const_iterator it=fetchResults.begin();
          it!=fetchResults.end(); ++it)
     {
-        pin(it->parent, false);
+        unpin(it->parent);
         touch(it->parent);
-        pin(it->child);
+        unpin(it->child);
         touch(it->child);
 
-        DEBUG_OUT(1, "MainCache::frame: request for Index %s:%d processed\n",
-                  it->parent->getData().index.med_str().c_str(), it->which);
+CRUSTA_DEBUG_OUT(1, "MainCache::frame: request for Index %s:%d processed\n",
+it->parent->getData().index.med_str().c_str(), it->which);
     }
     fetchResults.clear();
 #endif
@@ -214,6 +214,8 @@ fetchThreadFunc()
             {
                 fetchResults.push_back(*fetch);
                 fetchRequests.pop_front();
+                //need to reactivate cache to process fetch completion
+                Vrui::requestUpdate();
             }
             //attempt to grab new request
             if (fetchRequests.empty())

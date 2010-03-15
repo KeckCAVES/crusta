@@ -21,8 +21,9 @@
 #if DEBUG_INTERSECT_CRAP
 #define DEBUG_INTERSECT_SIDES 1
 #define DEBUG_INTERSECT_PEEK 0
-#include <crusta/CrustaVisualizer.h>
 #endif //DEBUG_INTERSECT_CRAP
+#include <crusta/CrustaVisualizer.h>
+#define CV(x) CrustaVisualizer::x
 
 ///\todo used for debugspheres
 #include <GL/GLModels.h>
@@ -65,6 +66,116 @@ intersect(const Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout,
 
     return intersectNode(nodeBuf, ray, tin, sin, tout, sout, gout);
 }
+
+
+static int
+computeContainingChild(const Point3& p, int sideIn, const Scope& scope)
+{
+    const Point3* corners[4][2] = {
+        {&scope.corners[3], &scope.corners[2]},
+        {&scope.corners[2], &scope.corners[0]},
+        {&scope.corners[0], &scope.corners[1]},
+        {&scope.corners[1], &scope.corners[3]}};
+
+    const Vector3 vp(p[0], p[1], p[2]);
+    int childId   = ~0;
+    int leftRight = ~0;
+    int upDown    = ~0;
+    switch (sideIn)
+    {
+        case -1:
+        {
+            Point3 mids    = Geometry::mid(*(corners[2][0]), *(corners[2][1]));
+            Point3 mide    = Geometry::mid(*(corners[0][0]), *(corners[0][1]));
+            Vector3 normal = Geometry::cross(Vector3(mids[0],mids[1],mids[2]),
+                                             Vector3(mide[0],mide[1],mide[2]));
+
+            leftRight = vp*normal>Scalar(0) ? 0 : 1;
+
+            mids   = Geometry::mid(*(corners[3][0]), *(corners[3][1]));
+            mide   = Geometry::mid(*(corners[1][0]), *(corners[1][1]));
+            normal = Geometry::cross(Vector3(mids[0],mids[1],mids[2]),
+                                             Vector3(mide[0],mide[1],mide[2]));
+
+            upDown = vp*normal>Scalar(0) ? 0 : 2;
+            break;
+        }
+
+        case 0:
+        case 2:
+        {
+            Point3 mids    = Geometry::mid(*(corners[2][0]), *(corners[2][1]));
+            Point3 mide    = Geometry::mid(*(corners[0][0]), *(corners[0][1]));
+            Vector3 normal = Geometry::cross(Vector3(mids[0],mids[1],mids[2]),
+                                             Vector3(mide[0],mide[1],mide[2]));
+
+            leftRight = vp*normal>Scalar(0) ? 0 : 1;
+
+            upDown = sideIn==2 ? 0 : 2;
+            break;
+        }
+
+        case 1:
+        case 3:
+        {
+            leftRight = sideIn==1 ? 0 : 1;
+
+            Point3 mids    = Geometry::mid(*(corners[3][0]), *(corners[3][1]));
+            Point3 mide    = Geometry::mid(*(corners[1][0]), *(corners[1][1]));
+            Vector3 normal = Geometry::cross(Vector3(mids[0],mids[1],mids[2]),
+                                             Vector3(mide[0],mide[1],mide[2]));
+
+            upDown = vp*normal>Scalar(0) ? 0 : 2;
+            break;
+        }
+
+        default:
+            assert(false);
+    }
+
+    childId = leftRight | upDown;
+    return childId;
+}
+
+static void
+computeExit(const Scope& scope, const Ray& ray,
+            const Scalar& tin, const int& sin, Scalar& tout, int& sout)
+{
+    const Point3* corners[4][2] = { {&scope.corners[3], &scope.corners[2]},
+                                    {&scope.corners[2], &scope.corners[0]},
+                                    {&scope.corners[0], &scope.corners[1]},
+                                    {&scope.corners[1], &scope.corners[3]} };
+
+    tout = Math::Constants<Scalar>::max;
+    for (int i=0; i<4; ++i)
+    {
+        if (sin==-1 || i!=sin)
+        {
+            Section section(*(corners[i][0]), *(corners[i][1]));
+            HitResult hit   = section.intersectRay(ray);
+            Scalar hitParam = hit.getParameter();
+            if (hit.isValid() && hitParam>tin && hitParam<=tout)
+            {
+                tout = hitParam;
+                sout = i;
+            }
+        }
+    }
+}
+
+void QuadTerrain::
+traverseCurrentLeaves(Point3s::const_iterator& start,
+    const Point3s::const_iterator& end, PolylineTraversalFunctor& callback,
+    Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout) const
+{
+    MainCache& mainCache     = crusta->getCache()->getMainCache();
+    MainCacheBuffer* nodeBuf = mainCache.findCached(rootIndex);
+    assert(nodeBuf != NULL);
+
+    traverseCurrentLeavesNode(start, end, callback, nodeBuf,
+                              ray, tin, sin, tout, sout);
+}
+
 
 static GLFrustum<Scalar>
 getFrustumFromVrui(GLContextData& contextData)
@@ -144,6 +255,7 @@ getFrustumFromVrui(GLContextData& contextData)
     return frustum;
 }
 
+
 void QuadTerrain::
 prepareDisplay(GLContextData& contextData, Nodes& nodes)
 {
@@ -175,7 +287,8 @@ prepareDisplay(GLContextData& contextData, Nodes& nodes)
 }
 
 void QuadTerrain::
-display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes)
+display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes,
+        const Colors& offsets)
 {
     //setup the GL
     GLint activeTexture;
@@ -197,8 +310,10 @@ display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes)
        issues with rotating vertices far off the origin */
     glPushMatrix();
 
-    for (Nodes::iterator it=nodes.begin(); it!=nodes.end(); ++it)
-        drawNode(contextData, glData, **it);
+    assert(nodes.size() == offsets.size());
+    int numNodes = static_cast<int>(nodes.size());
+    for (int i=0; i<numNodes; ++i)
+        drawNode(contextData, glData, *(nodes[i]), offsets[i]);
 
     //restore the GL transform as it was before
     glPopMatrix();
@@ -965,6 +1080,138 @@ std::cerr << "traversedCells: " << traversedCells << std::endl;
 }
 
 
+void QuadTerrain::
+traverseCurrentLeavesNode(Point3s::const_iterator& start,
+    const Point3s::const_iterator& end, PolylineTraversalFunctor& callback,
+    MainCacheBuffer* nodeBuf, Ray& ray, Scalar tin, int sin,
+    Scalar& tout, int& sout) const
+{
+    QuadNodeMainData& node = nodeBuf->getData();
+
+CRUSTA_DEBUG(20,
+CV(addScope(node.scope));
+CV(addHit(ray, HitResult(tin), 8));
+CV(addSideIn(sin, node.scope));
+CV(show("Entered new node"));
+)
+
+//- perform leaf intersection?
+    //is it even possible to retrieve higher res data?
+    if (node.childDemTiles[0]   ==   DemFile::INVALID_TILEINDEX &&
+        node.childColorTiles[0] == ColorFile::INVALID_TILEINDEX)
+    {
+        traverseCurrentLeavesLeaf(start, end, callback, node, ray,
+                                  tin, sin, tout, sout);
+        return;
+    }
+
+//- continue traversal
+    Point3 entry              = ray(tin);
+    int childId               = computeContainingChild(entry, sin, node.scope);
+    MainCache& mainCache      = crusta->getCache()->getMainCache();
+    TreeIndex childIndex      = node.index.down(childId);
+    MainCacheBuffer* childBuf = mainCache.findCached(childIndex);
+
+    while (true)
+    {
+        if (childBuf==NULL || !mainCache.isActive(childBuf))
+        {
+            traverseCurrentLeavesLeaf(start, end, callback, node, ray,
+                                      tin, sin, tout, sout);
+            return;
+        }
+        else
+        {
+            //recurse
+            traverseCurrentLeavesNode(start, end, callback, childBuf, ray,
+                                      tin, sin, tout, sout);
+            if (start == end)
+                return;
+            tin = tout;
+
+            //move to the next child
+            static const int next[4][4][2] = {
+                { { 2, 2}, {-1,-1}, {-1,-1}, { 1, 1} },
+                { { 3, 2}, { 0, 3}, {-1,-1}, {-1,-1} },
+                { {-1,-1}, {-1,-1}, { 0, 0}, { 3, 1} },
+                { {-1,-1}, { 2, 3}, { 1, 0}, {-1,-1} } };
+            sin     = next[childId][sout][1];
+            childId = next[childId][sout][0];
+            if (childId == -1)
+                return;
+
+            childIndex = node.index.down(childId);
+            childBuf   = mainCache.findCached(childIndex);
+        }
+    }
+
+    //execution should never reach this point
+    assert(false);
+}
+
+void QuadTerrain::
+traverseCurrentLeavesLeaf(Point3s::const_iterator& start,
+    const Point3s::const_iterator& end, PolylineTraversalFunctor& callback,
+    QuadNodeMainData& leaf, Ray& ray, Scalar tin, int sin,
+    Scalar& tout, int& sout) const
+{
+    const Scope& scope  = leaf.scope;
+    Section sections[4] = { Section(scope.corners[3], scope.corners[2]),
+                            Section(scope.corners[2], scope.corners[0]),
+                            Section(scope.corners[0], scope.corners[1]),
+                            Section(scope.corners[1], scope.corners[3]) };
+    //call back for all the nodes of the polyline that are contained
+    while (true)
+    {
+        //call back for the current control point
+        callback(start, &leaf);
+
+        //compute exit for current segment
+        tout = Math::Constants<Scalar>::max;
+        for (int i=0; i<4; ++i)
+        {
+CRUSTA_DEBUG(21,
+CV(addSection(sections[i], 5));
+CV(peek());
+)
+            if (sin==-1 || i!=sin)
+            {
+                HitResult hit   = sections[i].intersectRay(ray);
+                Scalar hitParam = hit.getParameter();
+                if (hit.isValid() && hitParam>tin && hitParam<=tout)
+                {
+CRUSTA_DEBUG(21,
+CV(addHit(ray, hit, 7, Color(0.3, 1.0, 0.1, 1.0)));
+CV(show("Exit found"));
+)
+                    tout = hitParam;
+                    sout = i;
+                }
+            }
+        }
+CRUSTA_DEBUG(21,
+CV(clear(5));
+)
+
+        //try to move out of the leaf
+        if (tout >= 1.0)
+        {
+            //move to the next segment and loop
+            tin =  0.0;
+            sin = -1.0;
+            ++start;
+            if ((start+1) == end)
+            {
+                start = end;
+                break;
+            }
+            ray = Ray(*start, *(start+1));
+        }
+        else
+            break;
+    }
+}
+
 const QuadNodeVideoData& QuadTerrain::
 prepareGlData(CrustaGlData* glData, QuadNodeMainData& mainData)
 {
@@ -1012,7 +1259,7 @@ prepareGlData(CrustaGlData* glData, QuadNodeMainData& mainData)
 
 void QuadTerrain::
 drawNode(GLContextData& contextData, CrustaGlData* glData,
-         QuadNodeMainData& mainData)
+         QuadNodeMainData& mainData, const Color& offset)
 {
 ///\todo accommodate for lazy data fetching
     const QuadNodeVideoData& data = prepareGlData(glData, mainData);
@@ -1042,6 +1289,8 @@ drawNode(GLContextData& contextData, CrustaGlData* glData,
 
     glData->terrainShader.setCentroid(
         mainData.centroid[0], mainData.centroid[1], mainData.centroid[2]);
+    glData->terrainShader.setTerrainAttribute(offset[0], offset[1],
+                                              offset[2], offset[3]);
 
 //    glPolygonMode(GL_FRONT, GL_LINE);
 
@@ -1088,13 +1337,16 @@ if (displayDebuggingGrid)
 {
 glData->terrainShader.disable();
     GLint activeTexture;
-    glPushAttrib(GL_ENABLE_BIT);
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+
+    glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT);
 
     glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);
     glActiveTexture(GL_TEXTURE0);
     glDisable(GL_TEXTURE_2D);
+
+    glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
 
     Point3* c = mainData.scope.corners;
     glBegin(GL_LINE_STRIP);
@@ -1126,6 +1378,8 @@ prepareDraw(FrustumVisibility& visibility, FocusViewEvaluator& lod,
 
     //confirm current node as being active
     actives.push_back(node);
+    mainCache.touch(node);
+
     QuadNodeMainData& mainData = node->getData();
 
     float visible = visibility.evaluate(mainData);
@@ -1172,6 +1426,7 @@ prepareDraw(FrustumVisibility& visibility, FocusViewEvaluator& lod,
                     {
                         //"request" it for update
                         actives.push_back(children[i]);
+                        mainCache.touch(children[i]);
                         allgood = false;
                     }
                 }

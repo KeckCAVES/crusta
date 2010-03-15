@@ -14,6 +14,9 @@ Color CrustaVisualizer::defaultTriangleColor(0.7, 0.6, 0.9, 1.0);
 Color CrustaVisualizer::defaultRayColor(0.3, 0.8, 0.4, 1.0);
 Color CrustaVisualizer::defaultHitColor(0.9, 0.3, 0.2, 1.0);
 
+Color CrustaVisualizer::defaultSideInColor(0.4, 0.7, 0.8, 1.0);
+
+
 void CrustaVisualizer::
 addScope(const Scope& s, int temp, const Color& color)
 {
@@ -101,6 +104,26 @@ addHit(const Ray& r, const HitResult& h, int temp, const Color& color)
     verts[0] = r(h.getParameter());
 
     newPrim.setVertices(verts);
+}
+
+
+void CrustaVisualizer::
+addSideIn(const int sideIn, const Scope& s, int temp, const Color& color)
+{
+    const Point3* corners[4][2] = {
+        {&s.corners[3], &s.corners[2]},
+        {&s.corners[2], &s.corners[0]},
+        {&s.corners[0], &s.corners[1]},
+        {&s.corners[1], &s.corners[3]}};
+
+    if (sideIn!=-1)
+    {
+        Point3s verts;
+        verts.resize(2);
+        verts[0] = *(corners[sideIn][0]);
+        verts[1] = *(corners[sideIn][1]);
+        addPrimitive(GL_LINES, verts, temp, color);
+    }
 }
 
 

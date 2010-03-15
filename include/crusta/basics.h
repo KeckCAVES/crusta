@@ -1,7 +1,8 @@
 #ifndef _basics_H_
 #define _basics_H_
 
-#include <stdlib.h>
+#include <cstdlib>
+#include <cstdio>
 #include <stdint.h>
 #include <vector>
 
@@ -15,20 +16,29 @@
 
 BEGIN_CRUSTA
 
-#ifndef CRUSTA_BEBUG_LEVEL
-#define CRUSTA_BEBUG_LEVEL 0
-#endif //CRUSTA_BEBUG_LEVEL
-#define DEBUG_BEGIN(l) if (CRUSTA_BEBUG_LEVEL>=l) {
-#define DEBUG_END }
+#ifndef CRUSTA_ENABLE_DEBUG
+#define CRUSTA_ENABLE_DEBUG 1
+#endif //CRUSTA_ENABLE_DEBUG
+
+#if CRUSTA_ENABLE_DEBUG
+
+extern int CRUSTA_DEBUG_LEVEL_MIN;
+extern int CRUSTA_DEBUG_LEVEL_MAX;
+
+#define CRUSTA_DEBUG(l,x) if (l>=CRUSTA_DEBUG_LEVEL_MIN &&\
+                              l<=CRUSTA_DEBUG_LEVEL_MAX){x;}
 #ifndef CRUSTA_DEBUG_OUTPUT_DESTINATION
 #define CRUSTA_DEBUG_OUTPUT_DESTINATION stderr
 #endif //CRUSTA_DEBUG_OUTPUT_DESTINATION
-#if CRUSTA_BEBUG_LEVEL>0
-#define DEBUG_OUT(a, b, args...)\
-if ((a)<=CRUSTA_BEBUG_LEVEL) fprintf(CRUSTA_DEBUG_OUTPUT_DESTINATION, b, ## args)
+#define CRUSTA_DEBUG_OUT(l, b, args...)\
+if (l>=CRUSTA_DEBUG_LEVEL_MIN && l<=CRUSTA_DEBUG_LEVEL_MAX) {\
+    fprintf(CRUSTA_DEBUG_OUTPUT_DESTINATION, b, ## args); }
 #else
-#define DEBUG_OUT(a, b, args...)
-#endif
+
+#define CRUSTA_DEBUG(l,x)
+#define CRUSTA_DEBUG_OUT(a, b, args...)
+
+#endif //CRUSTA_ENABLE_DEBUG
 
 #define DEBUG_INTERSECT_CRAP 0
 #if DEBUG_INTERSECT_CRAP
@@ -57,9 +67,12 @@ typedef Geometry::Point<float, 3>   Point3f;
 typedef std::vector<Point3>         Point3s;
 typedef std::vector<Point3f>        Point3fs;
 typedef Geometry::Vector<Scalar, 3> Vector3;
+typedef Geometry::Vector<float, 3>  Vector3f;
 typedef std::vector<Vector3>        Vector3s;
+typedef std::vector<Vector3f>       Vector3fs;
 
 typedef Geometry::Vector<float, 4>  Color;
+typedef std::vector<Color>          Colors;
 
 typedef Geometry::HitResult<Scalar> HitResult;
 typedef Geometry::Ray<Scalar, 3>    Ray;

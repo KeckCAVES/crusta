@@ -559,10 +559,12 @@ void LightingShader::compileShader()
 	/* Compile the standard fragment shader: */
 	const char* fragmentShaderSource=
 		"\
-		void main()\n\
+        uniform vec4 terrainAttribute;\n\
+        \n\
+        void main()\n\
 			{\n\
 			gl_FragData[0] = gl_Color;\n\
-            gl_FragData[1] = vec4(0.0);\n\
+            gl_FragData[1] = terrainAttribute;\n\
 			}\n";
 	glCompileShaderFromString(fragmentShader,fragmentShaderSource);
 
@@ -596,6 +598,8 @@ void LightingShader::compileShader()
     textureStepUniform  =glGetUniformLocationARB(programObject,"texStep");
     verticalScaleUniform=glGetUniformLocationARB(programObject,"verticalScale");
     centroidUniform     =glGetUniformLocationARB(programObject,"center");
+    terrainAttributeUniform =
+        glGetUniformLocationARB(programObject,"terrainAttribute");
 
     glUseProgramObjectARB(0);
 }
