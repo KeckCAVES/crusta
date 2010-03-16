@@ -119,8 +119,13 @@ load(const char* filename)
     //grab all the features and their control points (we assume polylines only)
     OGRFeature* feature = NULL;
 
+///\todo do not restrict number of features read in
+int numFeatureLimit = 5000;
+int numFeature = 0;
+
     layer->ResetReading();
-    while ( (feature = layer->GetNextFeature()) != NULL)
+    while ( (feature = layer->GetNextFeature()) != NULL  && numFeature<numFeatureLimit)
+//    while ( (feature = layer->GetNextFeature()) != NULL)
     {
         OGRGeometry* geo = feature->GetGeometryRef();
 
@@ -155,6 +160,8 @@ load(const char* filename)
         }
 
         OGRFeature::DestroyFeature(feature);
+///\todo do not restrict number of features read in
+++numFeature;
     }
 
     OGRDataSource::DestroyDataSource(source);
@@ -396,7 +403,14 @@ writeToTexture(GLContextData& contextData, Colors& offsets)
         int numSams = 2;
 
 ///\todo hardcoded 2 samples for now (just end points)
+uint32 baseOffsetX = curOffset[0];
         int texelsNeeded = 5 + numBits*2 + numSegs*(2 + numSams);
+        //node data must fit into a row
+        if (texelsNeeded>=lineTexSize)
+        {
+            offsets.push_back(Color(1));
+            continue;
+        }
         if (static_cast<int>(curOffset[0])+texelsNeeded >= lineTexSize)
         {
             //move to the next row
@@ -444,10 +458,12 @@ writeToTexture(GLContextData& contextData, Colors& offsets)
         const ProjectiveXformf::Matrix& tm = trans.getMatrix();
         for (int i=0; i<4; ++i, ++curOffset[0])
             lineData.push_back(Color(tm(0,i), tm(1,i), tm(2,i), tm(3,i)));
+        assert(curOffset[0]<=lineTexSize);
 
         //dump the number of bits in this node
         lineData.push_back(Color(lineBit.size(), 0, 0, 0));
         ++curOffset[0];
+        assert(curOffset[0]<=lineTexSize);
 
 /**\todo insert another level here: collections of lines that use the same
 symbol from the atlas. Then dump the atlas info and the number of lines
@@ -466,9 +482,11 @@ following that use it. For now just duplicate the atlas info */
             int symbolId = line->getSymbol().id % 2;
             lineData.push_back(symbolOriginSize[symbolId]);
             ++curOffset[0];
+            assert(curOffset[0]<=lineTexSize);
 
             lineData.push_back(Color(cpis.size(), 0, 0, 0));
             ++curOffset[0];
+            assert(curOffset[0]<=lineTexSize);
 
         //- dump all the segments for the current line
             Vector3 curTan(0);
@@ -490,8 +508,10 @@ following that use it. For now just duplicate the atlas info */
                 //segment control points
                 lineData.push_back(Color(curPf[0], curPf[1], curPf[2], 0));
                 ++curOffset[0];
+                assert(curOffset[0]<=lineTexSize);
                 lineData.push_back(Color(nextPf[0], nextPf[1], nextPf[2], 0));
                 ++curOffset[0];
+                assert(curOffset[0]<=lineTexSize);
 
                 //samples
 ///\todo hardcoded 2 samples for now (just end points)
@@ -502,10 +522,12 @@ following that use it. For now just duplicate the atlas info */
                 lineData.push_back(Color(curTan[0], curTan[1], curTan[2],
                                    curC));
                 ++curOffset[0];
+                assert(curOffset[0]<=lineTexSize);
 
                 lineData.push_back(Color(curTan[0], curTan[1], curTan[2],
                                    nextC));
                 ++curOffset[0];
+                assert(curOffset[0]<=lineTexSize);
             }
         }
     }
