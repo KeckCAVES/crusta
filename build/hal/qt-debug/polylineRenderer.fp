@@ -1,62 +1,31 @@
-#version 150 compatibility
-
-uniform sampler2D depthTex;
-uniform sampler2D terrainTex;
-
 uniform float lineStartCoord;
 uniform float lineCoordStep;
-uniform float lineLastSample;
-uniform float lineSkipSamples;
+uniform float lineWidth;
 
-uniform sampler2D lineDataTex;
+uniform vec3 center;
+
+uniform sampler1D lineDataTex;
 uniform sampler2D symbolTex;
 
+varying vec3 position;
+varying vec3 normal;
 
-vec3 unproject(in mat4 inverseMVP, in vec2 fragCoord)
+vec4 read(inout float coord)
 {
-    gl_FragDepth = texture(depthTex, fragCoord).r;
-
-    vec4 tmp;
-    tmp.xy = (fragCoord * 2.0) - 1.0;
-    tmp.z  = gl_FragDepth*2.0 - 1.0;
-    tmp.w  = 1.0;
-
-    tmp   = inverseMVP * tmp;
-    tmp.w = 1.0 / tmp.w;
-    return tmp.xyz * tmp.w;
-}
-
-vec4 read(inout vec2 coord)
-{
-    vec4 r   = texture(lineDataTex, coord);
-    coord.x += lineCoordStep;
+    vec4 r = texture1D(lineDataTex, coord);
+    coord += lineCoordStep;
     return r;
 }
 
 void main()
 {
-    vec2 fragCoord = gl_TexCoord[0].xy;
+    //setup the default color to whatever the vertex program computed
+    gl_FragColor = gl_Color;
 
-    vec4 terrainAttribute = texture(terrainTex, fragCoord);
-    if (all(equal(terrainAttribute, vec4(1.0))))
-        discard;
+    float coord = lineStartCoord;
 
-    //compute the starting coordinate of the line data for the node
-    vec2 coordShift = vec2(255.0*lineCoordStep,255.0*256.0*lineCoordStep);
-    vec2 coordX = terrainAttribute.rg * coordShift;
-    vec2 coordY = terrainAttribute.ba * coordShift;
-    vec2 coord  = vec2(coordX.x + coordX.y, coordY.x + coordY.y);
-    coord      += vec2(lineStartCoord);
-
-    //read in the inverse model view projection matrix
-    mat4 inverseMVP;
-    inverseMVP[0] = read(coord);
-    inverseMVP[1] = read(coord);
-    inverseMVP[2] = read(coord);
-    inverseMVP[3] = read(coord);
-
-    //compute the position of the fragment
-    vec3 pos = unproject(inverseMVP, fragCoord);
+    if (coord == 0.0)
+        return;
 
     //walk all the line bits for the node of the fragment
     vec4 color      = vec4(0.0, 0.0, 0.0, 0.0);
@@ -69,11 +38,11 @@ void main()
         int segmentsMax = int(read(coord).r) - 1;
         for (int j=0; j<128; ++j)
         {
-            vec3 startCP = read(coord).xyz;
-            vec3 endCP   = read(coord).xyz;
+            vec4 startCP = read(coord);
+            vec4 endCP   = read(coord);
 
-            vec3 toPos      = pos   - startCP;
-            vec3 startToEnd = endCP - startCP;
+            vec3 toPos      = position  - startCP.xyz;
+            vec3 startToEnd = endCP.xyz - startCP.xyz;
 
             //compute the u coordinate along the segment
             float sqrLen = dot(startToEnd, startToEnd);
@@ -81,34 +50,52 @@ void main()
 
             if (u>=0.0 && u<=1.0)
             {
-                 //fetch the sample
-                 vec2 sampleCoord = coord;          //first sample coord
-                 coord.x         += lineLastSample; //last  sample coord
-                 sampleCoord.x    = mix(sampleCoord.x, coord.x, u);
-                 vec4 sample      = texture(lineDataTex, sampleCoord);
-                 coord.x         += lineCoordStep;
+///\todo the section normal could be passed in to improve precision
+                //compute normal to the section described by the segment
+                vec3 sectionNormal  = cross(startCP.xyz+center,
+                                            endCP.xyz+center);
+                sectionNormal       = normalize(sectionNormal);
 
-                 //compute the v coordinate along the tangent
-                 toPos   = startCP + u*startToEnd;
-                 toPos   = pos - toPos;
-                 sqrLen  = dot(sample.xyz, sample.xyz);
-                 float v = dot(toPos, sample.xyz) / sqrLen;
+                //compute the line tangent
+                vec3 tangent = cross(normal, normalize(startToEnd));
+                float tangentLen = length(tangent);
+#if 1
+                if (tangentLen<0.00001)
+#else
+                if (true)
+#endif
+                    tangent = lineWidth*sectionNormal;
+                else
+                    tangent *= lineWidth;
 
-                 if (v>=-1.0 && v<=1.0)
-                 {
-                    //accumulate the contribution
-                    v = v*0.5 + 0.5;
-                    vec2 symbolCoord = vec2(sample.w, v);
+                //intersect ray from position along tangent with section
+#if 1
+                float sectionOffset = -dot(startCP.xyz, sectionNormal);
+                float nume  = dot(position, sectionNormal) + sectionOffset;
+                float denom = dot(tangent, sectionNormal);
+                float v     = nume / denom;
+#else
+                //compute the v coordinate along the tangent
+                toPos   = startCP.xyz + u*startToEnd;
+                toPos   = position - toPos;
+                float v = dot(toPos, tangent) / (lineWidth*lineWidth);
+#endif
+
+                if (v>=-1.0 && v<=1.0)
+                {
+//color = vec4(vec3(v), 0.3);
+#if 1
+                    //compute the scaled u coordinate
+                    u = mix(startCP.w, endCP.w, u);
+                    //fetch the color contribution from the texture atlas
+                    vec2 symbolCoord = vec2(u, v);
                     symbolCoord     *= symbolOS.ba;
                     symbolCoord     += symbolOS.rg;
-                    vec4 symbolColor = texture(symbolTex, symbolCoord);
+                    vec4 symbolColor = texture2D(symbolTex, symbolCoord);
+                    //accumulate the contribution
                     color = mix(color, symbolColor, symbolColor.w);
+#endif
                 }
-            }
-            else
-            {
-                //simply advance to the next segment
-                coord.x += lineSkipSamples;
             }
 
             if (j == segmentsMax)

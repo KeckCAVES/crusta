@@ -345,12 +345,12 @@ removePolyline(Polyline* line)
 
 
 MapManager::LineDataGenerator::
-LineDataGenerator(const Nodes& iNodes) :
-    nodes(iNodes), curLine(NULL)
+LineDataGenerator(const Nodes& nodes) :
+    curLine(NULL)
 {
     //initialize the line data map with empty data
     for (Nodes::const_iterator it=nodes.begin(); it!=nodes.end(); ++it)
-        lineInfo.insert(NodeLineBitMap::value_type(*it, LineBit()));
+        lineInfo.insert(NodeLineSectionMap::value_type(*it, LineSectionMap()));
 }
 
 void MapManager::LineDataGenerator::
@@ -360,118 +360,55 @@ newLine(Shape* nLine)
 }
 
 void MapManager::LineDataGenerator::
-writeToTexture(GLContextData& contextData, Colors& offsets)
+writeToNodes()
 {
-    static const int& lineTexSize = PolylineRenderer::lineTexSize;
+    static const int& lineTexSize = Crusta::lineDataTexSize;
 
-    typedef Geometry::ProjectiveTransformation<GLfloat,3> ProjectiveXformf;
-
-    static const Color symbolOriginSize[2] = { Color(0.0f, 0.0f, 1.0f, 0.5f),
-                                               Color(0.0f, 0.5f, 1.0f, 0.5f) };
+    static const Color symbolOriginSize[2] = { Color(0.0f, 0.25f, 1.0f, 0.25f),
+                                               Color(0.0f, 0.75f, 1.0f, 0.25f) };
     float scaleFac  = Vrui::getNavigationTransformation().getScaling();
-///\todo this needs to be tweakable
-    float lineWidth = 0.1f / scaleFac;
 
-    lineData.clear();
-    uint32 curOffset[2] = {0,0};
-
-    //go through all the nodes encountered in the sequence of the original list
-    for (Nodes::const_iterator onit=nodes.begin(); onit!=nodes.end(); ++onit)
+    //go through all the nodes encountered
+    for (NodeLineSectionMap::iterator nit=lineInfo.begin(); nit!=lineInfo.end();
+         ++nit)
     {
-        //find the corresponding node line info data
-        NodeLineBitMap::iterator nit = lineInfo.find(*onit);
-        assert(nit != lineInfo.end());
-        QuadNodeMainData* node    = nit->first;
-        LineBit&          lineBit = nit->second;
+        //clear the node's current data
+        QuadNodeMainData* node = nit->first;
+        Colors& lineData = node->lineData;
+        lineData.clear();
+        const Point3& centroid = node->centroid;
 
-        //skip if we have no actual data for the node
-        if (lineBit.empty())
-        {
-            //flag with "empty" offset
-            offsets.push_back(Color(1));
+        LineSectionMap& lineSectionMap = nit->second;
+        if (lineSectionMap.empty())
             continue;
-        }
 
-        //figure out if we're going to hit the line break and break early
-        int numBits = static_cast<int>(lineBit.size());
-        int numSegs = 0;
-        for (LineBit::iterator lit=lineBit.begin(); lit!=lineBit.end();
-             ++lit)
+        //determine texture space requirements
+        int numSections = static_cast<int>(lineSectionMap.size());
+        int numSegs     = 0;
+        for (LineSectionMap::iterator lit=lineSectionMap.begin();
+             lit!=lineSectionMap.end(); ++lit)
         {
             numSegs += static_cast<int>(lit->second.size());
         }
-        int numSams = 2;
 
 ///\todo hardcoded 2 samples for now (just end points)
-uint32 baseOffsetX = curOffset[0];
-        int texelsNeeded = 5 + numBits*2 + numSegs*(2 + numSams);
-        //node data must fit into a row
-        if (texelsNeeded>=lineTexSize)
-        {
-            offsets.push_back(Color(1));
+//uint32 baseOffsetX = curOffset[0];
+        int texelsNeeded = 5 + numSections*2 + numSegs*2;
+        //node data must fit into the line data texture
+        if (texelsNeeded >= lineTexSize)
             continue;
-        }
-        if (static_cast<int>(curOffset[0])+texelsNeeded >= lineTexSize)
-        {
-            //move to the next row
-            ++curOffset[1];
-            //bail if we are out of texture space
-            if (static_cast<int>(curOffset[1]) >= lineTexSize)
-            {
-                std::cerr << "Out of line data texture space" << std::endl;
-                break;
-            }
-            //pad the remaining of the current row
-            for (int i=0; i<lineTexSize-static_cast<int>(curOffset[0]); ++i)
-                lineData.push_back(Color::zero);
-            curOffset[0] = 0;
-        }
 
-        //we are adding stuff for a new node, provide proper offset
-        Color off((curOffset[0]&0xFF)/255.0f, ((curOffset[0]>>8)&0xFF)/255.0f,
-                  (curOffset[1]&0xFF)/255.0f, ((curOffset[1]>>8)&0xFF)/255.0f);
-        offsets.push_back(off);
-
-    //- dump the tile dependent data, i.e.: relative to tile transform
-        //Get projection matrix from openGL
-        GLfloat proj[16];
-
-        glGetFloatv(GL_PROJECTION_MATRIX, proj);
-
-        ProjectiveXformf trans =  ProjectiveXformf::fromColumnMajor(proj);
-
-        //produce modelview matrix
-        const DemHeight (&centroid)[3] = node->centroid;
-        Vrui::Vector centroidTranslation(centroid[0], centroid[1], centroid[2]);
-        Vrui::NavTransform nav =
-            Vrui::getDisplayState(contextData).modelviewNavigational;
-        nav *= Vrui::NavTransform::translate(centroidTranslation);
-
-        ProjectiveXformf modl;
-        nav.writeMatrix(modl.getMatrix());
-
-        //generate inverse modelview projective matrix
-        trans *= modl;
-        trans.doInvert();
-
-        //dump the inverse MVP
-        const ProjectiveXformf::Matrix& tm = trans.getMatrix();
-        for (int i=0; i<4; ++i, ++curOffset[0])
-            lineData.push_back(Color(tm(0,i), tm(1,i), tm(2,i), tm(3,i)));
-        assert(curOffset[0]<=lineTexSize);
-
-        //dump the number of bits in this node
-        lineData.push_back(Color(lineBit.size(), 0, 0, 0));
-        ++curOffset[0];
-        assert(curOffset[0]<=lineTexSize);
+    //- dump the node dependent data, i.e.: relative to tile transform
+        //dump the number of sections in this node
+        lineData.push_back(Color(numSections, 0, 0, 0));
 
 /**\todo insert another level here: collections of lines that use the same
 symbol from the atlas. Then dump the atlas info and the number of lines
 following that use it. For now just duplicate the atlas info */
 
     //- go through all the lines for that node and dump the data
-        for (LineBit::iterator lit=lineBit.begin(); lit!=lineBit.end();
-             ++lit)
+        for (LineSectionMap::iterator lit=lineSectionMap.begin();
+             lit!=lineSectionMap.end(); ++lit)
         {
             Polyline* line = dynamic_cast<Polyline*>(lit->first);
             assert(line != NULL);
@@ -481,15 +418,9 @@ following that use it. For now just duplicate the atlas info */
 ///\todo for now just generate one of two symbol visuals
             int symbolId = line->getSymbol().id % 2;
             lineData.push_back(symbolOriginSize[symbolId]);
-            ++curOffset[0];
-            assert(curOffset[0]<=lineTexSize);
-
             lineData.push_back(Color(cpis.size(), 0, 0, 0));
-            ++curOffset[0];
-            assert(curOffset[0]<=lineTexSize);
 
         //- dump all the segments for the current line
-            Vector3 curTan(0);
             for (CPIterators::iterator cit=cpis.begin(); cit!=cpis.end(); ++cit)
             {
                 const Point3& curP  = **cit;
@@ -506,41 +437,11 @@ following that use it. For now just duplicate the atlas info */
                 Scalar nextC = scaleFac * (*(coit+1));
 
                 //segment control points
-                lineData.push_back(Color(curPf[0], curPf[1], curPf[2], 0));
-                ++curOffset[0];
-                assert(curOffset[0]<=lineTexSize);
-                lineData.push_back(Color(nextPf[0], nextPf[1], nextPf[2], 0));
-                ++curOffset[0];
-                assert(curOffset[0]<=lineTexSize);
-
-                //samples
-///\todo hardcoded 2 samples for now (just end points)
-                curTan = Geometry::cross(Vector3(curP), Vector3(nextP));
-                curTan.normalize();
-                curTan *= lineWidth;
-
-                lineData.push_back(Color(curTan[0], curTan[1], curTan[2],
-                                   curC));
-                ++curOffset[0];
-                assert(curOffset[0]<=lineTexSize);
-
-                lineData.push_back(Color(curTan[0], curTan[1], curTan[2],
-                                   nextC));
-                ++curOffset[0];
-                assert(curOffset[0]<=lineTexSize);
+                lineData.push_back(Color(curPf[0], curPf[1], curPf[2], curC));
+                lineData.push_back(Color(nextPf[0],nextPf[1],nextPf[2],nextC));
             }
         }
     }
-
-//- dump the produced data into the specified texture
-    //figure out the subregion's size
-    //pad the remaining of the current row
-    for (int i=0; i<lineTexSize-static_cast<int>(curOffset[0]); ++i)
-        lineData.push_back(Color::zero);
-
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, lineTexSize, curOffset[1]+1,
-                    GL_RGBA, GL_FLOAT, lineData.front().getComponents());
-    CHECK_GLA
 }
 
 void MapManager::LineDataGenerator::
@@ -549,17 +450,17 @@ operator()(const Point3s::const_iterator& cp, QuadNodeMainData* node)
     assert(curLine != NULL);
 
     //check that the node intersected is part of the set we care for
-    NodeLineBitMap::iterator it = lineInfo.find(node);
+    NodeLineSectionMap::iterator it = lineInfo.find(node);
     if (it == lineInfo.end())
         return;
 
-    //record the control point
+    //record the end control point (see writeToNodes)
     it->second[curLine].push_back(cp);
 }
 
 
 void MapManager::
-generateLineData(GLContextData& contextData, Nodes& nodes, Colors& offsets)
+generateLineData(Nodes& nodes)
 {
     //initialize the line data generator
     LineDataGenerator generator(nodes);
@@ -575,9 +476,7 @@ generateLineData(GLContextData& contextData, Nodes& nodes, Colors& offsets)
     }
 
     //generate and upload the line data
-    GLuint lineDataTex = polylineRenderer->getLineDataTexture(contextData);
-    glBindTexture(GL_TEXTURE_2D, lineDataTex);
-    generator.writeToTexture(contextData, offsets);
+    generator.writeToNodes();
 }
 
 void MapManager::

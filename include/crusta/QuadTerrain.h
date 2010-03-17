@@ -54,7 +54,7 @@ public:
     void prepareDisplay(GLContextData& contextData, Nodes& nodes);
     /** issues the drawing commands for the render set */
     static void display(GLContextData& contextData, CrustaGlData* glData,
-                        Nodes& nodes, const Colors& offsets);
+                        Nodes& nodes);
 
     /** generate the vertex stream template characterizing a node and
         stream it to the graphics card as a vertex buffer. This buffer
@@ -66,7 +66,7 @@ public:
     /** generate the index-template characterizing a node and stream it to
         the graphics card as a index buffer. */
     static void generateIndexTemplate(GLuint& indexTemplate);
-    
+
 /** display bounding spheres for debugging purposes or not */
 static bool displayDebuggingBoundingSpheres;
 /** display debugging grid or not */
@@ -100,7 +100,7 @@ protected:
         operations to stream data from the main cache are performed at this
         point. */
     static void drawNode(GLContextData& contextData, CrustaGlData* glData,
-                         QuadNodeMainData& mainData, const Color& offset);
+                         QuadNodeMainData& mainData);
 
     /** draw the finest resolution node that are part of the currently terrain
         approximation */

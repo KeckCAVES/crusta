@@ -32,6 +32,9 @@ struct QuadNodeMainData
     /** color texture */
     TextureColor* color;
 
+///\todo integrate me properly into the caching scheme (VIS 2010)
+Colors lineData;
+
     /** uniquely characterize this node's "position" in the tree. The tree
      index must correlate with the global hierarchy of the data
      sources */

@@ -76,28 +76,23 @@ public:
     LineDataGenerator(const Nodes& iNodes);
 
     void newLine(Shape* nLine);
-    void writeToTexture(GLContextData& contextData, Colors& offsets);
+    void writeToNodes();
+
 protected:
     typedef std::vector<Point3s::const_iterator> CPIterators;
-    typedef std::map<Shape*, CPIterators> LineBit;
+    typedef std::map<Shape*, CPIterators> LineSectionMap;
 
-    typedef std::map<QuadNodeMainData*, LineBit> NodeLineBitMap;
+    typedef std::map<QuadNodeMainData*, LineSectionMap> NodeLineSectionMap;
 
-    /** used to maintain the sequence of the original nodes, so as to provide
-        the same sequence for the offsets.
-        \see writeToTexture */
-    const Nodes&   nodes;
-    Shape*         curLine;
-    NodeLineBitMap lineInfo;
-    Colors         lineData;
+    Shape*             curLine;
+    NodeLineSectionMap lineInfo;
 
 //- inherited from PolylineTraversalFunctor
 public:
     virtual void operator()(const Point3s::const_iterator& cp,
                             QuadNodeMainData* node);
 };
-void generateLineData(GLContextData& contextData, Nodes& nodes,
-                      Colors& offsets);
+void generateLineData(Nodes& nodes);
 
     void frame();
     void display(GLContextData& contextData) const;

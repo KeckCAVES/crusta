@@ -30,11 +30,11 @@ struct CrustaGlData : public GLObject::DataItem
 {
     CrustaGlData();
     ~CrustaGlData();
-    
+
     /** store a handle to the video cache of this context for convenient
      access */
     VideoCache* videoCache;
-    
+
     /** basic data being passed to the GL to represent a vertex. The
      template provides simply texel-centered, normalized texture
      coordinates that are used to address the corresponding data in the
@@ -42,13 +42,10 @@ struct CrustaGlData : public GLObject::DataItem
     GLuint vertexAttributeTemplate;
     /** defines a triangle-string triangulation of the vertices */
     GLuint indexTemplate;
-    
-    GLuint colorTerrainDepthFrame;
-    GLuint colorFrame;
-    GLuint colorBuf;
-    GLuint terrainAttributesTex;
-    GLuint depthTex;
-    
+
+    GLuint lineDataTex;
+    GLuint symbolTex;
+
     LightingShader terrainShader;
 };
 
@@ -105,17 +102,18 @@ public:
     void frame();
     void display(GLContextData& contextData);
 
+///\todo integrate me into the system properly (VIS 2010)
+/** the size of the line data texture */
+static const int   lineDataTexSize;
+static const float lineDataCoordStep;
+static const float lineDataStartCoord;
+
 protected:
     typedef std::vector<QuadTerrain*> RenderPatches;
 
     /** make sure the bounding objects used for visibility and LOD checks are
         up-to-date wrt to the vertical scale */
     void confirmActives();
-
-    /** prepare the offscreen framebuffer, i.e. copy current framebuffer */
-    void prepareFrameBuffer(CrustaGlData* glData);
-    /** commit the offscreen framebuffer to the default one */
-    void commitFrameBuffer(CrustaGlData* glData);
 
     /** keep track of the number of frames processed. Used, for example, by the
         cache to perform LRU that is aware of currently active nodes (the ones
@@ -154,12 +152,9 @@ protected:
     /** the global height range */
     Scalar globalElevationRange[2];
 
-    /** the size of the current terrain attributes texture/buffer */
-    int bufferSize[2];
-
 //- inherited from GLObject
 public:
-   	virtual void initContext(GLContextData& contextData) const;
+    virtual void initContext(GLContextData& contextData) const;
 };
 
 END_CRUSTA

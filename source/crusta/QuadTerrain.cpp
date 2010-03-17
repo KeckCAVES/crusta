@@ -10,6 +10,7 @@
 #include <Vrui/Vrui.h>
 #include <Vrui/VRWindow.h>
 
+#include <crusta/checkGl.h>
 #include <crusta/Crusta.h>
 #include <crusta/DataManager.h>
 #include <crusta/LightingShader.h>
@@ -190,44 +191,44 @@ getFrustumFromVrui(GLContextData& contextData)
     for (int i=0; i<8; ++i)
         frustum.setFrustumVertex(i,inv.transform(viewSpec.getFrustumVertex(i)));
 
-	/* Calculate the six frustum face planes: */
-	Vector3 fv10 = frustum.getFrustumVertex(1) - frustum.getFrustumVertex(0);
-	Vector3 fv20 = frustum.getFrustumVertex(2) - frustum.getFrustumVertex(0);
-	Vector3 fv40 = frustum.getFrustumVertex(4) - frustum.getFrustumVertex(0);
-	Vector3 fv67 = frustum.getFrustumVertex(6) - frustum.getFrustumVertex(7);
-	Vector3 fv57 = frustum.getFrustumVertex(5) - frustum.getFrustumVertex(7);
-	Vector3 fv37 = frustum.getFrustumVertex(3) - frustum.getFrustumVertex(7);
+    /* Calculate the six frustum face planes: */
+    Vector3 fv10 = frustum.getFrustumVertex(1) - frustum.getFrustumVertex(0);
+    Vector3 fv20 = frustum.getFrustumVertex(2) - frustum.getFrustumVertex(0);
+    Vector3 fv40 = frustum.getFrustumVertex(4) - frustum.getFrustumVertex(0);
+    Vector3 fv67 = frustum.getFrustumVertex(6) - frustum.getFrustumVertex(7);
+    Vector3 fv57 = frustum.getFrustumVertex(5) - frustum.getFrustumVertex(7);
+    Vector3 fv37 = frustum.getFrustumVertex(3) - frustum.getFrustumVertex(7);
 
     Vrui::Plane planes[8];
-	planes[0] = Vrui::Plane(Geometry::cross(fv40,fv20),
+    planes[0] = Vrui::Plane(Geometry::cross(fv40,fv20),
                             frustum.getFrustumVertex(0));
-	planes[1] = Vrui::Plane(Geometry::cross(fv57,fv37),
+    planes[1] = Vrui::Plane(Geometry::cross(fv57,fv37),
                             frustum.getFrustumVertex(7));
-	planes[2] = Vrui::Plane(Geometry::cross(fv10,fv40),
+    planes[2] = Vrui::Plane(Geometry::cross(fv10,fv40),
                             frustum.getFrustumVertex(0));
-	planes[3] = Vrui::Plane(Geometry::cross(fv37,fv67),
+    planes[3] = Vrui::Plane(Geometry::cross(fv37,fv67),
                             frustum.getFrustumVertex(7));
-	planes[4] = Vrui::Plane(Geometry::cross(fv20,fv10),
+    planes[4] = Vrui::Plane(Geometry::cross(fv20,fv10),
                             frustum.getFrustumVertex(0));
-	planes[5] = Vrui::Plane(Geometry::cross(fv67,fv57),
+    planes[5] = Vrui::Plane(Geometry::cross(fv67,fv57),
                             frustum.getFrustumVertex(7));
-                    
+
     Scalar screenArea = Geometry::mag(planes[4].getNormal());
-	for(int i=0; i<6; ++i)
-		planes[i].normalize();
-	
+    for(int i=0; i<6; ++i)
+        planes[i].normalize();
+
     for (int i=0; i<6; ++i)
         frustum.setFrustumPlane(i, planes[i]);
 
-	/* Use the frustum near plane as the screen plane: */
+    /* Use the frustum near plane as the screen plane: */
     frustum.setScreenEye(planes[4], inv.transform(viewSpec.getEye()));
-	
-	/* Get viewport size from OpenGL: */
-	GLint viewport[4];
-	glGetIntegerv(GL_VIEWPORT,viewport);
-	
-	/* Calculate the inverse pixel size: */
-	frustum.setPixelSize(Math::sqrt((Scalar(viewport[2])*Scalar(viewport[3]))/screenArea));
+
+    /* Get viewport size from OpenGL: */
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT,viewport);
+
+    /* Calculate the inverse pixel size: */
+    frustum.setPixelSize(Math::sqrt((Scalar(viewport[2])*Scalar(viewport[3]))/screenArea));
 #else
     for (int i=0; i<8; ++i)
         frustum.setFrustumVertex(i,inv.transform(viewSpec.getFrustumVertex(i)));
@@ -287,19 +288,19 @@ prepareDisplay(GLContextData& contextData, Nodes& nodes)
 }
 
 void QuadTerrain::
-display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes,
-        const Colors& offsets)
+display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes)
 {
     //setup the GL
     GLint activeTexture;
     glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
+
     GLint arrayBuffer;
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &arrayBuffer);
     GLint elementArrayBuffer;
     glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &elementArrayBuffer);
 
     glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_POLYGON_BIT);
-	glEnable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
     glEnable(GL_TEXTURE_2D);
 
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
@@ -310,10 +311,9 @@ display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes,
        issues with rotating vertices far off the origin */
     glPushMatrix();
 
-    assert(nodes.size() == offsets.size());
     int numNodes = static_cast<int>(nodes.size());
     for (int i=0; i<numNodes; ++i)
-        drawNode(contextData, glData, *(nodes[i]), offsets[i]);
+        drawNode(contextData, glData, *(nodes[i]));
 
     //restore the GL transform as it was before
     glPopMatrix();
@@ -335,7 +335,7 @@ generateVertexAttributeTemplate(GLuint& vertexAttributeTemplate)
     uint numTexCoords = TILE_RESOLUTION*TILE_RESOLUTION*2;
     float* positionsInMemory = new float[numTexCoords];
     float* positions = positionsInMemory;
-    
+
     /** generate a set of normalized texture coordinates */
     for (float y = TEXTURE_COORD_START;
          y < (TEXTURE_COORD_END + 0.1*TILE_TEXTURE_COORD_STEP);
@@ -349,14 +349,14 @@ generateVertexAttributeTemplate(GLuint& vertexAttributeTemplate)
             positions[1] = y;
         }
     }
-    
+
     //generate the vertex buffer and stream in the data
     glGenBuffers(1, &vertexAttributeTemplate);
     glBindBuffer(GL_ARRAY_BUFFER, vertexAttributeTemplate);
     glBufferData(GL_ARRAY_BUFFER, numTexCoords*sizeof(float), positionsInMemory,
                  GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    
+
     //clean-up
     delete[] positionsInMemory;
 }
@@ -367,7 +367,7 @@ generateIndexTemplate(GLuint& indexTemplate)
     /* allocate some temporary main memory to store the indices before they are
         streamed to the GPU */
     uint16* indicesInMemory = new uint16[NUM_GEOMETRY_INDICES];
-    
+
     /* generate a sequence of indices that describe a single triangle strip that
         zizag through the geometry a row at a time: e.g.
         12 ...
@@ -398,14 +398,14 @@ generateIndexTemplate(GLuint& indexTemplate)
                 *indices = index[1];
         }
     }
-    
+
     //generate the index buffer and stream in the data
     glGenBuffers(1, &indexTemplate);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexTemplate);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, NUM_GEOMETRY_INDICES*sizeof(uint16),
                  indicesInMemory, GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    
+
     //clean-up
     delete[] indicesInMemory;
 }
@@ -1259,7 +1259,7 @@ prepareGlData(CrustaGlData* glData, QuadNodeMainData& mainData)
 
 void QuadTerrain::
 drawNode(GLContextData& contextData, CrustaGlData* glData,
-         QuadNodeMainData& mainData, const Color& offset)
+         QuadNodeMainData& mainData)
 {
 ///\todo accommodate for lazy data fetching
     const QuadNodeVideoData& data = prepareGlData(glData, mainData);
@@ -1276,6 +1276,21 @@ drawNode(GLContextData& contextData, CrustaGlData* glData,
 
     glVertexPointer(2, GL_FLOAT, 0, 0);
     glIndexPointer(GL_SHORT, 0, 0);
+    CHECK_GLA
+
+///\todo integrate me properly into the system (VIS 2010)
+//stream the line data to the GPU
+if (mainData.lineData.empty())
+    glData->terrainShader.setLineStartCoord(0.0);
+else
+{
+    glData->terrainShader.setLineStartCoord(Crusta::lineDataStartCoord);
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_1D, glData->lineDataTex);
+    glTexSubImage1D(GL_TEXTURE_1D, 0, 0, mainData.lineData.size(), GL_RGBA,
+                    GL_FLOAT, mainData.lineData.front().getComponents());
+}
 
 #if 1
     //load the centroid relative translated navigation transformation
@@ -1289,9 +1304,8 @@ drawNode(GLContextData& contextData, CrustaGlData* glData,
 
     glData->terrainShader.setCentroid(
         mainData.centroid[0], mainData.centroid[1], mainData.centroid[2]);
-    glData->terrainShader.setTerrainAttribute(offset[0], offset[1],
-                                              offset[2], offset[3]);
 
+    CHECK_GLA
 //    glPolygonMode(GL_FRONT, GL_LINE);
 
     static const float ambient[4]  = {0.4, 0.4, 0.4, 1.0};
@@ -1308,6 +1322,7 @@ drawNode(GLContextData& contextData, CrustaGlData* glData,
                         (TILE_RESOLUTION*TILE_RESOLUTION) - 1,
                         NUM_GEOMETRY_INDICES, GL_UNSIGNED_SHORT, 0);
     glPopMatrix();
+    CHECK_GLA
 #endif
 
 if (displayDebuggingBoundingSpheres)
@@ -1335,7 +1350,9 @@ glData->terrainShader.enable();
 
 if (displayDebuggingGrid)
 {
+    CHECK_GLA
 glData->terrainShader.disable();
+    CHECK_GLA
     GLint activeTexture;
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
 
@@ -1346,8 +1363,7 @@ glData->terrainShader.disable();
     glActiveTexture(GL_TEXTURE0);
     glDisable(GL_TEXTURE_2D);
 
-    glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
-
+    CHECK_GLA
     Point3* c = mainData.scope.corners;
     glBegin(GL_LINE_STRIP);
         glColor3f(1.0f, 0.0f, 0.0f);
@@ -1361,10 +1377,13 @@ glData->terrainShader.disable();
         glColor3f(0.0f, 0.0f, 1.0f);
         glVertex3f(c[0][0], c[0][1], c[0][2]);
     glEnd();
+    CHECK_GLA
 
     glPopAttrib();
     glActiveTexture(activeTexture);
+    CHECK_GLA
 glData->terrainShader.enable();
+    CHECK_GLA
 }
 
 }
