@@ -393,7 +393,7 @@ writeToNodes()
 
 ///\todo hardcoded 2 samples for now (just end points)
 //uint32 baseOffsetX = curOffset[0];
-        int texelsNeeded = 5 + numSections*2 + numSegs*2;
+        int texelsNeeded = 5 + numSections*2 + numSegs*3;
         //node data must fit into the line data texture
         if (texelsNeeded >= lineTexSize)
             continue;
@@ -439,6 +439,11 @@ following that use it. For now just duplicate the atlas info */
                 //segment control points
                 lineData.push_back(Color(curPf[0], curPf[1], curPf[2], curC));
                 lineData.push_back(Color(nextPf[0],nextPf[1],nextPf[2],nextC));
+
+                //section normal
+                Vector3 normal = Geometry::cross(Vector3(nextP), Vector3(curP));
+                normal.normalize();
+                lineData.push_back(Color(normal[0], normal[1], normal[2], 0.0));
             }
         }
     }

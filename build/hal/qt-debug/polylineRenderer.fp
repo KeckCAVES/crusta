@@ -50,13 +50,21 @@ void main()
 
             if (u>=0.0 && u<=1.0)
             {
+#if 1
+                //fetch the section normal
+                vec3 sectionNormal = read(coord).xyz;
+#else
+//need to skip normal
+coord += lineCoordStep;
 ///\todo the section normal could be passed in to improve precision
                 //compute normal to the section described by the segment
                 vec3 sectionNormal  = cross(startCP.xyz+center,
                                             endCP.xyz+center);
                 sectionNormal       = normalize(sectionNormal);
+#endif
 
                 //compute the line tangent
+///\todo normalize startToEnd a single time here and reuse for the u undistort
                 vec3 tangent = cross(normal, normalize(startToEnd));
                 float tangentLen = length(tangent);
 #if 1
@@ -85,8 +93,17 @@ void main()
                 {
 //color = vec4(vec3(v), 0.3);
 #if 1
-                    //compute the scaled u coordinate
+                    //compute the u coordinate wrt the length of the segment
                     u = mix(startCP.w, endCP.w, u);
+#if 0
+                    //undistort u by scaling it wrt to the normal
+///\todo startToEnd should already be normalized for tangent compute
+                    float scale = 1.0 - abs(dot(normal, normalize(startToEnd)));
+                    scale       = 1.0 / scale;
+//scale *= 0.05;
+//color = vec4(vec3(scale), 1.0);
+                    u *= scale;
+#endif
                     //fetch the color contribution from the texture atlas
                     vec2 symbolCoord = vec2(u, v);
                     symbolCoord     *= symbolOS.ba;
@@ -97,6 +114,13 @@ void main()
 #endif
                 }
             }
+#if 1
+            else
+            {
+                //need to skip the normal fetch
+                coord += lineCoordStep;
+            }
+#endif
 
             if (j == segmentsMax)
                 break;
