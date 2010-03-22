@@ -5,12 +5,38 @@
 
 #include <Math/Constants.h>
 
+#include <crusta/Crusta.h>
+#include <crusta/map/MapManager.h>
+
 
 BEGIN_CRUSTA
 
 const Shape::Symbol    Shape::DEFAULT_SYMBOL;
-const Shape::ControlId Shape::BAD_ID(-1);
+const Shape::ControlId Shape::BAD_ID(CONTROL_INVALID, ControlPointHandle());
 
+
+Shape::ControlPoint::
+ControlPoint() :
+    age(~0), pos(0), coord(0)
+{}
+
+Shape::ControlPoint::
+ControlPoint(const ControlPoint& other) :
+    age(other.age), pos(other.pos), coord(other.coord)
+{}
+
+Shape::ControlPoint::
+ControlPoint(const AgeStamp& iAge, const Point3& iPos) :
+    age(iAge), pos(iPos), coord(0)
+{}
+
+
+std::ostream&
+operator<<(std::ostream& os, const Shape::ControlPointHandle& cph)
+{
+    os << "cph(" << &(*cph) << ")";
+    return os;
+}
 
 Shape::Symbol::
 Symbol() :
@@ -31,41 +57,79 @@ Symbol(int iId, float iRed, float iGreen, float iBlue) :
 
 Shape::ControlId::
 ControlId():
-    raw(BAD_ID.raw)
+    type(BAD_ID.type), handle(BAD_ID.handle)
 {}
 
 Shape::ControlId::
-ControlId(int iRaw) :
-    raw(iRaw)
+ControlId(const ControlId& other) :
+    type(other.type), handle(other.handle)
 {}
 
 Shape::ControlId::
-ControlId(int iType, int iIndex) :
-    type(iType), index(iIndex)
+ControlId(int iType, const ControlPointHandle& iHandle) :
+    type(iType), handle(iHandle)
 {}
+
+
+bool Shape::ControlId::
+isValid() const
+{
+    return type!=BAD_ID.type;
+}
+
+bool Shape::ControlId::
+isPoint() const
+{
+    return type==CONTROL_POINT;
+}
+
+bool Shape::ControlId::
+isSegment() const
+{
+    return type==CONTROL_SEGMENT;
+}
+
+
+Shape::ControlId& Shape::ControlId::
+operator=(const ControlId& other)
+{
+    type   = other.type;
+    handle = other.handle;
+    return *this;
+}
 
 bool Shape::ControlId::
 operator ==(const ControlId& other) const
 {
-    return raw == other.raw;
+    return type==other.type && handle==other.handle;
 }
 
 bool Shape::ControlId::
 operator !=(const ControlId& other) const
 {
-    return raw != other.raw;
+    return type!=other.type || handle!=other.handle;
+}
+
+std::ostream&
+operator<<(std::ostream& os, const Shape::ControlId& cid)
+{
+    os << "ci(" << cid.type << "." << &(*cid.handle) << ")";
+    return os;
 }
 
 
 Shape::
-Shape() :
-    id(~0), symbol(DEFAULT_SYMBOL)
+Shape(Crusta* iCrusta) :
+    CrustaComponent(iCrusta), id(~0), symbol(DEFAULT_SYMBOL), newestAge(0)
 {
 }
 
 Shape::
 ~Shape()
 {
+    //make sure to remove the shape's coverage and data from the hierarchy
+    crusta->getMapManager()->removeShapeCoverage(this, controlPoints.begin(),
+        controlPoints.end());
 }
 
 
@@ -95,14 +159,14 @@ selectPoint(const Point3& pos, double& dist)
     ControlId retId = BAD_ID;
     dist            = Math::Constants<double>::max;
 
-    int numPoints = static_cast<int>(controlPoints.size());
-    for (int i=0; i<numPoints; ++i)
+    for (ControlPointHandle it=controlPoints.begin(); it!=controlPoints.end();
+         ++it)
     {
-        double newDist = Geometry::dist(controlPoints[i], pos);
+        double newDist = Geometry::dist(it->pos, pos);
         if (newDist < dist)
         {
             retId.type   = CONTROL_POINT;
-            retId.index  = i;
+            retId.handle = it;
             dist         = newDist;
         }
     }
@@ -116,11 +180,14 @@ selectSegment(const Point3& pos, double& dist)
     ControlId retId = BAD_ID;
     dist            = Math::Constants<double>::max;
 
-    int numSegments = static_cast<int>(controlPoints.size()) - 1;
-    for (int i=0; i<numSegments; ++i)
+    ControlPointHandle end = --controlPoints.end();
+    for (ControlPointHandle it=controlPoints.begin(); it!=end; ++it)
     {
-        const Point3& start = controlPoints[i];
-        const Point3& end   = controlPoints[i+1];
+        ControlPointHandle nit = it;
+        ++nit;
+
+        const Point3& start = it->pos;
+        const Point3& end   = nit->pos;
 
         Vector3 seg   = end - start;
         Vector3 toPos = pos - start;
@@ -140,7 +207,7 @@ selectSegment(const Point3& pos, double& dist)
         if (newDist < dist)
         {
             retId.type   = CONTROL_SEGMENT;
-            retId.index  = i;
+            retId.handle = it;
             dist         = newDist;
         }
     }
@@ -151,109 +218,199 @@ selectSegment(const Point3& pos, double& dist)
 Shape::ControlId Shape::
 selectExtremity(const Point3& pos, double& dist, End& end)
 {
-    double frontDist = Geometry::dist(pos, controlPoints.front());
-    double backDist  = Geometry::dist(pos, controlPoints.back());
+    assert(controlPoints.size()>0);
+    double frontDist = Geometry::dist(pos, controlPoints.front().pos);
+    double backDist  = Geometry::dist(pos, controlPoints.back().pos);
 
     if (frontDist < backDist)
     {
         dist = frontDist;
         end  = END_FRONT;
-        return ControlId(CONTROL_POINT, 0);
+        return ControlId(CONTROL_POINT, controlPoints.begin());
     }
     else
     {
         dist = backDist;
         end  = END_BACK;
-        return ControlId(CONTROL_POINT, controlPoints.size() - 1);
+        return ControlId(CONTROL_POINT, --controlPoints.end());
     }
 }
 
 
-bool Shape::
-isValid(const ControlId& id)
+void Shape::
+setControlPoints(const Point3s& newControlPoints)
 {
-    if (id==BAD_ID)
-        return false;
+    MapManager* mapMan = crusta->getMapManager();
 
-    int numPoints = static_cast<int>(controlPoints.size());
-    switch (id.type)
+    //delete the old control points to the coverage hierarchy
+    mapMan->removeShapeCoverage(this,controlPoints.begin(),controlPoints.end());
+    controlPoints.clear();
+
+    //assign the new control point positions and age
+    for (Point3s::const_iterator it=newControlPoints.begin();
+         it!=newControlPoints.end(); ++it)
     {
-        case CONTROL_POINT:
-            return id.index<numPoints;
-        case CONTROL_SEGMENT:
-            return id.index<numPoints-1;
-        default:
-            return false;
+        controlPoints.push_back(ControlPoint(newestAge, *it));
     }
-}
+    ++newestAge;
 
-bool Shape::
-isValidPoint(const ControlId& id)
-{
-    int numPoints = static_cast<int>(controlPoints.size());
-    return id!=BAD_ID && id.type==CONTROL_POINT && id.index<numPoints;
+    //add the new control points to the coverage hierarchy
+    mapMan->addShapeCoverage(this, controlPoints.begin(), controlPoints.end());
 }
-
-bool Shape::
-isValidSegment(const ControlId& id)
-{
-    int numSegments = static_cast<int>(controlPoints.size()) - 1;
-    return id!=BAD_ID && id.type==CONTROL_SEGMENT && id.index<numSegments;
-}
-
 
 Shape::ControlId Shape::
 addControlPoint(const Point3& pos, End end)
 {
+    MapManager* mapMan = crusta->getMapManager();
+
     if (end == END_FRONT)
     {
-        controlPoints.insert(controlPoints.begin(), pos);
-        return ControlId(CONTROL_POINT, 0);
+CRUSTA_DEBUG(40, std::cerr << "++++AddCP @ FRONT:\n";)
+        controlPoints.push_front(ControlPoint(newestAge++, pos));
+        mapMan->addShapeCoverage(this, controlPoints.begin(),
+                                 ++controlPoints.begin());
+
+CRUSTA_DEBUG(40, std::cerr << "----added\n" <<
+             ControlId(CONTROL_POINT, controlPoints.begin()) << std::endl;)
+        return ControlId(CONTROL_POINT, controlPoints.begin());
     }
     else
     {
-        controlPoints.push_back(pos);
-        return ControlId(CONTROL_POINT,
-                         static_cast<int>(controlPoints.size()-1));
+CRUSTA_DEBUG(40, std::cerr << "++++AddCP @ END\n";)
+        controlPoints.push_back(ControlPoint(newestAge++, pos));
+        ControlPointHandle start = --controlPoints.end();
+        if (controlPoints.size()>1)
+        {
+            --start;
+            start->age = newestAge++;
+        }
+        mapMan->addShapeCoverage(this, start, controlPoints.end());
+
+CRUSTA_DEBUG(40, std::cerr << "----added " <<
+             ControlId(CONTROL_POINT, --controlPoints.end()) << ".\n\n\n";)
+        return ControlId(CONTROL_POINT, --controlPoints.end());
     }
 }
 
-bool Shape::
+void Shape::
 moveControlPoint(const ControlId& id, const Point3& pos)
 {
-    if (!isValidPoint(id))
-        return false;
+///\todo only works for single map tool: ids can't be invalidated outside tool
+    assert(isValid(id));
 
-    controlPoints[id.index] = pos;
-    return true;
+    MapManager* mapMan = crusta->getMapManager();
+
+CRUSTA_DEBUG(40, std::cerr << "++++MoveCP " << id << " \n";)
+    //remove the old affected segments
+    ControlPointHandle start = id.handle;
+    if (start != controlPoints.begin())
+        --start;
+    ControlPointHandle end = id.handle; ++end;
+    if (end != controlPoints.end())
+        ++end;
+
+    mapMan->removeShapeCoverage(this, start, end);
+
+    //move the control point and update its age
+    id.handle->age = newestAge;
+    id.handle->pos = pos;
+    start->age     = newestAge++;
+
+    //add the new affected segments
+    mapMan->addShapeCoverage(this, start, end);
+CRUSTA_DEBUG(40, std::cerr << "----moved.\n\n\n";)
 }
 
 void Shape::
 removeControlPoint(const ControlId& id)
 {
-    if (!isValidPoint(id))
-        return;
+///\todo only works for single map tool: ids can't be invalidated outside tool
+    assert(isValid(id));
 
-    controlPoints.erase(controlPoints.begin()+id.index);
+    MapManager* mapMan = crusta->getMapManager();
+
+CRUSTA_DEBUG(40, std::cerr << "++++DelCP " << id << " \n";)
+    //remove affected segments
+    ControlPointHandle start = id.handle;
+    if (start != controlPoints.begin())
+        --start;
+    ControlPointHandle end = id.handle; ++end;
+    if (end != controlPoints.end())
+        ++end;
+
+    mapMan->removeShapeCoverage(this, start, end);
+
+    //delete the control point
+    start = controlPoints.erase(id.handle);
+
+    //add new shortcut segment
+    end = start;
+    if (start!=controlPoints.begin())
+    {
+        --start;
+        start->age = newestAge++;
+    }
+    if (end != controlPoints.end())
+        ++end;
+
+    mapMan->addShapeCoverage(this, start, end);
+
+CRUSTA_DEBUG(40, std::cerr << "----deleted.\n\n\n";)
+}
+
+Shape::ControlId Shape::
+refine(const ControlId& id, const Point3& pos)
+{
+///\todo only works for single map tool: ids can't be invalidated outside tool
+    assert(isValid(id));
+
+    MapManager* mapMan = crusta->getMapManager();
+
+CRUSTA_DEBUG(40, std::cerr << "++++RefineSeg " << id << " \n";)
+    //determine insertion point
+    ControlId retControl = nextControl(id);
+
+    //remove affected segment
+    ControlPointHandle start = previousControl(id).handle;
+    ControlPointHandle end   = retControl.handle;
+    assert(end != controlPoints.end());
+    ++end;
+
+    mapMan->removeShapeCoverage(this, start, end);
+
+    //insert new control point
+    retControl.handle = controlPoints.insert(retControl.handle,
+                                             ControlPoint(newestAge, pos));
+
+    start->age = newestAge++;
+
+    //add affected segments
+    mapMan->addShapeCoverage(this, start, end);
+
+CRUSTA_DEBUG(40, std::cerr << "refined " << id << ".\n\n\n";)
+    return retControl;
 }
 
 
 Shape::ControlId Shape::
-previousControl(const ControlId& id)
+previousControl(const ControlId& id) const
 {
+///\todo only works for single map tool: ids can't be invalidated outside tool
+    assert(isValid(id));
+
     switch (id.type)
     {
         case CONTROL_POINT:
-            if (id.index>0)
-                return ControlId(CONTROL_SEGMENT, id.index-1);
+            if (id.handle != controlPoints.begin())
+            {
+                return ControlId(CONTROL_SEGMENT,
+                                 --ControlPointHandle(id.handle));
+            }
             else
                 return BAD_ID;
 
         case CONTROL_SEGMENT:
-            if (id.index>=0)
-                return ControlId(CONTROL_POINT, id.index);
-            else
-                return BAD_ID;
+            return ControlId(CONTROL_POINT, id.handle);
 
         default:
             return BAD_ID;
@@ -261,19 +418,21 @@ previousControl(const ControlId& id)
 }
 
 Shape::ControlId Shape::
-nextControl(const ControlId& id)
+nextControl(const ControlId& id) const
 {
-    int lastPoint = static_cast<int>(controlPoints.size()) - 1;
-    if (id==BAD_ID || id.index>=lastPoint)
-        return BAD_ID;
+///\todo only works for single map tool: ids can't be invalidated outside tool
+    assert(isValid(id));
 
     switch (id.type)
     {
         case CONTROL_POINT:
-            return ControlId(CONTROL_SEGMENT, id.index);
+            if (id.handle != --controlPoints.end())
+                return BAD_ID;
+            else
+                return ControlId(CONTROL_SEGMENT, id.handle);
 
         case CONTROL_SEGMENT:
-            return ControlId(CONTROL_POINT, id.index+1);
+            return ControlId(CONTROL_POINT, ++ControlPointHandle(id.handle));
 
         default:
             return BAD_ID;
@@ -281,10 +440,11 @@ nextControl(const ControlId& id)
 }
 
 
-IdGenerator32::Id& Shape::
-getId()
+
+void Shape::
+setId(const IdGenerator32::Id& nId)
 {
-    return id;
+    id = nId;
 }
 
 const IdGenerator32::Id& Shape::
@@ -293,10 +453,17 @@ getId() const
     return id;
 }
 
-Shape::Symbol& Shape::
-getSymbol()
+void Shape::
+setSymbol(const Symbol& nSymbol)
 {
-    return symbol;
+    symbol = nSymbol;
+    //dirty the whole shape to prompt an update of the display representation
+    for (ControlPointList::iterator it=controlPoints.begin();
+         it!=controlPoints.end(); ++it)
+    {
+        it->age = newestAge;
+    }
+    ++newestAge;
 }
 
 const Shape::Symbol& Shape::
@@ -305,40 +472,34 @@ getSymbol() const
     return symbol;
 }
 
-Point3& Shape::
-getControlPoint(const ControlId& id)
-{
-    if (!isValidPoint(id))
-        throw std::runtime_error("invalid control point id");
-
-    return controlPoints[id.index];
-}
-
-Point3s& Shape::
+Shape::ControlPointList& Shape::
 getControlPoints()
 {
     return controlPoints;
 }
 
-const Point3s& Shape::
+const Shape::ControlPointList& Shape::
 getControlPoints() const
 {
     return controlPoints;
 }
 
 
-Shape::ControlId Shape::
-refine(const ControlId& id, const Point3& pos)
+bool Shape::
+isValid(const ControlId& control) const
 {
-    if (!isValidSegment(id))
-        return BAD_ID;
-
-    ControlId end = nextControl(id);
-    assert(isValidPoint(end));
-    Point3s::iterator it = controlPoints.begin() + end.index;
-    controlPoints.insert(it, pos);
-
-    return end;
+    ControlPointList::const_iterator handle;
+    for (handle=controlPoints.begin();
+         handle!=controlPoints.end() && handle!=control.handle; ++handle);
+    if (handle!=controlPoints.end())
+    {
+        if (control.isSegment() && handle==--controlPoints.end())
+            return false;
+        else
+            return true;
+    }
+    else
+        return false;
 }
 
 

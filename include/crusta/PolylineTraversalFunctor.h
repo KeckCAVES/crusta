@@ -13,6 +13,7 @@ class QuadNodeMainData;
 class PolylineTraversalFunctor
 {
 public:
+    virtual ~PolylineTraversalFunctor() {}
     virtual void operator()(const Point3s::const_iterator& cp,
                             QuadNodeMainData* node) = 0;
 };

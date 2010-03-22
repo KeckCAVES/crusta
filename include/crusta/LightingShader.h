@@ -66,6 +66,7 @@ class LightingShader
     GLint verticalScaleUniform;
     GLint centroidUniform;
     GLint lineStartCoordUniform;
+    GLint lineCoordScaleUniform;
     GLint lineWidthUniform;
 
     /* Private methods: */
@@ -108,6 +109,10 @@ class LightingShader
     void setLineStartCoord(float sc)
     {
         glUniform1f(lineStartCoordUniform, sc);
+    }
+    void setLineCoordScale(float lcs)
+    {
+        glUniform1f(lineCoordScaleUniform, lcs);
     }
     void setLineWidth(float lw)
     {

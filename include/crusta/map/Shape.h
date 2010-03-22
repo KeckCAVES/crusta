@@ -1,29 +1,54 @@
 #ifndef _Shape_H_
 #define _Shape_H_
 
+#include <iostream>
+#include <list>
 
+#include <crusta/CrustaComponent.h>
 #include <crusta/IdGenerator.h>
 
 
 BEGIN_CRUSTA
 
 
+class QuadNodeMainData;
+
+/**\todo should shape really be a crusta component and interact with the map
+manager directly? Vis2010 */
 ///\todo comment on this more once the interface is stable
 /**
     Abstract interface to shapes used for mapping.
 */
-class Shape
+class Shape : public CrustaComponent
 {
 public:
+///\todo fix the abstraction of the data Vis2010
+    struct ControlPoint
+    {
+        ControlPoint();
+        ControlPoint(const ControlPoint& other);
+        ControlPoint(const AgeStamp& iAge, const Point3& iPos);
+
+        AgeStamp age;
+        Point3   pos;
+        Scalar   coord;
+    };
+    typedef std::list<ControlPoint>       ControlPointList;
+///\todo this should actually be a const_iterator
+    typedef ControlPointList::iterator    ControlPointHandle;
+    typedef std::list<ControlPointHandle> ControlPointHandleList;
+
     enum ControlType
     {
         CONTROL_POINT,
-        CONTROL_SEGMENT
+        CONTROL_SEGMENT,
+        CONTROL_INVALID
     };
     enum End
     {
         END_FRONT,
-        END_BACK
+        END_BACK,
+        END_INVALID
     };
 
     struct Symbol
@@ -36,23 +61,36 @@ public:
         Symbol(int iId, float iRed, float iGreen, float iBlue);
     };
 
-    union ControlId
+    struct ControlId
     {
         ControlId();
-        ControlId(int iRaw);
-        ControlId(int iType, int iIndex);
-        bool operator ==(const ControlId& other) const;
-        bool operator !=(const ControlId& other) const;
+        ControlId(const ControlId& other);
+        ControlId(int type, const ControlPointHandle& handle);
 
-        struct
-        {
-            int type   :  8;
-            int index  : 24;
-        };
-        int raw;
+        bool isValid()   const;
+        bool isPoint()   const;
+        bool isSegment() const;
+
+        ControlId& operator=(const ControlId& other);
+        bool       operator ==(const ControlId& other) const;
+        bool       operator !=(const ControlId& other) const;
+
+        int                type;
+        ControlPointHandle handle;
+
+///\todo debug, remove
+friend std::ostream& operator<<(std::ostream& os, const ControlId& cid);
     };
 
-    Shape();
+    class IntersectionFunctor
+    {
+    public:
+        virtual ~IntersectionFunctor() {}
+        virtual void operator()(const ControlPointHandle& cp,
+                                QuadNodeMainData* node) = 0;
+    };
+
+    Shape(Crusta* iCrusta);
     virtual ~Shape();
 
     ControlId select(const Point3& pos, double& dist, double pointBias=1.0);
@@ -60,26 +98,26 @@ public:
     ControlId selectSegment(const Point3& pos, double& dist);
     ControlId selectExtremity(const Point3& pos, double& dist, End& end);
 
-    bool isValid(const ControlId& id);
-    bool isValidPoint(const ControlId& id);
-    bool isValidSegment(const ControlId& id);
+    virtual void setControlPoints(const Point3s& newControlPoints);
 
     virtual ControlId addControlPoint(const Point3& pos, End end=END_BACK);
-    virtual bool moveControlPoint(const ControlId& id, const Point3& pos);
+    virtual void moveControlPoint(const ControlId& id, const Point3& pos);
     virtual void removeControlPoint(const ControlId& id);
+    virtual ControlId refine(const ControlId& id, const Point3& pos);
 
-    ControlId previousControl(const ControlId& id);
-    ControlId nextControl(const ControlId& id);
+    ControlId previousControl(const ControlId& id) const;
+    ControlId nextControl(const ControlId& id) const;
 
-    IdGenerator32::Id&       getId();
+    void                     setId(const IdGenerator32::Id& nId);
     const IdGenerator32::Id& getId() const;
-    Symbol&                  getSymbol();
+    void                     setSymbol(const Symbol& nSymbol);
     const Symbol&            getSymbol() const;
-    Point3&                  getControlPoint(const ControlId& id);
-    Point3s&                 getControlPoints();
-    const Point3s&           getControlPoints() const;
+    ControlPointList&        getControlPoints();
+    const ControlPointList&  getControlPoints() const;
 
-    ControlId refine(const ControlId& id, const Point3& pos);
+    /** for debugging purposes. Check the validity of the control. Expected to
+        perform very poorly */
+    bool isValid(const ControlId& control) const;
 
     static const Symbol    DEFAULT_SYMBOL;
     static const ControlId BAD_ID;
@@ -87,8 +125,18 @@ public:
 protected:
     IdGenerator32::Id id;
     Symbol            symbol;
-    Point3s           controlPoints;
+    ControlPointList  controlPoints;
+    /** newestAge is used to make sure that when new control points are added,
+        no old cached data can be accidentally used (since the control ids are
+        reused) */
+    AgeStamp          newestAge;
 };
+
+
+///\todo debug, remove
+std::ostream& operator<<(std::ostream& os,
+                         const Shape::ControlPointHandle& cid);
+
 
 END_CRUSTA
 

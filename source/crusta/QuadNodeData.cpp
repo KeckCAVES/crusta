@@ -6,9 +6,21 @@
 
 BEGIN_CRUSTA
 
+QuadNodeMainData::AgeStampedControlPointHandle::
+AgeStampedControlPointHandle() :
+    age(~0), handle()
+{}
+
+QuadNodeMainData::AgeStampedControlPointHandle::
+AgeStampedControlPointHandle(const AgeStamp& iAge,
+                             const Shape::ControlPointHandle& iHandle) :
+    age(iAge), handle(iHandle)
+{}
+
 QuadNodeMainData::
 QuadNodeMainData(uint size) :
-    index(TreeIndex::invalid), boundingCenter(0,0,0), boundingRadius(0)
+    lineCoverageAge(0), index(TreeIndex::invalid), boundingCenter(0,0,0),
+    boundingRadius(0)
 {
     geometry = new Vertex[size*size];
     height   = new DemHeight[size*size];
@@ -38,9 +50,9 @@ computeBoundingSphere(Scalar verticalScale)
 {
     DemHeight avgElevation = (elevationRange[0] + elevationRange[1]);
     avgElevation          *= DemHeight(0.5)* verticalScale;
-    
+
     boundingCenter = scope.getCentroid(SPHEROID_RADIUS + avgElevation);
-    
+
     boundingRadius = Scope::Scalar(0);
     for (int i=0; i<4; ++i)
     {
@@ -70,7 +82,7 @@ init(Scalar verticalScale)
     centroid[0] = scopeCentroid[0];
     centroid[1] = scopeCentroid[1];
     centroid[2] = scopeCentroid[2];
-    
+
     computeBoundingSphere(verticalScale);
 }
 
@@ -101,6 +113,30 @@ createTexture(GLuint& texture, GLint internalFormat, uint size)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+
+std::ostream& operator<<(std::ostream& os,
+                         const QuadNodeMainData::ShapeCoverage& cov)
+{
+    for (QuadNodeMainData::ShapeCoverage::const_iterator lit=cov.begin();
+         lit!=cov.end(); ++lit)
+    {
+        os << "-line " << lit->first->getId() << " XX ";
+        const QuadNodeMainData::AgeStampedControlPointHandleList& handles =
+            lit->second;
+        for (QuadNodeMainData::AgeStampedControlPointHandleList::const_iterator
+             hit=handles.begin(); hit!=handles.end(); ++hit)
+        {
+            if (hit==handles.begin())
+                os << hit->age << "." << hit->handle;
+            else
+                os << " | " << hit->age << "." << hit->handle;
+        }
+        os << "\n";
+    }
+
+    return os;
 }
 
 END_CRUSTA

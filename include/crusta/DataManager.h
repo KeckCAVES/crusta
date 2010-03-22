@@ -30,8 +30,6 @@ public:
     void loadRoot(TreeIndex rootIndex, const Scope& scope);
     /** load the data required for the child of the specified node */
     void loadChild(MainCacheBuffer* parent,uint8 which,MainCacheBuffer* child);
-    /** load the data required for splitting a node into its children */
-    void loadChildren(MainCacheBuffer* parent, MainCacheBuffer* children[4]);
 
 protected:
     /** produce the flat sphere cartesian space coordinates for a node */

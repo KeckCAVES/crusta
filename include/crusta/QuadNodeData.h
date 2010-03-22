@@ -1,19 +1,38 @@
 #ifndef _QuadNodeData_H_
 #define _QuadNodeData_H_
 
+#include <map>
+
 #include <GL/GLVertex.h>
 
+#include <crusta/map/Shape.h>
 #include <crusta/QuadtreeFileSpecs.h>
 #include <crusta/TreeIndex.h>
 #include <crusta/Scope.h>
 
+
 BEGIN_CRUSTA
+
 
 /** stores the main RAM view-independent data of the terrain that can be shared
     between multiple view-dependent trees */
 struct QuadNodeMainData
 {
     typedef GLVertex<void, 0, void, 0, void, float, 3> Vertex;
+
+    struct AgeStampedControlPointHandle
+    {
+        AgeStampedControlPointHandle();
+        AgeStampedControlPointHandle(const AgeStamp& iAge,
+                                     const Shape::ControlPointHandle& iHandle);
+
+        AgeStamp                  age;
+        Shape::ControlPointHandle handle;
+    };
+    typedef std::list<AgeStampedControlPointHandle>
+        AgeStampedControlPointHandleList;
+    typedef std::map<const Shape*, AgeStampedControlPointHandleList>
+        ShapeCoverage;
 
     QuadNodeMainData(uint size);
     ~QuadNodeMainData();
@@ -33,6 +52,8 @@ struct QuadNodeMainData
     TextureColor* color;
 
 ///\todo integrate me properly into the caching scheme (VIS 2010)
+AgeStamp      lineCoverageAge;
+ShapeCoverage lineCoverage;
 Colors lineData;
 
     /** uniquely characterize this node's "position" in the tree. The tree
@@ -42,6 +63,7 @@ Colors lineData;
     /** caches this node's scope for visibility and lod evaluation */
     Scope scope;
 
+///\todo add an age stamp to the semi-dynamic data like for the coverage?
     /** center of the bounding sphere primitive */
     Scope::Vertex boundingCenter;
     /** radius of a sphere containing the node */
@@ -80,6 +102,9 @@ struct QuadNodeVideoData
 };
 
 
+///\todo debug, remove
+std::ostream& operator<<(std::ostream& os,
+                         const QuadNodeMainData::ShapeCoverage& cov);
 
 END_CRUSTA
 

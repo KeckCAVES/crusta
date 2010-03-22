@@ -10,7 +10,7 @@
 
 #include <crusta/basics.h>
 #include <crusta/LightingShader.h>
-#include <crusta/PolylineTraversalFunctor.h>
+#include <crusta/map/Shape.h>
 
 class GLContextData;
 
@@ -58,9 +58,6 @@ public:
     void init(const std::string& demFileBase, const std::string& colorFileBase);
     void shutdown();
 
-///\todo fix this API. potentially deprecate
-    /** query the height of the surface closest to the query point */
-    double getHeight(double x, double y, double z);
 ///\todo potentially deprecate
     /** snap the given cartesian point to the surface of the terrain (at an
         optional offset) */
@@ -68,11 +65,10 @@ public:
     /** intersect a ray with the crusta globe */
     HitResult intersect(const Ray& ray) const;
 
-    /** traverse the leaf nodes of the current approximation that intersect the
-        specified polyline */
-    void traverseCurrentLeaves(Point3s::const_iterator startingCP,
-                               const Point3s::const_iterator& endingCP,
-                               PolylineTraversalFunctor& callback) const;
+    /** intersect the specified shape with the global hierarchy */
+    void intersect(Shape::ControlPointHandle start,
+                   Shape::ControlPointHandle end,
+                   Shape::IntersectionFunctor& callback) const;
 
     const FrameNumber& getCurrentFrame()   const;
     const FrameNumber& getLastScaleFrame() const;

@@ -58,7 +58,10 @@ typedef int64_t     int64;
 
 typedef uint        error;
 
-typedef uint64      FrameNumber;
+typedef uint64                AgeStamp;
+typedef std::vector<AgeStamp> AgeStamps;
+///\todo need to deprecate FrameNumber in favor of AgeStamp
+typedef uint64      FrameNumber; ///<< DEPRECATED
 
 typedef double      Scalar;
 

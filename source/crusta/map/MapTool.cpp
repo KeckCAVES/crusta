@@ -185,6 +185,7 @@ selectControl(const Point3& pos)
     curControl = control;
 }
 
+#if 0
 void MapTool::
 addPointAtEnds(const Point3& pos)
 {
@@ -195,6 +196,7 @@ addPointAtEnds(const Point3& pos)
 
     curControl = curShape->addControlPoint(pos, end);
 }
+#endif
 
 
 
@@ -218,14 +220,13 @@ frame()
     {
         case MODE_DRAGGING:
         {
-            Shape*& curShape = crusta->getMapManager()->getActiveShape(toolId);
+            MapManager* mapMan = crusta->getMapManager();
+            Shape*& curShape   = mapMan->getActiveShape(toolId);
             assert(curShape != NULL);
-///\todo defer moving the control point to specialized implementations
-            if (!curShape->moveControlPoint(curControl, pos))
-            {
-                curControl = Shape::BAD_ID;
-                mode       = MODE_SELECTING_CONTROL;
-            }
+///\todo implement a way to check validity of curControl that doesn't suck
+            assert(curShape->isValid(curControl));
+
+            curShape->moveControlPoint(curControl, pos);
             break;
         }
 
@@ -276,19 +277,20 @@ display(GLContextData& contextData) const
 
     //compute the centroids
     Point3 centroid(0);
-    const Point3s& controlPoints = curShape->getControlPoints();
-    int numPoints                = static_cast<int>(controlPoints.size());
+    const Shape::ControlPointList& controlPoints = curShape->getControlPoints();
     Point3s cps;
-    cps.resize(numPoints);
-    for (int i=0; i<numPoints; ++i)
+    for (Shape::ControlPointList::const_iterator it=controlPoints.begin();
+         it!=controlPoints.end(); ++it)
     {
-        cps[i] = crusta->mapToScaledGlobe(controlPoints[i]);
-        for (int j=0; j<3; ++j)
-            centroid[j] += cps[i][j];
+        cps.push_back(crusta->mapToScaledGlobe(it->pos));
+        const Point3& cp = cps.back();
+        for (int i=0; i<3; ++i)
+            centroid[i] += cp[i];
     }
+    int numPoints = static_cast<int>(cps.size());
     double norm = 1.0 / numPoints;
-    for (int j=0; j<3; ++j)
-        centroid[j] *= norm;
+    for (int i=0; i<3; ++i)
+        centroid[i] *= norm;
 
     glPushMatrix();
 
@@ -321,12 +323,12 @@ display(GLContextData& contextData) const
         {
             case Shape::CONTROL_POINT:
             {
-                Point3 p = curShape->getControlPoint(curControl);
+                Point3 p = curControl.handle->pos;
                 p        = crusta->mapToScaledGlobe(p);
 
                 glColor3f(0.3f, 0.9f, 0.5f);
                 glBegin(GL_POINTS);
-                glVertex3f(p[0]-centroid[0], p[1]-centroid[1], p[2]-centroid[2]);
+                glVertex3f(p[0]-centroid[0],p[1]-centroid[1],p[2]-centroid[2]);
                 glEnd();
 
                 break;
@@ -335,16 +337,16 @@ display(GLContextData& contextData) const
             case Shape::CONTROL_SEGMENT:
             {
                 Shape::ControlId si = curShape->previousControl(curControl);
-                Point3 s            = curShape->getControlPoint(si);
+                Point3 s            = si.handle->pos;
                 s                   = crusta->mapToScaledGlobe(s);
                 Shape::ControlId ei = curShape->nextControl(curControl);
-                Point3 e     = curShape->getControlPoint(ei);
-                e            = crusta->mapToScaledGlobe(e);
+                Point3 e            = ei.handle->pos;
+                e                   = crusta->mapToScaledGlobe(e);
 
                 glColor3f(0.3f, 0.9f, 0.5f);
                 glBegin(GL_LINES);
-                glVertex3f(s[0]-centroid[0], s[1]-centroid[1], s[2]-centroid[2]);
-                glVertex3f(e[0]-centroid[0], e[1]-centroid[1], e[2]-centroid[2]);
+                glVertex3f(s[0]-centroid[0],s[1]-centroid[1],s[2]-centroid[2]);
+                glVertex3f(e[0]-centroid[0],e[1]-centroid[1],e[2]-centroid[2]);
                 glEnd();
 
                 break;
@@ -412,8 +414,12 @@ buttonCallback(int deviceIndex, int buttonIndex,
                 case MODE_DRAGGING:
                 {
                     removeControl(curShape, curControl);
-                    if (curShape == NULL)
+                    //destroy empty shapes
+                    if (curShape->getControlPoints().size()==0)
+                    {
+                        deleteShape(curShape, curControl);
                         mode = MODE_IDLE;
+                    }
                     else
                         mode = MODE_SELECTING_CONTROL;
                     break;

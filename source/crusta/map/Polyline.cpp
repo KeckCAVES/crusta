@@ -1,59 +1,87 @@
 #include <crusta/map/Polyline.h>
 
+#include <cassert>
+
 
 BEGIN_CRUSTA
 
 
-const Polyline::Coords& Polyline::
-getCoords()
+Polyline::
+Polyline(Crusta* iCrusta) :
+    Shape(iCrusta)
 {
-    return coords;
-}
-
-Polyline::Coords::const_iterator Polyline::
-getCoord(Point3s::const_iterator pit)
-{
-    int offset = static_cast<int>(&(*pit) - &controlPoints.front());
-    return coords.begin() + offset;
 }
 
 
 void Polyline::
-recomputeCoords()
+recomputeCoords(ControlPointHandle cur)
 {
-    int num = static_cast<int>(controlPoints.size());
-    coords.resize(num);
-    Scalar coord = 0.0;
-    coords[0]    = coord;
-    for (int i=1; i<num; ++i)
+    assert(cur != controlPoints.end());
+
+    ControlPointHandle prev = cur;
+    if (prev != controlPoints.begin())
+        --prev;
+    else
     {
-        coord    += Geometry::dist(controlPoints[i-1], controlPoints[i]);
-        coords[i] = coord;
+        prev->coord = 0.0;
+        ++cur;
     }
+    for (; cur!=controlPoints.end(); ++prev, ++cur)
+    {
+        cur->coord = prev->coord + Geometry::dist(prev->pos, cur->pos);
+        cur->age   = newestAge;
+    }
+    ++newestAge;
+}
+
+void Polyline::
+setControlPoints(const Point3s& newControlPoints)
+{
+    Shape::setControlPoints(newControlPoints);
+    recomputeCoords(controlPoints.begin());
 }
 
 Shape::ControlId Polyline::
 addControlPoint(const Point3& pos, End end)
 {
     Shape::ControlId ret = Shape::addControlPoint(pos, end);
-    recomputeCoords();
+    assert(ret.isValid());
+    recomputeCoords(ret.handle);
     return ret;
 }
 
-bool Polyline::
+void Polyline::
 moveControlPoint(const ControlId& id, const Point3& pos)
 {
-    bool ret = Shape::moveControlPoint(id, pos);
-    recomputeCoords();
-    return ret;
+    Shape::moveControlPoint(id, pos);
+    recomputeCoords(id.handle);
 }
 
 void Polyline::
 removeControlPoint(const ControlId& id)
 {
-    Shape::removeControlPoint(id);
-    recomputeCoords();
+    assert(id.isValid());
+
+    if (id.handle==controlPoints.begin() || id.handle==controlPoints.end())
+    {
+        Shape::removeControlPoint(id);
+    }
+    else
+    {
+        ControlPointHandle next = id.handle;
+        ++next;
+        Shape::removeControlPoint(id);
+        recomputeCoords(next);
+    }
 }
 
+Shape::ControlId Polyline::
+refine(const ControlId& id, const Point3& pos)
+{
+    Shape::ControlId ret = Shape::refine(id, pos);
+    assert(ret.isValid());
+    recomputeCoords(ret.handle);
+    return ret;
+}
 
 END_CRUSTA

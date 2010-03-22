@@ -51,8 +51,8 @@ void PolylineTool::
 createShape(Shape*& shape, Shape::ControlId& control, const Point3& pos)
 {
     MapManager* mapMan   = crusta->getMapManager();
-    Polyline* newLine    = new Polyline;
-    newLine->getSymbol() = mapMan->getActiveSymbol();
+    Polyline*   newLine  = new Polyline(crusta);
+    newLine->setSymbol(mapMan->getActiveSymbol());
     mapMan->addPolyline(newLine);
 
     shape   = newLine;

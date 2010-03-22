@@ -11,6 +11,7 @@
 
 #include <crusta/FrustumVisibility.h>
 #include <crusta/FocusViewEvaluator.h>
+#include <crusta/map/Shape.h>
 #include <crusta/QuadCache.h>
 
 BEGIN_CRUSTA
@@ -43,9 +44,14 @@ public:
                         Scalar& tout, int& sout, const Scalar gout) const;
 
     /** traverse the leaf nodes of the current approximation of the patch */
-    void traverseCurrentLeaves(Point3s::const_iterator& start,
-        const Point3s::const_iterator& end, PolylineTraversalFunctor& callback,
-        Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout) const;
+    void intersect(Shape::ControlPointHandle& start,
+        const Shape::ControlPointHandle& end,
+        Shape::IntersectionFunctor& callback, Ray& ray, Scalar tin, int sin,
+        Scalar& tout, int& sout) const;
+
+    /** intersect the ray agains the sections of the node */
+    static void intersectNodeSides(const QuadNodeMainData& node, const Ray& ray,
+                            Scalar& tin, int& sin, Scalar& tout, int& sout);
 
     /** prepareDiplay has several functions:
         1. evaluate the current active set (as it is view-dependent)
@@ -81,14 +87,14 @@ protected:
     HitResult intersectLeaf(const QuadNodeMainData& leaf, const Ray& ray,
                             Scalar param, int side, const Scalar gout) const;
 
-    void traverseCurrentLeavesNode(Point3s::const_iterator& start,
-        const Point3s::const_iterator& end, PolylineTraversalFunctor& callback,
-        MainCacheBuffer* nodeBuf, Ray& ray, Scalar tin, int sin,
-        Scalar& tout, int& sout) const;
-    void traverseCurrentLeavesLeaf(Point3s::const_iterator& start,
-        const Point3s::const_iterator& end, PolylineTraversalFunctor& callback,
-        QuadNodeMainData& leaf, Ray& ray, Scalar tin, int sin,
-        Scalar& tout, int& sout) const;
+    void intersectNode(Shape::ControlPointHandle& start,
+        const Shape::ControlPointHandle& end,
+        Shape::IntersectionFunctor& callback, MainCacheBuffer* nodeBuf,
+        Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout) const;
+    void intersectLeaf(Shape::ControlPointHandle& start,
+        const Shape::ControlPointHandle& end,
+        Shape::IntersectionFunctor& callback, QuadNodeMainData& leaf,
+        Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout) const;
 
     /** make sure the required GL data for drawing is available. In case a
         buffer cannot be associated with the specified node (cache is full),

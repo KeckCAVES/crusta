@@ -11,7 +11,6 @@
 
 #include <crusta/CrustaComponent.h>
 #include <crusta/map/Shape.h>
-#include <crusta/PolylineTraversalFunctor.h>
 
 
 class GLContextData;
@@ -38,6 +37,7 @@ class MapManager : public CrustaComponent
 public:
     typedef std::vector<QuadNodeMainData*> Nodes;
     typedef std::vector<Polyline*>         PolylinePtrs;
+
 
     MapManager(Vrui::ToolFactory* parentToolFactory, Crusta* iCrusta);
     ~MapManager();
@@ -69,30 +69,18 @@ public:
     PolylinePtrs& getPolylines();
     void removePolyline(Polyline* line);
 
-/** testing: generate the line data */
-class LineDataGenerator : public PolylineTraversalFunctor
-{
-public:
-    LineDataGenerator(const Nodes& iNodes);
+///\todo Vis2010 testing: update line coverage for given line sections
+    void addShapeCoverage(Shape* shape,
+                          const Shape::ControlPointHandle& startCP,
+                          const Shape::ControlPointHandle& endCP);
+    void removeShapeCoverage(Shape* shape,
+                             const Shape::ControlPointHandle& startCP,
+                             const Shape::ControlPointHandle& endCP);
+    void inheritShapeCoverage(const QuadNodeMainData& parent,
+                              QuadNodeMainData& child);
 
-    void newLine(Shape* nLine);
-    void writeToNodes();
-
-protected:
-    typedef std::vector<Point3s::const_iterator> CPIterators;
-    typedef std::map<Shape*, CPIterators> LineSectionMap;
-
-    typedef std::map<QuadNodeMainData*, LineSectionMap> NodeLineSectionMap;
-
-    Shape*             curLine;
-    NodeLineSectionMap lineInfo;
-
-//- inherited from PolylineTraversalFunctor
-public:
-    virtual void operator()(const Point3s::const_iterator& cp,
-                            QuadNodeMainData* node);
-};
-void generateLineData(Nodes& nodes);
+    /** generate line data for the subset of render nodes that are outdated */
+    void updateLineData(Nodes& nodes);
 
     void frame();
     void display(GLContextData& contextData) const;
@@ -102,6 +90,23 @@ void generateLineData(Nodes& nodes);
     void symbolChangedCallback(
         GLMotif::ListBox::ItemSelectedCallbackData* cbData);
     void closeSymbolsGroupCallback(GLMotif::Button::SelectCallbackData* cbData);
+
+///\todo Vis2010 testing: update line coverage for given line sections
+    class CoverageCollector : public Shape::IntersectionFunctor
+    {
+    public:
+        typedef std::vector<Shape::ControlPointHandle> ControlPointHandles;
+        typedef std::map<QuadNodeMainData*, ControlPointHandles> NodeCoverage;
+///\todo debug, remove
+friend std::ostream& operator<<(std::ostream& os, const CoverageCollector& cc);
+
+        NodeCoverage coverage;
+
+    //- inherited from Shape::IntersectionFunctor
+    public:
+        virtual void operator()(const Shape::ControlPointHandle& cp,
+                                QuadNodeMainData* node);
+    };
 
     static const int BAD_TOOLID = -1;
 

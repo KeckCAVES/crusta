@@ -28,7 +28,7 @@ BEGIN_CRUSTA
 
 
 #if CRUSTA_ENABLE_DEBUG
-int CRUSTA_DEBUG_LEVEL_MIN = 100;
+int CRUSTA_DEBUG_LEVEL_MIN = 40;
 int CRUSTA_DEBUG_LEVEL_MAX = 100;
 #endif //CRUSTA_ENABLE_DEBUG
 
@@ -220,111 +220,6 @@ shutdown()
     delete mapMan;
     delete dataMan;
     delete cache;
-}
-
-double Crusta::
-getHeight(double x, double y, double z)
-{
-    Scope::Vertex p(x,y,z);
-
-//- find the base patch
-    MainCacheBuffer*  nodeBuf = NULL;
-    QuadNodeMainData* node    = NULL;
-    for (int patch=0; patch<static_cast<int>(renderPatches.size()); ++patch)
-    {
-        //grab specification of the patch
-        nodeBuf = cache->getMainCache().findCached(TreeIndex(patch));
-        assert(nodeBuf != NULL);
-        node = &nodeBuf->getData();
-
-        //check containment
-        if (node->scope.contains(p))
-            break;
-    }
-
-    assert(node->index.patch < static_cast<uint>(renderPatches.size()));
-
-//- grab the finest level data possible
-    while (true)
-    {
-        //is it even possible to retrieve higher res data?
-        bool higherResDataFetchable = false;
-        for (int i=0; i<4; ++i)
-        {
-            if (node->childDemTiles[i]  !=  DemFile::INVALID_TILEINDEX ||
-                node->childColorTiles[i]!=ColorFile::INVALID_TILEINDEX)
-            {
-                higherResDataFetchable = true;
-                break;
-            }
-        }
-        if (!higherResDataFetchable)
-            break;
-
-        //try to grab the children for evaluation
-        MainCache::Requests missingChildren;
-        for (int i=0; i<4; ++i)
-        {
-            //find child
-            TreeIndex childIndex      = node->index.down(i);
-            MainCacheBuffer* childBuf =
-                cache->getMainCache().findCached(childIndex);
-            if (childBuf == NULL)
-                missingChildren.push_back(MainCache::Request(0, nodeBuf, i));
-            else if (childBuf->getData().scope.contains(p))
-            {
-                //switch to the child for traversal continuation
-                nodeBuf = childBuf;
-                node    = &childBuf->getData();
-                missingChildren.clear();
-                break;
-            }
-        }
-        if (!missingChildren.empty())
-        {
-            //request the missing and stop traversal
-            cache->getMainCache().request(missingChildren);
-            break;
-        }
-    }
-
-//- locate the cell of the refinement containing the point
-    int numLevels = 1;
-    int res = TILE_RESOLUTION-1;
-    while (res > 1)
-    {
-        ++numLevels;
-        res >>= 1;
-    }
-
-    Scope scope = node->scope;
-    int offset[2] = {0,0};
-    int shift = (TILE_RESOLUTION-1)>>1;
-    for (int level=1; level<numLevels; ++level)
-    {
-        //compute the coverage for the children
-        Scope childScopes[4];
-        scope.split(childScopes);
-
-        //find the child containing the point
-        for (int i=0; i<4; ++i)
-        {
-            if (childScopes[i].contains(p))
-            {
-                //adjust the current bottom-left offset and switch to that scope
-                offset[0] += i&0x1 ? shift : 0;
-                offset[1] += i&0x2 ? shift : 0;
-                shift    >>= 1;
-                scope      = childScopes[i];
-                break;
-            }
-        }
-    }
-
-//- sample the cell
-///\todo sample properly. For now just return the height of the corner
-    double height = node->height[offset[1]*TILE_RESOLUTION + offset[0]];
-    return height;
 }
 
 Point3 Crusta::
@@ -555,14 +450,14 @@ std::cerr << "visited: " << ++patchesVisited << std::endl;
 
 
 void Crusta::
-traverseCurrentLeaves(Point3s::const_iterator start,
-                      const Point3s::const_iterator& end,
-                      PolylineTraversalFunctor& callback) const
+intersect(Shape::ControlPointHandle start, Shape::ControlPointHandle end,
+          Shape::IntersectionFunctor& callback) const
 {
-    assert(start!=end && (start+1)!=end);
+    if (start==end || ++Shape::ControlPointHandle(start)==end)
+        return;
 
     //find the patch containing the entry point
-    const Point3&           entry = *start;
+    const Point3&           entry = start->pos;
     const QuadTerrain*      patch = NULL;
     const QuadNodeMainData* node  = NULL;
     for (RenderPatches::const_iterator it=renderPatches.begin();
@@ -579,7 +474,7 @@ traverseCurrentLeaves(Point3s::const_iterator start,
     assert(patch!=NULL && node!=NULL);
 
     //traverse terrain patches until intersection or ray exit
-    Ray    ray(*start, *(start+1));
+    Ray    ray(start->pos, (++Shape::ControlPointHandle(start))->pos);
 CRUSTA_DEBUG(20,
 CV(addRay(ray));
 )
@@ -591,8 +486,7 @@ CV(addRay(ray));
     Triacontahedron polyhedron(SPHEROID_RADIUS);
     while (true)
     {
-        patch->traverseCurrentLeaves(start, end, callback, ray, tin, sideIn,
-                                     tout, sideOut);
+        patch->intersect(start, end, callback, ray, tin, sideIn, tout, sideOut);
         if (start == end)
             break;
 
@@ -741,8 +635,9 @@ display(GLContextData& contextData)
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
     glPushAttrib(GL_TEXTURE_BIT);
 
-///\todo generate the map representation
-    mapMan->generateLineData(renderNodes);
+    //update the map data
+///\todo integrate properly (VIS 2010)
+    mapMan->updateLineData(renderNodes);
 
 //- draw the current terrain and map data
 ///\todo integrate properly (VIS 2010)
@@ -761,7 +656,8 @@ glBindTexture(GL_TEXTURE_2D, glData->symbolTex);
     glData->terrainShader.setVerticalScale(getVerticalScale());
 
 ///\todo this needs to be tweakable
-    float scaleFac  = Vrui::getNavigationTransformation().getScaling();
+    float scaleFac = Vrui::getNavigationTransformation().getScaling();
+    glData->terrainShader.setLineCoordScale(scaleFac);
     float lineWidth = 0.1f / scaleFac;
     glData->terrainShader.setLineWidth(lineWidth);
 

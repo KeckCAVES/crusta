@@ -5,6 +5,7 @@
 #include <Math/Constants.h>
 
 #include <crusta/Crusta.h>
+#include <crusta/map/MapManager.h>
 #include <crusta/Polyhedron.h>
 #include <crusta/QuadCache.h>
 
@@ -123,32 +124,16 @@ loadChild(MainCacheBuffer* parent, uint8 which, MainCacheBuffer* child)
         childData.childColorTiles[i] = ColorFile::INVALID_TILEINDEX;
     }
 
+    //clear the old line data
+    childData.lineCoverageAge = 0;
+    childData.lineCoverage.clear();
+    childData.lineData.clear();
+
+    //grab the proper data for the child
     sourceDem(&parentData,   childData);
     sourceColor(&parentData, childData);
     generateGeometry(childData);
-}
-
-void DataManager::
-loadChildren(MainCacheBuffer* parent, MainCacheBuffer* children[4])
-{
-    QuadNodeMainData& parentData = parent->getData();
-
-    //compute the child scopes
-    Scope childScopes[4];
-    parentData.scope.split(childScopes);
-
-    for (int i=0; i<4; ++i)
-    {
-        QuadNodeMainData& child = children[i]->getData();
-        child.index     = parentData.index.down(i);
-        child.scope     = childScopes[i];
-        child.demTile   = parentData.childDemTiles[i];
-        child.colorTile = parentData.childColorTiles[i];
-
-        sourceDem(&parentData,   child);
-        sourceColor(&parentData, child);
-        generateGeometry(child);
-    }
+    crusta->getMapManager()->inheritShapeCoverage(parentData, childData);
 }
 
 

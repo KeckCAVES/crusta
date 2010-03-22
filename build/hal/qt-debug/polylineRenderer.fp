@@ -1,5 +1,7 @@
 uniform float lineStartCoord;
 uniform float lineCoordStep;
+
+uniform float lineCoordScale;
 uniform float lineWidth;
 
 uniform vec3 center;
@@ -99,7 +101,8 @@ void main()
                 {
 //color = vec4(vec3(v), 0.3);
                     //compute the u coordinate wrt the length of the segment
-                    u = mix(startCP.w, endCP.w, u);
+                    u  = mix(startCP.w, endCP.w, u);
+                    u *= lineCoordScale;
                     //fetch the color contribution from the texture atlas
                     vec2 symbolCoord = vec2(u, v);
                     symbolCoord     *= symbolOS.ba;

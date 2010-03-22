@@ -12,21 +12,19 @@ class Polyline : public Shape
     friend class PolylineRenderer;
 
 public:
-    typedef std::vector<Scalar> Coords;
-
-    const Coords& getCoords();
-    Coords::const_iterator getCoord(Point3s::const_iterator pit);
+    Polyline(Crusta* iCrusta);
 
 protected:
-    void recomputeCoords();
-
-    Coords coords;
+    void recomputeCoords(ControlPointHandle start);
 
 //- Inherited from Shape
 public:
+    virtual void setControlPoints(const Point3s& newControlPoints);
+
     virtual ControlId addControlPoint(const Point3& pos, End end=END_BACK);
-    virtual bool moveControlPoint(const ControlId& id, const Point3& pos);
+    virtual void moveControlPoint(const ControlId& id, const Point3& pos);
     virtual void removeControlPoint(const ControlId& id);
+    virtual ControlId refine(const ControlId& id, const Point3& pos);
 };
 
 

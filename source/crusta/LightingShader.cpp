@@ -658,6 +658,8 @@ catch (std::exception& e){
 
     lineStartCoordUniform =
         glGetUniformLocationARB(programObject, "lineStartCoord");
+    lineCoordScaleUniform =
+        glGetUniformLocationARB(programObject, "lineCoordScale");
     lineWidthUniform = glGetUniformLocationARB(programObject, "lineWidth");
 
     glUseProgramObjectARB(0);

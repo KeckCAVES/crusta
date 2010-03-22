@@ -14,6 +14,7 @@
 #include <crusta/Crusta.h>
 #include <crusta/DataManager.h>
 #include <crusta/LightingShader.h>
+#include <crusta/map/MapManager.h>
 #include <crusta/QuadCache.h>
 #include <crusta/Triangle.h>
 #include <crusta/Section.h>
@@ -138,43 +139,51 @@ computeContainingChild(const Point3& p, int sideIn, const Scope& scope)
     return childId;
 }
 
-static void
-computeExit(const Scope& scope, const Ray& ray,
-            const Scalar& tin, const int& sin, Scalar& tout, int& sout)
-{
-    const Point3* corners[4][2] = { {&scope.corners[3], &scope.corners[2]},
-                                    {&scope.corners[2], &scope.corners[0]},
-                                    {&scope.corners[0], &scope.corners[1]},
-                                    {&scope.corners[1], &scope.corners[3]} };
-
-    tout = Math::Constants<Scalar>::max;
-    for (int i=0; i<4; ++i)
-    {
-        if (sin==-1 || i!=sin)
-        {
-            Section section(*(corners[i][0]), *(corners[i][1]));
-            HitResult hit   = section.intersectRay(ray);
-            Scalar hitParam = hit.getParameter();
-            if (hit.isValid() && hitParam>tin && hitParam<=tout)
-            {
-                tout = hitParam;
-                sout = i;
-            }
-        }
-    }
-}
 
 void QuadTerrain::
-traverseCurrentLeaves(Point3s::const_iterator& start,
-    const Point3s::const_iterator& end, PolylineTraversalFunctor& callback,
+intersect(Shape::ControlPointHandle& start,
+    const Shape::ControlPointHandle& end, Shape::IntersectionFunctor& callback,
     Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout) const
 {
     MainCache& mainCache     = crusta->getCache()->getMainCache();
     MainCacheBuffer* nodeBuf = mainCache.findCached(rootIndex);
     assert(nodeBuf != NULL);
 
-    traverseCurrentLeavesNode(start, end, callback, nodeBuf,
-                              ray, tin, sin, tout, sout);
+    intersectNode(start, end, callback, nodeBuf, ray, tin, sin, tout, sout);
+}
+
+
+void QuadTerrain::
+intersectNodeSides(const QuadNodeMainData& node, const Ray& ray,
+                   Scalar& tin, int& sin, Scalar& tout, int& sout)
+{
+    const Scope& scope  = node.scope;
+    Section sections[4] = { Section(scope.corners[3], scope.corners[2]),
+                            Section(scope.corners[2], scope.corners[0]),
+                            Section(scope.corners[0], scope.corners[1]),
+                            Section(scope.corners[1], scope.corners[3]) };
+
+    sin  =  sout = -1;
+    tin  =  Math::Constants<Scalar>::max;
+    tout = -Math::Constants<Scalar>::max;
+    for (int i=0; i<4; ++i)
+    {
+        HitResult hit   = sections[i].intersectRay(ray);
+        Scalar hitParam = hit.getParameter();
+        if (hit.isValid())
+        {
+            if (hitParam < tin)
+            {
+                tin = hitParam;
+                sin = i;
+            }
+            else if (hitParam > tout)
+            {
+                tout = hitParam;
+                sout = i;
+            }
+        }
+    }
 }
 
 
@@ -1081,10 +1090,10 @@ std::cerr << "traversedCells: " << traversedCells << std::endl;
 
 
 void QuadTerrain::
-traverseCurrentLeavesNode(Point3s::const_iterator& start,
-    const Point3s::const_iterator& end, PolylineTraversalFunctor& callback,
-    MainCacheBuffer* nodeBuf, Ray& ray, Scalar tin, int sin,
-    Scalar& tout, int& sout) const
+intersectNode(Shape::ControlPointHandle& start,
+    const Shape::ControlPointHandle& end, Shape::IntersectionFunctor& callback,
+    MainCacheBuffer* nodeBuf, Ray& ray, Scalar tin, int sin, Scalar& tout,
+    int& sout) const
 {
     QuadNodeMainData& node = nodeBuf->getData();
 
@@ -1100,8 +1109,7 @@ CV(show("Entered new node"));
     if (node.childDemTiles[0]   ==   DemFile::INVALID_TILEINDEX &&
         node.childColorTiles[0] == ColorFile::INVALID_TILEINDEX)
     {
-        traverseCurrentLeavesLeaf(start, end, callback, node, ray,
-                                  tin, sin, tout, sout);
+        intersectLeaf(start, end, callback, node, ray, tin, sin, tout, sout);
         return;
     }
 
@@ -1116,15 +1124,14 @@ CV(show("Entered new node"));
     {
         if (childBuf==NULL || !mainCache.isActive(childBuf))
         {
-            traverseCurrentLeavesLeaf(start, end, callback, node, ray,
-                                      tin, sin, tout, sout);
+            intersectLeaf(start, end, callback, node, ray, tin,sin, tout,sout);
             return;
         }
         else
         {
             //recurse
-            traverseCurrentLeavesNode(start, end, callback, childBuf, ray,
-                                      tin, sin, tout, sout);
+            intersectNode(start, end, callback, childBuf, ray, tin, sin,
+                          tout, sout);
             if (start == end)
                 return;
             tin = tout;
@@ -1150,10 +1157,10 @@ CV(show("Entered new node"));
 }
 
 void QuadTerrain::
-traverseCurrentLeavesLeaf(Point3s::const_iterator& start,
-    const Point3s::const_iterator& end, PolylineTraversalFunctor& callback,
-    QuadNodeMainData& leaf, Ray& ray, Scalar tin, int sin,
-    Scalar& tout, int& sout) const
+intersectLeaf(Shape::ControlPointHandle& start,
+    const Shape::ControlPointHandle& end, Shape::IntersectionFunctor& callback,
+    QuadNodeMainData& leaf, Ray& ray, Scalar tin, int sin, Scalar& tout,
+    int& sout) const
 {
     const Scope& scope  = leaf.scope;
     Section sections[4] = { Section(scope.corners[3], scope.corners[2]),
@@ -1200,12 +1207,14 @@ CV(clear(5));
             tin =  0.0;
             sin = -1.0;
             ++start;
-            if ((start+1) == end)
+            Shape::ControlPointHandle next = start;
+            ++next;
+            if (next == end)
             {
                 start = end;
                 break;
             }
-            ray = Ray(*start, *(start+1));
+            ray = Ray(start->pos, next->pos);
         }
         else
             break;
@@ -1393,7 +1402,8 @@ prepareDraw(FrustumVisibility& visibility, FocusViewEvaluator& lod,
             MainCacheBuffer* node, NodeBufs& actives, Nodes& renders,
             MainCache::Requests& requests)
 {
-    MainCache& mainCache = crusta->getCache()->getMainCache();
+    MainCache&  mainCache = crusta->getCache()->getMainCache();
+    MapManager* mapMan    = crusta->getMapManager();
 
     //confirm current node as being active
     actives.push_back(node);
@@ -1439,17 +1449,37 @@ prepareDraw(FrustumVisibility& visibility, FocusViewEvaluator& lod,
             {
                 for (int i=0; i<4; ++i)
                 {
-                    if (!mainCache.isValid(children[i]))
+                    MainCacheBuffer* childBuf = children[i];
+                    if (!mainCache.isValid(childBuf))
+                    {
                         allgood = false;
-                    else if (!mainCache.isCurrent(children[i]))
+                    }
+                    else if (!mainCache.isCurrent(childBuf))
                     {
                         //"request" it for update
-                        actives.push_back(children[i]);
-                        mainCache.touch(children[i]);
+                        actives.push_back(childBuf);
+                        mainCache.touch(childBuf);
                         allgood = false;
                     }
                 }
             }
+/**\todo horrible Vis2010 HACK: integrate this in the proper way? I.e. don't
+stall here, but defer the update. */
+if (allgood)
+{
+    for (int i=0; i<4; ++i)
+    {
+        QuadNodeMainData& child = children[i]->getData();
+        if (child.lineCoverageAge != mainData.lineCoverageAge)
+        {
+CRUSTA_DEBUG(60, std::cerr << "***COVUP n(" << child.index << ") - ages " <<
+child.lineCoverageAge << " vs " << mainData.lineCoverageAge << "\n\n";)
+            child.lineCoverage.clear();
+            mapMan->inheritShapeCoverage(mainData, child);
+        }
+    }
+}
+
             //still all good then recurse to the children
             if (allgood)
             {

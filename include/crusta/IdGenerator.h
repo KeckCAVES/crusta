@@ -15,7 +15,7 @@ public:
     typedef UnsignedInteger Id;
 
     IdGeneratorTemplate(UnsignedInteger numberOfIds) :
-        max(numberOfIds-1), invalid(numberOfIds)
+        max(numberOfIds-1), invalid(numberOfIds), sequence(UnsignedInteger(0))
     {
     }
 
