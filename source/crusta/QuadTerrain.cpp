@@ -618,7 +618,8 @@ int childrenVisited = 0;
     {
         if (childBuf == NULL)
         {
-            mainCache.request(MainCache::Request(0.0, nodeBuf, childId));
+///\todo Vis2010 simplify. Don't allow loads of nodes from here
+//            mainCache.request(MainCache::Request(0.0, nodeBuf, childId));
             return intersectLeaf(node, ray, tin, sin, gout);
         }
         else
@@ -1465,19 +1466,17 @@ prepareDraw(FrustumVisibility& visibility, FocusViewEvaluator& lod,
             }
 /**\todo horrible Vis2010 HACK: integrate this in the proper way? I.e. don't
 stall here, but defer the update. */
-if (allgood)
+if (allgood && mainData.lineCoverageDirty)
 {
     for (int i=0; i<4; ++i)
     {
         QuadNodeMainData& child = children[i]->getData();
-        if (child.lineCoverageAge != mainData.lineCoverageAge)
-        {
-CRUSTA_DEBUG(60, std::cerr << "***COVUP n(" << child.index << ") - ages " <<
-child.lineCoverageAge << " vs " << mainData.lineCoverageAge << "\n\n";)
-            child.lineCoverage.clear();
-            mapMan->inheritShapeCoverage(mainData, child);
-        }
+CRUSTA_DEBUG(60, std::cerr << "***COVDOWN n(" << child.index << ")\n\n";)
+        child.lineCoverage.clear();
+        mapMan->inheritShapeCoverage(mainData, child);
     }
+    //reset the dirty flag
+    mainData.lineCoverageDirty = false;
 }
 
             //still all good then recurse to the children

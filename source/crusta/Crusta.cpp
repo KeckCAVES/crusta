@@ -212,12 +212,12 @@ globalElevationRange[1] = 11000.0;
 void Crusta::
 shutdown()
 {
+    delete mapMan;
     for (RenderPatches::iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
     {
         delete *it;
     }
-    delete mapMan;
     delete dataMan;
     delete cache;
 }
@@ -277,7 +277,8 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
         MainCacheBuffer* childBuf = mainCache.findCached(childIndex);
         if (childBuf == NULL)
         {
-            mainCache.request(MainCache::Request(0.0, nodeBuf, childId));
+///\todo Vis2010 simplify. Don't allow loads of nodes from here
+//            mainCache.request(MainCache::Request(0.0, nodeBuf, childId));
             break;
         }
         else

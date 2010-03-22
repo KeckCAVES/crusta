@@ -52,7 +52,7 @@ struct QuadNodeMainData
     TextureColor* color;
 
 ///\todo integrate me properly into the caching scheme (VIS 2010)
-AgeStamp      lineCoverageAge;
+bool          lineCoverageDirty;
 ShapeCoverage lineCoverage;
 Colors lineData;
 

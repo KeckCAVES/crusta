@@ -19,7 +19,7 @@ AgeStampedControlPointHandle(const AgeStamp& iAge,
 
 QuadNodeMainData::
 QuadNodeMainData(uint size) :
-    lineCoverageAge(0), index(TreeIndex::invalid), boundingCenter(0,0,0),
+    index(TreeIndex::invalid), boundingCenter(0,0,0),
     boundingRadius(0)
 {
     geometry = new Vertex[size*size];
@@ -30,9 +30,10 @@ QuadNodeMainData(uint size) :
     colorTile = ColorFile::INVALID_TILEINDEX;
     for (int i=0; i<4; ++i)
     {
-        childDemTiles[i]   = DemFile::INVALID_TILEINDEX;
-        childColorTiles[i] = ColorFile::INVALID_TILEINDEX;
+        childDemTiles[i]       = DemFile::INVALID_TILEINDEX;
+        childColorTiles[i]     = ColorFile::INVALID_TILEINDEX;
     }
+    lineCoverageDirty = false;
 
     centroid[0] = centroid[1] = centroid[2] = DemHeight(0.0);
     elevationRange[0] = elevationRange[1]   = DemHeight(0.0);

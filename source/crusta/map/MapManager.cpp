@@ -359,7 +359,7 @@ addShapeCoverage(Shape* shape, const Shape::ControlPointHandle& startCP,
 
     MainCache& mainCache = crusta->getCache()->getMainCache();
 
-CRUSTA_DEBUG(41, std::cerr << "++ADD (";
+CRUSTA_DEBUG(41, std::cerr << "++ADD ( ";
 for (Shape::ControlPointHandle s=startCP; s!=endCP; ++s)
 {
     if (s==startCP)
@@ -367,7 +367,7 @@ for (Shape::ControlPointHandle s=startCP; s!=endCP; ++s)
     else
         std::cerr << " | " << s;
 }
-std::cerr << ")\n";
+std::cerr << " )\n";
 )
     //collect the nodes that are affected
     CoverageCollector collector;
@@ -380,6 +380,7 @@ CRUSTA_DEBUG(42, std::cerr << collector << "\n";)
     {
         QuadNodeMainData* node      = nit->first;
         CCCPHandles&      ccHandles = nit->second;
+        bool              isLeaf    = true;
 
         while (ccHandles.size()>0)
         {
@@ -401,6 +402,7 @@ CRUSTA_DEBUG(43, std::cerr << "+adding to node " << node->index << "\n";)
                         {
 CRUSTA_DEBUG(43, std::cerr << "found " << fit->handle << "ages: " <<
 fit->age << " vs " << (*it)->age << "\n";)
+                            //simply must flag that coverage must be invalidated
                             nhlDirty = true;
                             //move forward to the next collected handle
                             ++it;
@@ -429,10 +431,14 @@ CRUSTA_DEBUG(43, std::cerr << "inserted " << *it << " with age " <<
 
             if (nhlDirty)
             {
-CRUSTA_DEBUG(44, std::cerr << "new cov age " << crusta->getCurrentFrame() <<
-"\n";)
                 node->lineData.clear();
-                node->lineCoverageAge = crusta->getCurrentFrame();
+                //only apply the dirty bit to leaf nodes
+                if (isLeaf)
+                {
+CRUSTA_DEBUG(44, std::cerr << "~cov dirtied\n";)
+                    node->lineCoverageDirty |= true;
+                    isLeaf                   = false;
+                }
             }
 
             //move up to the parent
@@ -460,7 +466,7 @@ removeShapeCoverage(Shape* shape, const Shape::ControlPointHandle& startCP,
 
     MainCache& mainCache = crusta->getCache()->getMainCache();
 
-CRUSTA_DEBUG(41, std::cerr << "++REM (";
+CRUSTA_DEBUG(41, std::cerr << "++REM ( ";
 for (Shape::ControlPointHandle s=startCP; s!=endCP; ++s)
 {
     if (s==startCP)
@@ -468,7 +474,7 @@ for (Shape::ControlPointHandle s=startCP; s!=endCP; ++s)
     else
         std::cerr << " | " << s;
 }
-std::cerr << ")\n";
+std::cerr << " )\n";
 )
     //collect the nodes that are affected
     CoverageCollector collector;
@@ -481,6 +487,7 @@ CRUSTA_DEBUG(42, std::cerr << collector << "\n";)
     {
         QuadNodeMainData* node      = nit->first;
         CCCPHandles&      ccHandles = nit->second;
+        bool              isLeaf    = true;
 
         while (ccHandles.size()>0)
         {
@@ -515,10 +522,13 @@ CRUSTA_DEBUG(43, std::cerr << "del duplicate " << *it << "\n";)
             //invalidate the current line data
             if (nhlDirty)
             {
-CRUSTA_DEBUG(44, std::cerr << "new cov age " << crusta->getCurrentFrame() <<
-"\n";)
                 node->lineData.clear();
-                node->lineCoverageAge = crusta->getCurrentFrame();
+                if (isLeaf)
+                {
+CRUSTA_DEBUG(44, std::cerr << "~cov dirtied\n";)
+                    node->lineCoverageDirty |= true;
+                    isLeaf                   = false;
+                }
             }
 
             //clean up the coverage if it has just been emptied
@@ -554,6 +564,9 @@ inheritShapeCoverage(const QuadNodeMainData& parent, QuadNodeMainData& child)
         const HandleList&  srcHandles = lit->second;
         HandleList*        dstHandles = NULL;
 
+        assert(shape!=NULL);
+        assert(srcHandles.size()>0);
+
         //intersect all the segments
         Scalar tin= 0, tout= 0;
         int    sin=-1, sout=-1;
@@ -576,11 +589,11 @@ inheritShapeCoverage(const QuadNodeMainData& parent, QuadNodeMainData& child)
                 dstHandles = &child.lineCoverage[shape];
 
             dstHandles->push_back(*hit);
+            child.lineCoverageDirty |= true;
         }
     }
 
-    //update the age to reflect the parent's
-    child.lineCoverageAge = parent.lineCoverageAge;
+    //invalidate the child's line data
     child.lineData.clear();
 }
 
@@ -609,7 +622,7 @@ the representation. For now just check deprecation here...
 Actually there is a problem with not checking this before drawing: the current
 code assumes this is going to happen is this flags redraws by updating the age
 of the changed segments (e.g. new symbol, new coords) */
-if (!data.empty())
+if (false)//!data.empty())
 {
     for (Coverage::iterator lit=coverage.begin();
          lit!=coverage.end() && !data.empty(); ++lit)
@@ -634,11 +647,32 @@ CRUSTA_DEBUG(51, std::cerr << "~~~INV n(" << node->index << ") has old " <<
         if (!data.empty() || coverage.empty())
             continue;
 
+///\todo debug: check for duplicates in the line coverage
+static bool checkForDuplicates = false;
+if (checkForDuplicates) {
+for (Coverage::iterator lit=coverage.begin(); lit!=coverage.end(); ++lit)
+{
+    const Shape* const shape = lit->first;
+    HandleList& handles      = lit->second;
+    assert(handles.size() > 0);
+    assert(dynamic_cast<const Polyline*>(shape) != NULL);
+
+    for (HandleList::iterator hit=handles.begin(); hit!=handles.end(); ++hit)
+    {
+        HandleList::iterator nhit = hit;
+        for (++nhit; nhit!=handles.end(); ++nhit)
+            assert(hit->handle != nhit->handle);
+    }
+}
+}
+
         //determine texture space requirements
         int numLines = static_cast<int>(coverage.size());
         int numSegs  = 0;
         for (Coverage::iterator lit=coverage.begin();lit!=coverage.end();++lit)
+        {
             numSegs += static_cast<int>(lit->second.size());
+        }
 
 ///\todo hardcoded 2 samples for now (just end points)
 //uint32 baseOffsetX = curOffset[0];
@@ -771,7 +805,7 @@ operator<<(std::ostream& os,
 {
     const MapManager::CoverageCollector::NodeCoverage& cov = cc.coverage;
 
-    os << "NODECOVERAGE(((";
+    os << "nodeCov((( ";
     for (MapManager::CoverageCollector::NodeCoverage::const_iterator nit=
          cov.begin(); nit!=cov.end(); ++nit)
     {
