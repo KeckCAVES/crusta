@@ -62,7 +62,7 @@ removeControlPoint(const ControlId& id)
 {
     assert(id.isValid());
 
-    if (id.handle==controlPoints.begin() || id.handle==controlPoints.end())
+    if (id.handle==controlPoints.begin() || id.handle==--controlPoints.end())
     {
         Shape::removeControlPoint(id);
     }

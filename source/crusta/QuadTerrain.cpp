@@ -828,7 +828,11 @@ CrustaVisualizer::show("Busted Entry");
 #endif //DEBUG_INTERSECT_CRAP
 ///\todo Vis2010 just bail here. Need to figure out how this can be happening
 #if 1
-return HitResult();
+if (!alongEdge.isValid() ||
+    alongEdge.getParameter()<0 || alongEdge.getParameter()>1.0)
+{
+    return HitResult();
+}
 #else
         assert(alongEdge.isValid() &&
                alongEdge.getParameter()>=0 && alongEdge.getParameter()<=1.0);
