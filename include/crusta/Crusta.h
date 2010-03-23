@@ -65,9 +65,8 @@ public:
     /** intersect a ray with the crusta globe */
     HitResult intersect(const Ray& ray) const;
 
-    /** intersect the specified shape with the global hierarchy */
+    /** intersect a single segment with the global hierarchy */
     void intersect(Shape::ControlPointHandle start,
-                   Shape::ControlPointHandle end,
                    Shape::IntersectionFunctor& callback) const;
 
     const FrameNumber& getCurrentFrame()   const;

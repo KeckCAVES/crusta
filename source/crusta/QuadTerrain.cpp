@@ -141,15 +141,14 @@ computeContainingChild(const Point3& p, int sideIn, const Scope& scope)
 
 
 void QuadTerrain::
-intersect(Shape::ControlPointHandle& start,
-    const Shape::ControlPointHandle& end, Shape::IntersectionFunctor& callback,
-    Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout) const
+intersect(Shape::IntersectionFunctor& callback, Ray& ray, Scalar tin, int sin,
+          Scalar& tout, int& sout) const
 {
     MainCache& mainCache     = crusta->getCache()->getMainCache();
     MainCacheBuffer* nodeBuf = mainCache.findCached(rootIndex);
     assert(nodeBuf != NULL);
 
-    intersectNode(start, end, callback, nodeBuf, ray, tin, sin, tout, sout);
+    intersectNode(callback, nodeBuf, ray, tin, sin, tout, sout);
 }
 
 
@@ -827,8 +826,13 @@ CrustaVisualizer::addHit(ray, HitResult(param));
 CrustaVisualizer::show("Busted Entry");
 }
 #endif //DEBUG_INTERSECT_CRAP
+///\todo Vis2010 just bail here. Need to figure out how this can be happening
+#if 1
+return HitResult();
+#else
         assert(alongEdge.isValid() &&
                alongEdge.getParameter()>=0 && alongEdge.getParameter()<=1.0);
+#endif
 
         int edgeIndex = alongEdge.getParameter() * (tileRes-1);
         if (edgeIndex == tileRes-1)
@@ -1091,28 +1095,10 @@ std::cerr << "traversedCells: " << traversedCells << std::endl;
 
 
 void QuadTerrain::
-intersectNode(Shape::ControlPointHandle& start,
-    const Shape::ControlPointHandle& end, Shape::IntersectionFunctor& callback,
-    MainCacheBuffer* nodeBuf, Ray& ray, Scalar tin, int sin, Scalar& tout,
-    int& sout) const
+intersectNode(Shape::IntersectionFunctor& callback, MainCacheBuffer* nodeBuf,
+              Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout) const
 {
     QuadNodeMainData& node = nodeBuf->getData();
-
-CRUSTA_DEBUG(20,
-CV(addScope(node.scope));
-CV(addHit(ray, HitResult(tin), 8));
-CV(addSideIn(sin, node.scope));
-CV(show("Entered new node"));
-)
-
-//- perform leaf intersection?
-    //is it even possible to retrieve higher res data?
-    if (node.childDemTiles[0]   ==   DemFile::INVALID_TILEINDEX &&
-        node.childColorTiles[0] == ColorFile::INVALID_TILEINDEX)
-    {
-        intersectLeaf(start, end, callback, node, ray, tin, sin, tout, sout);
-        return;
-    }
 
 //- continue traversal
     Point3 entry              = ray(tin);
@@ -1121,19 +1107,23 @@ CV(show("Entered new node"));
     TreeIndex childIndex      = node.index.down(childId);
     MainCacheBuffer* childBuf = mainCache.findCached(childIndex);
 
-    while (true)
+    if (childBuf==NULL || !mainCache.isActive(childBuf))
     {
-        if (childBuf==NULL || !mainCache.isActive(childBuf))
+        //callback for the current node
+        callback(&node, true);
+        intersectLeaf(node, ray, tin, sin, tout, sout);
+        return;
+    }
+    else
+    {
+        //callback for the current node
+        callback(&node, false);
+
+        //recurse
+        while (true)
         {
-            intersectLeaf(start, end, callback, node, ray, tin,sin, tout,sout);
-            return;
-        }
-        else
-        {
-            //recurse
-            intersectNode(start, end, callback, childBuf, ray, tin, sin,
-                          tout, sout);
-            if (start == end)
+            intersectNode(callback, childBuf, ray, tin, sin, tout, sout);
+            if (tout >= 1.0)
                 return;
             tin = tout;
 
@@ -1150,6 +1140,7 @@ CV(show("Entered new node"));
 
             childIndex = node.index.down(childId);
             childBuf   = mainCache.findCached(childIndex);
+            assert(childBuf != NULL);
         }
     }
 
@@ -1158,67 +1149,29 @@ CV(show("Entered new node"));
 }
 
 void QuadTerrain::
-intersectLeaf(Shape::ControlPointHandle& start,
-    const Shape::ControlPointHandle& end, Shape::IntersectionFunctor& callback,
-    QuadNodeMainData& leaf, Ray& ray, Scalar tin, int sin, Scalar& tout,
-    int& sout) const
+intersectLeaf(QuadNodeMainData& leaf, Ray& ray, Scalar tin, int sin,
+              Scalar& tout, int& sout) const
 {
     const Scope& scope  = leaf.scope;
     Section sections[4] = { Section(scope.corners[3], scope.corners[2]),
                             Section(scope.corners[2], scope.corners[0]),
                             Section(scope.corners[0], scope.corners[1]),
                             Section(scope.corners[1], scope.corners[3]) };
-    //call back for all the nodes of the polyline that are contained
-    while (true)
+
+    //compute exit for current segment
+    tout = Math::Constants<Scalar>::max;
+    for (int i=0; i<4; ++i)
     {
-        //call back for the current control point
-        callback(start, &leaf);
-
-        //compute exit for current segment
-        tout = Math::Constants<Scalar>::max;
-        for (int i=0; i<4; ++i)
+        if (sin==-1 || i!=sin)
         {
-CRUSTA_DEBUG(21,
-CV(addSection(sections[i], 5));
-CV(peek());
-)
-            if (sin==-1 || i!=sin)
+            HitResult hit   = sections[i].intersectRay(ray);
+            Scalar hitParam = hit.getParameter();
+            if (hit.isValid() && hitParam>tin && hitParam<=tout)
             {
-                HitResult hit   = sections[i].intersectRay(ray);
-                Scalar hitParam = hit.getParameter();
-                if (hit.isValid() && hitParam>tin && hitParam<=tout)
-                {
-CRUSTA_DEBUG(21,
-CV(addHit(ray, hit, 7, Color(0.3, 1.0, 0.1, 1.0)));
-CV(show("Exit found"));
-)
-                    tout = hitParam;
-                    sout = i;
-                }
+                tout = hitParam;
+                sout = i;
             }
         }
-CRUSTA_DEBUG(21,
-CV(clear(5));
-)
-
-        //try to move out of the leaf
-        if (tout >= 1.0)
-        {
-            //move to the next segment and loop
-            tin =  0.0;
-            sin = -1.0;
-            ++start;
-            Shape::ControlPointHandle next = start;
-            ++next;
-            if (next == end)
-            {
-                start = end;
-                break;
-            }
-            ray = Ray(start->pos, next->pos);
-        }
-        else
-            break;
     }
 }
 
@@ -1471,8 +1424,8 @@ if (allgood && mainData.lineCoverageDirty)
     for (int i=0; i<4; ++i)
     {
         QuadNodeMainData& child = children[i]->getData();
-CRUSTA_DEBUG(60, std::cerr << "***COVDOWN n(" << child.index << ")\n\n";)
-        child.lineCoverage.clear();
+CRUSTA_DEBUG(60, std::cerr << "***COVDOWN parent(" << mainData.index <<
+")    " << "n(" << child.index << ")\n\n";)
         mapMan->inheritShapeCoverage(mainData, child);
     }
     //reset the dirty flag

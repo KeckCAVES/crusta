@@ -15,7 +15,7 @@ find_package(VRUI REQUIRED HINTS ${CMAKE_SOURCE_DIR})
 #-------------------
 include_directories(../include)
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pg")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
 #GDAL

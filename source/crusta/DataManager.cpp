@@ -132,7 +132,12 @@ loadChild(MainCacheBuffer* parent, uint8 which, MainCacheBuffer* child)
     sourceDem(&parentData,   childData);
     sourceColor(&parentData, childData);
     generateGeometry(childData);
-    crusta->getMapManager()->inheritShapeCoverage(parentData, childData);
+
+/**\todo Vis2010 This is where the coverage data should be propagated to the
+child. But, here I only see individual children, thus I'd have to split the
+dirty bit to reflect that individuality. For now, since even loaded nodes need
+to be inserted proper after all checks pass in QuadTerrain, just leave it up to
+that to pass along the proper data */
 }
 
 

@@ -152,14 +152,16 @@ int numFeature = 0;
             {
                 //create new polyline and assign the control points
                 Polyline* out = new Polyline(crusta);
+                //add the polyline to the managed set (this gives it its id)
+                addPolyline(out);
+
+                //configure the polyline
                 out->setControlPoints(cps);
 
                 //read in the symbol field and assign it
                 int symbolId = feature->GetFieldAsInteger(symbolFieldIndex);
                 out->setSymbol(symbolMap[symbolId]);
 
-                //add the polyline to the managed set
-                addPolyline(out);
             }
         }
 
@@ -352,14 +354,7 @@ void MapManager::
 addShapeCoverage(Shape* shape, const Shape::ControlPointHandle& startCP,
     const Shape::ControlPointHandle& endCP)
 {
-    typedef CoverageCollector::NodeCoverage                    CCCoverage;
-    typedef CoverageCollector::ControlPointHandles             CCCPHandles;
-    typedef QuadNodeMainData::AgeStampedControlPointHandleList QNACPHList;
-    typedef QuadNodeMainData::AgeStampedControlPointHandle     QNACPHandle;
-
-    MainCache& mainCache = crusta->getCache()->getMainCache();
-
-CRUSTA_DEBUG(41, std::cerr << "++ADD ( ";
+CRUSTA_DEBUG(41, std::cerr << "++ADD line " << shape->getId() << " ( ";
 for (Shape::ControlPointHandle s=startCP; s!=endCP; ++s)
 {
     if (s==startCP)
@@ -367,91 +362,23 @@ for (Shape::ControlPointHandle s=startCP; s!=endCP; ++s)
     else
         std::cerr << " | " << s;
 }
-std::cerr << " )\n";
+std::cerr << " )\n\n";
 )
-    //collect the nodes that are affected
-    CoverageCollector collector;
-    crusta->intersect(startCP, endCP, collector);
 
-CRUSTA_DEBUG(42, std::cerr << collector << "\n";)
+    Shape::ControlPointHandle end = startCP;
+    if (end != endCP) ++end;
 
-    for (CCCoverage::iterator nit=collector.coverage.begin();
-         nit!=collector.coverage.end(); ++nit)
+    ShapeCoverageAdder adder;
+    adder.setShape(shape);
+
+    for (Shape::ControlPointHandle start=startCP; end!=endCP; ++start, ++end)
     {
-        QuadNodeMainData* node      = nit->first;
-        CCCPHandles&      ccHandles = nit->second;
-        bool              isLeaf    = true;
-
-        while (ccHandles.size()>0)
-        {
-CRUSTA_DEBUG(43, std::cerr << "+adding to node " << node->index << "\n";)
-            QNACPHList& nhl      = node->lineCoverage[shape];
-            bool        nhlDirty = false;
-            //add the entries to the current node
-///\todo optimize this Vis2010
-            for (CCCPHandles::iterator it=ccHandles.begin();
-                 it!=ccHandles.end(); /*it can be deleted in loop*/)
-            {
-                QNACPHList::iterator fit;
-                for (fit=nhl.begin(); fit!=nhl.end(); ++fit)
-                {
-                    if (fit->handle == *it)
-                    {
-                        //check for duplicates
-                        if (fit->age != (*it)->age)
-                        {
-CRUSTA_DEBUG(43, std::cerr << "found " << fit->handle << "ages: " <<
-fit->age << " vs " << (*it)->age << "\n";)
-                            //simply must flag that coverage must be invalidated
-                            nhlDirty = true;
-                            //move forward to the next collected handle
-                            ++it;
-                        }
-                        else
-                        {
-                            //we found a duplicate, remove it from the update
-CRUSTA_DEBUG(43, std::cerr << "del duplicate " << *it << "\n";)
-                            it = ccHandles.erase(it);
-                            //erase has already moved the iterator forward
-                        }
-                        break;
-                    }
-                }
-                if (fit == nhl.end())
-                {
-                    //add a new piece to the coverage
-                    nhl.push_back(QNACPHandle((*it)->age, *it));
-CRUSTA_DEBUG(43, std::cerr << "inserted " << *it << " with age " <<
-(*it)->age << "\n";)
-                    nhlDirty = true;
-                    //move forward to the next collected handle
-                    ++it;
-                }
-            }
-
-            if (nhlDirty)
-            {
-                node->lineData.clear();
-                //only apply the dirty bit to leaf nodes
-                if (isLeaf)
-                {
-CRUSTA_DEBUG(44, std::cerr << "~cov dirtied\n";)
-                    node->lineCoverageDirty |= true;
-                    isLeaf                   = false;
-                }
-            }
-
-            //move up to the parent
-            if (node->index.level==0)
-                break;
-
-            TreeIndex parentIndex    = node->index.up();
-            MainCacheBuffer* nodeBuf = mainCache.findCached(parentIndex);
-            assert(nodeBuf != NULL);
-            node = &nodeBuf->getData();
-        }
-CRUSTA_DEBUG(43, std::cerr << "\n";)
+CRUSTA_DEBUG(42, std::cerr << "adding segment " << start << "\n");
+        adder.setSegment(start);
+        crusta->intersect(start, adder);
+CRUSTA_DEBUG(42, std::cerr << "\n");
     }
+
 CRUSTA_DEBUG(41, std::cerr << "--ADD\n\n");
 }
 
@@ -459,14 +386,7 @@ void MapManager::
 removeShapeCoverage(Shape* shape, const Shape::ControlPointHandle& startCP,
     const Shape::ControlPointHandle& endCP)
 {
-    typedef CoverageCollector::NodeCoverage                    CCCoverage;
-    typedef CoverageCollector::ControlPointHandles             CCCPHandles;
-    typedef QuadNodeMainData::AgeStampedControlPointHandleList QNACPHList;
-    typedef QuadNodeMainData::AgeStampedControlPointHandle     QNACPHandle;
-
-    MainCache& mainCache = crusta->getCache()->getMainCache();
-
-CRUSTA_DEBUG(41, std::cerr << "++REM ( ";
+CRUSTA_DEBUG(41, std::cerr << "++REM line " << shape->getId() << " ( ";
 for (Shape::ControlPointHandle s=startCP; s!=endCP; ++s)
 {
     if (s==startCP)
@@ -476,76 +396,21 @@ for (Shape::ControlPointHandle s=startCP; s!=endCP; ++s)
 }
 std::cerr << " )\n";
 )
-    //collect the nodes that are affected
-    CoverageCollector collector;
-    crusta->intersect(startCP, endCP, collector);
 
-CRUSTA_DEBUG(42, std::cerr << collector << "\n";)
+    Shape::ControlPointHandle end = startCP;
+    if (end != endCP) ++end;
 
-    for (CCCoverage::iterator nit=collector.coverage.begin();
-         nit!=collector.coverage.end(); ++nit)
+    ShapeCoverageRemover remover;
+    remover.setShape(shape);
+
+    for (Shape::ControlPointHandle start=startCP; end!=endCP; ++start, ++end)
     {
-        QuadNodeMainData* node      = nit->first;
-        CCCPHandles&      ccHandles = nit->second;
-        bool              isLeaf    = true;
-
-        while (ccHandles.size()>0)
-        {
-CRUSTA_DEBUG(43, std::cerr << "+rem'ing from node " << node->index << "\n";)
-            QNACPHList& nhl      = node->lineCoverage[shape];
-            bool        nhlDirty = false;
-            //remove the entries from the current node
-///\todo optimize this Vis2010
-            for (CCCPHandles::iterator it=ccHandles.begin();
-                 it!=ccHandles.end(); /*it can be deleted in loop*/)
-            {
-                QNACPHList::iterator fit;
-                for (fit=nhl.begin(); fit!=nhl.end() && fit->handle!=*it;
-                     ++fit);
-                if (fit != nhl.end())
-                {
-CRUSTA_DEBUG(43, std::cerr << "found " << fit->handle << "\n";)
-                    nhl.erase(fit);
-                    nhlDirty = true;
-                    //move forward to the next collected handle
-                    ++it;
-                }
-                else
-                {
-                    //we found a duplicate, remove it from the update
-CRUSTA_DEBUG(43, std::cerr << "del duplicate " << *it << "\n";)
-                    it = ccHandles.erase(it);
-                    //erase has already moved the iterator forward
-                }
-            }
-
-            //invalidate the current line data
-            if (nhlDirty)
-            {
-                node->lineData.clear();
-                if (isLeaf)
-                {
-CRUSTA_DEBUG(44, std::cerr << "~cov dirtied\n";)
-                    node->lineCoverageDirty |= true;
-                    isLeaf                   = false;
-                }
-            }
-
-            //clean up the coverage if it has just been emptied
-            if (nhl.empty())
-                node->lineCoverage.erase(shape);
-
-            //move up to the parent
-            if (node->index.level==0)
-                break;
-
-            TreeIndex parentIndex    = node->index.up();
-            MainCacheBuffer* nodeBuf = mainCache.findCached(parentIndex);
-            assert(nodeBuf != NULL);
-            node = &nodeBuf->getData();
-        }
-CRUSTA_DEBUG(43, std::cerr << "\n";)
+CRUSTA_DEBUG(42, std::cerr << "removing segment " << start << "\n");
+        remover.setSegment(start);
+        crusta->intersect(start, remover);
+CRUSTA_DEBUG(42, std::cerr << "\n");
     }
+
 CRUSTA_DEBUG(41, std::cerr << "--REM\n\n");
 }
 
@@ -555,6 +420,8 @@ inheritShapeCoverage(const QuadNodeMainData& parent, QuadNodeMainData& child)
     typedef QuadNodeMainData::ShapeCoverage                    Coverage;
     typedef QuadNodeMainData::AgeStampedControlPointHandleList HandleList;
     typedef Shape::ControlPointList::const_iterator            ConstHandle;
+
+    child.lineCoverage.clear();
 
     //go through all lines from the parent's coverage
     for (Coverage::const_iterator lit=parent.lineCoverage.begin();
@@ -798,42 +665,96 @@ closeSymbolsGroupCallback(GLMotif::Button::SelectCallbackData* cbData)
 }
 
 
-
-std::ostream&
-operator<<(std::ostream& os,
-           const MapManager::CoverageCollector& cc)
+void MapManager::ShapeCoverageManipulator::
+setShape(Shape* nShape)
 {
-    const MapManager::CoverageCollector::NodeCoverage& cov = cc.coverage;
-
-    os << "nodeCov((( ";
-    for (MapManager::CoverageCollector::NodeCoverage::const_iterator nit=
-         cov.begin(); nit!=cov.end(); ++nit)
-    {
-        if (nit == cov.begin())
-            os << nit->first->index << " X ";
-        else
-            os << "XX " << nit->first->index << " X ";
-
-        const MapManager::CoverageCollector::ControlPointHandles& handles =
-            nit->second;
-        for (MapManager::CoverageCollector::ControlPointHandles::const_iterator
-             hit=handles.begin(); hit!=handles.end(); ++hit)
-        {
-            if (hit == handles.begin())
-                os << *hit << " ";
-            else
-                os << "| " << *hit << " ";
-        }
-    }
-    os << ")))";
-
-    return os;
+    shape   = nShape;
 }
 
-void MapManager::CoverageCollector::
-operator()(const Shape::ControlPointHandle& cp, QuadNodeMainData* node)
+void MapManager::ShapeCoverageManipulator::
+setSegment(const Shape::ControlPointHandle& nSegment)
 {
-    coverage[node].push_back(cp);
+    segment = nSegment;
+}
+
+
+void MapManager::ShapeCoverageAdder::
+operator()(QuadNodeMainData* node, bool isLeaf)
+{
+    typedef QuadNodeMainData::ShapeCoverage                    Coverage;
+    typedef QuadNodeMainData::AgeStampedControlPointHandleList CHandleList;
+    typedef QuadNodeMainData::AgeStampedControlPointHandle     CHandle;
+    typedef Shape::ControlPointHandle                          SHandle;
+
+    CHandleList& chandles = node->lineCoverage[shape];
+
+CRUSTA_DEBUG(43, std::cerr << "+n" << node->index;)
+
+///\todo Vis2010 this needs to be put into debug
+//CRUSTA_DEBUG_ONLY(
+    CHandleList::iterator fit;
+    for (fit=chandles.begin();
+         fit!=chandles.end() && fit->handle!=segment;
+         ++fit);
+    if (fit != chandles.end())
+    {
+        std::cerr << "DUPLICATE FOUND: node(" << node->index << ") " <<
+            "contains:\n" << node->lineCoverage << "Offending segment is "
+            "fit." << fit->handle << " segment." << segment << "\n";
+    }
+//)
+
+    chandles.push_back(CHandle(segment->age, segment));
+
+    //invalidate current line data
+    node->lineData.clear();
+    //record the change for the culled tree if this is a leaf node
+    if (isLeaf)
+    {
+CRUSTA_DEBUG(44, std::cerr << "~ ";)
+        node->lineCoverageDirty |= true;
+    }
+    else
+CRUSTA_DEBUG(44, std::cerr << " ";)
+}
+
+void MapManager::ShapeCoverageRemover::
+operator()(QuadNodeMainData* node, bool isLeaf)
+{
+    typedef QuadNodeMainData::ShapeCoverage                    Coverage;
+    typedef QuadNodeMainData::AgeStampedControlPointHandleList CHandleList;
+    typedef QuadNodeMainData::AgeStampedControlPointHandle     CHandle;
+    typedef Shape::ControlPointHandle                          SHandle;
+
+    Coverage::iterator lit = node->lineCoverage.find(shape);
+    assert(lit != node->lineCoverage.end());
+    CHandleList& chandles = lit->second;
+    assert(chandles.size() > 0);
+
+CRUSTA_DEBUG(43, std::cerr << "-n" << node->index;)
+
+    CHandleList::iterator fit;
+    for (fit=chandles.begin();
+         fit!=chandles.end() && fit->handle!=segment;
+         ++fit);
+    assert(fit != chandles.end());
+
+    chandles.erase(fit);
+
+    //clean up emptied coverages
+    if (chandles.empty())
+        node->lineCoverage.erase(lit);
+
+    //invalidate current line data
+    node->lineData.clear();
+    //record the change for the culled tree if this is a leaf node
+    if (isLeaf)
+    {
+CRUSTA_DEBUG(44, std::cerr << "~ ";)
+        node->lineCoverageDirty |= true;
+    }
+    else
+CRUSTA_DEBUG(44, std::cerr << " ";)
 }
 
 

@@ -91,21 +91,28 @@ public:
         GLMotif::ListBox::ItemSelectedCallbackData* cbData);
     void closeSymbolsGroupCallback(GLMotif::Button::SelectCallbackData* cbData);
 
-///\todo Vis2010 testing: update line coverage for given line sections
-    class CoverageCollector : public Shape::IntersectionFunctor
+    class ShapeCoverageManipulator : public Shape::IntersectionFunctor
     {
     public:
-        typedef std::vector<Shape::ControlPointHandle> ControlPointHandles;
-        typedef std::map<QuadNodeMainData*, ControlPointHandles> NodeCoverage;
-///\todo debug, remove
-friend std::ostream& operator<<(std::ostream& os, const CoverageCollector& cc);
+        void setShape(Shape* nShape);
+        void setSegment(const Shape::ControlPointHandle& nSegment);
+    protected:
+        Shape*                    shape;
+        Shape::ControlPointHandle segment;
+    };
 
-        NodeCoverage coverage;
-
+    class ShapeCoverageAdder : public ShapeCoverageManipulator
+    {
     //- inherited from Shape::IntersectionFunctor
     public:
-        virtual void operator()(const Shape::ControlPointHandle& cp,
-                                QuadNodeMainData* node);
+        virtual void operator()(QuadNodeMainData* node, bool isLeaf);
+    };
+
+    class ShapeCoverageRemover : public ShapeCoverageManipulator
+    {
+    //- inherited from Shape::IntersectionFunctor
+    public:
+        virtual void operator()(QuadNodeMainData* node, bool isLeaf);
     };
 
     static const int BAD_TOOLID = -1;

@@ -44,10 +44,8 @@ public:
                         Scalar& tout, int& sout, const Scalar gout) const;
 
     /** traverse the leaf nodes of the current approximation of the patch */
-    void intersect(Shape::ControlPointHandle& start,
-        const Shape::ControlPointHandle& end,
-        Shape::IntersectionFunctor& callback, Ray& ray, Scalar tin, int sin,
-        Scalar& tout, int& sout) const;
+    void intersect(Shape::IntersectionFunctor& callback, Ray& ray,
+                   Scalar tin, int sin, Scalar& tout, int& sout) const;
 
     /** intersect the ray agains the sections of the node */
     static void intersectNodeSides(const QuadNodeMainData& node, const Ray& ray,
@@ -87,14 +85,11 @@ protected:
     HitResult intersectLeaf(const QuadNodeMainData& leaf, const Ray& ray,
                             Scalar param, int side, const Scalar gout) const;
 
-    void intersectNode(Shape::ControlPointHandle& start,
-        const Shape::ControlPointHandle& end,
-        Shape::IntersectionFunctor& callback, MainCacheBuffer* nodeBuf,
-        Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout) const;
-    void intersectLeaf(Shape::ControlPointHandle& start,
-        const Shape::ControlPointHandle& end,
-        Shape::IntersectionFunctor& callback, QuadNodeMainData& leaf,
-        Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout) const;
+    void intersectNode(Shape::IntersectionFunctor& callback,
+                       MainCacheBuffer* nodeBuf, Ray& ray, Scalar tin, int sin,
+                       Scalar& tout, int& sout) const;
+    void intersectLeaf(QuadNodeMainData& leaf, Ray& ray, Scalar tin, int sin,
+                       Scalar& tout, int& sout) const;
 
     /** make sure the required GL data for drawing is available. In case a
         buffer cannot be associated with the specified node (cache is full),

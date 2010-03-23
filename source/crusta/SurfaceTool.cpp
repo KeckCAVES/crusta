@@ -30,16 +30,16 @@ SurfaceTool::
 Vrui::ToolFactory* SurfaceTool::
 init()
 {
-	Vrui::TransformToolFactory* transformToolFactory =
+    Vrui::TransformToolFactory* transformToolFactory =
         dynamic_cast<Vrui::TransformToolFactory*>(
             Vrui::getToolManager()->loadClass("TransformTool"));
 
-    Factory* surfaceFactory = new Factory("SurfaceTool", "Crusta Surface",
+    Factory* surfaceFactory = new Factory("CrustaSurfaceTool", "Crusta Surface",
         transformToolFactory, *Vrui::getToolManager());
 
-	surfaceFactory->setNumDevices(1);
-	surfaceFactory->setNumButtons(0, transformToolFactory->getNumButtons());
-	surfaceFactory->setNumValuators(0, transformToolFactory->getNumValuators());
+    surfaceFactory->setNumDevices(1);
+    surfaceFactory->setNumButtons(0, transformToolFactory->getNumButtons());
+    surfaceFactory->setNumValuators(0, transformToolFactory->getNumValuators());
 
     Vrui::getToolManager()->addClass(surfaceFactory,
         Vrui::ToolManager::defaultToolFactoryDestructor);
@@ -109,7 +109,7 @@ frame()
             surfacePoint = crusta->mapToScaledGlobe(surfacePoint);
 #endif
 
-			if (Vrui::getMainPipe() != NULL)
+            if (Vrui::getMainPipe() != NULL)
                 Vrui::getMainPipe()->write<Point3>(surfacePoint);
         }
         else

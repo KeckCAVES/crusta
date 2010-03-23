@@ -30,7 +30,7 @@ PolylineTool::
 Vrui::ToolFactory* PolylineTool::
 init(Vrui::ToolFactory* parent)
 {
-    Factory* polylineFactory = new Factory("PolylineTool",
+    Factory* polylineFactory = new Factory("CrustaPolylineTool",
         "Polyline Drawing Tool", parent, *Vrui::getToolManager());
 
     //one device is required

@@ -451,12 +451,9 @@ std::cerr << "visited: " << ++patchesVisited << std::endl;
 
 
 void Crusta::
-intersect(Shape::ControlPointHandle start, Shape::ControlPointHandle end,
+intersect(Shape::ControlPointHandle start,
           Shape::IntersectionFunctor& callback) const
 {
-    if (start==end || ++Shape::ControlPointHandle(start)==end)
-        return;
-
     //find the patch containing the entry point
     const Point3&           entry = start->pos;
     const QuadTerrain*      patch = NULL;
@@ -475,10 +472,8 @@ intersect(Shape::ControlPointHandle start, Shape::ControlPointHandle end,
     assert(patch!=NULL && node!=NULL);
 
     //traverse terrain patches until intersection or ray exit
-    Ray    ray(start->pos, (++Shape::ControlPointHandle(start))->pos);
-CRUSTA_DEBUG(20,
-CV(addRay(ray));
-)
+    Ray ray(start->pos, (++Shape::ControlPointHandle(start))->pos);
+
     Scalar tin           = 0;
     Scalar tout          = 0;
     int    sideIn        = -1;
@@ -487,8 +482,8 @@ CV(addRay(ray));
     Triacontahedron polyhedron(SPHEROID_RADIUS);
     while (true)
     {
-        patch->intersect(start, end, callback, ray, tin, sideIn, tout, sideOut);
-        if (start == end)
+        patch->intersect(callback, ray, tin, sideIn, tout, sideOut);
+        if (tout >= 1.0)
             break;
 
         //move to the patch on the exit side

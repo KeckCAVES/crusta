@@ -86,8 +86,7 @@ friend std::ostream& operator<<(std::ostream& os, const ControlId& cid);
     {
     public:
         virtual ~IntersectionFunctor() {}
-        virtual void operator()(const ControlPointHandle& cp,
-                                QuadNodeMainData* node) = 0;
+        virtual void operator()(QuadNodeMainData* node, bool isLeaf) = 0;
     };
 
     Shape(Crusta* iCrusta);

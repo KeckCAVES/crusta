@@ -267,8 +267,10 @@ addControlPoint(const Point3& pos, End end)
     {
 CRUSTA_DEBUG(40, std::cerr << "++++AddCP @ FRONT:\n";)
         controlPoints.push_front(ControlPoint(newestAge++, pos));
-        mapMan->addShapeCoverage(this, controlPoints.begin(),
-                                 ++controlPoints.begin());
+        ControlPointHandle end = ++controlPoints.begin();
+        if (end != controlPoints.end())
+            ++end;
+        mapMan->addShapeCoverage(this, controlPoints.begin(), end);
 
 CRUSTA_DEBUG(40, std::cerr << "----added\n" <<
              ControlId(CONTROL_POINT, controlPoints.begin()) << std::endl;)
