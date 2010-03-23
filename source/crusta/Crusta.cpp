@@ -691,4 +691,28 @@ initContext(GLContextData& contextData) const
 }
 
 
+
+void Crusta::
+confirmLineCoverageRemoval(Shape* shape, Shape::ControlPointHandle cp)
+{
+    for (RenderPatches::const_iterator it=renderPatches.begin();
+         it!=renderPatches.end(); ++it)
+    {
+        const QuadNodeMainData* node = &((*it)->getRootNode());
+        (*it)->confirmLineCoverageRemoval(node, shape, cp);
+    }
+}
+
+void Crusta::
+validateLineCoverage()
+{
+    for (RenderPatches::const_iterator it=renderPatches.begin();
+         it!=renderPatches.end(); ++it)
+    {
+        const QuadNodeMainData* node = &((*it)->getRootNode());
+        (*it)->validateLineCoverage(node);
+    }
+}
+
+
 END_CRUSTA

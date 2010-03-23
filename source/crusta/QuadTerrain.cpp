@@ -15,6 +15,7 @@
 #include <crusta/DataManager.h>
 #include <crusta/LightingShader.h>
 #include <crusta/map/MapManager.h>
+#include <crusta/map/Polyline.h>
 #include <crusta/QuadCache.h>
 #include <crusta/Triangle.h>
 #include <crusta/Section.h>
@@ -176,7 +177,7 @@ intersectNodeSides(const QuadNodeMainData& node, const Ray& ray,
                 tin = hitParam;
                 sin = i;
             }
-            else if (hitParam > tout)
+            if (hitParam > tout)
             {
                 tout = hitParam;
                 sout = i;
@@ -1450,6 +1451,155 @@ CRUSTA_DEBUG(60, std::cerr << "***COVDOWN parent(" << mainData.index <<
         }
         else
             renders.push_back(&mainData);
+    }
+}
+
+
+
+
+void QuadTerrain::
+confirmLineCoverageRemoval(const QuadNodeMainData* node, Shape* shape,
+                           Shape::ControlPointHandle cp)
+{
+    MainCache& mainCache = crusta->getCache()->getMainCache();
+
+    MainCacheBuffer* children[4];
+
+    //validate current node's coverage
+    QuadNodeMainData::ShapeCoverage::const_iterator lit =
+        node->lineCoverage.find(shape);
+    if (lit != node->lineCoverage.end())
+    {
+        //check all the control point handles
+        const QuadNodeMainData::AgeStampedControlPointHandleList& handles =
+            lit->second;
+        if (!handles.empty())
+        {
+            QuadNodeMainData::AgeStampedControlPointHandleList::const_iterator
+                hit;
+            for (hit=handles.begin();hit!=handles.end()&&hit->handle!=cp;++hit);
+            assert(hit == handles.end());
+        }
+    }
+
+    //recurse
+    bool allgood = false;
+    //children existance
+    for (int i=0; i<4; ++i)
+    {
+        if (node->childDemTiles[i]  !=  DemFile::INVALID_TILEINDEX ||
+            node->childColorTiles[i]!=ColorFile::INVALID_TILEINDEX)
+        {
+            allgood = false;
+        }
+    }
+    //check cached
+    if (allgood)
+    {
+        for (int i=0; i<4; ++i)
+        {
+            children[i] = mainCache.findCached(node->index.down(i));
+            if (children[i] == NULL)
+                allgood = false;
+        }
+    }
+    //check active
+    if (allgood)
+    {
+        for (int i=0; i<4; ++i)
+        {
+            if (!mainCache.isActive(children[i]))
+                allgood = false;
+        }
+    }
+    //if good to go still, then the children are part of the active repr.
+    if (allgood)
+    {
+        for (int i=0; i<4; ++i)
+            confirmLineCoverageRemoval(&children[i]->getData(), shape, cp);
+    }
+}
+
+void QuadTerrain::
+validateLineCoverage(const QuadNodeMainData* node)
+{
+    MainCache&  mainCache = crusta->getCache()->getMainCache();
+    MapManager* mapMan    = crusta->getMapManager();
+
+    MapManager::PolylinePtrs& lines = mapMan->getPolylines();
+
+    MainCacheBuffer* children[4];
+
+    //validate current node's coverage
+    for (QuadNodeMainData::ShapeCoverage::const_iterator lit=
+         node->lineCoverage.begin(); lit!=node->lineCoverage.end(); ++lit)
+    {
+        //check that this line exists
+        MapManager::PolylinePtrs::iterator lfit = std::find(lines.begin(),
+            lines.end(), lit->first);
+        assert(lfit != lines.end());
+
+        //grab the polyline's controlpoints
+        Shape::ControlPointList& cpl = (*lfit)->getControlPoints();
+
+        //check all the control point handles
+        const QuadNodeMainData::AgeStampedControlPointHandleList& handles =
+            lit->second;
+        assert(!handles.empty());
+
+        for (QuadNodeMainData::AgeStampedControlPointHandleList::const_iterator
+             hit=handles.begin(); hit!=handles.end(); ++hit)
+        {
+            //check existance
+            Shape::ControlPointHandle cfit;
+            for (cfit=cpl.begin(); cfit!=cpl.end()&&cfit!=hit->handle; ++cfit);
+            assert(cfit != cpl.end());
+
+            //check overlap
+            Shape::ControlPointHandle end = hit->handle; ++end;
+            Ray ray(hit->handle->pos, end->pos);
+            Scalar tin, tout;
+            int sin, sout;
+            intersectNodeSides(*node, ray, tin, sin, tout, sout);
+            assert(tin<1.0 && tout>0.0);
+        }
+    }
+
+    //recurse
+    bool allgood = false;
+    //children existance
+    for (int i=0; i<4; ++i)
+    {
+        if (node->childDemTiles[i]  !=  DemFile::INVALID_TILEINDEX ||
+            node->childColorTiles[i]!=ColorFile::INVALID_TILEINDEX)
+        {
+            allgood = false;
+        }
+    }
+    //check cached
+    if (allgood)
+    {
+        for (int i=0; i<4; ++i)
+        {
+            children[i] = mainCache.findCached(node->index.down(i));
+            if (children[i] == NULL)
+                allgood = false;
+        }
+    }
+    //check active
+    if (allgood)
+    {
+        for (int i=0; i<4; ++i)
+        {
+            if (!mainCache.isActive(children[i]))
+                allgood = false;
+        }
+    }
+    //if good to go still, then the children are part of the active repr.
+    if (allgood)
+    {
+        for (int i=0; i<4; ++i)
+            validateLineCoverage(&children[i]->getData());
     }
 }
 

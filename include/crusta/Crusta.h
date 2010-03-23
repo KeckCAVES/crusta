@@ -103,6 +103,11 @@ static const int   lineDataTexSize;
 static const float lineDataCoordStep;
 static const float lineDataStartCoord;
 
+
+///\todo debug
+void confirmLineCoverageRemoval(Shape* shape, Shape::ControlPointHandle cp);
+void validateLineCoverage();
+
 protected:
     typedef std::vector<QuadTerrain*> RenderPatches;
 

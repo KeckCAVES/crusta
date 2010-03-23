@@ -45,6 +45,8 @@
 #endif //CRUSTA_ENABLE_DEBUG
 #include <iostream>
 
+#define CHECK_CONVERAGE_VALIDITY 0
+
 BEGIN_CRUSTA
 
 
@@ -379,6 +381,9 @@ CRUSTA_DEBUG(42, std::cerr << "adding segment " << start << "\n");
 CRUSTA_DEBUG(42, std::cerr << "\n");
     }
 
+#if CHECK_CONVERAGE_VALIDITY
+CRUSTA_DEBUG_ONLY(crusta->validateLineCoverage();)
+#endif //CHECK_CONVERAGE_VALIDITY
 CRUSTA_DEBUG(41, std::cerr << "--ADD\n\n");
 }
 
@@ -408,9 +413,15 @@ std::cerr << " )\n";
 CRUSTA_DEBUG(42, std::cerr << "removing segment " << start << "\n");
         remover.setSegment(start);
         crusta->intersect(start, remover);
+#if CHECK_CONVERAGE_VALIDITY
+CRUSTA_DEBUG_ONLY(crusta->confirmLineCoverageRemoval(shape, start);)
+#endif //CHECK_CONVERAGE_VALIDITY
 CRUSTA_DEBUG(42, std::cerr << "\n");
     }
 
+#if CHECK_CONVERAGE_VALIDITY
+CRUSTA_DEBUG_ONLY(crusta->validateLineCoverage();)
+#endif //CHECK_CONVERAGE_VALIDITY
 CRUSTA_DEBUG(41, std::cerr << "--REM\n\n");
 }
 
@@ -448,7 +459,7 @@ inheritShapeCoverage(const QuadNodeMainData& parent, QuadNodeMainData& child)
             //intersect ray and check for overlap
             Ray ray(start->pos, end->pos);
             QuadTerrain::intersectNodeSides(child, ray, tin, sin, tout, sout);
-            if (tin>1.0 && tout<0.0)
+            if (tin>=1.0 || tout<=0.0)
                 continue;
 
             //insert segment into child coverage
@@ -462,6 +473,10 @@ inheritShapeCoverage(const QuadNodeMainData& parent, QuadNodeMainData& child)
 
     //invalidate the child's line data
     child.lineData.clear();
+
+#if CHECK_CONVERAGE_VALIDITY
+CRUSTA_DEBUG_ONLY(crusta->validateLineCoverage();)
+#endif //CHECK_CONVERAGE_VALIDITY
 }
 
 
@@ -489,7 +504,7 @@ the representation. For now just check deprecation here...
 Actually there is a problem with not checking this before drawing: the current
 code assumes this is going to happen is this flags redraws by updating the age
 of the changed segments (e.g. new symbol, new coords) */
-if (false)//!data.empty())
+if (!data.empty())
 {
     for (Coverage::iterator lit=coverage.begin();
          lit!=coverage.end() && !data.empty(); ++lit)
@@ -688,7 +703,7 @@ operator()(QuadNodeMainData* node, bool isLeaf)
 
     CHandleList& chandles = node->lineCoverage[shape];
 
-CRUSTA_DEBUG(43, std::cerr << "+n" << node->index;)
+CRUSTA_DEBUG(43, std::cerr << "+" << node->index;)
 
 ///\todo Vis2010 this needs to be put into debug
 //CRUSTA_DEBUG_ONLY(
@@ -711,11 +726,11 @@ CRUSTA_DEBUG(43, std::cerr << "+n" << node->index;)
     //record the change for the culled tree if this is a leaf node
     if (isLeaf)
     {
-CRUSTA_DEBUG(44, std::cerr << "~ ";)
+CRUSTA_DEBUG(44, std::cerr << "~\n";)
         node->lineCoverageDirty |= true;
     }
     else
-CRUSTA_DEBUG(44, std::cerr << " ";)
+CRUSTA_DEBUG(44, std::cerr << "\n";)
 }
 
 void MapManager::ShapeCoverageRemover::
@@ -731,7 +746,7 @@ operator()(QuadNodeMainData* node, bool isLeaf)
     CHandleList& chandles = lit->second;
     assert(chandles.size() > 0);
 
-CRUSTA_DEBUG(43, std::cerr << "-n" << node->index;)
+CRUSTA_DEBUG(43, std::cerr << "-" << node->index;)
 
     CHandleList::iterator fit;
     for (fit=chandles.begin();
@@ -750,11 +765,11 @@ CRUSTA_DEBUG(43, std::cerr << "-n" << node->index;)
     //record the change for the culled tree if this is a leaf node
     if (isLeaf)
     {
-CRUSTA_DEBUG(44, std::cerr << "~ ";)
+CRUSTA_DEBUG(44, std::cerr << "~\n";)
         node->lineCoverageDirty |= true;
     }
     else
-CRUSTA_DEBUG(44, std::cerr << " ";)
+CRUSTA_DEBUG(44, std::cerr << "\n";)
 }
 
 

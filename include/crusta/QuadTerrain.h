@@ -76,6 +76,11 @@ static bool displayDebuggingBoundingSpheres;
 /** display debugging grid or not */
 static bool displayDebuggingGrid;
 
+///\todo debug Vis 2010
+void confirmLineCoverageRemoval(const QuadNodeMainData* node, Shape* shape,
+                                Shape::ControlPointHandle cp);
+void validateLineCoverage(const QuadNodeMainData* node);
+
 protected:
     /** ray patch traversal function for inner nodes of the quadtree */
     HitResult intersectNode(MainCacheBuffer* nodeBuf, const Ray& ray,
