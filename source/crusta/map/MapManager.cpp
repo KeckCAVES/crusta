@@ -622,6 +622,9 @@ following that use it. For now just duplicate the atlas info */
                 data.push_back(Color(normal[0], normal[1], normal[2], 0.0));
             }
         }
+
+        //update the age of the line data
+        node->lineCoverageAge = crusta->getCurrentFrame();
     }
 }
 

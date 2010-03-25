@@ -39,7 +39,7 @@ bool DEBUG_INTERSECT = false;
 #endif //DEBUG_INTERSECT_CRAP
 
 ///\todo OMG this needs to be integrated into the code properly (VIS 2010)
-const int   Crusta::lineDataTexSize     = 2048;
+const int   Crusta::lineDataTexSize     = 512;
 const float Crusta::lineDataCoordStep   = 1.0f / lineDataTexSize;
 const float Crusta::lineDataStartCoord  = 0.5f * lineDataCoordStep;
 
@@ -122,14 +122,6 @@ CrustaGlData()
 
     glPushAttrib(GL_TEXTURE_BIT);
 
-    glGenTextures(1, &lineDataTex);
-    glBindTexture(GL_TEXTURE_1D, lineDataTex);
-    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F_ARB, Crusta::lineDataTexSize, 0,
-                 GL_RGBA, GL_FLOAT, NULL);
-    CHECK_GLA
-
     glGenTextures(1, &symbolTex);
     glBindTexture(GL_TEXTURE_2D, symbolTex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -185,7 +177,7 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
 
     Triacontahedron polyhedron(SPHEROID_RADIUS);
 
-    cache    = new Cache(4096, 1024, this);
+    cache    = new Cache(4096, 1024, 1024, this);
     dataMan  = new DataManager(&polyhedron, demFileBase, colorFileBase, this);
     mapMan   = new MapManager(crustaTool, this);
 
@@ -612,6 +604,7 @@ display(GLContextData& contextData)
 {
     CrustaGlData* glData = contextData.retrieveDataItem<CrustaGlData>(this);
     glData->videoCache = &getCache()->getVideoCache(contextData);
+    glData->lineCache  = &getCache()->getGpuLineCache(contextData);
 
 //- prepare the renderable representation
     std::vector<QuadNodeMainData*> renderNodes;
@@ -657,7 +650,7 @@ glBindTexture(GL_TEXTURE_2D, glData->symbolTex);
     float lineWidth = 0.1f / scaleFac;
     glData->terrainShader.setLineWidth(lineWidth);
 
-    QuadTerrain::display(contextData, glData, renderNodes);
+    QuadTerrain::display(contextData, glData, renderNodes, getCurrentFrame());
 
     glData->terrainShader.disable();
 

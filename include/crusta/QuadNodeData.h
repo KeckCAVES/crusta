@@ -53,6 +53,7 @@ struct QuadNodeMainData
 
 ///\todo integrate me properly into the caching scheme (VIS 2010)
 bool          lineCoverageDirty;
+AgeStamp      lineCoverageAge;
 ShapeCoverage lineCoverage;
 Colors lineData;
 
@@ -99,6 +100,18 @@ struct QuadNodeVideoData
     GLuint height;
     /** texture storing the node's color image */
     GLuint color;
+};
+
+///\todo Vis2010 integrate this into the system better
+/** stores the coverage map textures */
+struct QuadNodeGpuLineData
+{
+    QuadNodeGpuLineData(uint size);
+    ~QuadNodeGpuLineData();
+
+    AgeStamp age;
+    GLuint   data;
+    GLuint   coverage;
 };
 
 

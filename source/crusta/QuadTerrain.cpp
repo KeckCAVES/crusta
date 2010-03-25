@@ -297,7 +297,8 @@ prepareDisplay(GLContextData& contextData, Nodes& nodes)
 }
 
 void QuadTerrain::
-display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes)
+display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes,
+        const AgeStamp& currentFrame)
 {
     //setup the GL
     GLint activeTexture;
@@ -322,7 +323,7 @@ display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes)
 
     int numNodes = static_cast<int>(nodes.size());
     for (int i=0; i<numNodes; ++i)
-        drawNode(contextData, glData, *(nodes[i]));
+        drawNode(contextData, glData, *(nodes[i]), currentFrame);
 
     //restore the GL transform as it was before
     glPopMatrix();
@@ -1180,8 +1181,54 @@ intersectLeaf(QuadNodeMainData& leaf, Ray& ray, Scalar tin, int sin,
     }
 }
 
+
+void QuadTerrain::
+renderGpuLineCoverageMap(const QuadNodeMainData& node, GLuint tex)
+{
+}
+
+
+const QuadNodeGpuLineData& QuadTerrain::
+prepareGpuLineData(CrustaGlData* glData, QuadNodeMainData& mainData,
+                   const AgeStamp& currentFrame)
+{
+    bool existed;
+    GpuLineCacheBuffer* lineBuf = glData->lineCache->getBuffer(mainData.index,
+                                                               &existed);
+    if (existed && lineBuf->getData().age==mainData.lineCoverageAge)
+    {
+        //we have cached and current data
+        glData->lineCache->touch(lineBuf);
+        return lineBuf->getData();
+    }
+    else
+    {
+        //in any case the data has to be transfered from main memory
+        if (lineBuf)
+            glData->lineCache->touch(lineBuf);
+        else
+            lineBuf = glData->lineCache->getStreamBuffer();
+
+        QuadNodeGpuLineData& lineData = lineBuf->getData();
+
+        //transfer the data proper
+        glBindTexture(GL_TEXTURE_1D, lineData.data);
+        glTexSubImage1D(GL_TEXTURE_1D, 0, 0, mainData.lineData.size(), GL_RGBA,
+                        GL_FLOAT, mainData.lineData.front().getComponents());
+
+        //render a new coverage map
+        renderGpuLineCoverageMap(mainData, lineData.coverage);
+
+        //stamp the age of the new data
+        lineData.age = currentFrame;
+
+        //return the data
+        return lineData;
+    }
+}
+
 const QuadNodeVideoData& QuadTerrain::
-prepareGlData(CrustaGlData* glData, QuadNodeMainData& mainData)
+prepareVideoData(CrustaGlData* glData, QuadNodeMainData& mainData)
 {
     bool existed;
     VideoCacheBuffer* videoBuf = glData->videoCache->getBuffer(mainData.index,
@@ -1227,10 +1274,25 @@ prepareGlData(CrustaGlData* glData, QuadNodeMainData& mainData)
 
 void QuadTerrain::
 drawNode(GLContextData& contextData, CrustaGlData* glData,
-         QuadNodeMainData& mainData)
+         QuadNodeMainData& mainData, const AgeStamp& currentFrame)
 {
+///\todo integrate me properly into the system (VIS 2010)
+    //stream the line data to the GPU if necessary
+    if (mainData.lineData.empty())
+        glData->terrainShader.setLineStartCoord(0.0);
+    else
+    {
+        glData->terrainShader.setLineStartCoord(Crusta::lineDataStartCoord);
+
+        const QuadNodeGpuLineData& lineData =
+            prepareGpuLineData(glData, mainData, currentFrame);
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_1D, lineData.data);
+    }
+
 ///\todo accommodate for lazy data fetching
-    const QuadNodeVideoData& data = prepareGlData(glData, mainData);
+    const QuadNodeVideoData& data = prepareVideoData(glData, mainData);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, data.geometry);
@@ -1245,20 +1307,6 @@ drawNode(GLContextData& contextData, CrustaGlData* glData,
     glVertexPointer(2, GL_FLOAT, 0, 0);
     glIndexPointer(GL_SHORT, 0, 0);
     CHECK_GLA
-
-///\todo integrate me properly into the system (VIS 2010)
-//stream the line data to the GPU
-if (mainData.lineData.empty())
-    glData->terrainShader.setLineStartCoord(0.0);
-else
-{
-    glData->terrainShader.setLineStartCoord(Crusta::lineDataStartCoord);
-
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_1D, glData->lineDataTex);
-    glTexSubImage1D(GL_TEXTURE_1D, 0, 0, mainData.lineData.size(), GL_RGBA,
-                    GL_FLOAT, mainData.lineData.front().getComponents());
-}
 
 #if 1
     //load the centroid relative translated navigation transformation

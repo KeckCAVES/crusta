@@ -58,7 +58,7 @@ public:
     void prepareDisplay(GLContextData& contextData, Nodes& nodes);
     /** issues the drawing commands for the render set */
     static void display(GLContextData& contextData, CrustaGlData* glData,
-                        Nodes& nodes);
+                        Nodes& nodes, const AgeStamp& currentFrame);
 
     /** generate the vertex stream template characterizing a node and
         stream it to the graphics card as a vertex buffer. This buffer
@@ -96,17 +96,27 @@ protected:
     void intersectLeaf(QuadNodeMainData& leaf, Ray& ray, Scalar tin, int sin,
                        Scalar& tout, int& sout) const;
 
+    /** render the coverage map for the given node into the specified texture */
+    static void renderGpuLineCoverageMap(const QuadNodeMainData& node,
+                                         GLuint tex);
+
+    /** make sure the required GL data for line data is available. In case a
+        buffer cannot be associated with the specified node (cache is full),
+        then a temporary buffer is provided that has had the data streamed to
+        it */
+    static const QuadNodeGpuLineData& prepareGpuLineData(CrustaGlData* glData,
+        QuadNodeMainData& mainData, const AgeStamp& currentFrame);
     /** make sure the required GL data for drawing is available. In case a
         buffer cannot be associated with the specified node (cache is full),
         then a temporary buffer is provided that has had the data streamed to
         it */
-    static const QuadNodeVideoData& prepareGlData(CrustaGlData* glData,
+    static const QuadNodeVideoData& prepareVideoData(CrustaGlData* glData,
         QuadNodeMainData& mainData);
     /** issue the drawing commands for displaying a node. The video cache
         operations to stream data from the main cache are performed at this
         point. */
     static void drawNode(GLContextData& contextData, CrustaGlData* glData,
-                         QuadNodeMainData& mainData);
+        QuadNodeMainData& mainData, const AgeStamp& currentFrame);
 
     /** draw the finest resolution node that are part of the currently terrain
         approximation */

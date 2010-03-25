@@ -2,6 +2,7 @@
 
 #include <cassert>
 
+#include <crusta/checkGl.h>
 #include <crusta/Crusta.h>
 
 BEGIN_CRUSTA
@@ -19,8 +20,8 @@ AgeStampedControlPointHandle(const AgeStamp& iAge,
 
 QuadNodeMainData::
 QuadNodeMainData(uint size) :
-    index(TreeIndex::invalid), boundingCenter(0,0,0),
-    boundingRadius(0)
+    lineCoverageDirty(false), lineCoverageAge(0), index(TreeIndex::invalid),
+    boundingCenter(0,0,0), boundingRadius(0)
 {
     geometry = new Vertex[size*size];
     height   = new DemHeight[size*size];
@@ -33,7 +34,6 @@ QuadNodeMainData(uint size) :
         childDemTiles[i]       = DemFile::INVALID_TILEINDEX;
         childColorTiles[i]     = ColorFile::INVALID_TILEINDEX;
     }
-    lineCoverageDirty = false;
 
     centroid[0] = centroid[1] = centroid[2] = DemHeight(0.0);
     elevationRange[0] = elevationRange[1]   = DemHeight(0.0);
@@ -114,6 +114,40 @@ createTexture(GLuint& texture, GLint internalFormat, uint size)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_2D, 0);
+    CHECK_GLA
+}
+
+
+QuadNodeGpuLineData::
+QuadNodeGpuLineData(uint size) :
+    age(0)
+{
+    glGenTextures(1, &data);
+    glBindTexture(GL_TEXTURE_1D, data);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F_ARB, Crusta::lineDataTexSize, 0,
+                 GL_RGBA, GL_FLOAT, NULL);
+    CHECK_GLA
+
+    uint mapSize = size>>1;
+    glGenTextures(1, &coverage);
+    glBindTexture(GL_TEXTURE_2D, coverage);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_INTENSITY16, mapSize, mapSize, 0,
+                 GL_RED, GL_UNSIGNED_SHORT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    CHECK_GLA
+}
+
+QuadNodeGpuLineData::
+~QuadNodeGpuLineData()
+{
+    glDeleteTextures(1, &data);
+    glDeleteTextures(1, &coverage);
 }
 
 

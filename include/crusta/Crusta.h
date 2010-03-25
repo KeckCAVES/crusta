@@ -21,6 +21,7 @@ class CacheBuffer;
 
 class Cache;
 class DataManager;
+class GpuLineCache;
 class MapManager;
 class QuadNodeMainData;
 class QuadTerrain;
@@ -32,18 +33,20 @@ struct CrustaGlData : public GLObject::DataItem
     ~CrustaGlData();
 
     /** store a handle to the video cache of this context for convenient
-     access */
+        access */
     VideoCache* videoCache;
+    /** store a handle to the line cache of this context for convenient
+        access */
+    GpuLineCache* lineCache;
 
     /** basic data being passed to the GL to represent a vertex. The
-     template provides simply texel-centered, normalized texture
-     coordinates that are used to address the corresponding data in the
-     geometry, elevation and color textures */
+        template provides simply texel-centered, normalized texture
+        coordinates that are used to address the corresponding data in the
+        geometry, elevation and color textures */
     GLuint vertexAttributeTemplate;
     /** defines a triangle-string triangulation of the vertices */
     GLuint indexTemplate;
 
-    GLuint lineDataTex;
     GLuint symbolTex;
 
     LightingShader terrainShader;

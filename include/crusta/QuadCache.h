@@ -13,8 +13,9 @@
 
 BEGIN_CRUSTA
 
-typedef CacheBuffer<QuadNodeMainData>  MainCacheBuffer;
-typedef CacheBuffer<QuadNodeVideoData> VideoCacheBuffer;
+typedef CacheBuffer<QuadNodeMainData>    MainCacheBuffer;
+typedef CacheBuffer<QuadNodeVideoData>   VideoCacheBuffer;
+typedef CacheBuffer<QuadNodeGpuLineData> GpuLineCacheBuffer;
 
 
 class MainCache : public CacheUnit<MainCacheBuffer>
@@ -24,14 +25,14 @@ public:
     class Request
     {
         friend class MainCache;
-        
+
     public:
         Request();
         Request(float iLod, MainCacheBuffer* iParent, uint8 iChild);
 
         bool operator ==(const Request& other) const;
         bool operator <(const Request& other) const;
-        
+
     protected:
         /** lod value used for prioritizing the requests */
         float lod;
@@ -103,19 +104,36 @@ protected:
     VideoCacheBuffer streamBuffer;
 };
 
+class GpuLineCache : public CacheUnit<GpuLineCacheBuffer>
+{
+public:
+    GpuLineCache(uint size, Crusta* iCrusta);
+
+    /** retrieve the temporary video buffer that can be used for streaming
+        data */
+    GpuLineCacheBuffer* getStreamBuffer();
+
+protected:
+    GpuLineCacheBuffer streamBuffer;
+};
+
 class Cache : public GLObject
 {
 public:
-    Cache(uint mainSize, uint videoSize, Crusta* iCrusta);
+    Cache(uint mainSize, uint videoSize, uint gpuLineSize, Crusta* iCrusta);
 
     /** retrieve the main memory cache unit */
     MainCache& getMainCache();
     /** retrieve the video memory cache unit */
     VideoCache& getVideoCache(GLContextData& contextData);
+    /** retrieve the gpu line data cache unit */
+    GpuLineCache& getGpuLineCache(GLContextData& contextData);
 
 protected:
     /** needed during initContext, specified during construction */
     uint videoCacheSize;
+    /** needed during initContext, specified during construction */
+    uint gpuLineCacheSize;
     /** needed during initContext, specified during construction */
     Crusta* crustaInstance;
     /** the main memory cache unit */
@@ -128,10 +146,12 @@ public:
 protected:
     struct GlData : public GLObject::DataItem
     {
-        GlData(uint size, Crusta* crustaInstance);
+        GlData(uint videoSize, uint lineSize, Crusta* crustaInstance);
 
         /** the video memory cache unit for the GL context */
         VideoCache videoCache;
+        /** the gpu line data cache unit for the GL context */
+        GpuLineCache lineCache;
     };
 };
 

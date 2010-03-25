@@ -244,10 +244,26 @@ getStreamBuffer()
     return &streamBuffer;
 }
 
+/**\todo Vis2010 This is very dangerous here to have internals required at the
+upper level. TILE_RESOLUTION is assumed to be used internally!! */
+GpuLineCache::
+GpuLineCache(uint size, Crusta* iCrusta) :
+    CacheUnit<GpuLineCacheBuffer>(size, iCrusta),
+    streamBuffer(TILE_RESOLUTION)
+{
+}
+
+GpuLineCacheBuffer* GpuLineCache::
+getStreamBuffer()
+{
+    return &streamBuffer;
+}
+
 
 Cache::
-Cache(uint mainSize, uint videoSize, Crusta* iCrusta) :
-    videoCacheSize(videoSize), crustaInstance(iCrusta),
+Cache(uint mainSize, uint videoSize, uint gpuLineSize, Crusta* iCrusta) :
+    videoCacheSize(videoSize), gpuLineCacheSize(gpuLineSize),
+    crustaInstance(iCrusta),
     mainCache(mainSize, iCrusta)
 {
 }
@@ -264,18 +280,25 @@ getVideoCache(GLContextData& contextData)
     GlData* glData = contextData.retrieveDataItem<GlData>(this);
     return glData->videoCache;
 }
+GpuLineCache& Cache::
+getGpuLineCache(GLContextData& contextData)
+{
+    GlData* glData = contextData.retrieveDataItem<GlData>(this);
+    return glData->lineCache;
+}
 
 
 void Cache::
 initContext(GLContextData& contextData) const
 {
-    GlData* glData = new GlData(videoCacheSize, crustaInstance);
+    GlData* glData = new GlData(videoCacheSize, gpuLineCacheSize,
+                                crustaInstance);
     contextData.addDataItem(this, glData);
 }
 
 Cache::GlData::
-GlData(uint size, Crusta* crustaInstance) :
-    videoCache(size, crustaInstance)
+GlData(uint videoSize, uint lineSize, Crusta* crustaInstance) :
+    videoCache(videoSize, crustaInstance), lineCache(lineSize, crustaInstance)
 {
 }
 
