@@ -226,6 +226,11 @@ frame()
 ///\todo implement a way to check validity of curControl that doesn't suck
             assert(curShape->isValid(curControl));
 
+///\todo HACK: avoid moving control point if projection has failed Vis2010
+            float scaleFac = Vrui::getNavigationTransformation().getScaling();
+            if (scaleFac*Geometry::dist(pos, curControl.handle->pos) > 5.0)
+                return;
+
             curShape->moveControlPoint(curControl, pos);
             break;
         }
