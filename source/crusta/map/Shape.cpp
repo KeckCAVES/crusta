@@ -40,7 +40,7 @@ operator<<(std::ostream& os, const Shape::ControlPointHandle& cph)
 
 Shape::Symbol::
 Symbol() :
-    id(0), color(0.8f, 0.7f, 0.5f, 1.0f)
+    id(0), color(0.8f, 0.7f, 0.5f, 1.0f), originSize(0.0f, 0.5f, 1.0f, 0.5f)
 {}
 
 Shape::Symbol::

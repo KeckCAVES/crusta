@@ -55,6 +55,7 @@ public:
     {
         int   id;
         Color color;
+        Color originSize;
 
         Symbol();
         Symbol(int iId, const Color& iColor);

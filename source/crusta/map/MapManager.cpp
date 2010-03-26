@@ -489,9 +489,6 @@ updateLineData(Nodes& nodes)
 
     static const int& lineTexSize = Crusta::lineDataTexSize;
 
-    static const Color symbolOriginSize[2] = {Color(0.0f, 0.25f, 1.0f, 0.25f),
-                                              Color(0.0f, 0.75f, 1.0f, 0.25f)};
-
     //go through all the nodes provided
     for (Nodes::iterator nit=nodes.begin(); nit!=nodes.end(); ++nit)
     {
@@ -584,9 +581,8 @@ following that use it. For now just duplicate the atlas info */
             HandleList& handles = lit->second;
 
         //- dump the line dependent data, i.e.: atlas info, number of segments
-///\todo for now just generate one of two symbol visuals
-            int symbolId = line->getSymbol().id % 2;
-            data.push_back(symbolOriginSize[symbolId]);
+            const Shape::Symbol& symbol = line->getSymbol();
+            data.push_back(symbol.originSize);
             data.push_back(Color(handles.size(), 0, 0, 0));
 
         //- age stamp and dump all the segments for the current line
@@ -837,17 +833,14 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
     GLMotif::SubMenu* symbolsMenu =
         new GLMotif::SubMenu("Symbols", symbolsMenuPopup, false);
 
-//- add the default crusta symbol
-    Shape::Symbol crustaDefaultSymbol;
-    symbolNameMap["Crusta Default"]              = crustaDefaultSymbol.id;
-    symbolReverseNameMap[crustaDefaultSymbol.id] = "Crusta Default";
-    symbolMap[crustaDefaultSymbol.id]            = crustaDefaultSymbol;
 
 //- parse the symbols definition file to create the symbols lists
 ///\todo fix the location of the configuration file
     std::ifstream symbolsConfig("Crusta_MapSymbols.cfg");
     if (!symbolsConfig.good())
         return;
+
+    bool isDefault = false;
 
     GLMotif::ScrolledListBox* symbolsGroup = NULL;
     std::string cfgLine;
@@ -861,8 +854,14 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
         //check for a new group
         std::string token;
         iss >> token;
-        if (token.compare("group") == 0)
+        if (token.compare("defaultSymbol") == 0)
         {
+            isDefault = true;
+        }
+        else if (token.compare("group") == 0)
+        {
+            isDefault = false;
+
             //read in the group name
             iss >> token;
 
@@ -896,7 +895,7 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
         }
         else
         {
-            if (symbolsGroup == NULL)
+            if (symbolsGroup==NULL && !isDefault)
                 continue;
 
             iss.seekg(0, std::ios::beg);
@@ -906,15 +905,27 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
             iss >> symbolName;
 
             Shape::Symbol symbol;
-            iss >> symbol.id >> symbol.color[0] >> symbol.color[1] >>
-                                symbol.color[2] >> symbol.color[3];
+            iss >> symbol.id >>
+                   symbol.color[0] >> symbol.color[1] >>
+                   symbol.color[2] >> symbol.color[3] >>
+                   symbol.originSize[0] >> symbol.originSize[1] >>
+                   symbol.originSize[2] >> symbol.originSize[3];
 
             symbolNameMap[symbolName]       = symbol.id;
             symbolReverseNameMap[symbol.id] = symbolName;
             symbolMap[symbol.id]            = symbol;
 
-            //populate the current group
-            symbolsGroup->getListBox()->addItem(symbolName.c_str());
+            if (isDefault)
+            {
+///\todo create a menu entry for the default symbol and update that entry here
+                //set the active shape to the default one
+                activeSymbol = symbol;
+            }
+            else
+            {
+                //populate the current group
+                symbolsGroup->getListBox()->addItem(symbolName.c_str());
+            }
         }
     }
 
