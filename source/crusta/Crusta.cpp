@@ -17,6 +17,7 @@
 #include <crusta/SurfaceTool.h>
 #include <crusta/Tool.h>
 #include <crusta/Triacontahedron.h>
+#include <crusta/Triangle.h>
 
 
 ///todo debug
@@ -195,10 +196,6 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
         globalElevationRange[1] = std::max(globalElevationRange[1],
                                            Scalar(root.elevationRange[1]));
     }
-/**\todo For the ray-casting we actually need min/max for the root.
-    HUGE HACK, set ranges here to some defaults */
-globalElevationRange[0] = -8000.0;
-globalElevationRange[1] = 11000.0;
 }
 
 void Crusta::
@@ -316,14 +313,50 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     }
 
 //- sample the cell
-///\todo sample properly. For now just return the height of the corner
-    Scalar height = node->height[offset[1]*TILE_RESOLUTION + offset[0]];
-    height       += SPHEROID_RADIUS + elevationOffset;
+    static const int tileRes = TILE_RESOLUTION;
+    int linearOffset = offset[1]*tileRes + offset[0];
+    QuadNodeMainData::Vertex* cellV = node->geometry + linearOffset;
+    DemHeight*                cellH = node->height   + linearOffset;
+    const QuadNodeMainData::Vertex::Position* positions[4] = {
+        &(cellV->position), &((cellV+1)->position),
+        &((cellV+tileRes)->position), &((cellV+tileRes+1)->position) };
+    const DemHeight* heights[4] = {
+        cellH, cellH+1, cellH+tileRes, cellH+tileRes+1
+    };
+    //construct the corners of the current cell
+    Vector3 cellCorners[4];
+    for (int i=0; i<4; ++i)
+    {
+        for (int j=0; j<3; ++j)
+            cellCorners[i][j] = (*(positions[i]))[j] + node->centroid[j];
+        Vector3 extrude(cellCorners[i]);
+        extrude.normalize();
+        extrude *= *(heights[i]);
+        cellCorners[i] += extrude;
+    }
 
-    Vector3 toPos = Vector3(pos);
-    toPos.normalize();
-    toPos *= height;
-    return Point3(toPos[0], toPos[1], toPos[2]);
+    //intersect triangles of current cell
+    Triangle t0(cellCorners[0], cellCorners[3], cellCorners[2]);
+    Triangle t1(cellCorners[0], cellCorners[1], cellCorners[3]);
+
+    Ray ray(pos, -Vector3(pos));
+    HitResult hit = t0.intersectRay(ray);
+    if (!hit.isValid())
+    {
+        hit = t1.intersectRay(ray);
+        if (!hit.isValid())
+        {
+            Scalar height = node->height[offset[1]*TILE_RESOLUTION + offset[0]];
+            height       += SPHEROID_RADIUS + elevationOffset;
+
+            Vector3 toPos = Vector3(pos);
+            toPos.normalize();
+            toPos *= height;
+            return Point3(toPos[0], toPos[1], toPos[2]);
+        }
+    }
+
+    return ray(hit.getParameter());
 }
 
 HitResult Crusta::
@@ -347,6 +380,7 @@ CrustaVisualizer::peek();
                  verticalScale*globalElevationRange[1]);
     Scalar gin, gout;
     bool intersects = shell.intersectRay(ray, gin, gout);
+    gin = std::max(gin, 0.0);
 
     if (!intersects)
         return HitResult();

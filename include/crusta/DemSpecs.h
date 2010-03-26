@@ -159,13 +159,13 @@ public:
     }
 #endif //CONSTRUO_BUILD
 
-	static size_t getSize()
+    static size_t getSize()
     {
-		return 2 * sizeof(DemHeight);
+        return 2 * sizeof(DemHeight);
     }
 
 #if CONSTRUO_BUILD
-	void reset(TreeNode<DemHeight>* node=NULL)
+    void reset(TreeNode<DemHeight>* node=NULL)
     {
         if (node==NULL || node->data==NULL)
         {
@@ -181,29 +181,47 @@ public:
             assert(node->treeState!=NULL && node->treeState->file!=NULL);
             const uint32* tileSize = node->treeState->file->getTileSize();
             for(uint i=1; i<tileSize[0]*tileSize[1]; ++i)
-			{
+            {
                 range[0] = std::min(range[0], tile[i]);
                 range[1] = std::max(range[1], tile[i]);
-			}
+            }
+
+            if (node->children != NULL)
+            {
+                for (int i=0; i<4; ++i)
+                {
+                    TreeNode<DemHeight>& child = node->children[i];
+                    assert(child.tileIndex != TreeState<DemHeight>::
+                           File::INVALID_TILEINDEX);
+                    //get the child header
+                    QuadtreeTileHeader<DemHeight> header;
+                    bool res = node->treeState->file->readTile(
+                        child.tileIndex, header);
+                    assert(res==true);
+
+                    range[0] = std::min(range[0], header.range[0]);
+                    range[1] = std::max(range[1], header.range[1]);
+                }
+            }
         }
     }
 #endif //CONSTRUO_BUILD
 
-	void read(Misc::LargeFile* file)
+    void read(Misc::LargeFile* file)
     {
-		file->read(range, 2);
+        file->read(range, 2);
     }
 #if CONSTRUO_BUILD
-	void write(Misc::LargeFile* file) const
+    void write(Misc::LargeFile* file) const
     {
-		file->write(range, 2);
+        file->write(range, 2);
     }
 #endif //CONSTRUO_BUILD
 
     static const DemHeight defaultPixelValue;
 
     ///range of height values of DEM tile
-	DemHeight range[2];
+    DemHeight range[2];
 };
 
 
