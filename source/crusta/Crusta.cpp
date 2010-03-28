@@ -40,9 +40,57 @@ bool DEBUG_INTERSECT = false;
 #endif //DEBUG_INTERSECT_CRAP
 
 ///\todo OMG this needs to be integrated into the code properly (VIS 2010)
-const int   Crusta::lineDataTexSize     = 512;
+const int   Crusta::lineDataTexSize     = 8192;
 const float Crusta::lineDataCoordStep   = 1.0f / lineDataTexSize;
 const float Crusta::lineDataStartCoord  = 0.5f * lineDataCoordStep;
+
+///\todo OMG this needs to be integrated into the code properly (VIS 2010)
+class RGBAImage
+{
+public:
+    RGBAImage(int width, int height) : byteCount(4), pixels(NULL)
+    {
+        size[0] = width;
+	size[1] = height;
+    }
+    ~RGBAImage()
+    {
+        destroy();
+    }
+
+    bool load(const char* filename)
+    {
+        FILE* file;
+        file = fopen(filename, "rb");
+        if (file == NULL)
+            return false;
+
+        int imageSize = size[0]*size[1] * byteCount;
+
+        //allocate memory for image data
+        pixels = new uint8[imageSize];
+
+        //read in image data
+        fread(pixels, sizeof(uint8), imageSize, file);
+
+        //close file
+        fclose(file);
+
+        return true;
+    }
+
+    void destroy()
+    {
+        size[0] = size[1] = 0;
+        byteCount = 0;
+        delete[] pixels;
+        pixels = NULL;
+    }
+
+    int    size[2];
+    int    byteCount;
+    uint8* pixels;
+};
 
 ///\todo OMG this needs to be integrated into the code properly (VIS 2010)
 class TargaImage
@@ -141,8 +189,13 @@ CrustaGlData()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+#if 0
     TargaImage atlas;
     if (atlas.load("Crusta_MapSymbolAtlas.tga"))
+#else
+    RGBAImage atlas(1024, 1024);
+    if (atlas.load("Crusta_MapSymbolAtlas.rgba"))
+#endif
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas.size[0], atlas.size[1], 0,
                      GL_RGBA, GL_UNSIGNED_BYTE, atlas.pixels);
