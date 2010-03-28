@@ -82,6 +82,8 @@ public:
     /** generate line data for the subset of render nodes that are outdated */
     void updateLineData(Nodes& nodes);
 
+    void processVerticalScaleChange();
+
     void frame();
     void display(GLContextData& contextData) const;
 

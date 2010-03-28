@@ -662,6 +662,7 @@ static_cast<unsigned int>(currentFrame));
     {
         verticalScale  = newVerticalScale;
         lastScaleFrame = currentFrame;
+        mapMan->processVerticalScaleChange();
     }
 
     //make sure all the active nodes are current

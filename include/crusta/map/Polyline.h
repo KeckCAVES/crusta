@@ -14,7 +14,6 @@ class Polyline : public Shape
 public:
     Polyline(Crusta* iCrusta);
 
-protected:
     void recomputeCoords(ControlPointHandle start);
 
 //- Inherited from Shape

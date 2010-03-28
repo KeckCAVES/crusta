@@ -649,6 +649,14 @@ following that use it. For now just duplicate the atlas info */
 
 
 void MapManager::
+processVerticalScaleChange()
+{
+    //need to recompute all the polylines' coordinates
+    for (PolylinePtrs::iterator it=polylines.begin(); it!=polylines.end(); ++it)
+        (*it)->recomputeCoords((*it)->getControlPoints().begin());
+}
+
+void MapManager::
 frame()
 {
     polylineRenderer->lines = &polylines;

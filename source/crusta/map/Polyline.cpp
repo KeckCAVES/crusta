@@ -2,6 +2,8 @@
 
 #include <cassert>
 
+#include <crusta/Crusta.h>
+
 
 BEGIN_CRUSTA
 
@@ -18,6 +20,7 @@ recomputeCoords(ControlPointHandle cur)
 {
     assert(cur != controlPoints.end());
 
+    Point3 prevP, curP;
     ControlPointHandle prev = cur;
     if (prev != controlPoints.begin())
         --prev;
@@ -26,10 +29,12 @@ recomputeCoords(ControlPointHandle cur)
         prev->coord = 0.0;
         ++cur;
     }
-    for (; cur!=controlPoints.end(); ++prev, ++cur)
+    prevP = crusta->mapToScaledGlobe(prev->pos);
+    for (; cur!=controlPoints.end(); ++prev, ++cur, prevP=curP)
     {
-        cur->coord = prev->coord + Geometry::dist(prev->pos, cur->pos);
-        cur->age   = newestAge;
+        curP = crusta->mapToScaledGlobe(cur->pos);
+        cur->coord  = prev->coord + Geometry::dist(prevP, curP);
+        cur->age    = newestAge;
     }
     ++newestAge;
 }
