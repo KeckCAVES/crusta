@@ -133,7 +133,7 @@ QuadNodeGpuLineData(uint size) :
     uint mapSize = size>>1;
     glGenTextures(1, &coverage);
     glBindTexture(GL_TEXTURE_2D, coverage);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_INTENSITY16, mapSize, mapSize, 0,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, mapSize, mapSize, 0,
                  GL_RED, GL_UNSIGNED_SHORT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

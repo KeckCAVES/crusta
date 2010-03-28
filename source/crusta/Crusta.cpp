@@ -118,8 +118,19 @@ public:
 CrustaGlData::
 CrustaGlData()
 {
+    /* Initialize the required extensions: */
+    if(!GLEXTFramebufferObject::isSupported())
+    {
+        Misc::throwStdErr("LightingShader: GL_EXT_framebuffer_object not"
+                          " supported");
+    }
+    GLEXTFramebufferObject::initExtension();
+
     QuadTerrain::generateVertexAttributeTemplate(vertexAttributeTemplate);
     QuadTerrain::generateIndexTemplate(indexTemplate);
+
+    //create the framebuffer to be used to attach and render the coverage maps
+    glGenFramebuffersEXT(1, &coverageFbo);
 
     glPushAttrib(GL_TEXTURE_BIT);
 
@@ -147,6 +158,36 @@ CrustaGlData()
     CHECK_GLA
 
     glPopAttrib();
+
+    //create the shader to process the line coverages into the corresponding map
+    static const char* vp = "\
+//        uniform mat4 transform;\n\
+        void main()\n\
+        {\n\
+#if 1\n\
+            gl_Position = gl_Vertex;\n\
+#else\n\
+            gl_Position = transform * gl_Vertex;\n\
+#endif\n\
+        }\n\
+        \n";
+
+    static const char* fp = "\
+        void main()\n\
+        {\n\
+            gl_FragColor = vec4(100.0);\n\
+        }\n\
+        \n";
+    lineCoverageShader.compileVertexShaderFromString(vp);
+    lineCoverageShader.compileFragmentShaderFromString(fp);
+    lineCoverageShader.linkShader();
+
+#if 0
+    lineCoverageShader.useProgram();
+    lineCoverageTransformUniform = lineCoverageShader.getUniformLocation(
+        "transform");
+    lineCoverageShader.disablePrograms();
+#endif
 }
 
 CrustaGlData::
@@ -636,6 +677,8 @@ static_cast<unsigned int>(currentFrame));
 void Crusta::
 display(GLContextData& contextData)
 {
+    CHECK_GLA
+
     CrustaGlData* glData = contextData.retrieveDataItem<CrustaGlData>(this);
     glData->videoCache = &getCache()->getVideoCache(contextData);
     glData->lineCache  = &getCache()->getGpuLineCache(contextData);
@@ -665,7 +708,7 @@ display(GLContextData& contextData)
 //- draw the current terrain and map data
 ///\todo integrate properly (VIS 2010)
 //bind the texture that contains the symbol images
-glActiveTexture(GL_TEXTURE4);
+glActiveTexture(GL_TEXTURE5);
 glBindTexture(GL_TEXTURE_2D, glData->symbolTex);
 
     //have the QuadTerrain draw the surface approximation

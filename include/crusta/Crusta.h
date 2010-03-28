@@ -6,6 +6,7 @@
 
 #include <GL/gl.h>
 #include <GL/GLObject.h>
+#include <GL/GLShader.h>
 #include <Threads/Mutex.h>
 
 #include <crusta/basics.h>
@@ -47,9 +48,14 @@ struct CrustaGlData : public GLObject::DataItem
     /** defines a triangle-string triangulation of the vertices */
     GLuint indexTemplate;
 
+    GLuint coverageFbo;
+
     GLuint symbolTex;
 
     LightingShader terrainShader;
+
+    GLint    lineCoverageTransformUniform;
+    GLShader lineCoverageShader;
 };
 
 /** Main crusta class */

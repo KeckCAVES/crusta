@@ -471,6 +471,7 @@ void LightingShader::compileShader()
         \n\
         varying vec3 position;\n\
         varying vec3 normal;\n\
+        varying vec2 texCoord;\n\
     ";
 
     if (useTextureForTerrainColor)
@@ -592,6 +593,9 @@ void LightingShader::compileShader()
             \n\
             /* Use finalize vertex transformation: */\n\
             gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 1.0);\n\
+            \n\
+            /* Pass the texture coordinates to the fragment program: */\n\
+            texCoord = gl_Vertex.xy;\n\
             }\n";
 
     /* Compile the vertex shader: */
@@ -651,8 +655,10 @@ catch (std::exception& e){
 
     uniform = glGetUniformLocationARB(programObject, "lineDataTex");
     glUniform1i(uniform, 3);
-    uniform = glGetUniformLocationARB(programObject, "symbolTex");
+    uniform = glGetUniformLocationARB(programObject, "lineCoverageTex");
     glUniform1i(uniform, 4);
+    uniform = glGetUniformLocationARB(programObject, "symbolTex");
+    glUniform1i(uniform, 5);
     uniform = glGetUniformLocationARB(programObject, "lineCoordStep");
     glUniform1f(uniform, crusta::Crusta::lineDataCoordStep);
 

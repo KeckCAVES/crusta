@@ -97,8 +97,8 @@ protected:
                        Scalar& tout, int& sout) const;
 
     /** render the coverage map for the given node into the specified texture */
-    static void renderGpuLineCoverageMap(const QuadNodeMainData& node,
-                                         GLuint tex);
+    static void renderGpuLineCoverageMap(CrustaGlData* glData,
+        const QuadNodeMainData& node, GLuint tex);
 
     /** make sure the required GL data for line data is available. In case a
         buffer cannot be associated with the specified node (cache is full),

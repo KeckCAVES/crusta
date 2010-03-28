@@ -7,10 +7,12 @@ uniform float lineWidth;
 uniform vec3 center;
 
 uniform sampler1D lineDataTex;
+uniform sampler2D lineCoverageTex;
 uniform sampler2D symbolTex;
 
 varying vec3 position;
 varying vec3 normal;
+varying vec2 texCoord;
 
 const float EPSILON = 0.00001;
 
@@ -21,8 +23,9 @@ vec4 read(inout float coord)
     return r;
 }
 
-#define NORMAL 1
-#define TWIST  1
+#define NORMAL   1
+#define TWIST    1
+#define COVERAGE 0
 
 void main()
 {
@@ -31,11 +34,23 @@ void main()
 
     float coord = lineStartCoord;
 
+    //does this node contain any lines?
     if (coord == 0.0)
         return;
 
+    float coverage = texture2D(lineCoverageTex, texCoord).r;
+#if COVERAGE
+    gl_FragColor.rgb = vec3(coverage);
+    gl_FragColor.a   = 1.0;
+    return;
+#endif
+
+    //do lines overlap this fragment?
+    if (coverage==0)
+        return;
+
     //walk all the line bits for the node of the fragment
-    vec4 color      = vec4(0.0, 0.0, 0.0, 0.0);
+    vec4 color      = vec4(0.8, 0.7, 0.2, 0.2);
     int lineBitsMax = int(read(coord).r) - 1;
 
     for (int i=0; i<128; ++i)
@@ -89,7 +104,7 @@ void main()
 #endif
                     tangent = lineWidth*sectionNormal;
                 else
-                    tangent *= lineWidth;
+                    tangent *= 3.0*lineWidth;
 
                 //intersect ray from position along tangent with section
                 float sectionOffset = -dot(startCP.xyz, sectionNormal);
@@ -102,7 +117,8 @@ void main()
 //color = vec4(vec3(v), 0.3);
                     //compute the u coordinate wrt the length of the segment
                     u  = mix(startCP.w, endCP.w, u);
-                    u *= lineCoordScale;
+                    u *= 0.15*lineCoordScale;
+                    u  = fract(u/symbolOS.b);
                     //fetch the color contribution from the texture atlas
                     vec2 symbolCoord = vec2(u, v);
                     symbolCoord     *= symbolOS.ba;

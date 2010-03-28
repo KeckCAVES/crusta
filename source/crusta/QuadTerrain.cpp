@@ -13,6 +13,7 @@
 #include <crusta/checkGl.h>
 #include <crusta/Crusta.h>
 #include <crusta/DataManager.h>
+#include <crusta/Homography.h>
 #include <crusta/LightingShader.h>
 #include <crusta/map/MapManager.h>
 #include <crusta/map/Polyline.h>
@@ -30,6 +31,9 @@
 
 ///\todo used for debugspheres
 #include <GL/GLModels.h>
+
+///\todo debug remove
+#include <Geometry/ProjectiveTransformation.h>
 
 BEGIN_CRUSTA
 
@@ -1183,8 +1187,165 @@ intersectLeaf(QuadNodeMainData& leaf, Ray& ray, Scalar tin, int sin,
 
 
 void QuadTerrain::
-renderGpuLineCoverageMap(const QuadNodeMainData& node, GLuint tex)
+renderGpuLineCoverageMap(CrustaGlData* glData, const QuadNodeMainData& node,
+    GLuint tex)
 {
+    typedef QuadNodeMainData::ShapeCoverage                    Coverage;
+    typedef QuadNodeMainData::AgeStampedControlPointHandleList HandleList;
+    typedef Shape::ControlPointHandle                          Handle;
+
+    //compute projection matrix
+    Homography toNormalized;
+    //destinations are fll, flr, ful, bll, bur
+    toNormalized.setDestination(Point3(-1,-1,-1), Point3(1,-1,-1),
+        Point3(-1,1,-1), Point3(-1,-1,1), Point3(1,1,1));
+
+    //the elevation range might be flat. Make sure to give the frustum depth
+    DemHeight elevationRange[2] = { node.elevationRange[0],
+                                    node.elevationRange[1] };
+    Scalar sideLen = Geometry::dist(node.scope.corners[0],
+                                    node.scope.corners[1]);
+    if (Math::abs(elevationRange[0]-elevationRange[1]) < sideLen)
+    {
+        DemHeight midElevation = (elevationRange[0] + elevationRange[1]) * 0.5;
+        sideLen *= 0.5;
+        elevationRange[0] = midElevation - sideLen;
+        elevationRange[1] = midElevation + sideLen;
+    }
+
+    Point3 srcs[5];
+    srcs[0] = node.scope.corners[0];
+    srcs[1] = node.scope.corners[1];
+    srcs[2] = node.scope.corners[2];
+    srcs[3] = node.scope.corners[0];
+    srcs[4] = node.scope.corners[3];
+
+    //map the source points to planes
+    Vector3 normal(node.centroid);
+    normal.normalize();
+
+    Geometry::Plane<Scalar,3> plane;
+    plane.setNormal(-normal);
+    plane.setPoint(Point3(normal*(SPHEROID_RADIUS+elevationRange[0])));
+    for (int i=0; i<3; ++i)
+    {
+        Ray ray(Point3(0), srcs[i]);
+        HitResult hit = plane.intersectRay(ray);
+        assert(hit.isValid());
+        srcs[i] = ray(hit.getParameter());
+    }
+    plane.setPoint(Point3(normal*(SPHEROID_RADIUS+elevationRange[1])));
+    for (int i=3; i<5; ++i)
+    {
+        Ray ray(Point3(0), srcs[i]);
+        HitResult hit = plane.intersectRay(ray);
+        assert(hit.isValid());
+        srcs[i] = ray(hit.getParameter());
+    }
+
+    toNormalized.setSource(srcs[0], srcs[1], srcs[2], srcs[3], srcs[4]);
+
+    toNormalized.computeProjective();
+
+    //switch to the line coverage rendering shader
+    glData->lineCoverageShader.useProgram();
+/**\todo it seems there might be an issue in converting the matrix to float or
+simply float processing the transformation */
+#if 0
+    //convert the projection matrix to floating point and assign to the shader
+    GLfloat projMat[16];
+    for (int j=0; j<4; ++j)
+    {
+        for (int i=0; i<4; ++i)
+        {
+#if 0
+            projMat[j*4+i] = i==j ? 1.0 : 0.0;
+#else
+            projMat[j*4+i] = toNormalized.getProjective().getMatrix()(i,j);
+#endif
+        }
+    }
+    glUniformMatrix4fv(glData->lineCoverageTransformUniform, 1, true, projMat);
+#endif
+
+    //setup openGL for rendering the texture
+    glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_COLOR_BUFFER_BIT);
+
+///\todo query this from the GL only once per frame, pass info along in glData
+    //save the current viewport specification
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+///\todo query the coverage texture size don't have it hardcoded everywhere
+    //set the viewport to match the coverage texture
+    glViewport(0,0,TILE_RESOLUTION>>1,TILE_RESOLUTION>>1);
+
+    //bind the coverage rendering framebuffer
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->coverageFbo);
+    //attach the appropriate coverage map
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
+                              GL_TEXTURE_2D, tex, 0);
+    assert(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) ==
+             GL_FRAMEBUFFER_COMPLETE_EXT);
+
+    //clear the old coverage map
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glDisable(GL_DEPTH_TEST);
+
+    const Coverage& coverage = node.lineCoverage;
+
+    glColor4f(1,1,1,1);
+    glLineWidth(15.0f);
+
+    glBegin(GL_LINES);
+
+#if 1
+    for (Coverage::const_iterator lit=coverage.begin(); lit!=coverage.end();
+         ++lit)
+    {
+        const Polyline* line = dynamic_cast<const Polyline*>(lit->first);
+        assert(line != NULL);
+        const HandleList& handles = lit->second;
+
+        for (HandleList::const_iterator hit=handles.begin(); hit!=handles.end();
+             ++hit)
+        {
+            Handle cur  = hit->handle;
+            Handle next = cur; ++next;
+
+#if 1
+            //manually transform the points before passing to the GL
+            typedef Geometry::HVector<double,3> HPoint;
+
+            const Homography::Projective& p = toNormalized.getProjective();
+
+            Point3 curPos  = p.transform(HPoint(cur->pos)).toPoint();
+            Point3 nextPos = p.transform(HPoint(next->pos)).toPoint();
+
+            glVertex3dv(curPos.getComponents());
+            glVertex3dv(nextPos.getComponents());
+#else
+            //let the GL transform the points
+            glVertex3dv(cur->pos.getComponents());
+            glVertex3dv(next->pos.getComponents());
+#endif
+        }
+    }
+#endif
+
+    glEnd();
+
+    //bind back the default framebuffer
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+    //restore the viewport
+    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+
+    //clean up all the state changes
+    glPopAttrib();
+
+    //re-enable the terrain rendering shader
+    glData->terrainShader.enable();
 }
 
 
@@ -1217,7 +1378,7 @@ prepareGpuLineData(CrustaGlData* glData, QuadNodeMainData& mainData,
                         GL_FLOAT, mainData.lineData.front().getComponents());
 
         //render a new coverage map
-        renderGpuLineCoverageMap(mainData, lineData.coverage);
+        renderGpuLineCoverageMap(glData, mainData, lineData.coverage);
 
         //stamp the age of the new data
         lineData.age = currentFrame;
@@ -1289,6 +1450,8 @@ drawNode(GLContextData& contextData, CrustaGlData* glData,
 
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_1D, lineData.data);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, lineData.coverage);
     }
 
 ///\todo accommodate for lazy data fetching

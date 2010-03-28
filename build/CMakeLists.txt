@@ -45,6 +45,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/Ellipsoid.h
     ../include/crusta/FocusViewEvaluator.h
     ../include/crusta/FrustumVisibility.h
+    ../include/crusta/Homography.h
     ../include/crusta/IdGenerator.h
     ../include/crusta/LightingShader.h
     ../include/crusta/LodEvaluator.h
@@ -85,6 +86,7 @@ add_library(CrustaCore SHARED
     ../source/crusta/DemSpecs.cpp
     ../source/crusta/FocusViewEvaluator.cpp
     ../source/crusta/FrustumVisibility.cpp
+    ../source/crusta/Homography.cpp
     ../source/crusta/LightingShader.cpp
     ../source/crusta/LodEvaluator.cpp
     ../source/crusta/map/MapManager.cpp
