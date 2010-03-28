@@ -1295,15 +1295,15 @@ simply float processing the transformation */
     glBlendFunc(GL_ONE, GL_ONE);
     glEnable(GL_BLEND);
 
-    const Coverage& coverage             = node.lineCoverage;
-    const std::vector<Vector2f>& offsets = node.lineCoverageOffsets;
+    const Coverage& coverage = node.lineCoverage;
+    const Colors&   offsets  = node.lineCoverageOffsets;
     glLineWidth(15.0f);
 
     glBegin(GL_LINES);
 
 #if 1
     //as the coverage is traversed also traverse the offsets
-    std::vector<Vector2f>::const_iterator oit = offsets.begin();
+    Colors::const_iterator oit = offsets.begin();
     //traverse all the line in the coverage
     for (Coverage::const_iterator lit=coverage.begin(); lit!=coverage.end();
          ++lit)
@@ -1315,9 +1315,8 @@ simply float processing the transformation */
         for (HandleList::const_iterator hit=handles.begin(); hit!=handles.end();
              ++hit, ++oit)
         {
-            //compute the compound offset attribute
-            float off = 67108864 + (*oit)[1]*8192 + (*oit)[0];
-            glVertexAttrib1f(glData->lineCoverageOffsetAttrib, off);
+            //pass the offset along
+            glColor4fv(oit->getComponents());
 
             Handle cur  = hit->handle;
             Handle next = cur; ++next;

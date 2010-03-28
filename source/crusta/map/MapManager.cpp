@@ -494,7 +494,7 @@ updateLineData(Nodes& nodes)
     {
         QuadNodeMainData*                node     = *nit;
         QuadNodeMainData::ShapeCoverage& coverage = node->lineCoverage;
-        std::vector<Vector2f>&           offsets  = node->lineCoverageOffsets;
+        Colors&                          offsets  = node->lineCoverageOffsets;
         Colors&                          data     = node->lineData;
 
 /**\todo integrate check for deprecated data only to where nodes are added to
@@ -566,8 +566,9 @@ coverage << "\n\n";)
 
     //- reset the offsets
         offsets.clear();
-        Vector2f off;
-        float curOff = 0.0;
+        Colors off;
+        uint32 symbolOff;
+        uint32 curOff = 0.0;
 
     //- dump the node dependent data, i.e.: relative to tile transform
         //dump the number of sections in this node
@@ -588,7 +589,7 @@ following that use it. For now just duplicate the atlas info */
             HandleList& handles = lit->second;
 
         //- save the offset to the symbols definition
-            off[0] = curOff;
+            symbolOff = curOff;
 
         //- dump the line dependent data, i.e.: atlas info, number of segments
             const Shape::Symbol& symbol = line->getSymbol();
@@ -621,8 +622,11 @@ following that use it. For now just duplicate the atlas info */
                 const Scalar& nextC = next->coord;
 
                 //save the offset to the data
-                off[1] = curOff;
-                offsets.push_back(off);
+                Color coff((symbolOff&0xFF)             / 255.0f,
+                           (((symbolOff>>8)&0xFF) + 64) / 255.0f,
+                           (curOff&0xFF)                / 255.0f,
+                           ((curOff>>8)&0xFF)           / 255.0f);
+                offsets.push_back(coff);
 
                 //segment control points
                 data.push_back(Color( curPf[0],  curPf[1],  curPf[2],  curC));
@@ -748,7 +752,9 @@ CRUSTA_DEBUG(44, std::cerr << "~\n";)
         node->lineCoverageDirty |= true;
     }
     else
+    {
 CRUSTA_DEBUG(44, std::cerr << "\n";)
+    }
 }
 
 void MapManager::ShapeCoverageRemover::
@@ -787,7 +793,9 @@ CRUSTA_DEBUG(44, std::cerr << "~\n";)
         node->lineCoverageDirty |= true;
     }
     else
+    {
 CRUSTA_DEBUG(44, std::cerr << "\n";)
+    }
 }
 
 

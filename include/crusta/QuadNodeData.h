@@ -52,11 +52,11 @@ struct QuadNodeMainData
     TextureColor* color;
 
 ///\todo integrate me properly into the caching scheme (VIS 2010)
-bool                  lineCoverageDirty;
-AgeStamp              lineCoverageAge;
-std::vector<Vector2f> lineCoverageOffsets;
-ShapeCoverage         lineCoverage;
-Colors                lineData;
+bool          lineCoverageDirty;
+AgeStamp      lineCoverageAge;
+Colors        lineCoverageOffsets;
+ShapeCoverage lineCoverage;
+Colors        lineData;
 
     /** uniquely characterize this node's "position" in the tree. The tree
      index must correlate with the global hierarchy of the data

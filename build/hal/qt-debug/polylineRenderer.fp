@@ -26,6 +26,7 @@ vec4 read(inout float coord)
 #define NORMAL   1
 #define TWIST    1
 #define COVERAGE 0
+#define COLORIZE_COVERAGE 1
 
 void computeLine(in vec4 symbolOS, in vec4 startCP, in vec4 endCP,
                  in vec3 sectionNormal, inout vec4 color)
@@ -109,11 +110,11 @@ void main()
     if (coord == 0.0)
         return;
 
-    float coverage = texture2D(lineCoverageTex, texCoord).r;
+    vec4 coverage = texture2D(lineCoverageTex, texCoord);
 #if COVERAGE
-    if (coverage < 134217728.0)
+    if (coverage.g < 0.5)
     {
-        if (coverage > 0.0)
+        if (coverage.r > 0.0)
             gl_FragColor.rgb = vec3(0.2, 0.8, 0.4);
         else
             gl_FragColor.rgb = vec3(0.0);
@@ -125,22 +126,25 @@ void main()
 #endif
 
     //do lines overlap this fragment?
-    if (coverage == 0.0)
+    if (coverage == vec4(0.0))
         return;
 
-    vec4 color      = vec4(0.8, 0.7, 0.2, 0.2);
+    vec4 color = vec4(0.0);
 
     //optimize for single coverage
-    if (coverage < 134217728.0)
+    if (coverage.g < 0.5)
     {
-        float off        = coverage / 8192.0;
-        float symbolOff  = fract(off);
-        off             -= symbolOff;
-        off             /= 8192.0;
-        float segmentOff = fract(off);
+        vec2 coordShift = vec2(255.0, 255.0*256.0);
+
+        vec2 off        = coverage.rg * coordShift;
+        off.x          -= 64.0*256.0;
+        float symbolOff = off.x + off.y;
+
+        off              = coverage.ba * coordShift;
+        float segmentOff = off.x + off.y;
 
         //read in the symbol
-        coord        += symbolOff*lineCoordStep;
+        coord         = lineStartCoord + symbolOff*lineCoordStep;
         vec4 symbolOS = texture1D(lineDataTex, coord);
 
         //read in the segment data
@@ -150,10 +154,16 @@ void main()
         vec3 sectionNormal = read(coord).xyz;
 
         //compute line and done
+#if COLORIZE_COVERAGE
+        color = vec4(0.2, 0.8, 0.4, 0.2);
+#endif //COLORIZE_COVERAGE
         computeLine(symbolOS, startCP, endCP, sectionNormal, color);
     }
     else
     {
+#if COLORIZE_COVERAGE
+        color = vec4(0.8, 0.4, 0.2, 0.2);
+#endif //COLORIZE_COVERAGE
         //walk all the line bits for the node of the fragment
         int lineBitsMax = int(read(coord).r) - 1;
 
