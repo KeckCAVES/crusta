@@ -162,6 +162,8 @@ CrustaGlData()
     //create the shader to process the line coverages into the corresponding map
     static const char* vp = "\
 //        uniform mat4 transform;\n\
+        attribute float offsetIn;\n\
+        varying   float offset;\n\
         void main()\n\
         {\n\
 #if 1\n\
@@ -169,25 +171,28 @@ CrustaGlData()
 #else\n\
             gl_Position = transform * gl_Vertex;\n\
 #endif\n\
+            offset = offsetIn;\n\
         }\n\
         \n";
 
     static const char* fp = "\
+        varying float offset;\n\
         void main()\n\
         {\n\
-            gl_FragColor = vec4(100.0);\n\
+            gl_FragColor = offset;\n\
         }\n\
         \n";
     lineCoverageShader.compileVertexShaderFromString(vp);
     lineCoverageShader.compileFragmentShaderFromString(fp);
     lineCoverageShader.linkShader();
 
-#if 0
     lineCoverageShader.useProgram();
+    lineCoverageOffsetAttrib = lineCoverageShader.getAttribLocation("offsetIn");
+#if 0
     lineCoverageTransformUniform = lineCoverageShader.getUniformLocation(
         "transform");
-    lineCoverageShader.disablePrograms();
 #endif
+    lineCoverageShader.disablePrograms();
 }
 
 CrustaGlData::

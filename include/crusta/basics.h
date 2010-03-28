@@ -71,6 +71,7 @@ typedef Geometry::Point<Scalar, 3>  Point3;
 typedef Geometry::Point<float, 3>   Point3f;
 typedef std::vector<Point3>         Point3s;
 typedef std::vector<Point3f>        Point3fs;
+typedef Geometry::Vector<float, 2>  Vector2f;
 typedef Geometry::Vector<Scalar, 3> Vector3;
 typedef Geometry::Vector<float, 3>  Vector3f;
 typedef std::vector<Vector3>        Vector3s;

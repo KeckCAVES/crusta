@@ -494,6 +494,7 @@ updateLineData(Nodes& nodes)
     {
         QuadNodeMainData*                node     = *nit;
         QuadNodeMainData::ShapeCoverage& coverage = node->lineCoverage;
+        std::vector<Vector2f>&           offsets  = node->lineCoverageOffsets;
         Colors&                          data     = node->lineData;
 
 /**\todo integrate check for deprecated data only to where nodes are added to
@@ -563,9 +564,15 @@ for (Coverage::iterator lit=coverage.begin(); lit!=coverage.end(); ++lit)
 CRUSTA_DEBUG(50, std::cerr << "###REGEN n(" << node->index << ") :\n" <<
 coverage << "\n\n";)
 
+    //- reset the offsets
+        offsets.clear();
+        Vector2f off;
+        float curOff = 0.0;
+
     //- dump the node dependent data, i.e.: relative to tile transform
         //dump the number of sections in this node
         data.push_back(Color(numLines, 0, 0, 0));
+        ++curOff;
 
 /**\todo insert another level here: collections of lines that use the same
 symbol from the atlas. Then dump the atlas info and the number of lines
@@ -580,10 +587,15 @@ following that use it. For now just duplicate the atlas info */
             assert(line != NULL);
             HandleList& handles = lit->second;
 
+        //- save the offset to the symbols definition
+            off[0] = curOff;
+
         //- dump the line dependent data, i.e.: atlas info, number of segments
             const Shape::Symbol& symbol = line->getSymbol();
             data.push_back(symbol.originSize);
+            ++curOff;
             data.push_back(Color(handles.size(), 0, 0, 0));
+            ++curOff;
 
         //- age stamp and dump all the segments for the current line
             for (HandleList::iterator hit=handles.begin(); hit!=handles.end();
@@ -608,14 +620,21 @@ following that use it. For now just duplicate the atlas info */
                 const Scalar& curC  = cur->coord;
                 const Scalar& nextC = next->coord;
 
+                //save the offset to the data
+                off[1] = curOff;
+                offsets.push_back(off);
+
                 //segment control points
                 data.push_back(Color( curPf[0],  curPf[1],  curPf[2],  curC));
+                ++curOff;
                 data.push_back(Color(nextPf[0], nextPf[1], nextPf[2], nextC));
+                ++curOff;
 
                 //section normal
                 Vector3 normal = Geometry::cross(Vector3(nextP), Vector3(curP));
                 normal.normalize();
                 data.push_back(Color(normal[0], normal[1], normal[2], 0.0));
+                ++curOff;
             }
         }
 

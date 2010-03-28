@@ -6,10 +6,10 @@
 
 #include <GL/gl.h>
 #include <GL/GLObject.h>
-#include <GL/GLShader.h>
 #include <Threads/Mutex.h>
 
 #include <crusta/basics.h>
+#include <crusta/GlProgram.h>
 #include <crusta/LightingShader.h>
 #include <crusta/map/Shape.h>
 
@@ -54,8 +54,9 @@ struct CrustaGlData : public GLObject::DataItem
 
     LightingShader terrainShader;
 
-    GLint    lineCoverageTransformUniform;
-    GLShader lineCoverageShader;
+    GLint     lineCoverageTransformUniform;
+    GLint     lineCoverageOffsetAttrib;
+    GlProgram lineCoverageShader;
 };
 
 /** Main crusta class */
