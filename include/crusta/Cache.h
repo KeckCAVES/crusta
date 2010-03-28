@@ -44,14 +44,14 @@ class CacheBuffer
 
 public:
     CacheBuffer(uint size);
-    
+
     /** retrieve the main memory node data from the buffer */
     NodeDataType& getData();
     const NodeDataType& getData() const;
-    
+
     /** query the frame number of the buffer */
     FrameNumber getFrameNumber() const;
-    
+
 protected:
     /** sequence number used to evaluate LRU prioritization */
     FrameNumber frameNumber;
@@ -79,9 +79,6 @@ public:
 
     /** check to see if the buffer is active in the current frame */
     bool isActive(const BufferType* const buffer) const;
-    /** check to see if the semi-dynamic data of the buffer is current and can
-        be used without an update */
-    bool isCurrent(const BufferType* const buffer) const;
     /** check to see if the buffer is valid */
     bool isValid(const BufferType* const buffer) const;
     /** confirm use of the buffer for the current frame */

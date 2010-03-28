@@ -65,7 +65,8 @@ Colors        lineData;
     /** caches this node's scope for visibility and lod evaluation */
     Scope scope;
 
-///\todo add an age stamp to the semi-dynamic data like for the coverage?
+///\todo integrate me properly into the caching scheme (VIS 2010)
+AgeStamp verticalScaleAge;
     /** center of the bounding sphere primitive */
     Scope::Vertex boundingCenter;
     /** radius of a sphere containing the node */

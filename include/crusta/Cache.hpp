@@ -146,13 +146,6 @@ isActive(const BufferType* const buffer) const
 
 template <typename BufferType>
 bool CacheUnit<BufferType>::
-isCurrent(const BufferType* const buffer) const
-{
-    return isValid(buffer) && buffer->frameNumber>=crusta->getLastScaleFrame();
-}
-
-template <typename BufferType>
-bool CacheUnit<BufferType>::
 isValid(const BufferType* const buffer) const
 {
     return buffer->frameNumber!=0 &&

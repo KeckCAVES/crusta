@@ -609,8 +609,8 @@ following that use it. For now just duplicate the atlas info */
                 Handle cur  = hit->handle;
                 Handle next = cur; ++cur;
 
-                const Point3& curP  = cur->pos;
-                const Point3& nextP = next->pos;
+                Point3 curP  = crusta->mapToScaledGlobe(cur->pos);
+                Point3 nextP = crusta->mapToScaledGlobe(next->pos);
                 Point3f curPf(curP[0]-centroid[0],
                               curP[1]-centroid[1],
                               curP[2]-centroid[2]);

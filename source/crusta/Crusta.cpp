@@ -661,8 +661,7 @@ static_cast<unsigned int>(currentFrame));
     if (verticalScale  != newVerticalScale)
     {
         verticalScale  = newVerticalScale;
-        assert(currentFrame>0);
-        lastScaleFrame = currentFrame-1;
+        lastScaleFrame = currentFrame;
     }
 
     //make sure all the active nodes are current
@@ -744,11 +743,14 @@ glBindTexture(GL_TEXTURE_2D, glData->symbolTex);
 void Crusta::
 confirmActives()
 {
-    MainCache& mainCache = getCache()->getMainCache();
     for (Actives::iterator it=actives.begin(); it!=actives.end(); ++it)
     {
-        if (!mainCache.isCurrent(*it))
-            (*it)->getData().computeBoundingSphere(getVerticalScale());
+        QuadNodeMainData& node = (*it)->getData();
+        if (node.verticalScaleAge < getLastScaleFrame())
+        {
+            node.computeBoundingSphere(getVerticalScale());
+            node.verticalScaleAge = getCurrentFrame();
+        }
     }
     actives.clear();
 }

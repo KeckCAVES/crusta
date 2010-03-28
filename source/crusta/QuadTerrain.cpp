@@ -1515,7 +1515,7 @@ if (displayDebuggingBoundingSpheres)
 {
 glData->terrainShader.disable();
     GLint activeTexture;
-    glPushAttrib(GL_ENABLE_BIT || GL_POLYGON_BIT);
+    glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT);
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
 
     glDisable(GL_LIGHTING);
@@ -1526,7 +1526,7 @@ glData->terrainShader.disable();
     glColor3f(0.5f,0.5f,0.5f);
     glTranslatef(mainData.boundingCenter[0], mainData.boundingCenter[1],
                  mainData.boundingCenter[2]);
-    glDrawSphereIcosahedron(mainData.boundingRadius, 2);
+    glDrawSphereIcosahedron(mainData.boundingRadius, 1);
 
     glPopMatrix();
     glPopAttrib();
@@ -1631,7 +1631,8 @@ prepareDraw(FrustumVisibility& visibility, FocusViewEvaluator& lod,
                     {
                         allgood = false;
                     }
-                    else if (!mainCache.isCurrent(childBuf))
+                    else if (childBuf->getData().verticalScaleAge <
+                             crusta->getLastScaleFrame())
                     {
                         //"request" it for update
                         actives.push_back(childBuf);
