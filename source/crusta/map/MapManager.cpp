@@ -172,6 +172,12 @@ int numFeature = 0;
 ++numFeature;
     }
 
+
+int numSegments = 0;
+for (PolylinePtrs::iterator pit=polylines.begin(); pit!=polylines.end(); ++pit)
+    numSegments += (*pit)->getControlPoints().size()-1;
+std::cerr << "num segs: " << numSegments << std::endl;
+
     OGRDataSource::DestroyDataSource(source);
 }
 

@@ -28,7 +28,61 @@ vec4 read(inout float coord)
 #define COVERAGE 0
 #define COLORIZE_COVERAGE 1
 
-void computeLine(in vec4 symbolOS, in vec4 startCP, in vec4 endCP,
+#define U_SCALE 0.15
+#define V_SCALE 3.0
+
+#define computeLine computeLineOld
+
+void computeLineNew(in vec4 symbolOS, in vec4 startCP, in vec4 endCP,
+                 in vec3 sectionNormal, inout vec4 color)
+{
+    //- Compute lateral coordinate v using simplified formula:
+
+    // Compute v without taking distortion into account:
+    float v = dot(position - startCP.xyz, sectionNormal);
+
+    // Correct for distortion by dividing by sin(alpha):
+    float snn = dot(sectionNormal, normal);
+    v = v / sqrt(1 - snn * snn);
+
+    // Scale v to normalize to the segment width
+    v /= V_SCALE*lineWidth;
+
+    //- Reject if v<-1 or v>1:
+    if(abs(v) <= 1)
+    {
+        //- Compute longitudinal coordinate u using simplified formula:
+
+        // Compute the normal vector of the plane containing center and
+        // position and being orthogonal to the wedge:
+        vec3 b = cross(sectionNormal, position + center);
+
+        // Compute the plane's intersection ration with the line's skeleton:
+        vec3 startToEnd = endCP.xyz - startCP.xyz;
+        float u = (dot(position, b) - dot(startCP, b)) / dot(startToEnd, b);
+
+        //- Reject if u<0 or u>1:
+        if(u >= 0 && u <= 1)
+        {
+//color = vec4(vec3(v), 0.3);
+            //compute the u coordinate wrt the length of the segment
+            u  = mix(startCP.w, endCP.w, u);
+            u *= U_SCALE*lineCoordScale;
+            u  = fract(u/symbolOS.b);
+
+            //fetch the color contribution from the texture atlas
+            vec2 symbolCoord = vec2(u, v);
+            symbolCoord     *= symbolOS.ba;
+            symbolCoord     += symbolOS.rg;
+            vec4 symbolColor = texture2D(symbolTex, symbolCoord);
+
+            //accumulate the contribution
+            color = mix(color, symbolColor, symbolColor.w);
+        }
+    }
+}
+
+void computeLineOld(in vec4 symbolOS, in vec4 startCP, in vec4 endCP,
                  in vec3 sectionNormal, inout vec4 color)
 {
     vec3 startToEnd = endCP.xyz - startCP.xyz;
