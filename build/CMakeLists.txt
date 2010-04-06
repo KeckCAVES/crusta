@@ -36,6 +36,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/CacheRequest.h
     ../include/crusta/checkGl.h
     ../include/crusta/ColorMap.h
+    ../include/crusta/ColorPicker.h
     ../include/crusta/ColorTextureSpecs.h
     ../include/crusta/Crusta.h
     ../include/crusta/CrustaComponent.h
@@ -83,6 +84,7 @@ add_library(CrustaCore SHARED
 
     ../source/crusta/CacheRequest.cpp
     ../source/crusta/ColorMap.cpp
+    ../source/crusta/ColorPicker.cpp
     ../source/crusta/ColorTextureSpecs.cpp
     ../source/crusta/Crusta.cpp
     ../source/crusta/CrustaVisualizer.cpp

@@ -66,14 +66,15 @@ class PaletteEditor:public GLMotif::PopupWindow
 	GLMotif::TextField* controlPointValue; // The data value of the currently selected control point
 	GLMotif::Blind* colorPanel; // The control point color display widget
 	GLMotif::Slider* colorSliders[4]; // The color selection slider widgets (R, G, B, alpha)
-	Misc::CallbackList savePaletteCallbacks; // List of callbacks called when the "Save Palette" button is pressed
+    GLMotif::TextField* rangeValue[2];
+    GLMotif::Slider* rangeSliders[2];
 	
 	/* Private methods: */
 	void selectedControlPointChangedCallback(Misc::CallbackData* cbData);
 	void colorMapChangedCallback(Misc::CallbackData* cbData);
 	void colorSliderValueChangedCallback(Misc::CallbackData* cbData);
 	void removeControlPointCallback(Misc::CallbackData* cbData);
-	void savePaletteCallback(Misc::CallbackData* cbData);
+    void savePaletteCallback(Misc::CallbackData* cbData);
 	
 	/* Constructors and destructors: */
 	public:
@@ -97,10 +98,6 @@ class PaletteEditor:public GLMotif::PopupWindow
 	Misc::CallbackList& getColorMapChangedCallbacks(void) // Returns list of color map change callbacks
 		{
 		return colorMap->getColorMapChangedCallbacks();
-		}
-	Misc::CallbackList& getSavePaletteCallbacks(void) // Returns list of save palette callbacks
-		{
-		return savePaletteCallbacks;
 		}
 	void exportColorMap(GLColorMap& glColorMap) const; // Exports color map to GLColorMap object
 	};

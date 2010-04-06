@@ -90,11 +90,17 @@ void PaletteEditor::removeControlPointCallback(Misc::CallbackData* cbData)
 	}
 
 void PaletteEditor::savePaletteCallback(Misc::CallbackData* cbData)
-	{
-	/* Delegate the actual saving to someone else: */
-	CallbackData myCbData(this);
-	savePaletteCallbacks.call(&myCbData);
-	}
+{
+    try
+    {
+        char numberedFileName[40];
+        savePalette(Misc::createNumberedFileName("SavedPalette.pal",4,numberedFileName));
+    }
+    catch(std::runtime_error)
+    {
+        /* Ignore errors and carry on: */
+    }
+}
 
 PaletteEditor::PaletteEditor(void)
 	:GLMotif::PopupWindow("PaletteEditorPopup",Vrui::getWidgetManager(),"Palette Editor"),
