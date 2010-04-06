@@ -15,26 +15,44 @@ class ElevationRangeTool : public Tool
 public:
     typedef Vrui::GenericToolFactory<ElevationRangeTool> Factory;
 
-    class ChangeCallback
+    class ChangeCallbackData : public Misc::CallbackData
     {
     public:
-        virtual void operator()(Scalar min, Scalar max);
+        ElevationRangeTool* tool;
+        Scalar min;
+        Scalar max;
+
+        ChangeCallbackData(ElevationRangeTool* iTool, Scalar iMin, Scalar iMax);
     };
-    
+
     ElevationRangeTool(const Vrui::ToolFactory* iFactory,
                 const Vrui::ToolInputAssignment& inputAssignment);
     virtual ~ElevationRangeTool();
 
+    Misc::CallbackList& getChangeCallbacks();
+
     static Vrui::ToolFactory* init(Vrui::ToolFactory* parent);
 
 protected:
-    static Factory* factory;
+    Point3 getPosition();
+    void notifyChange();
+
+    int controlPointsSet;
+    int controlPointsHover;
+    int controlPointsSelected;
 
     Point3 ends[2];
 
+    Misc::CallbackList changeCallbacks;
+
+    static const Scalar markerSize;
+    static const Scalar selectDistance;
+
+private:
+    static Factory* factory;
+
 //- Inherited from Vrui::Tool
 public:
-    virtual void initialize();
     virtual const Vrui::ToolFactory* getFactory() const;
 
     virtual void frame();
@@ -42,10 +60,6 @@ public:
 
     virtual void buttonCallback(int deviceIndex, int buttonIndex,
                                 Vrui::InputDevice::ButtonCallbackData* cbData);
-    
-//- Inherited from Crusta::Component
-public:
-    virtual void setupComponent(Crusta* nCrusta);
 };
 
 END_CRUSTA

@@ -24,6 +24,7 @@
 #include <GLMotif/SubMenu.h>
 #include <GLMotif/TextField.h>
 #include <GLMotif/WidgetManager.h>
+#include <GL/GLColorMap.h>
 #include <GL/GLContextData.h>
 #include <Vrui/Lightsource.h>
 #include <Vrui/LightsourceManager.h>
@@ -64,16 +65,16 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     crusta = new Crusta;
     crusta->init(demName, colorName);
 
-	/* Create the sun lightsource: */
-	sun=Vrui::getLightsourceManager()->createLightsource(false);
-	updateSun();
+    /* Create the sun lightsource: */
+    sun=Vrui::getLightsourceManager()->createLightsource(false);
+    updateSun();
 
-	/* Save all viewers' headlight enable states: */
-	for(int i=0;i<Vrui::getNumViewers();++i)
-	{
-		viewerHeadlightStates[i] =
+    /* Save all viewers' headlight enable states: */
+    for(int i=0;i<Vrui::getNumViewers();++i)
+    {
+        viewerHeadlightStates[i] =
             Vrui::getViewer(i)->getHeadlight().isEnabled();
-	}
+    }
 
     produceMainMenu();
     produceVerticalScaleDialog();
@@ -92,8 +93,8 @@ CrustaApp::
 ~CrustaApp()
 {
     delete popMenu;
-	/* Delete the viewer headlight states: */
-	delete[] viewerHeadlightStates;
+    /* Delete the viewer headlight states: */
+    delete[] viewerHeadlightStates;
 
     crusta->shutdown();
     delete crusta;
@@ -225,47 +226,47 @@ produceLightingDialog()
 {
     const GLMotif::StyleSheet* style =
         Vrui::getWidgetManager()->getStyleSheet();
-	lightingDialog=new GLMotif::PopupWindow("LightingDialog",Vrui::getWidgetManager(),"Light Settings");
-	GLMotif::RowColumn* lightSettings=new GLMotif::RowColumn("LightSettings",lightingDialog,false);
-	lightSettings->setNumMinorWidgets(2);
+    lightingDialog=new GLMotif::PopupWindow("LightingDialog",Vrui::getWidgetManager(),"Light Settings");
+    GLMotif::RowColumn* lightSettings=new GLMotif::RowColumn("LightSettings",lightingDialog,false);
+    lightSettings->setNumMinorWidgets(2);
 
-	/* Create a toggle button and two sliders to manipulate the sun light source: */
-	GLMotif::Margin* enableSunToggleMargin=new GLMotif::Margin("SunToggleMargin",lightSettings,false);
-	enableSunToggleMargin->setAlignment(GLMotif::Alignment(GLMotif::Alignment::HFILL,GLMotif::Alignment::VCENTER));
-	GLMotif::ToggleButton* enableSunToggle=new GLMotif::ToggleButton("SunToggle",enableSunToggleMargin,"Sun Light Source");
-	enableSunToggle->setToggle(enableSun);
-	enableSunToggle->getValueChangedCallbacks().add(this,&CrustaApp::enableSunToggleCallback);
-	enableSunToggleMargin->manageChild();
+    /* Create a toggle button and two sliders to manipulate the sun light source: */
+    GLMotif::Margin* enableSunToggleMargin=new GLMotif::Margin("SunToggleMargin",lightSettings,false);
+    enableSunToggleMargin->setAlignment(GLMotif::Alignment(GLMotif::Alignment::HFILL,GLMotif::Alignment::VCENTER));
+    GLMotif::ToggleButton* enableSunToggle=new GLMotif::ToggleButton("SunToggle",enableSunToggleMargin,"Sun Light Source");
+    enableSunToggle->setToggle(enableSun);
+    enableSunToggle->getValueChangedCallbacks().add(this,&CrustaApp::enableSunToggleCallback);
+    enableSunToggleMargin->manageChild();
 
-	GLMotif::RowColumn* sunBox=new GLMotif::RowColumn("SunBox",lightSettings,false);
-	sunBox->setOrientation(GLMotif::RowColumn::VERTICAL);
-	sunBox->setNumMinorWidgets(2);
-	sunBox->setPacking(GLMotif::RowColumn::PACK_TIGHT);
+    GLMotif::RowColumn* sunBox=new GLMotif::RowColumn("SunBox",lightSettings,false);
+    sunBox->setOrientation(GLMotif::RowColumn::VERTICAL);
+    sunBox->setNumMinorWidgets(2);
+    sunBox->setPacking(GLMotif::RowColumn::PACK_TIGHT);
 
-	sunAzimuthTextField=new GLMotif::TextField("SunAzimuthTextField",sunBox,5);
-	sunAzimuthTextField->setFloatFormat(GLMotif::TextField::FIXED);
-	sunAzimuthTextField->setFieldWidth(3);
-	sunAzimuthTextField->setPrecision(0);
-	sunAzimuthTextField->setValue(double(sunAzimuth));
+    sunAzimuthTextField=new GLMotif::TextField("SunAzimuthTextField",sunBox,5);
+    sunAzimuthTextField->setFloatFormat(GLMotif::TextField::FIXED);
+    sunAzimuthTextField->setFieldWidth(3);
+    sunAzimuthTextField->setPrecision(0);
+    sunAzimuthTextField->setValue(double(sunAzimuth));
 
-	sunAzimuthSlider=new GLMotif::Slider("SunAzimuthSlider",sunBox,GLMotif::Slider::HORIZONTAL,style->fontHeight*10.0f);
-	sunAzimuthSlider->setValueRange(0.0,360.0,1.0);
-	sunAzimuthSlider->setValue(double(sunAzimuth));
-	sunAzimuthSlider->getValueChangedCallbacks().add(this,&CrustaApp::sunAzimuthSliderCallback);
+    sunAzimuthSlider=new GLMotif::Slider("SunAzimuthSlider",sunBox,GLMotif::Slider::HORIZONTAL,style->fontHeight*10.0f);
+    sunAzimuthSlider->setValueRange(0.0,360.0,1.0);
+    sunAzimuthSlider->setValue(double(sunAzimuth));
+    sunAzimuthSlider->getValueChangedCallbacks().add(this,&CrustaApp::sunAzimuthSliderCallback);
 
-	sunElevationTextField=new GLMotif::TextField("SunElevationTextField",sunBox,5);
-	sunElevationTextField->setFloatFormat(GLMotif::TextField::FIXED);
-	sunElevationTextField->setFieldWidth(2);
-	sunElevationTextField->setPrecision(0);
-	sunElevationTextField->setValue(double(sunElevation));
+    sunElevationTextField=new GLMotif::TextField("SunElevationTextField",sunBox,5);
+    sunElevationTextField->setFloatFormat(GLMotif::TextField::FIXED);
+    sunElevationTextField->setFieldWidth(2);
+    sunElevationTextField->setPrecision(0);
+    sunElevationTextField->setValue(double(sunElevation));
 
-	sunElevationSlider=new GLMotif::Slider("SunElevationSlider",sunBox,GLMotif::Slider::HORIZONTAL,style->fontHeight*10.0f);
-	sunElevationSlider->setValueRange(-90.0,90.0,1.0);
-	sunElevationSlider->setValue(double(sunElevation));
-	sunElevationSlider->getValueChangedCallbacks().add(this,&CrustaApp::sunElevationSliderCallback);
+    sunElevationSlider=new GLMotif::Slider("SunElevationSlider",sunBox,GLMotif::Slider::HORIZONTAL,style->fontHeight*10.0f);
+    sunElevationSlider->setValueRange(-90.0,90.0,1.0);
+    sunElevationSlider->setValue(double(sunElevation));
+    sunElevationSlider->getValueChangedCallbacks().add(this,&CrustaApp::sunElevationSliderCallback);
 
-	sunBox->manageChild();
-	lightSettings->manageChild();
+    sunBox->manageChild();
+    lightSettings->manageChild();
 }
 
 void CrustaApp::
@@ -311,20 +312,29 @@ changeColorMapCallback(GLMotif::ColorMap::ColorMapChangedCallbackData* cbData)
 }
 
 void CrustaApp::
+changeElevationRangeCallback(ElevationRangeTool::ChangeCallbackData* cbData)
+{
+    GLColorMap* colorMap = crusta->getColorMap();
+    colorMap->setScalarRange(cbData->min, cbData->max);
+    crusta->touchColorMap();
+}
+
+
+void CrustaApp::
 showVerticalScaleCallback(
     GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 {
     if (cbData->set)
-	{
-		//open the dialog at the same position as the main menu:
-		Vrui::getWidgetManager()->popupPrimaryWidget(verticalScaleDialog,
+    {
+        //open the dialog at the same position as the main menu:
+        Vrui::getWidgetManager()->popupPrimaryWidget(verticalScaleDialog,
             Vrui::getWidgetManager()->calcWidgetTransformation(popMenu));
-	}
-	else
-	{
-		//close the dialog
-		Vrui::popdownPrimaryWidget(verticalScaleDialog);
-	}
+    }
+    else
+    {
+        //close the dialog
+        Vrui::popdownPrimaryWidget(verticalScaleDialog);
+    }
 }
 
 void CrustaApp::
@@ -343,88 +353,88 @@ changeScaleCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 void CrustaApp::
 showLightingDialogCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 {
-	if(cbData->set)
-	{
-		//open the dialog at the same position as the main menu:
-		Vrui::getWidgetManager()->popupPrimaryWidget(lightingDialog,
+    if(cbData->set)
+    {
+        //open the dialog at the same position as the main menu:
+        Vrui::getWidgetManager()->popupPrimaryWidget(lightingDialog,
             Vrui::getWidgetManager()->calcWidgetTransformation(popMenu));
-	}
-	else
-	{
-		//close the dialog:
-		Vrui::popdownPrimaryWidget(lightingDialog);
-	}
+    }
+    else
+    {
+        //close the dialog:
+        Vrui::popdownPrimaryWidget(lightingDialog);
+    }
 }
 
 void CrustaApp::
 updateSun()
 {
-	/* Enable or disable the light source: */
-	if(enableSun)
-		sun->enable();
-	else
-		sun->disable();
+    /* Enable or disable the light source: */
+    if(enableSun)
+        sun->enable();
+    else
+        sun->disable();
 
-	/* Compute the light source's direction vector: */
-	Vrui::Scalar z=Math::sin(Math::rad(sunElevation));
-	Vrui::Scalar xy=Math::cos(Math::rad(sunElevation));
-	Vrui::Scalar x=xy*Math::sin(Math::rad(sunAzimuth));
-	Vrui::Scalar y=xy*Math::cos(Math::rad(sunAzimuth));
-	sun->getLight().position=GLLight::Position(GLLight::Scalar(x),GLLight::Scalar(y),GLLight::Scalar(z),GLLight::Scalar(0));
+    /* Compute the light source's direction vector: */
+    Vrui::Scalar z=Math::sin(Math::rad(sunElevation));
+    Vrui::Scalar xy=Math::cos(Math::rad(sunElevation));
+    Vrui::Scalar x=xy*Math::sin(Math::rad(sunAzimuth));
+    Vrui::Scalar y=xy*Math::cos(Math::rad(sunAzimuth));
+    sun->getLight().position=GLLight::Position(GLLight::Scalar(x),GLLight::Scalar(y),GLLight::Scalar(z),GLLight::Scalar(0));
 }
 
 void CrustaApp::
 enableSunToggleCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 {
-	/* Set the sun enable flag: */
-	enableSun=cbData->set;
+    /* Set the sun enable flag: */
+    enableSun=cbData->set;
 
-	/* Enable/disable all viewers' headlights: */
-	if(enableSun)
-	{
-		for(int i=0;i<Vrui::getNumViewers();++i)
-			Vrui::getViewer(i)->setHeadlightState(false);
-	}
-	else
-	{
-		for(int i=0;i<Vrui::getNumViewers();++i)
-			Vrui::getViewer(i)->setHeadlightState(viewerHeadlightStates[i]);
-	}
+    /* Enable/disable all viewers' headlights: */
+    if(enableSun)
+    {
+        for(int i=0;i<Vrui::getNumViewers();++i)
+            Vrui::getViewer(i)->setHeadlightState(false);
+    }
+    else
+    {
+        for(int i=0;i<Vrui::getNumViewers();++i)
+            Vrui::getViewer(i)->setHeadlightState(viewerHeadlightStates[i]);
+    }
 
-	/* Update the sun light source: */
-	updateSun();
+    /* Update the sun light source: */
+    updateSun();
 
-	Vrui::requestUpdate();
+    Vrui::requestUpdate();
 }
 
 void CrustaApp::
 sunAzimuthSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
-	/* Update the sun azimuth angle: */
-	sunAzimuth=Vrui::Scalar(cbData->value);
+    /* Update the sun azimuth angle: */
+    sunAzimuth=Vrui::Scalar(cbData->value);
 
-	/* Update the sun azimuth value label: */
-	sunAzimuthTextField->setValue(double(cbData->value));
+    /* Update the sun azimuth value label: */
+    sunAzimuthTextField->setValue(double(cbData->value));
 
-	/* Update the sun light source: */
-	updateSun();
+    /* Update the sun light source: */
+    updateSun();
 
-	Vrui::requestUpdate();
+    Vrui::requestUpdate();
 }
 
 void CrustaApp::
 sunElevationSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
-	/* Update the sun elevation angle: */
-	sunElevation=Vrui::Scalar(cbData->value);
+    /* Update the sun elevation angle: */
+    sunElevation=Vrui::Scalar(cbData->value);
 
-	/* Update the sun elevation value label: */
-	sunElevationTextField->setValue(double(cbData->value));
+    /* Update the sun elevation value label: */
+    sunElevationTextField->setValue(double(cbData->value));
 
-	/* Update the sun light source: */
-	updateSun();
+    /* Update the sun light source: */
+    updateSun();
 
-	Vrui::requestUpdate();
+    Vrui::requestUpdate();
 }
 
 
@@ -497,6 +507,16 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
                 this,&CrustaApp::alignSurfaceFrame));
     }
 
+    //connect elevation range tool to the range of the color map
+    ElevationRangeTool* elevationRangeTool =
+        dynamic_cast<ElevationRangeTool*>(cbData->tool);
+    if (elevationRangeTool != NULL)
+    {
+        elevationRangeTool->getChangeCallbacks().add(this,
+            &CrustaApp::changeElevationRangeCallback);
+    }
+
+    //all crusta components get the crusta instance assigned
     CrustaComponent* component = dynamic_cast<CrustaComponent*>(cbData->tool);
     if (component != NULL)
         component->setupComponent(crusta);
@@ -510,10 +530,10 @@ END_CRUSTA
 
 int main(int argc, char* argv[])
 {
-	char** appDefaults = 0; // This is an additional parameter no one ever uses
+    char** appDefaults = 0; // This is an additional parameter no one ever uses
     crusta::CrustaApp app(argc, argv, appDefaults);
 
-	app.run();
+    app.run();
 
     return 0;
 }

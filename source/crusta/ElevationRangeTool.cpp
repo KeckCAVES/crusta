@@ -1,189 +1,230 @@
-#include <crusta/SurfaceTool.h>
+#include <crusta/ElevationRangeTool.h>
+
+#include <cassert>
 
 #include <Comm/MulticastPipe.h>
 #include <Geometry/OrthogonalTransformation.h>
-#include <Vrui/InputGraphManager.h>
+#include <GL/GLTransformationWrappers.h>
 #include <Vrui/ToolManager.h>
+#include <Vrui/DisplayState.h>
 #include <Vrui/Vrui.h>
 
+#include <crusta/checkGl.h>
 #include <crusta/Crusta.h>
 
 BEGIN_CRUSTA
 
 
-SurfaceTool::Factory* SurfaceTool::factory = NULL;
+ElevationRangeTool::Factory* ElevationRangeTool::factory = NULL;
+const Scalar ElevationRangeTool::markerSize              = 0.2;
+const Scalar ElevationRangeTool::selectDistance          = 0.5;
 
-SurfaceTool::
-SurfaceTool(const Vrui::ToolFactory* iFactory,
-            const Vrui::ToolInputAssignment& inputAssignment) :
-    Vrui::TransformTool(iFactory, inputAssignment), CrustaComponent(NULL),
-    projectionFailed(true)
-{
-}
-
-SurfaceTool::
-~SurfaceTool()
+ElevationRangeTool::ChangeCallbackData::
+ChangeCallbackData(ElevationRangeTool* iTool, Scalar iMin, Scalar iMax) :
+    tool(iTool), min(iMin), max(iMax)
 {
 }
 
 
-Vrui::ToolFactory* SurfaceTool::
-init()
+ElevationRangeTool::
+ElevationRangeTool(const Vrui::ToolFactory* iFactory,
+                   const Vrui::ToolInputAssignment& inputAssignment) :
+    Tool(iFactory, inputAssignment),
+    controlPointsSet(0), controlPointsHover(0), controlPointsSelected(0)
 {
-	Vrui::TransformToolFactory* transformToolFactory =
-        dynamic_cast<Vrui::TransformToolFactory*>(
-            Vrui::getToolManager()->loadClass("TransformTool"));
+}
 
-    Factory* surfaceFactory = new Factory("SurfaceTool", "Crusta Surface",
-        transformToolFactory, *Vrui::getToolManager());
+ElevationRangeTool::
+~ElevationRangeTool()
+{
+}
 
-	surfaceFactory->setNumDevices(1);
-	surfaceFactory->setNumButtons(0, transformToolFactory->getNumButtons());
-	surfaceFactory->setNumValuators(0, transformToolFactory->getNumValuators());
 
-    Vrui::getToolManager()->addClass(surfaceFactory,
+Misc::CallbackList& ElevationRangeTool::
+getChangeCallbacks()
+{
+    return changeCallbacks;
+}
+
+
+Vrui::ToolFactory* ElevationRangeTool::
+init(Vrui::ToolFactory* parent)
+{
+    Factory* erFactory = new Factory("ElevationRangeTool",
+        "Elevation Range Tool", parent, *Vrui::getToolManager());
+
+    erFactory->setNumDevices(1);
+    erFactory->setNumButtons(0, 1);
+
+    Vrui::getToolManager()->addClass(erFactory,
         Vrui::ToolManager::defaultToolFactoryDestructor);
 
-    SurfaceTool::factory = surfaceFactory;
+    ElevationRangeTool::factory = erFactory;
 
-    return SurfaceTool::factory;
+    return ElevationRangeTool::factory;
 }
 
 
-void SurfaceTool::
-initialize()
-{
-    //initialize the base tool
-    TransformTool::initialize();
-    //disable the transformed device's glyph
-    Vrui::InputGraphManager* igMan = Vrui::getInputGraphManager();
-    igMan->getInputDeviceGlyph(transformedDevice).disable();
-}
-
-const Vrui::ToolFactory* SurfaceTool::
+const Vrui::ToolFactory* ElevationRangeTool::
 getFactory() const
 {
     return factory;
 }
 
-void SurfaceTool::
+void ElevationRangeTool::
 frame()
 {
-    Vrui::InputDevice* dev = input.getDevice(0);
+    //grab the current tool position and map it to the unscaled globe
+    Point3 pos = getPosition();
+    pos        = crusta->mapToUnscaledGlobe(pos);
 
-    if (transformEnabled)
+    //compute selection distance
+    Scalar scaleFac   = Vrui::getNavigationTransformation().getScaling();
+    Scalar selectDist = selectDistance / scaleFac;
+
+    switch (controlPointsSet)
     {
-        //transform the physical frame to navigation space
-        Vrui::NavTransform physicalFrame = dev->getTransformation();
-        Vrui::NavTransform modelFrame    =
-            Vrui::getInverseNavigationTransformation() * physicalFrame;
-
-        //align the model frame to the surface
-        Point3 surfacePoint;
-        if (Vrui::isMaster())
+        case 1:
         {
-#if 1
-            Ray ray(modelFrame.getOrigin(), modelFrame.getDirection(1));
-            HitResult hit = crusta->intersect(ray);
-            if (hit.isValid())
-            {
-                surfacePoint = ray(hit.getParameter());
-            }
+            Scalar dist = Geometry::dist(pos, ends[0]);
+            if (dist < selectDist)
+                controlPointsHover = 1;
             else
-            {
-                transformedDevice->setTransformation(dev->getTransformation());
-                transformedDevice->setDeviceRayDirection(
-                    dev->getDeviceRayDirection());
-                projectionFailed = true;
-                return;
-            }
-#else
-            surfacePoint = modelFrame.getOrigin();
-            //snapping is done radially, no need to map to the unscaled globe
-            surfacePoint = crusta->snapToSurface(surfacePoint);
-            //the returned point is relative to the unscaled globe
-            surfacePoint = crusta->mapToScaledGlobe(surfacePoint);
-#endif
-
-			if (Vrui::getMainPipe() != NULL)
-                Vrui::getMainPipe()->write<Point3>(surfacePoint);
+                controlPointsHover = 0;
+            break;
         }
-        else
-            Vrui::getMainPipe()->read<Point3>(surfacePoint);
-
-        modelFrame = Vrui::NavTransform(Vector3(surfacePoint),
-            modelFrame.getRotation(), modelFrame.getScaling());
-
-        //transform the aligned frame back to physical space
-        physicalFrame = Vrui::getNavigationTransformation() * modelFrame;
-        transformedDevice->setTransformation(Vrui::TrackerState(
-            physicalFrame.getTranslation(), physicalFrame.getRotation()));
-
-        projectionFailed = false;
+        case 2:
+        {
+            Scalar dist[2] = { Geometry::dist(pos, ends[0]),
+                               Geometry::dist(pos, ends[1]) };
+            if (dist[0]<dist[1] && dist[0]<selectDist)
+                controlPointsHover = 1;
+            else if (dist[1]<dist[0] && dist[1]<selectDist)
+                controlPointsHover = 2;
+            else
+                controlPointsHover = 0;
+            break;
+        }
+        default:
+            break;
     }
-    else
+
+    if (controlPointsSelected != 0)
     {
-        transformedDevice->setTransformation(dev->getTransformation());
-        transformedDevice->setDeviceRayDirection(dev->getDeviceRayDirection());
-        projectionFailed = true;
+        ends[controlPointsSelected-1] = pos;
+        if (controlPointsSet == 2)
+            notifyChange();
     }
 }
 
-void SurfaceTool::
+void ElevationRangeTool::
 display(GLContextData& contextData) const
 {
-    Vrui::NavTransform transformed = transformedDevice->getTransformation();
+    CHECK_GLA
+    //don't draw anything if we don't have any control points yet
+    if (controlPointsSet == 0)
+        return;
 
-    if (projectionFailed)
+    //save relevant GL state and set state for marker rendering
+    glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT);
+
+    glDisable(GL_LIGHTING);
+
+    //go to navigational coordinates
+    glPushMatrix();
+    glLoadMatrix(Vrui::getDisplayState(contextData).modelviewNavigational);
+
+    //compute marker size
+    Scalar scaleFac = Vrui::getNavigationTransformation().getScaling();
+    Scalar size     = markerSize/scaleFac;
+
+    CHECK_GLA
+    //draw the control points
+    for (int i=0; i<controlPointsSet; ++i)
     {
-        glPushAttrib(GL_ENABLE_BIT);
-        glDisable(GL_LIGHTING);
-        glDisable(GL_TEXTURE_2D);
-
-        glColor3f(0.5f, 0.2f, 0.1f);
-
-        const Point3&  o = transformed.getOrigin();
-        Vector3 x        = 0.005*transformed.getDirection(0);
-        Vector3 z        = 0.005*transformed.getDirection(2);
+        if (controlPointsHover == i+1)
+        {
+            glColor3f(0.3f, 0.9f, 0.5f);
+            glLineWidth(2.0f);
+        }
+        else
+        {
+            glColor3f(1.0f, 1.0f, 1.0f);
+            glLineWidth(1.0f);
+        }
 
         glBegin(GL_LINES);
-            glVertex3dv((o-x+z).getComponents());
-            glVertex3dv((o+x-z).getComponents());
-            glVertex3dv((o+x+z).getComponents());
-            glVertex3dv((o-x-z).getComponents());
+            glVertex3f(ends[i][0]-size, ends[i][1],      ends[i][2]);
+            glVertex3f(ends[i][0]+size, ends[i][1],      ends[i][2]);
+            glVertex3f(ends[i][0],      ends[i][1]-size, ends[i][2]);
+            glVertex3f(ends[i][0],      ends[i][1]+size, ends[i][2]);
+            glVertex3f(ends[i][0],      ends[i][1],      ends[i][2]-size);
+            glVertex3f(ends[i][0],      ends[i][1],      ends[i][2]+size);
         glEnd();
+        CHECK_GLA
+    }
 
-        glPopAttrib();
+    //restore coordinate system
+    glPopMatrix();
+    //restore GL state
+    glPopAttrib();
+    CHECK_GLA
+}
+
+void ElevationRangeTool::
+buttonCallback(int deviceIndex, int buttonIndex,
+               Vrui::InputDevice::ButtonCallbackData* cbData)
+{
+    //get the current position
+    Point3 pos = getPosition();
+    pos        = crusta->mapToUnscaledGlobe(pos);
+
+    if (cbData->newButtonState)
+    {
+        switch (controlPointsSet)
+        {
+            case 0:
+                ends[0]               = pos;
+                controlPointsSet      = 1;
+                controlPointsHover    = 1;
+                controlPointsSelected = 1;
+                break;
+            case 1:
+                ends[1]               = pos;
+                controlPointsSet      = 2;
+                controlPointsHover    = 2;
+                controlPointsSelected = 2;
+                break;
+            case 2:
+                ends[controlPointsHover-1] = pos;
+                controlPointsSelected      = controlPointsHover;
+                break;
+            default:
+                break;
+        }
     }
     else
-    {
-        Vrui::NavTransform original    = input.getDevice(0)->getTransformation();
+        controlPointsSelected = 0;
+}
 
-        Point3 oPos = original.getOrigin();
-        Point3 tPos = transformed.getOrigin();
 
-        //make sure that the line is always drawn
-        GLdouble depthRange[2];
-        glGetDoublev(GL_DEPTH_RANGE, depthRange);
-        glDepthRange(0.0, 0.0);
+Point3 ElevationRangeTool::
+getPosition()
+{
+    Vrui::NavTrackerState nav = Vrui::getDeviceTransformation(getDevice(0));
+    Vrui::NavTrackerState::Vector trans = nav.getTranslation();
+    return Point3(trans[0], trans[1], trans[2]);
+}
 
-        glPushAttrib(GL_ENABLE_BIT);
-        glDisable(GL_LIGHTING);
-        glDisable(GL_TEXTURE_2D);
+void ElevationRangeTool::
+notifyChange()
+{
+    assert(controlPointsSet == 2);
+    Scalar min = Vector3(ends[0]).mag() - SPHEROID_RADIUS;
+    Scalar max = Vector3(ends[1]).mag() - SPHEROID_RADIUS;
 
-        if (Geometry::dist(oPos, tPos) < 1.0)
-            glColor3f(0.3f, 0.6f, 0.1f);
-        else
-            glColor3f(0.3f, 0.0f, 0.0f);
-
-        glBegin(GL_LINES);
-            glVertex3dv(oPos.getComponents());
-            glVertex3dv(tPos.getComponents());
-        glEnd();
-
-        glPopAttrib();
-        glDepthRange(depthRange[0], depthRange[1]);
-    }
+    ChangeCallbackData cb(this, min, max);
+    changeCallbacks.call(&cb);
 }
 
 

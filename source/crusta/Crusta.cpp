@@ -8,6 +8,7 @@
 
 #include <crusta/checkGl.h>
 #include <crusta/DataManager.h>
+#include <crusta/ElevationRangeTool.h>
 #include <crusta/map/MapManager.h>
 #include <crusta/QuadCache.h>
 #include <crusta/QuadTerrain.h>
@@ -55,6 +56,8 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
     cache    = new Cache(4096, 1024, this);
     dataMan  = new DataManager(&polyhedron, demFileBase, colorFileBase, this);
     mapMan   = new MapManager(crustaTool, this);
+
+    ElevationRangeTool::init(crustaTool);
 
     globalElevationRange[0] =  Math::Constants<Scalar>::max;
     globalElevationRange[1] = -Math::Constants<Scalar>::max;
