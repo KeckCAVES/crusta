@@ -20,7 +20,7 @@ with the 3D Data Visualizer; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ***********************************************************************/
 
-#include <crusta/ColorMap.h>
+#include <GLMotif/ColorMap.h>
 
 #include <stdio.h>
 #include <Misc/ThrowStdErr.h>
