@@ -16,6 +16,7 @@
 #include <GLMotif/Label.h>
 #include <GLMotif/Margin.h>
 #include <GLMotif/Menu.h>
+#include <GLMotif/PaletteEditor.h>
 #include <GLMotif/PopupMenu.h>
 #include <GLMotif/PopupWindow.h>
 #include <GLMotif/RadioBox.h>
@@ -34,7 +35,6 @@
 
 #include <crusta/Crusta.h>
 #include <crusta/map/MapManager.h>
-#include <crusta/PaletteEditor.h>
 #include <crusta/QuadTerrain.h>
 
 

@@ -10,7 +10,7 @@
 
 #include <crusta/basics.h>
 #include <crusta/ElevationRangeTool.h>
-#include <crusta/ColorMap.h>
+#include <GLMotif/ColorMap.h>
 
 class GLContextData;
 class PaletteEditor;

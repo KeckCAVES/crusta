@@ -1,4 +1,4 @@
-#include <crusta/ColorPicker.h>
+#include <GLMotif/ColorPicker.h>
 
 namespace GLMotif {
 
@@ -16,7 +16,7 @@ ColorChangedCallbackData(ColorPicker* iColorPicker,
 }
 
 ColorPicker::
-ColorPicker(const char* iName, Container* iParent, bool iManageChild=true) :
+ColorPicker(const char* iName, Container* iParent, bool iManageChild) :
     Widget(iName, iParent, false),
     color(1.0, 1.0, 1.0, 1.0), value(1.0),
     marginWidth(0.0), preferredSize(0.0, 0.0, 0.0), isDragging(false)
