@@ -319,6 +319,17 @@ changeElevationRangeCallback(ElevationRangeTool::ChangeCallbackData* cbData)
     crusta->touchColorMap();
 }
 
+void CrustaApp::
+shiftElevationRangeCallback(ElevationRangeShiftTool::ChangeCallbackData* cbData)
+{
+    GLColorMap* colorMap = crusta->getColorMap();
+    Scalar min = colorMap->getScalarRangeMin();
+    Scalar max = colorMap->getScalarRangeMax();
+    Scalar range = (max - min) * 0.5;
+    colorMap->setScalarRange(cbData->height-range, cbData->height+range);
+    crusta->touchColorMap();
+}
+
 
 void CrustaApp::
 showVerticalScaleCallback(
@@ -514,6 +525,14 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
     {
         elevationRangeTool->getChangeCallbacks().add(this,
             &CrustaApp::changeElevationRangeCallback);
+    }
+    //connect the elevation range shift tool to the range of the color map
+    ElevationRangeShiftTool* elevationRangeShiftTool =
+        dynamic_cast<ElevationRangeShiftTool*>(cbData->tool);
+    if (elevationRangeShiftTool != NULL)
+    {
+        elevationRangeShiftTool->getChangeCallbacks().add(this,
+            &CrustaApp::shiftElevationRangeCallback);
     }
 
     //all crusta components get the crusta instance assigned

@@ -33,13 +33,10 @@ public:
     class ColorChangedCallbackData : public CallbackData
     {
     public:
-        ColorChangedCallbackData(ColorHexagon* iHexagon,
-            const Color& iOldColor, const Color& iNewColor);
+        ColorChangedCallbackData(ColorHexagon* iHexagon, const Color& iColor);
 
-        /** previously selected color */
-        Color oldColor;
         /** new selected color */
-        Color newColor;
+        Color color;
     };
 
     ColorHexagon(const char* iName, Container* iParent,
@@ -47,7 +44,7 @@ public:
     virtual ~ColorHexagon();
 
     /** set the color value of the current hexagon */
-    void setValue(Scalar newValue);
+    void setValue(const GLfloat& newValue);
 
     /** changes the margin width */
     void setMarginWidth(GLfloat newMarginWidth);
@@ -58,18 +55,31 @@ public:
     Misc::CallbackList& getColorChangedCallbacks();
 
 private:
+    /** compute the current color */
+    Color computeCurColor();
     /** update the representation of the hexagon */
     void updateHexagon();
+    /** generate the callback for a color change */
+    void notifyColorChanged();
+    /** determine the wedge and coordinates for a widget location */
+    bool processPosition(const Point& pos);
 
-    /** non-value scaled corner colors */
-    static const Color baseColors[6];
+    /** indices to the corners of the hexagon's wedges */
+    static const int wedges[6][3];
+    /** non-value scaled center and corner colors */
+    static const Color baseColors[7];
 
-    /** position of the hexagon corners */
-    Vector corners[6];
-    /** scaled color of the hexagon corners */
-    Color colors[6];
+    /** position of the hexagon center and corners */
+    Vector corners[7];
+    /** scaled color of the hexagon center and corners */
+    Color colors[7];
     /** color value of the current hexagon */
-    Scalar value;
+    GLfloat value;
+
+    /** wedge containing the current color */
+    int curWedge;
+    /** barycentric coordinates of the current color */
+    GLfloat curCoords[3];
 
     /** width of margin around color map area */
     GLfloat marginWidth;
