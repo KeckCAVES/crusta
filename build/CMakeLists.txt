@@ -42,7 +42,6 @@ add_library(CrustaCore SHARED
     ../include/crusta/DataManager.h
     ../include/crusta/DemSpecs.h
     ../include/crusta/ElevationRangeTool.h
-    ../include/crusta/ElevationRangeShiftTool.h
     ../include/crusta/Ellipsoid.h
     ../include/crusta/FocusViewEvaluator.h
     ../include/crusta/FrustumVisibility.h
@@ -91,7 +90,6 @@ add_library(CrustaCore SHARED
     ../source/crusta/DataManager.cpp
     ../source/crusta/DemSpecs.cpp
     ../source/crusta/ElevationRangeTool.cpp
-    ../source/crusta/ElevationRangeShiftTool.cpp
     ../source/crusta/FocusViewEvaluator.cpp
     ../source/crusta/FrustumVisibility.cpp
     ../source/crusta/LightingShader.cpp

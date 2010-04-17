@@ -9,8 +9,6 @@
 #include <Vrui/Geometry.h>
 
 #include <crusta/basics.h>
-#include <crusta/ElevationRangeTool.h>
-#include <crusta/ElevationRangeShiftTool.h>
 #include <GLMotif/ColorMap.h>
 
 class GLContextData;
@@ -53,10 +51,6 @@ private:
         GLMotif::Button::SelectCallbackData* cbData);
     void changeColorMapCallback(
         GLMotif::ColorMap::ColorMapChangedCallbackData* cbData);
-    void changeElevationRangeCallback(
-        ElevationRangeTool::ChangeCallbackData* cbData);
-    void shiftElevationRangeCallback(
-        ElevationRangeShiftTool::ChangeCallbackData* cbData);
 
     void showVerticalScaleCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);

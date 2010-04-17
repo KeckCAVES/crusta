@@ -58,6 +58,7 @@ getColorChangedCallbacks()
 Vector ColorPicker::
 calcNaturalSize() const
 {
+    return Vector();
 }
 
 void ColorPicker::
@@ -73,6 +74,7 @@ draw(GLContextData& contextData) const
 bool ColorPicker::
 findRecipient(Event& event)
 {
+    return false;
 }
 
 void ColorPicker::

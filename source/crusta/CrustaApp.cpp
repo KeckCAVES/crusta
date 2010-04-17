@@ -226,8 +226,10 @@ produceLightingDialog()
 {
     const GLMotif::StyleSheet* style =
         Vrui::getWidgetManager()->getStyleSheet();
-    lightingDialog=new GLMotif::PopupWindow("LightingDialog",Vrui::getWidgetManager(),"Light Settings");
-    GLMotif::RowColumn* lightSettings=new GLMotif::RowColumn("LightSettings",lightingDialog,false);
+    lightingDialog=new GLMotif::PopupWindow("LightingDialog",
+        Vrui::getWidgetManager(), "Light Settings");
+    GLMotif::RowColumn* lightSettings=new GLMotif::RowColumn("LightSettings",
+        lightingDialog, false);
     lightSettings->setNumMinorWidgets(2);
 
     /* Create a toggle button and two sliders to manipulate the sun light source: */
@@ -308,25 +310,6 @@ changeColorMapCallback(GLMotif::ColorMap::ColorMapChangedCallbackData* cbData)
 {
     GLColorMap* colorMap = crusta->getColorMap();
     cbData->colorMap->exportColorMap(*colorMap);
-    crusta->touchColorMap();
-}
-
-void CrustaApp::
-changeElevationRangeCallback(ElevationRangeTool::ChangeCallbackData* cbData)
-{
-    GLColorMap* colorMap = crusta->getColorMap();
-    colorMap->setScalarRange(cbData->min, cbData->max);
-    crusta->touchColorMap();
-}
-
-void CrustaApp::
-shiftElevationRangeCallback(ElevationRangeShiftTool::ChangeCallbackData* cbData)
-{
-    GLColorMap* colorMap = crusta->getColorMap();
-    Scalar min = colorMap->getScalarRangeMin();
-    Scalar max = colorMap->getScalarRangeMax();
-    Scalar range = (max - min) * 0.5;
-    colorMap->setScalarRange(cbData->height-range, cbData->height+range);
     crusta->touchColorMap();
 }
 
@@ -516,23 +499,6 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
         surfaceNavigationTool->setAlignFunction(
             Misc::createFunctionCall<Vrui::NavTransform&,CrustaApp>(
                 this,&CrustaApp::alignSurfaceFrame));
-    }
-
-    //connect elevation range tool to the range of the color map
-    ElevationRangeTool* elevationRangeTool =
-        dynamic_cast<ElevationRangeTool*>(cbData->tool);
-    if (elevationRangeTool != NULL)
-    {
-        elevationRangeTool->getChangeCallbacks().add(this,
-            &CrustaApp::changeElevationRangeCallback);
-    }
-    //connect the elevation range shift tool to the range of the color map
-    ElevationRangeShiftTool* elevationRangeShiftTool =
-        dynamic_cast<ElevationRangeShiftTool*>(cbData->tool);
-    if (elevationRangeShiftTool != NULL)
-    {
-        elevationRangeShiftTool->getChangeCallbacks().add(this,
-            &CrustaApp::shiftElevationRangeCallback);
     }
 
     //all crusta components get the crusta instance assigned
