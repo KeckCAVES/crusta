@@ -26,17 +26,17 @@ vec4 read(inout float coord)
 #define NORMAL   1
 #define TWIST    1
 #define COVERAGE 0
-#define COLORIZE_COVERAGE 1
+#define COLORIZE_COVERAGE 0
 
 #define U_SCALE 0.15
 #define V_SCALE 3.0
 
-#define computeLine computeLineOld
+#define computeLine computeLineNew
 
 void computeLineNew(in vec4 symbolOS, in vec4 startCP, in vec4 endCP,
                  in vec3 sectionNormal, inout vec4 color)
 {
-    //- Compute lateral coordinate v using simplified formula:
+//- Compute lateral coordinate v using simplified formula:
 
     // Compute v without taking distortion into account:
     float v = dot(position - startCP.xyz, sectionNormal);
@@ -211,7 +211,7 @@ void main()
 #if COLORIZE_COVERAGE
         color = vec4(0.2, 0.8, 0.4, 0.2);
 #endif //COLORIZE_COVERAGE
-        computeLine(symbolOS, startCP, endCP, sectionNormal, color);
+        computeLine(symbolOS, startCP, endCP, -sectionNormal, color);
     }
     else
     {
@@ -232,7 +232,7 @@ void main()
                 vec4 endCP         = read(coord);
                 vec3 sectionNormal = read(coord).xyz;
 
-                computeLine(symbolOS, startCP, endCP, sectionNormal, color);
+                computeLine(symbolOS, startCP, endCP, -sectionNormal, color);
 
                 if (j == segmentsMax)
                     break;
