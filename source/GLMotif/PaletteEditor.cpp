@@ -90,6 +90,18 @@ void PaletteEditor::removeControlPointCallback(Misc::CallbackData* cbData)
     colorMap->deleteSelectedControlPoint();
     }
 
+void PaletteEditor::loadPaletteCallback(Misc::CallbackData*)
+{
+    GLMotif::FileSelectionDialog* fileDialog =
+        new GLMotif::FileSelectionDialog(Vrui::getWidgetManager(),
+                                         "Load Palette", 0, ".pal");
+    fileDialog->getOKCallbacks().add(this, &PaletteEditor::loadFileOKCallback);
+    fileDialog->getCancelCallbacks().add(this,
+        &PaletteEditor::loadFileCancelCallback);
+    Vrui::getWidgetManager()->popupPrimaryWidget(fileDialog,
+        Vrui::getWidgetManager()->calcWidgetTransformation(this));
+}
+
 void PaletteEditor::savePaletteCallback(Misc::CallbackData* cbData)
 {
     try
@@ -102,6 +114,23 @@ void PaletteEditor::savePaletteCallback(Misc::CallbackData* cbData)
         /* Ignore errors and carry on: */
     }
 }
+
+void PaletteEditor::loadFileOKCallback(
+    GLMotif::FileSelectionDialog::OKCallbackData* cbData)
+{
+    //load the selected palette
+    loadPalette(cbData->selectedFileName.c_str());
+    //destroy the file selection dialog
+    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
+}
+
+void PaletteEditor::loadFileCancelCallback(
+    GLMotif::FileSelectionDialog::CancelCallbackData* cbData)
+{
+    //destroy the file selection dialog
+    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
+}
+
 
 PaletteEditor::PaletteEditor(void)
     :GLMotif::PopupWindow("PaletteEditorPopup",Vrui::getWidgetManager(),"Palette Editor"),
@@ -191,6 +220,9 @@ PaletteEditor::PaletteEditor(void)
     GLMotif::Button* removeControlPointButton=new GLMotif::Button("RemoveControlPointButton",buttonBox,"Remove Control Point");
     removeControlPointButton->getSelectCallbacks().add(this,&PaletteEditor::removeControlPointCallback);
 
+    GLMotif::Button* loadPaletteButton=new GLMotif::Button("LoadPaletteButton",buttonBox,"Load Palette");
+    loadPaletteButton->getSelectCallbacks().add(this,&PaletteEditor::loadPaletteCallback);
+
     GLMotif::Button* savePaletteButton=new GLMotif::Button("SavePaletteButton",buttonBox,"Save Palette");
     savePaletteButton->getSelectCallbacks().add(this,&PaletteEditor::savePaletteCallback);
 
@@ -222,9 +254,9 @@ void PaletteEditor::createPalette(const std::vector<GLMotif::ColorMap::ControlPo
     colorMap->createColorMap(controlPoints);
     }
 
-void PaletteEditor::loadPalette(const char* paletteFileName,const PaletteEditor::ValueRange& newValueRange)
+void PaletteEditor::loadPalette(const char* paletteFileName)
     {
-    colorMap->loadColorMap(paletteFileName,newValueRange);
+    colorMap->loadColorMap(paletteFileName, GLMotif::ColorMap::ValueRange(0,1));
     }
 
 void PaletteEditor::savePalette(const char* paletteFileName) const

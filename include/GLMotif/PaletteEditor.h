@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #define PALETTEEDITOR_INCLUDED
 
 #include <Misc/CallbackList.h>
+#include <GLMotif/FileSelectionDialog.h>
 #include <GLMotif/PopupWindow.h>
 
 #include <GLMotif/ColorMap.h>
@@ -74,7 +75,14 @@ class PaletteEditor:public GLMotif::PopupWindow
     void colorMapChangedCallback(Misc::CallbackData* cbData);
     void colorSliderValueChangedCallback(Misc::CallbackData* cbData);
     void removeControlPointCallback(Misc::CallbackData* cbData);
+    void loadPaletteCallback(Misc::CallbackData* cbData);
     void savePaletteCallback(Misc::CallbackData* cbData);
+
+    void loadFileOKCallback(
+        GLMotif::FileSelectionDialog::OKCallbackData* cbData);
+    void loadFileCancelCallback(
+        GLMotif::FileSelectionDialog::CancelCallbackData* cbData);
+
 
     /* Constructors and destructors: */
     public:
@@ -93,7 +101,7 @@ class PaletteEditor:public GLMotif::PopupWindow
     void setPalette(const Storage* newPalette); // Sets a new palette
     void createPalette(ColorMapCreationType colorMapType,const ValueRange& newValueRange); // Creates a standard palette
     void createPalette(const std::vector<GLMotif::ColorMap::ControlPoint>& controlPoints); // Creates a palette from the given color map control point vector
-    void loadPalette(const char* paletteFileName,const ValueRange& newValueRange); // Loads a palette from a palette file
+    void loadPalette(const char* paletteFileName); // Loads a palette from a palette file
     void savePalette(const char* paletteFileName) const; // Saves the current palette to a palette file
     Misc::CallbackList& getColorMapChangedCallbacks(void) // Returns list of color map change callbacks
         {

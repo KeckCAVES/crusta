@@ -621,7 +621,7 @@ loadCallback(GLMotif::Button::SelectCallbackData* cbData)
     //create a file selection dialog and connect callbacks to process loading
     GLMotif::FileSelectionDialog* fileDialog =
         new GLMotif::FileSelectionDialog(Vrui::getWidgetManager(),
-                                         "Load Range File", 0, NULL);
+                                         "Load Range File", 0, ".rng");
     fileDialog->getOKCallbacks().add(this,
                                      &ElevationRangeTool::loadFileOKCallback);
     fileDialog->getCancelCallbacks().add(this,
