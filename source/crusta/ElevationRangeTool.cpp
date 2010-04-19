@@ -13,6 +13,7 @@
 #include <GLMotif/PopupWindow.h>
 #include <GLMotif/RowColumn.h>
 #include <GLMotif/StyleSheet.h>
+#include <GLMotif/TextField.h>
 #include <GLMotif/ToggleButton.h>
 #include <GLMotif/WidgetManager.h>
 #include <Misc/CreateNumberedFileName.h>
@@ -65,26 +66,55 @@ ElevationRangeTool(const Vrui::ToolFactory* iFactory,
 
 //- create the direct control group
     GLMotif::RowColumn* direct = new GLMotif::RowColumn("ERdirect", top, false);
-    direct->setNumMinorWidgets(3);
+    direct->setNumMinorWidgets(5);
 
     //create the two sliders for direct control of the range
     new GLMotif::Label("ERmaxLabelName", direct, "Max:");
-    rangeLabels[1]  = new GLMotif::Label("ERmaxLabel", direct, "-");
+    rangeLabels[1] = new GLMotif::TextField("ERmaxLabel", direct, 9);
+    rangeLabels[1]->setFloatFormat(GLMotif::TextField::FIXED);
+    rangeLabels[1]->setFieldWidth(9);
+    rangeLabels[1]->setPrecision(2);
+
+    GLMotif::Button* maxMinus = new GLMotif::Button("ERmaxMinusButton", direct,
+                                                    "-");
+    maxMinus->getSelectCallbacks().add(this,
+                                       &ElevationRangeTool::plusMinusCallback);
+
     rangeSliders[1] = new GLMotif::Slider("ERmaxSlider", direct,
         GLMotif::Slider::HORIZONTAL, 10.0 * style->fontHeight);
     rangeSliders[1]->setValue(0.0);
-    rangeSliders[1]->setValueRange(-3.0, 3.0, 0.00001);
+    rangeSliders[1]->setValueRange(-2.0, 2.0, 0.00001);
     rangeSliders[1]->getDraggingCallbacks().add(this,
         &ElevationRangeTool::dragCallback);
 
+    GLMotif::Button* maxPlus = new GLMotif::Button("ERmaxPlusButton", direct,
+                                                   "+");
+    maxPlus->getSelectCallbacks().add(this,
+                                      &ElevationRangeTool::plusMinusCallback);
+
+
     new GLMotif::Label("ERminLabelName", direct, "Min:");
-    rangeLabels[0]  = new GLMotif::Label("ERminLabel", direct, "-");
+    rangeLabels[0] = new GLMotif::TextField("ERminLabel", direct, 9);
+    rangeLabels[0]->setFloatFormat(GLMotif::TextField::FIXED);
+    rangeLabels[0]->setFieldWidth(9);
+    rangeLabels[0]->setPrecision(2);
+
+    GLMotif::Button* minMinus = new GLMotif::Button("ERminMinusButton", direct,
+                                                    "-");
+    minMinus->getSelectCallbacks().add(this,
+                                       &ElevationRangeTool::plusMinusCallback);
+
     rangeSliders[0] = new GLMotif::Slider("ERminSlider", direct,
         GLMotif::Slider::HORIZONTAL, 10.0 * style->fontHeight);
     rangeSliders[0]->setValue(0.0);
-    rangeSliders[0]->setValueRange(-3.0, 3.0, 0.00001);
+    rangeSliders[0]->setValueRange(-2.0, 2.0, 0.00001);
     rangeSliders[0]->getDraggingCallbacks().add(this,
         &ElevationRangeTool::dragCallback);
+
+    GLMotif::Button* minPlus = new GLMotif::Button("ERminPlusButton", direct,
+                                                   "+");
+    minPlus->getSelectCallbacks().add(this,
+                                      &ElevationRangeTool::plusMinusCallback);
 
     direct->manageChild();
 
@@ -494,13 +524,8 @@ frameShift(const Point3& pos)
 void ElevationRangeTool::
 updateLabels(const Scalar& min, const Scalar& max)
 {
-    std::ostringstream oss;
-    oss.precision(8);
-    oss << min;
-    rangeLabels[0]->setLabel(oss.str().c_str());
-    oss.str("");
-    oss << max;
-    rangeLabels[1]->setLabel(oss.str().c_str());
+    rangeLabels[0]->setValue(min);
+    rangeLabels[1]->setValue(max);
 }
 
 void ElevationRangeTool::
@@ -548,6 +573,30 @@ dragCallback(GLMotif::Slider::DraggingCallbackData* cbData)
             return;
     }
 }
+
+void ElevationRangeTool::
+plusMinusCallback(GLMotif::Button::SelectCallbackData* cbData)
+{
+    //get the current range from the color map
+    GLColorMap* colorMap = crusta->getColorMap();
+    Scalar newMin        = colorMap->getScalarRangeMin();
+    Scalar newMax        = colorMap->getScalarRangeMax();
+
+    if (strcmp(cbData->button->getName(), "ERmaxMinusButton") == 0)
+        newMax = floor(newMax - 1.0);
+    else if (strcmp(cbData->button->getName(), "ERmaxPlusButton") == 0)
+        newMax = floor(newMax + 1.0);
+    else if (strcmp(cbData->button->getName(), "ERminMinusButton") == 0)
+        newMin = floor(newMin - 1.0);
+    else if (strcmp(cbData->button->getName(), "ERminPlusButton") == 0)
+        newMin = floor(newMin + 1.0);
+
+    //set the new min max in the color map
+    colorMap->setScalarRange(newMin, newMax);
+    crusta->touchColorMap();
+
+    //update the displayed min/max
+    updateLabels(newMin, newMax);}
 
 void ElevationRangeTool::
 tickCallback(Misc::TimerEventScheduler::CallbackData* cbData)

@@ -14,7 +14,7 @@
 
 namespace GLMotif
 {
-    class Label;
+    class TextField;
     class PopupWindow;
 }
 
@@ -76,6 +76,8 @@ protected:
     void modeCallback(GLMotif::RadioBox::ValueChangedCallbackData* cbData);
     /** callback to process dragging of the direct range sliders */
     void dragCallback(GLMotif::Slider::DraggingCallbackData* cbData);
+    /** callback to process pressing the +/- buttons on the range sliders */
+    void plusMinusCallback(GLMotif::Button::SelectCallbackData* cbData);
     /** callback to process timed manipulation of min/max through sliders */
     void tickCallback(Misc::TimerEventScheduler::CallbackData* cbData);
     /** callback to process loading an elevation range from file */
@@ -114,7 +116,7 @@ protected:
     /** popup window for modifying the modes and the ranges directly */
     GLMotif::PopupWindow* dialog;
     /** text fields displaying the current min/max values */
-    GLMotif::Label* rangeLabels[2];
+    GLMotif::TextField* rangeLabels[2];
     /** direct adjustment sliders */
     GLMotif::Slider* rangeSliders[2];
 

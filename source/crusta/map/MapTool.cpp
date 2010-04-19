@@ -259,7 +259,7 @@ void MapTool::
 display(GLContextData& contextData) const
 {
     Shape*& curShape = crusta->getMapManager()->getActiveShape(toolId);
-    if (curShape == NULL)
+    if (curShape == NULL && curShape->getControlPoints().size()<1)
         return;
 
     GLint activeTexture;
@@ -275,7 +275,7 @@ display(GLContextData& contextData) const
     glDepthRange(0.0, 0.0);
 
     //compute the centroids
-    Point3 centroid;
+    Point3 centroid(0);
     const Point3s& controlPoints = curShape->getControlPoints();
     int numPoints                = static_cast<int>(controlPoints.size());
     Point3s cps;
