@@ -54,7 +54,6 @@ setValue(const GLfloat& newValue)
 {
     value = newValue;
     updateHexagon();
-    notifyColorChanged();
 }
 
 void ColorHexagon::

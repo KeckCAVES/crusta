@@ -50,15 +50,14 @@ void PaletteEditor::selectedControlPointChangedCallback(Misc::CallbackData* cbDa
         controlPointValue->setValue(colorMap->getSelectedControlPointValue());
         GLMotif::ColorMap::ColorMapValue colorValue=colorMap->getSelectedControlPointColorValue();
         colorPanel->setBackgroundColor(colorValue);
-        for(int i=0;i<4;++i)
-            colorSliders[i]->setValue(colorValue[i]);
+        colorPicker->setCurrentColor(colorValue);
         }
     else
         {
         controlPointValue->setLabel("");
-        colorPanel->setBackgroundColor(GLMotif::Color(0.5f,0.5f,0.5f));
-        for(int i=0;i<4;++i)
-            colorSliders[i]->setValue(0.5);
+        GLMotif::ColorMap::ColorMapValue color(0.5f,0.5f,0.5f, 1.0f);
+        colorPanel->setBackgroundColor(color);
+        colorPicker->setCurrentColor(color);
         }
     }
 
@@ -68,21 +67,17 @@ void PaletteEditor::colorMapChangedCallback(Misc::CallbackData* cbData)
         {
         /* Copy the updated value of the selected control point to the color editor: */
         controlPointValue->setValue(colorMap->getSelectedControlPointValue());
-        colorSliders[3]->setValue(colorMap->getSelectedControlPointColorValue()[3]);
+        colorPicker->setCurrentColor(colorMap->getSelectedControlPointColorValue());
         }
     }
 
-void PaletteEditor::colorSliderValueChangedCallback(Misc::CallbackData* cbData)
-    {
-    /* Calculate the new selected control point color: */
-    GLMotif::ColorMap::ColorMapValue newColor;
-    for(int i=0;i<4;++i)
-        newColor[i]=colorSliders[i]->getValue();
-
-    /* Copy the new color value to the color panel and the selected control point: */
-    colorPanel->setBackgroundColor(newColor);
-    colorMap->setSelectedControlPointColorValue(newColor);
-    }
+void PaletteEditor::colorPickerValueChangedCallback(
+    GLMotif::ColorPicker::ColorChangedCallbackData* cbData)
+{
+    //copy the new color value to the color panel and the selected control point
+    colorPanel->setBackgroundColor(cbData->newColor);
+    colorMap->setSelectedControlPointColorValue(cbData->newColor);
+}
 
 void PaletteEditor::removeControlPointCallback(Misc::CallbackData* cbData)
     {
@@ -136,9 +131,6 @@ PaletteEditor::PaletteEditor(void)
     :GLMotif::PopupWindow("PaletteEditorPopup",Vrui::getWidgetManager(),"Palette Editor"),
      colorMap(0),controlPointValue(0),colorPanel(0)
     {
-    for(int i=0;i<4;++i)
-        colorSliders[i]=0;
-
     const GLMotif::StyleSheet& ss=*Vrui::getWidgetManager()->getStyleSheet();
 
     /* Create the palette editor GUI: */
@@ -180,34 +172,16 @@ PaletteEditor::PaletteEditor(void)
 
     controlPointData->manageChild();
 
-    GLMotif::RowColumn* colorSlidersBox=new GLMotif::RowColumn("ColorSliders",colorEditor,false);
-    colorSlidersBox->setOrientation(GLMotif::RowColumn::HORIZONTAL);
-    colorSlidersBox->setPacking(GLMotif::RowColumn::PACK_GRID);
+    GLMotif::RowColumn* pickerBox=new GLMotif::RowColumn("ColorPickerBox",colorEditor,false);
 
-    colorSliders[0]=new GLMotif::Slider("RedSlider",colorSlidersBox,GLMotif::Slider::VERTICAL,ss.fontHeight*5.0f);
-    colorSliders[0]->setSliderColor(GLMotif::Color(1.0f,0.0f,0.0f));
-    colorSliders[0]->setValueRange(0.0,1.0,0.01);
-    colorSliders[0]->setValue(0.5);
-    colorSliders[0]->getValueChangedCallbacks().add(this,&PaletteEditor::colorSliderValueChangedCallback);
+    colorPicker = new GLMotif::ColorPicker("ColorPicker",
+        pickerBox, true);
+    colorPicker->getColorChangedCallbacks().add(this,
+        &PaletteEditor::colorPickerValueChangedCallback);
 
-    colorSliders[1]=new GLMotif::Slider("GreenSlider",colorSlidersBox,GLMotif::Slider::VERTICAL,ss.fontHeight*5.0f);
-    colorSliders[1]->setSliderColor(GLMotif::Color(0.0f,1.0f,0.0f));
-    colorSliders[1]->setValueRange(0.0,1.0,0.01);
-    colorSliders[1]->setValue(0.5);
-    colorSliders[1]->getValueChangedCallbacks().add(this,&PaletteEditor::colorSliderValueChangedCallback);
+    pickerBox->setOrientation(GLMotif::RowColumn::HORIZONTAL);
 
-    colorSliders[2]=new GLMotif::Slider("BlueSlider",colorSlidersBox,GLMotif::Slider::VERTICAL,ss.fontHeight*5.0f);
-    colorSliders[2]->setSliderColor(GLMotif::Color(0.0f,0.0f,1.0f));
-    colorSliders[2]->setValueRange(0.0,1.0,0.01);
-    colorSliders[2]->setValue(0.5);
-    colorSliders[2]->getValueChangedCallbacks().add(this,&PaletteEditor::colorSliderValueChangedCallback);
-
-    colorSliders[3]=new GLMotif::Slider("AlphaSlider",colorSlidersBox,GLMotif::Slider::VERTICAL,ss.fontHeight*5.0f);
-    colorSliders[3]->setValueRange(0.0,1.0,0.01);
-    colorSliders[3]->setValue(0.5);
-    colorSliders[3]->getValueChangedCallbacks().add(this,&PaletteEditor::colorSliderValueChangedCallback);
-
-    colorSlidersBox->manageChild();
+    pickerBox->manageChild();
 
     colorEditor->manageChild();
 

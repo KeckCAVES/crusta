@@ -7,13 +7,17 @@
 #include <Misc/CallbackList.h>
 #include <GL/gl.h>
 #include <GL/GLColor.h>
+#include <GLMotif/ColorHexagon.h>
+#include <GLMotif/RowColumn.h>
+#include <GLMotif/Slider.h>
 #include <GLMotif/Types.h>
-#include <GLMotif/Widget.h>
 
 
 namespace GLMotif {
 
-class ColorPicker : public Widget
+class Label;
+
+class ColorPicker : public RowColumn
 {
 public:
     /** type for colors with opacity values */
@@ -47,43 +51,36 @@ public:
     /** set the current color of the picker */
     void setCurrentColor(const Color& currentColor);
 
-    /** changes the margin width */
-    void setMarginWidth(GLfloat newMarginWidth);
-    /** sets a new preferred size */
-    void setPreferredSize(const Vector& newPreferredSize);
-
     /** returns list of color map change callbacks */
     Misc::CallbackList& getColorChangedCallbacks();
 
 private:
+    /** update the hexagon/slider representation of the current color */
+    void updateWidgets();
+
+    /** callback to process change in color selection from the hexagon */
+    void colorpickCallback(ColorHexagon::ColorChangedCallbackData* cbData);
+    /** callback to process change in the value slider */
+    void valueCallback(Slider::ValueChangedCallbackData* cbData);
+    /** callback to process change in the color sliders */
+    void colorSliderCallback(Slider::ValueChangedCallbackData* cbData);
+
     /** the current color */
     Color color;
     /** the current value of the color */
     Scalar value;
 
-    /** width of margin around color map area */
-    GLfloat marginWidth;
-    /** the color picker's preferred size */
-    Vector preferredSize;
-    /** position and size of color map area */
-    Box colorMapAreaBox;
+    /** the color picking hexagon */
+    ColorHexagon* hexagon;
+    /** the color value slider */
+    Slider* valueSlider;
+    /** labels to show the current RGBA values */
+    Label* rgbaLabels[4];
+    /** sliders to directly modify the RGBA channels of the color */
+    Slider* rgbaSliders[4];
 
     /** list of callbacks to be called when the color changes */
     Misc::CallbackList colorChangedCallbacks;
-
-    /** flag whether a color selector is being dragged */
-    bool isDragging;
-
-
-//- Inherited from Widget
-public:
-    virtual Vector calcNaturalSize() const;
-    virtual void resize(const Box& newExterior);
-    virtual void draw(GLContextData& contextData) const;
-    virtual bool findRecipient(Event& event);
-    virtual void pointerButtonDown(Event& event);
-    virtual void pointerButtonUp(Event& event);
-    virtual void pointerMotion(Event& event);
 };
 
 } //end namespace GLMotif

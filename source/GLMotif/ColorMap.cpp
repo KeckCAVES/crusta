@@ -91,7 +91,7 @@ void ColorMap::updateControlPoints(void)
     GLfloat x1=colorMapAreaBox.getCorner(0)[0];
     GLfloat x2=colorMapAreaBox.getCorner(1)[0];
     GLfloat y1=colorMapAreaBox.getCorner(0)[1];
-    GLfloat y2=colorMapAreaBox.getCorner(1)[1];
+    GLfloat y2=colorMapAreaBox.getCorner(2)[1];
     for(ControlPoint* cpPtr=&first;cpPtr!=0;cpPtr=cpPtr->right)
         {
         cpPtr->x=GLfloat((cpPtr->value-valueRange.first)/(valueRange.second-valueRange.first))*(x2-x1)+x1;

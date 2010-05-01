@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <GLMotif/PopupWindow.h>
 
 #include <GLMotif/ColorMap.h>
+#include <GLMotif/ColorPicker.h>
 
 /* Forward declarations: */
 namespace Misc {
@@ -66,14 +67,13 @@ class PaletteEditor:public GLMotif::PopupWindow
     GLMotif::ColorMap* colorMap; // The color map widget
     GLMotif::TextField* controlPointValue; // The data value of the currently selected control point
     GLMotif::Blind* colorPanel; // The control point color display widget
-    GLMotif::Slider* colorSliders[4]; // The color selection slider widgets (R, G, B, alpha)
-    GLMotif::TextField* rangeValue[2];
-    GLMotif::Slider* rangeSliders[2];
+    GLMotif::ColorPicker* colorPicker; // The color picker widget
 
     /* Private methods: */
     void selectedControlPointChangedCallback(Misc::CallbackData* cbData);
     void colorMapChangedCallback(Misc::CallbackData* cbData);
-    void colorSliderValueChangedCallback(Misc::CallbackData* cbData);
+    void colorPickerValueChangedCallback(
+        GLMotif::ColorPicker::ColorChangedCallbackData* cbData);
     void removeControlPointCallback(Misc::CallbackData* cbData);
     void loadPaletteCallback(Misc::CallbackData* cbData);
     void savePaletteCallback(Misc::CallbackData* cbData);
