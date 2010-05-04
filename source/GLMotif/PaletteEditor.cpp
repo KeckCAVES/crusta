@@ -150,7 +150,7 @@ PaletteEditor::PaletteEditor(void)
     /* Create the RGB color editor: */
     GLMotif::RowColumn* colorEditor=new GLMotif::RowColumn("ColorEditor",colorMapDialog,false);
     colorEditor->setOrientation(GLMotif::RowColumn::HORIZONTAL);
-    colorEditor->setAlignment(GLMotif::Alignment::LEFT);
+    colorEditor->setAlignment(GLMotif::Alignment::HCENTER);
 
     GLMotif::RowColumn* controlPointData=new GLMotif::RowColumn("ControlPointData",colorEditor,false);
     controlPointData->setOrientation(GLMotif::RowColumn::VERTICAL);
@@ -173,6 +173,7 @@ PaletteEditor::PaletteEditor(void)
     controlPointData->manageChild();
 
     GLMotif::RowColumn* pickerBox=new GLMotif::RowColumn("ColorPickerBox",colorEditor,false);
+
 
     colorPicker = new GLMotif::ColorPicker("ColorPicker",
         pickerBox, true);

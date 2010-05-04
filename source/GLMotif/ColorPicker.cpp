@@ -12,6 +12,8 @@
 
 namespace GLMotif {
 
+static const GLfloat COLORPICKER_MIN_VALUE = 0.0001;
+
 ColorPicker::CallbackData::
 CallbackData(ColorPicker* iColorPicker) :
     colorPicker(iColorPicker)
@@ -33,18 +35,20 @@ ColorPicker(const char* iName, Container* iParent, bool iManageChild) :
     const GLMotif::StyleSheet* style =
         Vrui::getWidgetManager()->getStyleSheet();
 
-    setNumMinorWidgets(5);
+    setNumMinorWidgets(2);
 
     RowColumn* hexaRoot = new RowColumn("pickerHexaRoot", this, false);
     hexaRoot->setNumMinorWidgets(1);
-    hexagon = new ColorHexagon("pickerHexagon", hexaRoot, false);
+    hexagon = new ColorHexagon("pickerHexagon", hexaRoot, true);
     hexagon->setValue(1.0);
+    hexagon->setPreferredSize(GLMotif::Vector(style->fontHeight*10.0,
+                                              style->fontHeight*10.0, 0.0f));
     hexagon->getColorChangedCallbacks().add(this,
                                             &ColorPicker::colorpickCallback);
     valueSlider = new Slider("pickerHexaSlider", hexaRoot,
                              Slider::HORIZONTAL, 10.0*style->fontHeight);
     valueSlider->setValue(1.0);
-    valueSlider->setValueRange(0.0, 1.0, 0.01);
+    valueSlider->setValueRange(COLORPICKER_MIN_VALUE, 1.0, 0.01);
     valueSlider->getValueChangedCallbacks().add(this,
         &ColorPicker::valueCallback);
 
@@ -68,7 +72,7 @@ ColorPicker(const char* iName, Container* iParent, bool iManageChild) :
                                    5.0f*style->fontHeight);
         if (i!=0)
             rgbaSliders[i]->setSliderColor(colors[i-1]);
-        rgbaSliders[i]->setValueRange(0.0, 1.0, 0.001);
+        rgbaSliders[i]->setValueRange(COLORPICKER_MIN_VALUE, 1.0, 0.001);
         rgbaSliders[i]->getValueChangedCallbacks().add(this,
             &ColorPicker::colorSliderCallback);
     }
@@ -90,10 +94,16 @@ void ColorPicker::
 setCurrentColor(const Color& currentColor)
 {
     //record color
-    color = currentColor;
+    for (int i=0; i<3; ++i)
+    {
+        color[i] = currentColor[i]<COLORPICKER_MIN_VALUE ? COLORPICKER_MIN_VALUE
+                                                         : currentColor[i];
+    }
+    color[3] = currentColor[3];
+
     //compute value
-    GLfloat newValue = std::max(currentColor[0], currentColor[1]);
-    newValue         = std::max(newValue, currentColor[2]);
+    GLfloat newValue = std::max(color[0], color[1]);
+    newValue         = std::max(newValue, color[2]);
     value            = newValue;
 
     //make sure the change is visually propagated

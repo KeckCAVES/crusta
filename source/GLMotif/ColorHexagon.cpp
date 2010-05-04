@@ -175,22 +175,24 @@ processPosition(const Point& pos)
 
         //compute coordinates and check interior of wedge
         GLfloat coords[3];
-        coords[1] = (c1[1]-c0[1])*(pos[0]-c0[0]) + (c0[0]-c1[0])*(pos[1]-c0[1]);
+        coords[0] =(c1[0]-pos[0])*(c2[1]-pos[1])-(c2[0]-pos[0])*(c1[1]-pos[1]);
+        coords[0]*= det;
+        if (coords[0]<0.0f || coords[0]>1.0f)
+            continue;
+        coords[1] =(c2[0]-pos[0])*(c0[1]-pos[1])-(c0[0]-pos[0])*(c2[1]-pos[1]);
         coords[1]*= det;
         if (coords[1]<0.0f || coords[1]>1.0f)
             continue;
-        coords[2] = (c0[1]-c2[1])*(pos[0]-c0[0]) + (c2[0]-c0[0])*(pos[1]-c0[1]);
+        coords[2] =(c0[0]-pos[0])*(c1[1]-pos[1])-(c1[0]-pos[0])*(c0[1]-pos[1]);
         coords[2]*= det;
         if (coords[2]<0.0f || coords[2]>1.0f)
-            continue;
-        coords[0] = 1.0f - coords[1] - coords[2];
-        if (coords[0]<0.0f || coords[0]>1.0f)
             continue;
 
         //set the current wedge and coordinates
         curWedge = w;
         for (int i=0; i<3; ++i)
             curCoords[i] = coords[i];
+        return true;
     }
 
     //not contained in any wedge
@@ -228,6 +230,26 @@ draw(GLContextData& contextData) const
 {
     //draw the parent class widget
     Widget::draw(contextData);
+
+    //draw the background parts (not covered by the hexagon)
+    glColor(backgroundColor);
+    glBegin(GL_TRIANGLES);
+        glVertex(corners[2]);
+        glVertex(corners[1]);
+        glVertex(getInterior().getCorner(3));
+
+        glVertex(getInterior().getCorner(2));
+        glVertex(corners[4]);
+        glVertex(corners[3]);
+
+        glVertex(corners[4]);
+        glVertex(getInterior().getCorner(0));
+        glVertex(corners[5]);
+
+        glVertex(corners[6]);
+        glVertex(getInterior().getCorner(1));
+        glVertex(corners[1]);
+    glEnd();
 
     //backup OpenGL state
     glPushAttrib(GL_ENABLE_BIT);
