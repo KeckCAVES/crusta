@@ -20,7 +20,7 @@
 #include <crusta/Sphere.h>
 
 #if DEBUG_INTERSECT_CRAP
-#define DEBUG_INTERSECT_SIDES 1
+#define DEBUG_INTERSECT_SIDES 0
 #define DEBUG_INTERSECT_PEEK 0
 #include <crusta/CrustaVisualizer.h>
 #endif //DEBUG_INTERSECT_CRAP
@@ -80,44 +80,44 @@ getFrustumFromVrui(GLContextData& contextData)
     for (int i=0; i<8; ++i)
         frustum.setFrustumVertex(i,inv.transform(viewSpec.getFrustumVertex(i)));
 
-	/* Calculate the six frustum face planes: */
-	Vector3 fv10 = frustum.getFrustumVertex(1) - frustum.getFrustumVertex(0);
-	Vector3 fv20 = frustum.getFrustumVertex(2) - frustum.getFrustumVertex(0);
-	Vector3 fv40 = frustum.getFrustumVertex(4) - frustum.getFrustumVertex(0);
-	Vector3 fv67 = frustum.getFrustumVertex(6) - frustum.getFrustumVertex(7);
-	Vector3 fv57 = frustum.getFrustumVertex(5) - frustum.getFrustumVertex(7);
-	Vector3 fv37 = frustum.getFrustumVertex(3) - frustum.getFrustumVertex(7);
+    /* Calculate the six frustum face planes: */
+    Vector3 fv10 = frustum.getFrustumVertex(1) - frustum.getFrustumVertex(0);
+    Vector3 fv20 = frustum.getFrustumVertex(2) - frustum.getFrustumVertex(0);
+    Vector3 fv40 = frustum.getFrustumVertex(4) - frustum.getFrustumVertex(0);
+    Vector3 fv67 = frustum.getFrustumVertex(6) - frustum.getFrustumVertex(7);
+    Vector3 fv57 = frustum.getFrustumVertex(5) - frustum.getFrustumVertex(7);
+    Vector3 fv37 = frustum.getFrustumVertex(3) - frustum.getFrustumVertex(7);
 
     Vrui::Plane planes[8];
-	planes[0] = Vrui::Plane(Geometry::cross(fv40,fv20),
+    planes[0] = Vrui::Plane(Geometry::cross(fv40,fv20),
                             frustum.getFrustumVertex(0));
-	planes[1] = Vrui::Plane(Geometry::cross(fv57,fv37),
+    planes[1] = Vrui::Plane(Geometry::cross(fv57,fv37),
                             frustum.getFrustumVertex(7));
-	planes[2] = Vrui::Plane(Geometry::cross(fv10,fv40),
+    planes[2] = Vrui::Plane(Geometry::cross(fv10,fv40),
                             frustum.getFrustumVertex(0));
-	planes[3] = Vrui::Plane(Geometry::cross(fv37,fv67),
+    planes[3] = Vrui::Plane(Geometry::cross(fv37,fv67),
                             frustum.getFrustumVertex(7));
-	planes[4] = Vrui::Plane(Geometry::cross(fv20,fv10),
+    planes[4] = Vrui::Plane(Geometry::cross(fv20,fv10),
                             frustum.getFrustumVertex(0));
-	planes[5] = Vrui::Plane(Geometry::cross(fv67,fv57),
+    planes[5] = Vrui::Plane(Geometry::cross(fv67,fv57),
                             frustum.getFrustumVertex(7));
-                    
+
     Scalar screenArea = Geometry::mag(planes[4].getNormal());
-	for(int i=0; i<6; ++i)
-		planes[i].normalize();
-	
+    for(int i=0; i<6; ++i)
+        planes[i].normalize();
+
     for (int i=0; i<6; ++i)
         frustum.setFrustumPlane(i, planes[i]);
 
-	/* Use the frustum near plane as the screen plane: */
+    /* Use the frustum near plane as the screen plane: */
     frustum.setScreenEye(planes[4], inv.transform(viewSpec.getEye()));
-	
-	/* Get viewport size from OpenGL: */
-	GLint viewport[4];
-	glGetIntegerv(GL_VIEWPORT,viewport);
-	
-	/* Calculate the inverse pixel size: */
-	frustum.setPixelSize(Math::sqrt((Scalar(viewport[2])*Scalar(viewport[3]))/screenArea));
+
+    /* Get viewport size from OpenGL: */
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT,viewport);
+
+    /* Calculate the inverse pixel size: */
+    frustum.setPixelSize(Math::sqrt((Scalar(viewport[2])*Scalar(viewport[3]))/screenArea));
 #else
     for (int i=0; i<8; ++i)
         frustum.setFrustumVertex(i,inv.transform(viewSpec.getFrustumVertex(i)));
@@ -152,15 +152,13 @@ display(GLContextData& contextData)
     GlData* glData = contextData.retrieveDataItem<GlData>(this);
 
     //setup the GL
-    GLint activeTexture;
-    glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
     GLint arrayBuffer;
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &arrayBuffer);
     GLint elementArrayBuffer;
     glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &elementArrayBuffer);
 
     glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_POLYGON_BIT);
-	glEnable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
     glEnable(GL_TEXTURE_2D);
 
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
@@ -199,7 +197,6 @@ display(GLContextData& contextData)
     glPopClientAttrib();
     glPopAttrib();
 
-    glActiveTexture(activeTexture);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
 
@@ -628,7 +625,7 @@ CrustaVisualizer::show("Busted Entry");
             case 1:  cellX = 0;         cellY = edgeIndex; break;
             case 2:  cellX = edgeIndex; cellY = 0;         break;
             case 3:  cellX = tileRes-2; cellY = edgeIndex; break;
-            default: assert(false);
+            default: cellX = 0;         cellY = 0;         assert(0);
         }
 
 #if DEBUG_INTERSECT_CRAP

@@ -372,7 +372,7 @@ buttonCallback(int deviceIndex, int buttonIndex,
 
     if (cbData->newButtonState)
     {
-        if (buttonIndex == 0)
+        if (deviceIndex==0 && buttonIndex==0)
         {
             switch (mode)
             {
@@ -434,7 +434,7 @@ buttonCallback(int deviceIndex, int buttonIndex,
     }
     else
     {
-        if (buttonIndex == 0)
+        if (deviceIndex==0 && buttonIndex==0)
         {
             switch (mode)
             {

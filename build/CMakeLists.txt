@@ -41,6 +41,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/CrustaVisualizer.h
     ../include/crusta/DataManager.h
     ../include/crusta/DemSpecs.h
+    ../include/crusta/ElevationRangeTool.h
     ../include/crusta/Ellipsoid.h
     ../include/crusta/FocusViewEvaluator.h
     ../include/crusta/FrustumVisibility.h
@@ -77,6 +78,10 @@ add_library(CrustaCore SHARED
     ../include/crusta/ViewLod.h
     ../include/crusta/VisibilityEvaluator.h
     ../include/crusta/Visualizer.h
+    ../include/GLMotif/ColorHexagon.h
+    ../include/GLMotif/ColorMap.h
+    ../include/GLMotif/ColorPicker.h
+    ../include/GLMotif/PaletteEditor.h
 
     ../source/crusta/CacheRequest.cpp
     ../source/crusta/ColorTextureSpecs.cpp
@@ -84,6 +89,7 @@ add_library(CrustaCore SHARED
     ../source/crusta/CrustaVisualizer.cpp
     ../source/crusta/DataManager.cpp
     ../source/crusta/DemSpecs.cpp
+    ../source/crusta/ElevationRangeTool.cpp
     ../source/crusta/FocusViewEvaluator.cpp
     ../source/crusta/FrustumVisibility.cpp
     ../source/crusta/LightingShader.cpp
@@ -106,6 +112,10 @@ add_library(CrustaCore SHARED
     ../source/crusta/Triacontahedron.cpp
     ../source/crusta/ViewLod.cpp
     ../source/crusta/Visualizer.cpp
+    ../source/GLMotif/ColorHexagon.cpp
+    ../source/GLMotif/ColorMap.cpp
+    ../source/GLMotif/ColorPicker.cpp
+    ../source/GLMotif/PaletteEditor.cpp
 )
 
 vrui_set_target_properties(CrustaCore)

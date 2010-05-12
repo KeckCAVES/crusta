@@ -33,10 +33,10 @@ init(Vrui::ToolFactory* parent)
     Factory* polylineFactory = new Factory("PolylineTool",
         "Polyline Drawing Tool", parent, *Vrui::getToolManager());
 
-    //one device is required
-    polylineFactory->setNumDevices(1);
-    //two buttons are required on the first (and only) device
-    polylineFactory->setNumButtons(0, 2);
+    //we want two buttons, so set two devices with one button each
+    polylineFactory->setNumDevices(2);
+    polylineFactory->setNumButtons(0, 1);
+    polylineFactory->setNumButtons(1, 1);
 
     Vrui::getToolManager()->addClass(polylineFactory,
         Vrui::ToolManager::defaultToolFactoryDestructor);
