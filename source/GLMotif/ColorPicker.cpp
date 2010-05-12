@@ -70,9 +70,15 @@ ColorPicker(const char* iName, Container* iParent, bool iManageChild) :
         rgbaLabels[i]  = new Label(names[i][0], rgbaRoot, "-");
         rgbaSliders[i] = new Slider(names[i][1], rgbaRoot, Slider::VERTICAL,
                                    5.0f*style->fontHeight);
-        if (i!=0)
+        if (i==0)
+        {
+            rgbaSliders[i]->setValueRange(0.0, 1.0, 0.001);
+        }
+        else
+        {
             rgbaSliders[i]->setSliderColor(colors[i-1]);
-        rgbaSliders[i]->setValueRange(COLORPICKER_MIN_VALUE, 1.0, 0.001);
+            rgbaSliders[i]->setValueRange(COLORPICKER_MIN_VALUE, 1.0, 0.001);
+        }
         rgbaSliders[i]->getValueChangedCallbacks().add(this,
             &ColorPicker::colorSliderCallback);
     }
