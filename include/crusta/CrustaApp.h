@@ -9,8 +9,10 @@
 #include <Vrui/Geometry.h>
 
 #include <crusta/basics.h>
+#include <GLMotif/ColorMap.h>
 
 class GLContextData;
+class PaletteEditor;
 
 namespace GLMotif {
     class DropdownBox;
@@ -38,34 +40,41 @@ public:
     ~CrustaApp();
 
 private:
-	void produceMainMenu();
+    void produceMainMenu();
+    void produceTexturingSubmenu(GLMotif::Menu* mainMenu);
     void produceVerticalScaleDialog();
     void produceLightingDialog();
 
     void alignSurfaceFrame(Vrui::NavTransform& surfaceFrame);
 
-    void useTexturedTerrainCallback(
-        GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
+    void changeTexturingModeCallback(
+        GLMotif::Button::SelectCallbackData* cbData);
+    void changeColorMapCallback(
+        GLMotif::ColorMap::ColorMapChangedCallbackData* cbData);
+
     void showVerticalScaleCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     void changeScaleCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
 
-	void showLightingDialogCallback(
+    void showLightingDialogCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
-	void updateSun(void);
-	void enableSunToggleCallback(
+    void updateSun(void);
+    void enableSunToggleCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
-	void sunAzimuthSliderCallback(
+    void sunAzimuthSliderCallback(
         GLMotif::Slider::ValueChangedCallbackData* cbData);
-	void sunElevationSliderCallback(
+    void sunElevationSliderCallback(
         GLMotif::Slider::ValueChangedCallbackData* cbData);
+
+    void showPaletteEditorCallback(
+        GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
 
     void debugGridCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     void debugSpheresCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
 
-	void resetNavigationCallback(Misc::CallbackData* cbData);
+    void resetNavigationCallback(Misc::CallbackData* cbData);
 
     double newVerticalScale;
 
@@ -73,18 +82,20 @@ private:
     GLMotif::RadioBox*    curTool;
 
     GLMotif::PopupWindow* verticalScaleDialog;
-	GLMotif::Label*       verticalScaleLabel;
+    GLMotif::Label*       verticalScaleLabel;
 
     GLMotif::PopupWindow* lightingDialog;
-	bool enableSun; // Flag to toggle sun lightsource
-	bool* viewerHeadlightStates; // Initial enable states of all viewers' headlights
-	Vrui::Lightsource* sun; // Light source representing the sun
-	Vrui::Scalar sunAzimuth; // Azimuth of sunlight direction
-	Vrui::Scalar sunElevation; // Elevation of sunlight direction
-	GLMotif::TextField* sunAzimuthTextField;
-	GLMotif::Slider* sunAzimuthSlider;
-	GLMotif::TextField* sunElevationTextField;
-	GLMotif::Slider* sunElevationSlider;
+    bool enableSun; // Flag to toggle sun lightsource
+    bool* viewerHeadlightStates; // Initial enable states of all viewers' headlights
+    Vrui::Lightsource* sun; // Light source representing the sun
+    Vrui::Scalar sunAzimuth; // Azimuth of sunlight direction
+    Vrui::Scalar sunElevation; // Elevation of sunlight direction
+    GLMotif::TextField* sunAzimuthTextField;
+    GLMotif::Slider* sunAzimuthSlider;
+    GLMotif::TextField* sunElevationTextField;
+    GLMotif::Slider* sunElevationSlider;
+
+    PaletteEditor* paletteEditor;
 
     /** the crusta instance */
     Crusta* crusta;
@@ -93,7 +104,7 @@ private:
 public:
     virtual void frame();
     virtual void display(GLContextData& contextData) const;
-	virtual void toolCreationCallback(
+    virtual void toolCreationCallback(
         Vrui::ToolManager::ToolCreationCallbackData* cbData);
 };
 

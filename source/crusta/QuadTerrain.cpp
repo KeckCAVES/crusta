@@ -23,7 +23,7 @@
 #include <crusta/Sphere.h>
 
 #if DEBUG_INTERSECT_CRAP
-#define DEBUG_INTERSECT_SIDES 1
+#define DEBUG_INTERSECT_SIDES 0
 #define DEBUG_INTERSECT_PEEK 0
 #endif //DEBUG_INTERSECT_CRAP
 #include <crusta/CrustaVisualizer.h>
@@ -305,9 +305,6 @@ display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes,
         const AgeStamp& currentFrame)
 {
     //setup the GL
-    GLint activeTexture;
-    glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
-
     GLint arrayBuffer;
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &arrayBuffer);
     GLint elementArrayBuffer;
@@ -335,7 +332,6 @@ display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes,
     glPopClientAttrib();
     glPopAttrib();
 
-    glActiveTexture(activeTexture);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
 }
@@ -854,7 +850,7 @@ if (!alongEdge.isValid() ||
             case 1:  cellX = 0;         cellY = edgeIndex; break;
             case 2:  cellX = edgeIndex; cellY = 0;         break;
             case 3:  cellX = tileRes-2; cellY = edgeIndex; break;
-            default: assert(false);
+            default: cellX = 0;         cellY = 0;         assert(0);
         }
 
 #if DEBUG_INTERSECT_CRAP

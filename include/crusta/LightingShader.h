@@ -54,14 +54,17 @@ class LightingShader
     static const char* applySpotLightTemplate;
     static const char* applyAttenuatedSpotLightTemplate;
     static const char* fetchTerrainColorAsConstant;
+    static const char* fetchTerrainColorFromColorMap;
     static const char* fetchTerrainColorFromTexture;
     bool mustRecompile;
     bool colorMaterial; // Flag whether material color tracking is enabled
-    bool useTextureForTerrainColor; // Flag whether the color is fetch from a texture or is just a constant
+    int texturingMode; // Flag whether the color is fetch from a texture or is just a constant
     int maxNumLights; // Maximum number of lights supported by local OpenGL
     LightState* lightStates; // Array of tracking states for each OpenGL light source
     GLhandleARB vertexShader,fragmentShader; // Handle for the vertex and fragment shaders
     GLhandleARB programObject; // Handle for the linked program object
+    GLint colorMapElevationInvRangeUniform;
+    GLint minColorMapElevationUniform;
     GLint textureStepUniform;
     GLint verticalScaleUniform;
     GLint centroidUniform;
@@ -84,15 +87,23 @@ class LightingShader
     void enable(void); // Enables point-based lighting in the current OpenGL context
     void disable(void); // Disables point-based lighting in the current OpenGL context
 
-    void useTextureForColor(bool useTex=true)
+    void setTexturingMode(int mode)
     {
-        if (useTex != useTextureForTerrainColor)
+        if (texturingMode != mode)
         {
-            useTextureForTerrainColor = useTex;
-            mustRecompile             = true;
+            texturingMode = mode;
+            mustRecompile = true;
         }
     }
 
+    void setColorMapElevationInvRange(float ir)
+    {
+        glUniform1f(colorMapElevationInvRangeUniform, ir);
+    }
+    void setMinColorMapElevation(float me)
+    {
+        glUniform1f(minColorMapElevationUniform, me);
+    }
     void setTextureStep(float ts)
     {
         glUniform1f(textureStepUniform, ts);

@@ -2,6 +2,7 @@
 
 #include <Geometry/OrthogonalTransformation.h>
 #include <GL/Extensions/GLEXTFramebufferObject.h>
+#include <GL/GLColorMap.h>
 #include <GL/GLContextData.h>
 #include <GL/GLTransformationWrappers.h>
 #include <Misc/ThrowStdErr.h>
@@ -9,6 +10,7 @@
 
 #include <crusta/checkGl.h>
 #include <crusta/DataManager.h>
+#include <crusta/ElevationRangeTool.h>
 #include <crusta/map/MapManager.h>
 #include <crusta/QuadCache.h>
 #include <crusta/QuadTerrain.h>
@@ -51,7 +53,7 @@ public:
     RGBAImage(int width, int height) : byteCount(4), pixels(NULL)
     {
         size[0] = width;
-	size[1] = height;
+    size[1] = height;
     }
     ~RGBAImage()
     {
@@ -189,6 +191,11 @@ CrustaGlData()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+    glGenTextures(1, &colorMap);
+    glBindTexture(GL_TEXTURE_1D, colorMap);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 #if 0
     TargaImage atlas;
     if (atlas.load("Crusta_MapSymbolAtlas.tga"))
@@ -249,6 +256,8 @@ CrustaGlData::
 {
     glDeleteBuffers(1, &vertexAttributeTemplate);
     glDeleteBuffers(1, &indexTemplate);
+    glDeleteTextures(1, &symbolTex);
+    glDeleteTextures(1, &colorMap);
 }
 
 
@@ -265,17 +274,19 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
     that are initialized with 0. Thus if crustaFrameNumber starts at 0, the
     init code wouldn't be able to retrieve any cache buffers since all the
     buffers of the current and previous frame are locked */
-    currentFrame      = 2;
-    lastScaleFrame    = 2;
-    isTexturedTerrain = true;
-    verticalScale     = 0.0;
-    newVerticalScale  = 1.0;
+    currentFrame     = 2;
+    lastScaleFrame   = 2;
+    texturingMode    = 2;
+    verticalScale    = 0.0;
+    newVerticalScale = 1.0;
 
     Triacontahedron polyhedron(SPHEROID_RADIUS);
 
     cache    = new Cache(4096, 1024, 1024, this);
     dataMan  = new DataManager(&polyhedron, demFileBase, colorFileBase, this);
     mapMan   = new MapManager(crustaTool, this);
+
+    ElevationRangeTool::init(crustaTool);
 
     globalElevationRange[0] =  Math::Constants<Scalar>::max;
     globalElevationRange[1] = -Math::Constants<Scalar>::max;
@@ -291,6 +302,13 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
         globalElevationRange[1] = std::max(globalElevationRange[1],
                                            Scalar(root.elevationRange[1]));
     }
+
+    colorMapDirty = true;
+    static const int numColorMapEntries = 1024;
+    GLColorMap::Color dummyColorMap[numColorMapEntries];
+    colorMap = new GLColorMap(numColorMapEntries, dummyColorMap,
+                              GLdouble(globalElevationRange[0]),
+                              GLdouble(globalElevationRange[1]));
 }
 
 void Crusta::
@@ -631,9 +649,9 @@ getLastScaleFrame() const
 }
 
 void Crusta::
-useTexturedTerrain(bool useTex)
+setTexturingMode(int mode)
 {
-    isTexturedTerrain = useTex;
+    texturingMode = mode;
 }
 
 void Crusta::
@@ -646,6 +664,27 @@ double Crusta::
 getVerticalScale() const
 {
     return verticalScale;
+}
+
+
+GLColorMap* Crusta::
+getColorMap()
+{
+    return colorMap;
+}
+
+void Crusta::
+touchColorMap()
+{
+    colorMapDirty = true;
+}
+
+void Crusta::
+uploadColorMap(GLuint colorTex)
+{
+    glBindTexture(GL_TEXTURE_1D, colorTex);
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, colorMap->getNumEntries(), 0,
+                 GL_RGBA, GL_FLOAT, colorMap->getColors());
 }
 
 Point3 Crusta::
@@ -765,13 +804,31 @@ display(GLContextData& contextData)
 glActiveTexture(GL_TEXTURE5);
 glBindTexture(GL_TEXTURE_2D, glData->symbolTex);
 
+    //bind the colormap texture
+    if (texturingMode == 1)
+    {
+        //upload a modified color map
+        if (colorMapDirty)
+        {
+            uploadColorMap(glData->colorMap);
+            colorMapDirty = false;
+        }
+
+        glActiveTexture(GL_TEXTURE6);
+        glBindTexture(GL_TEXTURE_1D, glData->colorMap);
+    }
+
     //have the QuadTerrain draw the surface approximation
     CHECK_GLA
 
     //draw the terrain
-    glData->terrainShader.useTextureForColor(isTexturedTerrain);
+    glData->terrainShader.setTexturingMode(texturingMode);
     glData->terrainShader.update();
     glData->terrainShader.enable();
+    glData->terrainShader.setMinColorMapElevation(
+        colorMap->getScalarRangeMin());
+    glData->terrainShader.setColorMapElevationInvRange(
+        1.0 / (colorMap->getScalarRangeMax()-colorMap->getScalarRangeMin()));
     glData->terrainShader.setTextureStep(TILE_TEXTURE_COORD_STEP);
     glData->terrainShader.setVerticalScale(getVerticalScale());
 

@@ -13,6 +13,7 @@
 #include <crusta/LightingShader.h>
 #include <crusta/map/Shape.h>
 
+class GLColorMap;
 class GLContextData;
 
 BEGIN_CRUSTA
@@ -52,6 +53,8 @@ struct CrustaGlData : public GLObject::DataItem
 
     GLuint symbolTex;
 
+    GLuint colorMap;
+
     LightingShader terrainShader;
 
     GLint    lineCoverageTransformUniform;
@@ -82,12 +85,19 @@ public:
     const FrameNumber& getLastScaleFrame() const;
 
     /** configure the display of the terrain to use a texture or not */
-    void useTexturedTerrain(bool useTex=true);
+    void setTexturingMode(int mode);
     /** set the vertical exaggeration. Make sure to set this value within a
         frame callback so that it doesn't change during a rendering phase */
     void setVerticalScale(double newVerticalScale);
     /** retrieve the vertical exaggeration factor */
     double getVerticalScale() const;
+
+    /** query the color map for external update */
+    GLColorMap* getColorMap();
+    /** signal crusta that changes have been made to the color map */
+    void touchColorMap();
+    /** upload the color map to the GL */
+    void uploadColorMap(GLuint colorTex);
 
     /** map a 3D cartesian point specified wrt an unscaled globe representation
         to the corresponding point in a scaled representation */
@@ -134,8 +144,8 @@ protected:
         semi-static data can be verified by comparison with this number */
     FrameNumber lastScaleFrame;
 
-    /** should the terrain rendering be using textures or not */
-    bool isTexturedTerrain;
+    /** texturing mode to use for terrain rendering */
+    int texturingMode;
     /** the vertical scale to be applied to all surface elevations */
     Scalar verticalScale;
     /** the vertical scale that has been externally set. Buffers the scales
@@ -160,6 +170,12 @@ protected:
 
     /** the global height range */
     Scalar globalElevationRange[2];
+
+    /** flags if the color map has been changed and needs to be updated to the
+        GL */
+    bool colorMapDirty;
+    /** the color map used to color the elevation of the terrain */
+    GLColorMap* colorMap;
 
 //- inherited from GLObject
 public:
