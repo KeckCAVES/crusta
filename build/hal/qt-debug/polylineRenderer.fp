@@ -43,13 +43,13 @@ void computeLineNew(in vec4 symbolOS, in vec4 startCP, in vec4 endCP,
 
     // Correct for distortion by dividing by sin(alpha):
     float snn = dot(sectionNormal, normal);
-    v = v / sqrt(1 - snn * snn);
+    v = v / sqrt(1.0 - snn * snn);
 
     // Scale v to normalize to the segment width
     v /= V_SCALE*lineWidth;
 
     //- Reject if v<-1 or v>1:
-    if(abs(v) <= 1)
+    if(abs(v) <= 1.0)
     {
         //- Compute longitudinal coordinate u using simplified formula:
 
@@ -59,10 +59,10 @@ void computeLineNew(in vec4 symbolOS, in vec4 startCP, in vec4 endCP,
 
         // Compute the plane's intersection ration with the line's skeleton:
         vec3 startToEnd = endCP.xyz - startCP.xyz;
-        float u = (dot(position, b) - dot(startCP, b)) / dot(startToEnd, b);
+        float u = (dot(position, b) - dot(startCP.xyz, b)) / dot(startToEnd, b);
 
         //- Reject if u<0 or u>1:
-        if(u >= 0 && u <= 1)
+        if(u>=0.0 && u<=1.0)
         {
 //color = vec4(vec3(v), 0.3);
             //compute the u coordinate wrt the length of the segment
