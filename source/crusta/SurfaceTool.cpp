@@ -69,6 +69,8 @@ getFactory() const
 void SurfaceTool::
 frame()
 {
+    static const Point3 badPoint(Math::Constants<Point3::Scalar>::max);
+
     Vrui::InputDevice* dev = input.getDevice(0);
 
     if (transformEnabled)
@@ -90,17 +92,9 @@ frame()
             Ray ray(modelFrame.getOrigin(), rayDir);
             HitResult hit = crusta->intersect(ray);
             if (hit.isValid())
-            {
                 surfacePoint = ray(hit.getParameter());
-            }
             else
-            {
-                transformedDevice->setTransformation(dev->getTransformation());
-                transformedDevice->setDeviceRayDirection(
-                    dev->getDeviceRayDirection());
-                projectionFailed = true;
-                return;
-            }
+                surfacePoint = badPoint;
 #else
             surfacePoint = modelFrame.getOrigin();
             //snapping is done radially, no need to map to the unscaled globe
@@ -114,6 +108,15 @@ frame()
         }
         else
             Vrui::getMainPipe()->read<Point3>(surfacePoint);
+
+        if (surfacePoint == badPoint)
+        {
+            transformedDevice->setTransformation(dev->getTransformation());
+            transformedDevice->setDeviceRayDirection(
+                dev->getDeviceRayDirection());
+            projectionFailed = true;
+            return;
+        }
 
         modelFrame = Vrui::NavTransform(Vector3(surfacePoint),
             modelFrame.getRotation(), modelFrame.getScaling());
