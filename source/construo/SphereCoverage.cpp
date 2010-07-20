@@ -9,35 +9,74 @@
 #include <construo/ImageCoverage.h>
 #include <construo/ImageTransform.h>
 
+#define DEBUG_COVERAGE 0
+#if DEBUG_COVERAGE
+#include <cstdio>
+#endif //DEBUG_COVERAGE
+
 BEGIN_CRUSTA
 
-static void shortestArc(const Point& ancor,
-                        Point& vertex)
+static const Point::Scalar EPSILON = 1e-5;
+static const Point::Scalar PI      = Math::Constants<Point::Scalar>::pi;
+static const Point::Scalar TWOPI   = 2.0 * PI;
+static const Point::Scalar HALFPI  = 0.5 * PI;
+
+/** Corrects issues with the representation of a coverage, e.g. the longitude
+    value at a pole, or shifts the representation of the vertex by periods to
+    find the one that is closest to the anchor in the linear lat/lon space */
+static void
+fixLatLon(const Point& anchor, Point& vertex)
 {
-    static const Point::Scalar twopi = 2.0 * Math::Constants<Point::Scalar>::pi;
-    for (uint i=0; i<2; ++i)
+    //assign the previous longitude to a vertex at pole latitude
+    if ((Math::abs( HALFPI - vertex[1]) < EPSILON) ||
+        (Math::abs(-HALFPI - vertex[1]) < EPSILON))
     {
-        Point::Scalar dist = vertex[i] - ancor[i];
-        vertex[i] = dist > Math::Constants<Point::Scalar>::pi ?
-                    vertex[i]-twopi : vertex[i];
-        vertex[i] = dist < -Math::Constants<Point::Scalar>::pi ?
-                    vertex[i]+twopi : vertex[i];
+        vertex[0] = anchor[0];
+    }
+
+    //find the representation closest to the anchor
+    for (int i=0; i<2; ++i)
+    {
+        Point::Scalar tmp = vertex[i]>anchor[i] ?
+                            vertex[i]-TWOPI : vertex[i]+TWOPI;
+        vertex[i] = Math::abs(tmp-anchor[i])<Math::abs(vertex[i]-anchor[i]) ?
+                    tmp : vertex[i];
     }
 }
 
-static SphereCoverage::Vector
-shortestArcShift(const Point& c0, const Point& c1)
+static bool
+segmentIntersect(Point a, Point b, Point c, Point d)
 {
-    SphereCoverage::Vector vec;
-    static const Point::Scalar twopi = 2.0 * Math::Constants<Point::Scalar>::pi;
-    for (uint i=0; i<2; ++i)
-    {
-        Point::Scalar dist = c1[0] - c0[0];
-        vec[i] = dist>= Math::Constants<Point::Scalar>::pi ? -twopi : 0;
-        vec[i] = dist<=-Math::Constants<Point::Scalar>::pi ?  twopi : 0;
-    }
+    //translate segments such that 'a' is new origin
+    b[0] -= a[0];  b[1] -= a[1];
+    c[0] -= a[0];  c[1] -= a[1];
+    d[0] -= a[0];  d[1] -= a[1];
 
-    return vec;
+    //rotate such that ab oriented toward the positive x axis
+    Point::Scalar distab = Geometry::dist(a, b);
+    Point::Scalar cosine = b[0] / distab;
+    Point::Scalar sine   = b[1] / distab;
+
+    Point::Scalar tmp;
+    tmp  = c[0]*cosine + c[1]*sine;
+    c[1] = c[1]*cosine - c[0]*sine;
+    c[0] = tmp;
+
+    tmp  = d[0]*cosine + d[1]*sine;
+    d[1] = d[1]*cosine - d[0]*sine;
+    d[0] = tmp;
+
+    //intersection exists if the rotated cd crosses the zero Y
+    if ((c[1]<0 && d[1]<0) || (c[1]>0 && d[1]>0))
+        return false;
+
+    //check that the intersection is within the range of ab
+    Point::Scalar y0 = d[0] + (c[0]-d[0])*d[1]/(d[1]-c[1]);
+
+    if (y0<0 || y0>distab)
+        return false;
+
+    return true;
 }
 
 SphereCoverage::
@@ -55,12 +94,6 @@ const Box& SphereCoverage::
 getBoundingBox() const
 {
     return box;
-}
-
-const Point& SphereCoverage::
-getCentroid() const
-{
-    return centroid;
 }
 
 bool SphereCoverage::
@@ -212,44 +245,22 @@ overlaps(const Box& bBox) const
 uint SphereCoverage::
 overlaps(const SphereCoverage& coverage) const
 {
-    //account for periodicity. Make sure the centroids are on the shortest arc
-    Vector shiftVector = shortestArcShift(centroid, coverage.centroid);
-    SphereCoverage test = coverage;
-    test.shift(shiftVector);
+    //must check overlap in the 4 spaces produced by periodicity
+    uint res = checkOverlap(coverage);
+    if (res != SEPARATE)
+        return res;
 
-    //check box against the bounding box first
-    if (!box.overlaps(test.box))
-        return SEPARATE;
-
-    /* check the points of 'test' for containment. There are 4 possibilities:
-       1. all the 'test' points are inside the coverage           -> OVERLAPS
-       1.1 all the coverage points are outside 'test'             -> CONTAINS
-       2. some are inside others outside the coverage             -> OVERLAPS
-       3. all outside and 'test' contains a point of the coverage -> OVERLAPS
-       3.1 all the vertices of coverage are outside of 'test'     -> ISCONTAINED
-       3.2 all outside and no coverage vertex is in 'test'        -> SEPARATE */
-    Points::const_iterator tIt = test.vertices.begin();
-    bool testContained = contains(*tIt);
-    for (++tIt; tIt!=test.vertices.end(); ++tIt)
+    Vector shifts[3] = {Vector(TWOPI,0), Vector(0,PI), Vector(TWOPI,PI)};
+    for (int i=0; i<3; ++i)
     {
-        bool isContained = contains(*tIt);
-        if (isContained != testContained)
-            return OVERLAPS;
+        SphereCoverage cov = coverage;
+        cov.shift(shifts[i]);
+        res = checkOverlap(cov);
+        if (res != SEPARATE)
+            break;
     }
 
-    Points::const_iterator cIt = vertices.begin();
-    bool coverageContained = test.contains(*cIt);
-    for (++cIt; cIt!=vertices.end(); ++cIt)
-    {
-        bool isContained = test.contains(*cIt);
-        if (isContained != coverageContained)
-            return OVERLAPS;
-    }
-
-    if (testContained)
-        return CONTAINS;
-    else
-        return coverageContained ? ISCONTAINED : SEPARATE;
+    return res;
 }
 
 void SphereCoverage::
@@ -265,6 +276,89 @@ shift(const Vector& vec)
 }
 
 
+void SphereCoverage::
+addVertex(Point& vertex)
+{
+#if DEBUG_COVERAGE
+fprintf(stderr, "(%f, %f)  --  ", vertex[0], vertex[1]);
+#endif //DEBUG_COVERAGE
+    if (vertices.empty())
+    {
+#if DEBUG_COVERAGE
+fprintf(stderr, "<%f, %f>\n", vertex[0], vertex[1]);
+#endif //DEBUG_COVERAGE
+        vertices.push_back(vertex);
+    }
+    else
+    {
+        const Point& last = vertices.back();
+        fixLatLon(last, vertex);
+#if DEBUG_COVERAGE
+fprintf(stderr, "<%f, %f>\n", vertex[0], vertex[1]);
+#endif //DEBUG_COVERAGE
+        //when coming from a pole add a pole vertex at the new longitude
+        if ((Math::abs( HALFPI - last[1]) < EPSILON) ||
+            (Math::abs(-HALFPI - last[1]) < EPSILON))
+        {
+            vertices.push_back(Point(vertex[0], last[1]));
+        }
+
+        vertices.push_back(vertex);
+    }
+    box.addPoint(vertex);
+}
+
+uint SphereCoverage::
+checkOverlap(const SphereCoverage& coverage) const
+{
+    //check box against the bounding box first
+    if (!box.overlaps(coverage.box))
+        return SEPARATE;
+
+    const Points& ref  = getVertices();
+    int numRef         = static_cast<int>(ref.size());
+    const Points& test = coverage.getVertices();
+    int numTest        = static_cast<int>(test.size());
+
+    //check for non-containment intersection by check edge crosses
+    for (int i=0; i<numRef-1; ++i)
+    {
+        for (int j=0; j<numTest-1; ++j)
+        {
+            if (segmentIntersect(ref[i], ref[i+1], test[j], test[j+1]))
+                return OVERLAPS;
+        }
+    }
+
+    //since there is no overlap on the edges, check containment
+    bool contained = true;
+    for (int i=0; i<numTest; ++i)
+    {
+        if (!contains(test[i]))
+        {
+            contained = false;
+            break;
+        }
+    }
+    if (contained)
+        return CONTAINS;
+
+    contained = true;
+    for (int i=0; i<numRef; ++i)
+    {
+        if (!coverage.contains(ref[i]))
+        {
+            contained = false;
+            break;
+        }
+    }
+    if (contained)
+        return ISCONTAINED;
+
+    //if there is no boundary intersection and no containment, they are separate
+    return SEPARATE;
+}
+
 StaticSphereCoverage::
 StaticSphereCoverage(uint subdivisions, const Scope& scope)
 {
@@ -277,8 +371,8 @@ StaticSphereCoverage(uint subdivisions, const Scope& scope)
     /* go through all the side-segments of the scope in order and produce
        samples on each segment through 'subdivisions' number of subdivisions.
        Each sample corresponsing to a vertex of the coverage */
-    Scope::Scalar radius = scope.getRadius();
     static const uint remap[4] = {0, 1, 3, 2};
+    Scope::Scalar radius       = scope.getRadius();
     for (uint start=0; start<4; ++start)
     {
         uint end            = (start+1) % 4;
@@ -311,57 +405,26 @@ StaticSphereCoverage(uint subdivisions, const Scope& scope)
 
         //append the new samples as spherical vertices to the set
         for (uint i=0; i<numSamples-1; ++i)
-            vertices.push_back(Converter::cartesianToSpherical(samples[i]));
+        {
+            Point newVertex = Converter::cartesianToSpherical(samples[i]);
+            addVertex(newVertex);
+        }
     }
+
+    //shift such that the max corner of the box is within (-pi,pi]x(-pi/2,pi/2]
+    Vector shiftVec;
+    shiftVec[0] = box.max[0]>PI     ? -TWOPI : 0;
+    shiftVec[1] = box.max[1]>HALFPI ? -PI    : 0;
+
+#if DEBUG_COVERAGE
+fprintf(stderr, "[[%f, %f]]\n", shiftVec[0], shiftVec[1]);
+#endif //DEBUG_COVERAGE
+
+    if (shiftVec[0]!=0 || shiftVec[1]!=0)
+        shift(shiftVec);
 
     //clean-up temporary memory used to store the samples
     delete[] samples;
-
-///\todo bad triacontahedron hack for spherical coords
-#if 1
-if ((Math::Constants<Point::Scalar>::pi - vertices[0][0]) < 1e-5)
-    vertices[0][0] = -Math::Constants<Point::Scalar>::pi;
-static const Point::Scalar halfpi = Math::Constants<Point::Scalar>::pi *
-                                    Point::Scalar(0.5);
-for (uint i=0; i<numVertices; ++i)
-{
-    if ((Math::abs( halfpi - vertices[i][1])<1e-5) ||
-        (Math::abs(-halfpi - vertices[i][1])<1e-5))
-    {
-        vertices[i][0] = vertices[(i-1)%numVertices][0];
-    }
-}
-#endif
-    //take care of periodicity of spherical space
-    for (uint i=1; i<numVertices; ++i)
-        shortestArc(vertices[i-1], vertices[i]);
-///\todo this is bad fix for the exact pole points of the triacontahedron
-#if 1
-    for (uint i=0; i<numVertices; ++i)
-    {
-        if ((Math::abs( halfpi - vertices[i][1])<1e-5) ||
-            (Math::abs(-halfpi - vertices[i][1])<1e-5))
-        {
-            Point& prev = vertices[(i-1)%numVertices];
-            Point& next = vertices[(i+1)%numVertices];
-            vertices[i][0] = (prev[0] + next[0]) * Point::Scalar(0.5);
-        }
-    }
-#endif
-
-    //compute box and centroid
-    centroid = Point(0,0);
-    for (uint i=0; i<numVertices; ++i)
-    {
-        Point& cur = vertices[i];
-        box.addPoint(cur);
-        centroid[0] += cur[0];
-        centroid[1] += cur[1];
-    }
-
-    Point::Scalar norm = Point::Scalar(1) / Point::Scalar(numVertices);
-    centroid[0] *= norm;
-    centroid[1] *= norm;
 }
 
 StaticSphereCoverage::
@@ -392,55 +455,23 @@ StaticSphereCoverage(uint subdivisions, const ImageCoverage* coverage,
             Point imgPoint((1.0-alpha)*lower[0] + alpha*upper[0],
                            (1.0-alpha)*lower[1] + alpha*upper[1]);
             Point newVertex = transform->imageToWorld(imgPoint);
-            vertices.push_back(newVertex);
+            addVertex(newVertex);
         }
     }
 
-    //take care of periodicity of spherical space
-    centroid = Point(0,0);
-    box.addPoint(vertices[0]);
-    centroid[0] += vertices[0][0];
-    centroid[1] += vertices[0][1];
-    for (uint i=1; i<numVertices; ++i)
-    {
-        Point& prev = vertices[i-1];
-        Point& cur  = vertices[i];
+///\todo special case handling for global coverages
 
-        shortestArc(prev, cur);
-        box.addPoint(cur);
-        centroid[0] += cur[0];
-        centroid[1] += cur[1];
-    }
+    //shift such that the max corner of the box is within (-pi,pi]x(-pi/2,pi/2]
+    Vector shiftVec;
+    shiftVec[0] = box.max[0]>PI     ? -TWOPI : 0;
+    shiftVec[1] = box.max[1]>HALFPI ? -PI    : 0;
 
-    Point::Scalar norm = Point::Scalar(1) / Point::Scalar(numVertices);
-    centroid[0] *= norm;
-    centroid[1] *= norm;
+#if DEBUG_COVERAGE
+fprintf(stderr, "[[%f, %f]]\n", shiftVec[0], shiftVec[1]);
+#endif //DEBUG_COVERAGE
 
-///\todo fix-it. hacked in global coverage
-Point::Scalar pi     = Math::Constants<Point::Scalar>::pi;
-Point::Scalar halfpi = pi * Point::Scalar(0.5);
-bool lonExtend = box.min[0]<=-pi+0.00872664626 || box.max[0]>=pi-0.00872664626;
-bool latExtend = box.min[1]<=-halfpi+0.00872664626 ||
-                 box.max[1]>= halfpi-0.00872664626;
-if (lonExtend || latExtend)
-{
-    box.min[0] = lonExtend ? -Point::Scalar(10) : box.min[0];
-    box.min[1] = latExtend ? -Point::Scalar(10) : box.min[1];
-    box.max[0] = lonExtend ?  Point::Scalar(10) : box.max[0];
-    box.max[1] = latExtend ?  Point::Scalar(10) : box.max[1];
-
-    vertices.resize(4);
-    vertices[0] = Point(box.min[0], box.min[1]);
-    vertices[1] = Point(box.max[0], box.min[1]);
-    vertices[2] = Point(box.max[0], box.max[1]);
-    vertices[3] = Point(box.min[0], box.max[1]);
-
-    centroid[0] = lonExtend ? Point::Scalar(0) :
-                              (box.min[0]+box.max[0]) * Point::Scalar(0.5);
-    centroid[1] = latExtend ? Point::Scalar(0) :
-                              (box.min[1]+box.max[1]) * Point::Scalar(0.5);
-}
-
+    if (shiftVec[0]!=0 || shiftVec[1]!=0)
+        shift(shiftVec);
 }
 
 

@@ -20,7 +20,7 @@ class SphereCoverage
 public:
     typedef std::vector<Point> Points;
     typedef Geometry::Vector<Point::Scalar, Point::dimension> Vector;
-    
+
     enum
     {
         SEPARATE,
@@ -35,9 +35,7 @@ public:
     const Points& getVertices() const;
     /** retrieve the bounding box of the coverage */
     const Box& getBoundingBox() const;
-    /** query the centroid of the coverage */
-    const Point& getCentroid() const;
-    
+
     /** checks if a given vertex (in spherical coordinates) is inside the
         coverage region */
     bool contains(const Point& v) const;
@@ -51,8 +49,10 @@ public:
 
 protected:
     Points vertices;
-    Point centroid;
     Box box;
+
+    void addVertex(Point& vertex);
+    uint checkOverlap(const SphereCoverage& coverage) const;
 };
 
 class StaticSphereCoverage : public SphereCoverage
