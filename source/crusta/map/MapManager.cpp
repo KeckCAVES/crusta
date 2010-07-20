@@ -442,8 +442,9 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
     symbolMap[crustaDefaultSymbol.id]            = crustaDefaultSymbol;
 
 //- parse the symbols definition file to create the symbols lists
-///\todo fix the location of the configuration file
-    std::ifstream symbolsConfig("Crusta_MapSymbols.cfg");
+    std::string cfgFile(CRUSTA_SHARE_PATH);
+    cfgFile += "/mapSymbols.cfg";
+    std::ifstream symbolsConfig(cfgFile.c_str());
     if (!symbolsConfig.good())
         return;
 
