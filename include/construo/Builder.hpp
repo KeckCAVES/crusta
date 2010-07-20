@@ -35,8 +35,8 @@ assert(size[0]==size[1]);
 
 ///\todo for now hardcode the subsampling filter
 //    Filter::makePointFilter(subsamplingFilter);
-//    Filter::makeTriangleFilter(subsamplingFilter);
-    Filter::makeFiveLobeLanczosFilter(subsamplingFilter);
+    Filter::makeTriangleFilter(subsamplingFilter);
+//    Filter::makeFiveLobeLanczosFilter(subsamplingFilter);
 
     scopeBuf          = new Scope::Scalar[tileSize[0]*tileSize[1]*3];
     sampleBuf         = new Point[tileSize[0]*tileSize[1]];
@@ -213,16 +213,9 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
         //transform the sample into the image space
         p = imgPatch->transform->worldToImage(p);
 
-assert(p[0]<-0.5 || (p[0]>=0 && p[0]<=imgSize[0]-1) || p[0]>imgSize[0]-1+0.5);
-assert(p[1]<-0.5 || (p[1]>=0 && p[1]<=imgSize[1]-1) || p[1]>imgSize[1]-1+0.5);
-
         //make sure the sample is valid
-        if (overlap!=SphereCoverage::ISCONTAINED &&
-            !imgPatch->imageCoverage->contains(p))
-        {
+        if (p[0]<0 || p[0]>imgSize[0]-1 || p[1]<0 || p[1]>imgSize[1]-1)
             continue;
-        }
-assert(p[0]>=0 && p[0]<=imgSize[0]-1 && p[1]>=0 && p[1]<=imgSize[1]-1);
 
         //insert the sample into an image box
         bool wasInserted = false;
@@ -357,9 +350,9 @@ updateFiner(Node* node, Patch* imgPatch, Point::Scalar imgResolution)
 {
 ///\todo remove
 #if DEBUG_SOURCEFINEST || 0
-static const float covColor[3] = { 0.1f, 0.4f, 0.6f };
-ConstruoVisualizer::addPrimitive(GL_LINES, node->coverage, covColor);
-ConstruoVisualizer::show();
+static const Color covColor(0.1f, 0.4f, 0.6f, 1.0f);
+ConstruoVisualizer::addSphereCoverage(node->coverage, -1, covColor);
+ConstruoVisualizer::peek();
 #endif
 
     //check for an overlap
@@ -393,7 +386,7 @@ updateFinestLevels()
 #if 0
 ConstruoVisualizer::clear();
 for (int i=0; i<(int)patches.size(); ++i)
-    ConstruoVisualizer::addPrimitive(GL_LINES, *(patches[i]->sphereCoverage));
+    ConstruoVisualizer::addSphereCoverage(*(patches[i]->sphereCoverage));
 ConstruoVisualizer::show();
 #endif
 
