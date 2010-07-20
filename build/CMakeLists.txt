@@ -13,7 +13,11 @@ find_package(VRUI REQUIRED HINTS ${CMAKE_SOURCE_DIR})
 #-------------------
 # Target independent configuration
 #-------------------
+set(CRUSTA_SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share")
+add_definitions(-DCRUSTA_SHARE_PATH=\"${CRUSTA_SHARE_PATH}\")
+
 include_directories(../include)
+include_directories(${VRUI_INCLUDE_DIR})
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
