@@ -13,7 +13,8 @@ find_package(VRUI REQUIRED HINTS ${CMAKE_SOURCE_DIR})
 #-------------------
 # Target independent configuration
 #-------------------
-set(CRUSTA_SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share")
+set(CRUSTA_SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share"
+    CACHE PATH "Crusta install share path")
 add_definitions(-DCRUSTA_SHARE_PATH=\"${CRUSTA_SHARE_PATH}\")
 
 include_directories(../include)
@@ -21,6 +22,11 @@ include_directories(${VRUI_INCLUDE_DIR})
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
+
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 #GDAL
 if(APPLE)
