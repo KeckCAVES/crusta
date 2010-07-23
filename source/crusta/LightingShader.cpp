@@ -383,7 +383,9 @@ update()
     updateLightingState();
 
 ///\todo bake this into the code
-mustRecompile |= checkFileForChanges("polylineRenderer.fp");
+std::string progFile(CRUSTA_SHARE_PATH);
+progFile += "/polylineRenderer.fp";
+mustRecompile |= checkFileForChanges(progFile.c_str());
 
     if (mustRecompile)
     {
@@ -625,7 +627,9 @@ void LightingShader::compileShader()
 
     /* Compile the standard fragment shader: */
     std::string fragmentShaderSource;
-    readFileToString("polylineRenderer.fp", fragmentShaderSource);
+    std::string progFile(CRUSTA_SHARE_PATH);
+    progFile += "/polylineRenderer.fp";
+    readFileToString(progFile.c_str(), fragmentShaderSource);
 
 try{
     glCompileShaderFromString(fragmentShader,fragmentShaderSource.c_str());

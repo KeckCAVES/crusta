@@ -138,25 +138,43 @@ produceMainMenu()
     showPaletteEditorToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::showPaletteEditorCallback);
 
-    /* Create a button to toogle display of the debugging grid: */
+    /* Create the advanced submenu */
+    GLMotif::Popup* advancedMenuPopup =
+        new GLMotif::Popup("AdvancedMenuPopup", Vrui::getWidgetManager());
+
+    GLMotif::SubMenu* advancedMenu =
+        new GLMotif::SubMenu("Advanced", advancedMenuPopup, false);
+
+    //line decoration toggle
+    GLMotif::ToggleButton* decorateLinesToggle = new GLMotif::ToggleButton(
+        "DecorateLinesToggle", advancedMenu, "Advanced");
+    decorateLinesToggle->setToggle(false);
+    decorateLinesToggle->getValueChangedCallbacks().add(
+        this, &CrustaApp::decorateLinesCallback);
+
+    //toogle display of the debugging grid
     GLMotif::ToggleButton* debugGridToggle = new GLMotif::ToggleButton(
-        "DebugGridToggle", mainMenu, "Debug Grid");
+        "DebugGridToggle", advancedMenu, "Debug Grid");
     debugGridToggle->setToggle(false);
     debugGridToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::debugGridCallback);
 
-    /* Create a button to toogle display of the debugging sphere: */
+    //toogle display of the debugging sphere
     GLMotif::ToggleButton* debugSpheresToggle = new GLMotif::ToggleButton(
-        "DebugSpheresToggle", mainMenu, "Debug Spheres");
+        "DebugSpheresToggle", advancedMenu, "Debug Spheres");
     debugSpheresToggle->setToggle(false);
     debugSpheresToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::debugSpheresCallback);
 
-    /* Create a button: */
+    advancedMenu->manageChild();
+
+    GLMotif::CascadeButton* advancedMenuCascade = new GLMotif::CascadeButton(
+        "AdvancedMenuCascade", mainMenu, "Advanced");
+    advancedMenuCascade->setPopup(advancedMenuPopup);
+
+    /* Navigation reset: */
     GLMotif::Button* resetNavigationButton = new GLMotif::Button(
         "ResetNavigationButton",mainMenu,"Reset Navigation");
-
-    /* Add a callback to the button: */
     resetNavigationButton->getSelectCallbacks().add(
         this, &CrustaApp::resetNavigationCallback);
 
@@ -450,6 +468,12 @@ showPaletteEditorCallback(
     }
 }
 
+
+void CrustaApp::
+decorateLinesCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+{
+    crusta->setLinesDecorated(cbData->set);
+}
 
 void CrustaApp::
 debugGridCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)

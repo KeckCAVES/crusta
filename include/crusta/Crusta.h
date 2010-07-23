@@ -92,6 +92,11 @@ public:
     /** retrieve the vertical exaggeration factor */
     double getVerticalScale() const;
 
+    /** toggle the decoration of the line mapping */
+    void setLinesDecorated(bool flag=true);
+    /** check status of decorated line rendering */
+    bool getLinesDecorated() const;
+
     /** query the color map for external update */
     GLColorMap* getColorMap();
     /** signal crusta that changes have been made to the color map */
@@ -151,6 +156,9 @@ protected:
     /** the vertical scale that has been externally set. Buffers the scales
         changes up to the next frame call */
     Scalar newVerticalScale;
+
+    /** flags if line mapping should be rendered decorated or not */
+    bool linesDecorated;
 
     /** the cache management component */
     Cache* cache;

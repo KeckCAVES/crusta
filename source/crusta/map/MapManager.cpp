@@ -53,7 +53,7 @@ BEGIN_CRUSTA
 MapManager::
 MapManager(Vrui::ToolFactory* parentToolFactory, Crusta* iCrusta) :
     CrustaComponent(iCrusta), selectDistance(0.2), pointSelectionBias(0.1),
-    polylineIds(uint32(~0)), polylineRenderer(new PolylineRenderer(iCrusta))
+    polylineIds(uint32(~0))
 {
     Vrui::ToolFactory* factory = MapTool::init(parentToolFactory);
     PolylineTool::init(factory);
@@ -68,7 +68,6 @@ MapManager::
 ~MapManager()
 {
     deleteAllShapes();
-    delete polylineRenderer;
 
     OGRCleanupAll();
 }
@@ -665,14 +664,11 @@ processVerticalScaleChange()
 void MapManager::
 frame()
 {
-    polylineRenderer->lines = &polylines;
 }
 
 void MapManager::
 display(GLContextData& contextData) const
 {
-    //go through all the simple polylines and draw them
-    polylineRenderer->display(contextData);
 }
 
 

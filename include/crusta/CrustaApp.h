@@ -69,6 +69,9 @@ private:
     void showPaletteEditorCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
 
+    void decorateLinesCallback(
+        GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
+
     void debugGridCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     void debugSpheresCallback(

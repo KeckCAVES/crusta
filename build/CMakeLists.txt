@@ -16,8 +16,8 @@ find_package(VRUI REQUIRED HINTS ${CMAKE_SOURCE_DIR})
 set(CRUSTA_SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share")
 add_definitions(-DCRUSTA_SHARE_PATH=\"${CRUSTA_SHARE_PATH}\")
 
-include_directories(../include)
 include_directories(${VRUI_INCLUDE_DIR})
+include_directories(../include)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
@@ -226,3 +226,9 @@ target_link_libraries(construo CrustaCore ${GDAL_LIBRARY})
 
 install(TARGETS CrustaCore  crusta construo CrustaVislet
         DESTINATION .)
+
+set(CRUSTA_SHARES ../share/mapSymbolAtlas.rgba
+                  ../share/mapSymbols.cfg
+                  ../share/polylineRenderer.fp
+)
+install(FILES ${CRUSTA_SHARES} DESTINATION ${CRUSTA_SHARE_PATH})

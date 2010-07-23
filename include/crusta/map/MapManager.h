@@ -28,7 +28,6 @@ BEGIN_CRUSTA
 
 
 class Polyline;
-class PolylineRenderer;
 class QuadNodeMainData;
 
 
@@ -146,7 +145,6 @@ protected:
 
     IdGenerator32     polylineIds;
     PolylinePtrs      polylines;
-    PolylineRenderer* polylineRenderer;
 
     SymbolNameMap        symbolNameMap;
     SymbolReverseNameMap symbolReverseNameMap;

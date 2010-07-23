@@ -198,10 +198,14 @@ CrustaGlData()
 
 #if 0
     TargaImage atlas;
-    if (atlas.load("Crusta_MapSymbolAtlas.tga"))
+    std::string imgFile(CRUSTA_SHARE_PATH);
+    imgFile += "/mapSymbolAtlas.tga";
+    if (atlas.load(imgFile.c_str()))
 #else
     RGBAImage atlas(1024, 1024);
-    if (atlas.load("Crusta_MapSymbolAtlas.rgba"))
+    std::string imgFile(CRUSTA_SHARE_PATH);
+    imgFile += "/mapSymbolAtlas.rgba";
+    if (atlas.load(imgFile.c_str()))
 #endif
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas.size[0], atlas.size[1], 0,
@@ -279,6 +283,7 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
     texturingMode    = 2;
     verticalScale    = 0.0;
     newVerticalScale = 1.0;
+    linesDecorated   = false;
 
     Triacontahedron polyhedron(SPHEROID_RADIUS);
 
@@ -666,6 +671,18 @@ getVerticalScale() const
     return verticalScale;
 }
 
+
+void Crusta::
+setLinesDecorated(bool flag)
+{
+    linesDecorated = flag;
+}
+
+bool Crusta::
+getLinesDecorated() const
+{
+    return linesDecorated;
+}
 
 GLColorMap* Crusta::
 getColorMap()

@@ -58,6 +58,7 @@ class LightingShader
     static const char* fetchTerrainColorFromTexture;
     bool mustRecompile;
     bool colorMaterial; // Flag whether material color tracking is enabled
+    bool linesDecorated; // Flag whether decorated lines should be processed
     int texturingMode; // Flag whether the color is fetch from a texture or is just a constant
     int maxNumLights; // Maximum number of lights supported by local OpenGL
     LightState* lightStates; // Array of tracking states for each OpenGL light source
@@ -86,6 +87,15 @@ class LightingShader
     void compileShader(void); // Recompiles the point-based lighting shader based on the current states of all OpenGL light sources
     void enable(void); // Enables point-based lighting in the current OpenGL context
     void disable(void); // Disables point-based lighting in the current OpenGL context
+
+    void setLinesDecorated(bool flag)
+    {
+        if (linesDecorated != flag)
+        {
+            linesDecorated = flag;
+            mustRecompile  = true;
+        }
+    }
 
     void setTexturingMode(int mode)
     {

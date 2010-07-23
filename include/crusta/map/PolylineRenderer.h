@@ -12,20 +12,17 @@ class GLContextData;
 BEGIN_CRUSTA
 
 
-class Polyline;
-
+class QuadNodeMainData;
 
 class PolylineRenderer : public CrustaComponent
 {
 public:
-    typedef std::vector<Polyline*> Ptrs;
-
     PolylineRenderer(Crusta* iCrusta);
 
-    void display(GLContextData& contextData) const;
-
-    Ptrs* lines;
+    void display(std::vector<QuadNodeMainData*>& renderNodes,
+                 GLContextData& contextData) const;
 };
+
 
 END_CRUSTA
 
