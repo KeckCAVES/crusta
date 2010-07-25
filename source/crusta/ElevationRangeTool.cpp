@@ -143,7 +143,7 @@ ElevationRangeTool::
 Vrui::ToolFactory* ElevationRangeTool::
 init(Vrui::ToolFactory* parent)
 {
-    Factory* erFactory = new Factory("ElevationRangeTool",
+    Factory* erFactory = new Factory("CrustaElevationRangeTool",
         "Elevation Range Tool", parent, *Vrui::getToolManager());
 
     erFactory->setNumDevices(1);
