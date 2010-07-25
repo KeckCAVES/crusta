@@ -67,18 +67,18 @@ public:
         if (file == NULL)
             return false;
 
-        int imageSize = size[0]*size[1] * byteCount;
+        size_t imageSize = size[0]*size[1] * byteCount;
 
         //allocate memory for image data
         pixels = new uint8[imageSize];
 
         //read in image data
-        fread(pixels, sizeof(uint8), imageSize, file);
+        size_t res = fread(pixels, sizeof(uint8), imageSize, file);
 
         //close file
         fclose(file);
 
-        return true;
+        return res==imageSize;
     }
 
     void destroy()
@@ -117,9 +117,21 @@ public:
         if (file == NULL)
             return false;
 
-        fread (&type, sizeof(char), 3, file);
-        fseek (file, 12, SEEK_SET);
-        fread (&info, sizeof(char), 6, file);
+        size_t res = fread(&type, sizeof(char), 3, file);
+        if (res != 3)
+        {
+            fclose(file);
+            return false;
+        }
+
+        fseek(file, 12, SEEK_SET);
+
+        res = fread(&info, sizeof(char), 6, file);
+        if (res != 6)
+        {
+            fclose(file);
+            return false;
+        }
 
         //image type either 2 (color) or 3 (greyscale)
         if (type[1]!=0 || (type[2]!=2 && type[2]!=3))
@@ -138,18 +150,18 @@ public:
             return false;
         }
 
-        int imageSize = size[0]*size[1] * byteCount;
+        size_t imageSize = size[0]*size[1] * byteCount;
 
         //allocate memory for image data
         pixels = new uint8[imageSize];
 
         //read in image data
-        fread(pixels, sizeof(uint8), imageSize, file);
+        res = fread(pixels, sizeof(uint8), imageSize, file);
 
         //close file
         fclose(file);
 
-        return true;
+        return res==imageSize;
     }
 
     void destroy()
@@ -818,8 +830,11 @@ display(GLContextData& contextData)
 //- draw the current terrain and map data
 ///\todo integrate properly (VIS 2010)
 //bind the texture that contains the symbol images
-glActiveTexture(GL_TEXTURE5);
-glBindTexture(GL_TEXTURE_2D, glData->symbolTex);
+if (linesDecorated)
+{
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, glData->symbolTex);
+}
 
     //bind the colormap texture
     if (texturingMode == 1)
@@ -839,28 +854,36 @@ glBindTexture(GL_TEXTURE_2D, glData->symbolTex);
     CHECK_GLA
 
     //draw the terrain
+    glData->terrainShader.setLinesDecorated(linesDecorated);
     glData->terrainShader.setTexturingMode(texturingMode);
     glData->terrainShader.update();
     glData->terrainShader.enable();
-    glData->terrainShader.setMinColorMapElevation(
-        colorMap->getScalarRangeMin());
-    glData->terrainShader.setColorMapElevationInvRange(
-        1.0 / (colorMap->getScalarRangeMax()-colorMap->getScalarRangeMin()));
-    glData->terrainShader.setTextureStep(TILE_TEXTURE_COORD_STEP);
+    if (texturingMode == 1)
+    {
+        glData->terrainShader.setMinColorMapElevation(
+            colorMap->getScalarRangeMin());
+        glData->terrainShader.setColorMapElevationInvRange(
+            1.0/(colorMap->getScalarRangeMax()-colorMap->getScalarRangeMin()));
+    }
     glData->terrainShader.setVerticalScale(getVerticalScale());
+    glData->terrainShader.setTextureStep(TILE_TEXTURE_COORD_STEP);
 
 ///\todo this needs to be tweakable
-    float scaleFac = Vrui::getNavigationTransformation().getScaling();
-    glData->terrainShader.setLineCoordScale(scaleFac);
-    float lineWidth = 0.1f / scaleFac;
-    glData->terrainShader.setLineWidth(lineWidth);
+    if (linesDecorated)
+    {
+        float scaleFac = Vrui::getNavigationTransformation().getScaling();
+        glData->terrainShader.setLineCoordScale(scaleFac);
+        float lineWidth = 0.1f / scaleFac;
+        glData->terrainShader.setLineWidth(lineWidth);
+    }
 
-    QuadTerrain::display(contextData, glData, renderNodes, getCurrentFrame());
+    QuadTerrain::display(contextData, glData, renderNodes, getCurrentFrame(),
+                         linesDecorated);
 
     glData->terrainShader.disable();
 
     //let the map manager draw all the mapping stuff
-//    mapMan->display(contextData);
+    mapMan->display(renderNodes, contextData);
     CHECK_GLA
 
     glPopAttrib();

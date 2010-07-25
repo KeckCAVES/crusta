@@ -302,7 +302,7 @@ prepareDisplay(GLContextData& contextData, Nodes& nodes)
 
 void QuadTerrain::
 display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes,
-        const AgeStamp& currentFrame)
+        const AgeStamp& currentFrame, bool linesDecorated)
 {
     //setup the GL
     GLint arrayBuffer;
@@ -324,7 +324,8 @@ display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes,
 
     int numNodes = static_cast<int>(nodes.size());
     for (int i=0; i<numNodes; ++i)
-        drawNode(contextData, glData, *(nodes[i]), currentFrame);
+        drawNode(contextData, glData, *(nodes[i]), currentFrame,
+                 linesDecorated);
 
     //restore the GL transform as it was before
     glPopMatrix();
@@ -1304,8 +1305,10 @@ simply float processing the transformation */
     for (Coverage::const_iterator lit=coverage.begin(); lit!=coverage.end();
          ++lit)
     {
+#if DEBUG
         const Polyline* line = dynamic_cast<const Polyline*>(lit->first);
         assert(line != NULL);
+#endif //DEBUG
         const HandleList& handles = lit->second;
 
         for (HandleList::const_iterator hit=handles.begin(); hit!=handles.end();
@@ -1438,23 +1441,27 @@ prepareVideoData(CrustaGlData* glData, QuadNodeMainData& mainData)
 
 void QuadTerrain::
 drawNode(GLContextData& contextData, CrustaGlData* glData,
-         QuadNodeMainData& mainData, const AgeStamp& currentFrame)
+         QuadNodeMainData& mainData, const AgeStamp& currentFrame,
+         bool linesDecorated)
 {
 ///\todo integrate me properly into the system (VIS 2010)
-    //stream the line data to the GPU if necessary
-    if (mainData.lineData.empty())
-        glData->terrainShader.setLineStartCoord(0.0);
-    else
+    if (linesDecorated)
     {
-        glData->terrainShader.setLineStartCoord(Crusta::lineDataStartCoord);
+        //stream the line data to the GPU if necessary
+        if (mainData.lineData.empty())
+            glData->terrainShader.setLineStartCoord(0.0);
+        else
+        {
+            glData->terrainShader.setLineStartCoord(Crusta::lineDataStartCoord);
 
-        const QuadNodeGpuLineData& lineData =
-            prepareGpuLineData(glData, mainData, currentFrame);
+            const QuadNodeGpuLineData& lineData =
+                prepareGpuLineData(glData, mainData, currentFrame);
 
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_1D, lineData.data);
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, lineData.coverage);
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_1D, lineData.data);
+            glActiveTexture(GL_TEXTURE4);
+            glBindTexture(GL_TEXTURE_2D, lineData.coverage);
+        }
     }
 
 ///\todo accommodate for lazy data fetching

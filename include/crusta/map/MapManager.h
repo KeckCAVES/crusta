@@ -10,6 +10,7 @@
 #include <GLMotif/ToggleButton.h>
 
 #include <crusta/CrustaComponent.h>
+#include <crusta/map/PolylineRenderer.h>
 #include <crusta/map/Shape.h>
 
 
@@ -84,7 +85,8 @@ public:
     void processVerticalScaleChange();
 
     void frame();
-    void display(GLContextData& contextData) const;
+    void display(std::vector<QuadNodeMainData*>& nodes,
+                 GLContextData& contextData) const;
 
     void addMenuEntry(GLMotif::Menu* mainMenu);
     void openSymbolsGroupCallback(GLMotif::Button::SelectCallbackData* cbData);
@@ -150,6 +152,8 @@ protected:
     SymbolReverseNameMap symbolReverseNameMap;
     SymbolMap            symbolMap;
     SymbolGroupMap       symbolGroupMap;
+
+    PolylineRenderer polylineRenderer;
 
     GLMotif::PopupWindow* mapControlDialog;
     GLMotif::Label*       mapSymbolLabel;

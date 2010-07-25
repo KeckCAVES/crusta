@@ -309,6 +309,7 @@ std::string LightingShader::createApplyLightFunction(const char* functionTemplat
 LightingShader::LightingShader() :
     mustRecompile(true),
     colorMaterial(false),
+    linesDecorated(false),
     texturingMode(2),
     lightStates(0),
     vertexShader(0),fragmentShader(0),
@@ -384,7 +385,10 @@ update()
 
 ///\todo bake this into the code
 std::string progFile(CRUSTA_SHARE_PATH);
-progFile += "/polylineRenderer.fp";
+if (linesDecorated)
+    progFile += "/decoratedRenderer.fp";
+else
+    progFile += "/plainRenderer.fp";
 mustRecompile |= checkFileForChanges(progFile.c_str());
 
     if (mustRecompile)
@@ -628,7 +632,10 @@ void LightingShader::compileShader()
     /* Compile the standard fragment shader: */
     std::string fragmentShaderSource;
     std::string progFile(CRUSTA_SHARE_PATH);
-    progFile += "/polylineRenderer.fp";
+    if (linesDecorated)
+        progFile += "/decoratedRenderer.fp";
+    else
+        progFile += "/plainRenderer.fp";
     readFileToString(progFile.c_str(), fragmentShaderSource);
 
 try{
@@ -654,7 +661,8 @@ catch (std::exception& e){
 
 #if 1
         std::cerr << linkLogBuffer << std::endl;
-        glCompileShaderFromString(fragmentShader, "void main(){gl_FragColor=vec4(1.0);}");
+        glCompileShaderFromString(fragmentShader,
+                                  "void main(){gl_FragColor=vec4(1.0);}");
         glLinkProgramARB(programObject);
 #else
         /* Signal an error: */
@@ -671,7 +679,10 @@ catch (std::exception& e){
     glUniform1i(uniform, 1);
     uniform = glGetUniformLocationARB(programObject, "colorTex");
     glUniform1i(uniform, 2);
-    //get the location of the other uniforms
+
+    uniform = glGetUniformLocationARB(programObject, "colorMap");
+    glUniform1i(uniform, 6);
+
     colorMapElevationInvRangeUniform =
         glGetUniformLocationARB(programObject, "colorMapElevationInvRange");
     minColorMapElevationUniform =
@@ -680,22 +691,25 @@ catch (std::exception& e){
     verticalScaleUniform=glGetUniformLocationARB(programObject,"verticalScale");
     centroidUniform     =glGetUniformLocationARB(programObject,"center");
 
-    uniform = glGetUniformLocationARB(programObject, "lineDataTex");
-    glUniform1i(uniform, 3);
-    uniform = glGetUniformLocationARB(programObject, "lineCoverageTex");
-    glUniform1i(uniform, 4);
-    uniform = glGetUniformLocationARB(programObject, "symbolTex");
-    glUniform1i(uniform, 5);
-    uniform = glGetUniformLocationARB(programObject, "colorMap");
-    glUniform1i(uniform, 6);
-    uniform = glGetUniformLocationARB(programObject, "lineCoordStep");
-    glUniform1f(uniform, crusta::Crusta::lineDataCoordStep);
 
-    lineStartCoordUniform =
-        glGetUniformLocationARB(programObject, "lineStartCoord");
-    lineCoordScaleUniform =
-        glGetUniformLocationARB(programObject, "lineCoordScale");
-    lineWidthUniform = glGetUniformLocationARB(programObject, "lineWidth");
+    if (linesDecorated)
+    {
+        uniform = glGetUniformLocationARB(programObject, "lineDataTex");
+        glUniform1i(uniform, 3);
+        uniform = glGetUniformLocationARB(programObject, "lineCoverageTex");
+        glUniform1i(uniform, 4);
+        uniform = glGetUniformLocationARB(programObject, "symbolTex");
+        glUniform1i(uniform, 5);
+
+        uniform = glGetUniformLocationARB(programObject, "lineCoordStep");
+        glUniform1f(uniform, crusta::Crusta::lineDataCoordStep);
+
+        lineStartCoordUniform =
+            glGetUniformLocationARB(programObject, "lineStartCoord");
+        lineCoordScaleUniform =
+            glGetUniformLocationARB(programObject, "lineCoordScale");
+        lineWidthUniform = glGetUniformLocationARB(programObject, "lineWidth");
+    }
 
     glUseProgramObjectARB(0);
 }

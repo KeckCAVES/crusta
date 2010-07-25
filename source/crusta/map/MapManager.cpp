@@ -53,7 +53,7 @@ BEGIN_CRUSTA
 MapManager::
 MapManager(Vrui::ToolFactory* parentToolFactory, Crusta* iCrusta) :
     CrustaComponent(iCrusta), selectDistance(0.2), pointSelectionBias(0.1),
-    polylineIds(uint32(~0))
+    polylineIds(uint32(~0)), polylineRenderer(iCrusta)
 {
     Vrui::ToolFactory* factory = MapTool::init(parentToolFactory);
     PolylineTool::init(factory);
@@ -537,10 +537,12 @@ static bool checkForDuplicates = false;
 if (checkForDuplicates) {
 for (Coverage::iterator lit=coverage.begin(); lit!=coverage.end(); ++lit)
 {
+#if DEBUG
     const Shape* const shape = lit->first;
-    HandleList& handles      = lit->second;
-    assert(handles.size() > 0);
     assert(dynamic_cast<const Polyline*>(shape) != NULL);
+#endif //DEBUG
+    HandleList& handles = lit->second;
+    assert(handles.size() > 0);
 
     for (HandleList::iterator hit=handles.begin(); hit!=handles.end(); ++hit)
     {
@@ -667,8 +669,10 @@ frame()
 }
 
 void MapManager::
-display(GLContextData& contextData) const
+display(std::vector<QuadNodeMainData*>& nodes, GLContextData& contextData) const
 {
+    if (!crusta->getLinesDecorated())
+        polylineRenderer.display(nodes, contextData);
 }
 
 

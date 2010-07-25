@@ -147,7 +147,7 @@ produceMainMenu()
 
     //line decoration toggle
     GLMotif::ToggleButton* decorateLinesToggle = new GLMotif::ToggleButton(
-        "DecorateLinesToggle", advancedMenu, "Advanced");
+        "DecorateLinesToggle", advancedMenu, "Decorate Lines");
     decorateLinesToggle->setToggle(false);
     decorateLinesToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::decorateLinesCallback);

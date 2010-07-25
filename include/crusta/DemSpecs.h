@@ -195,9 +195,13 @@ public:
                            File::INVALID_TILEINDEX);
                     //get the child header
                     QuadtreeTileHeader<DemHeight> header;
+#if DEBUG
                     bool res = node->treeState->file->readTile(
                         child.tileIndex, header);
                     assert(res==true);
+#else
+                    node->treeState->file->readTile(child.tileIndex, header);
+#endif //DEBUG
 
                     range[0] = std::min(range[0], header.range[0]);
                     range[1] = std::max(range[1], header.range[1]);
