@@ -68,6 +68,9 @@ public:
     CacheUnit(uint size, Crusta* iCrusta);
     ~CacheUnit();
 
+    /** reset the unit, unpinning and invalidating all the current entries */
+    void reset();
+
     /** find a buffer within the cached set. Returns NULL if not found. */
     BufferType* findCached(const TreeIndex& index) const;
     /** request a buffer from the cache. A non-NULL buffer is returned as long

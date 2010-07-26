@@ -59,13 +59,21 @@ CacheUnit<BufferType>::
 ~CacheUnit()
 {
     //deallocate all the cached buffers
-    for (typename BufferPtrMap::const_iterator it=cached.begin();
-         it!=cached.end(); ++it)
-    {
+    typedef typename BufferPtrMap::const_iterator iterator;
+    for (iterator it=cached.begin(); it!=cached.end(); ++it)
         delete it->second;
-    }
 }
 
+template <typename BufferType>
+void CacheUnit<BufferType>::
+reset()
+{
+    sortFrameNumber = 0;
+
+    typedef typename BufferPtrMap::const_iterator iterator;
+    for (iterator it=cached.begin(); it!=cached.end(); ++it)
+        invalidate(it->second);
+}
 
 template <typename BufferType>
 BufferType* CacheUnit<BufferType>::

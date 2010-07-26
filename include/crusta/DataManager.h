@@ -17,9 +17,14 @@ public:
     typedef std::vector<DemFile*>   DemFiles;
     typedef std::vector<ColorFile*> ColorFiles;
 
-    DataManager(Polyhedron* polyhedron, const std::string& demBase,
-                const std::string& colorBase, Crusta* iCrusta);
+    DataManager(Crusta* iCrusta);
     ~DataManager();
+
+    /** assign the given databases to the data manager */
+    void load(uint numPatches, const std::string& demBase,
+              const std::string& colorBase);
+    /** detach the data manager from the current databases */
+    void unload();
 
     /** check if DEM data is available from the manager */
     bool hasDemData() const;

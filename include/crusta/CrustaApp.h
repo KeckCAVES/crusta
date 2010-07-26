@@ -2,6 +2,7 @@
 #define _CrustaApp_H_
 
 #include <GLMotif/Button.h>
+#include <GLMotif/FileSelectionDialog.h>
 #include <GLMotif/Slider.h>
 #include <GLMotif/ToggleButton.h>
 
@@ -41,6 +42,22 @@ public:
 
 private:
     void produceMainMenu();
+
+    void produceDataDialog();
+    void showDataDialogCallback(GLMotif::Button::SelectCallbackData* cbData);
+    void loadDemCallback(GLMotif::Button::SelectCallbackData* cbData);
+    void loadDemFileOkCallback(
+        GLMotif::FileSelectionDialog::OKCallbackData* cbData);
+    void loadDemFileCancelCallback(
+        GLMotif::FileSelectionDialog::CancelCallbackData* cbData);
+    void loadColorCallback(GLMotif::Button::SelectCallbackData* cbData);
+    void loadColorFileOkCallback(
+        GLMotif::FileSelectionDialog::OKCallbackData* cbData);
+    void loadColorFileCancelCallback(
+        GLMotif::FileSelectionDialog::CancelCallbackData* cbData);
+    void loadDataOkCallback(GLMotif::Button::SelectCallbackData* cbData);
+    void loadDataCancelCallback(GLMotif::Button::SelectCallbackData* cbData);
+
     void produceTexturingSubmenu(GLMotif::Menu* mainMenu);
     void produceVerticalScaleDialog();
     void produceLightingDialog();
@@ -83,6 +100,10 @@ private:
 
     GLMotif::PopupMenu*   popMenu;
     GLMotif::RadioBox*    curTool;
+
+    GLMotif::PopupWindow* dataDialog;
+    GLMotif::Label*       dataDemFile;
+    GLMotif::Label*       dataColorFile;
 
     GLMotif::PopupWindow* verticalScaleDialog;
     GLMotif::Label*       verticalScaleLabel;

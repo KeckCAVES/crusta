@@ -12,12 +12,28 @@
 BEGIN_CRUSTA
 
 DataManager::
-DataManager(Polyhedron* polyhedron, const std::string& demBase,
-            const std::string& colorBase, Crusta* iCrusta) :
-    CrustaComponent(iCrusta)
+DataManager(Crusta* iCrusta) :
+    CrustaComponent(iCrusta), demNodata(0), colorNodata(128, 128, 128)
 {
+    geometryBuf = new double[TILE_RESOLUTION*TILE_RESOLUTION*3];
+}
+
+DataManager::
+~DataManager()
+{
+    unload();
+
+    delete[] geometryBuf;
+}
+
+
+void DataManager::
+load(uint numPatches, const std::string& demBase, const std::string& colorBase)
+{
+    //detach from existing databases
+    unload();
+
     uint resolution[2] = { TILE_RESOLUTION, TILE_RESOLUTION };
-    uint numPatches = polyhedron->getNumPatches();
 
     if (!demBase.empty())
     {
@@ -25,7 +41,7 @@ DataManager(Polyhedron* polyhedron, const std::string& demBase,
         for (uint i=0; i<numPatches; ++i)
         {
             std::ostringstream demName;
-            demName << demBase << "_" << i << ".qtf";
+            demName << demBase << "/patch_" << i << ".qtf";
             demFiles[i] = new DemFile(demName.str().c_str(), resolution);
         }
         demNodata = demFiles[0]->getDefaultPixelValue();
@@ -39,26 +55,22 @@ DataManager(Polyhedron* polyhedron, const std::string& demBase,
         for (uint i=0; i<numPatches; ++i)
         {
             std::ostringstream colorName;
-            colorName << colorBase << "_" << i << ".qtf";
+            colorName << colorBase << "/patch_" << i << ".qtf";
             colorFiles[i] = new ColorFile(colorName.str().c_str(), resolution);
         }
         colorNodata = colorFiles[0]->getDefaultPixelValue();
     }
     else
         colorNodata = TextureColor(128, 128, 128);
-
-    geometryBuf = new double[TILE_RESOLUTION*TILE_RESOLUTION*3];
 }
 
-DataManager::
-~DataManager()
+void DataManager::
+unload()
 {
     for (DemFiles::iterator it=demFiles.begin(); it!=demFiles.end(); ++it)
         delete *it;
     for (ColorFiles::iterator it=colorFiles.begin(); it!=colorFiles.end(); ++it)
         delete *it;
-
-    delete[] geometryBuf;
 }
 
 

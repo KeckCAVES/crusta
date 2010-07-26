@@ -59,6 +59,9 @@ struct CrustaGlData : public GLObject::DataItem
 
     GLint    lineCoverageTransformUniform;
     GLShader lineCoverageShader;
+
+    AgeStamp resetVideoCacheAge;
+    AgeStamp resetLineCacheAge;
 };
 
 /** Main crusta class */
@@ -67,7 +70,9 @@ class Crusta : public GLObject
 public:
     typedef std::vector<CacheBuffer<QuadNodeMainData>*> Actives;
 
-    void init(const std::string& demFileBase, const std::string& colorFileBase);
+    void init();
+    void load(const std::string& demFileBase, const std::string& colorFileBase);
+    void unload();
     void shutdown();
 
 ///\todo potentially deprecate
@@ -184,6 +189,11 @@ protected:
     bool colorMapDirty;
     /** the color map used to color the elevation of the terrain */
     GLColorMap* colorMap;
+
+    /** used to indicate if the video data cache needs to be reset */
+    AgeStamp resetVideoCacheAge;
+    /** used to indicate if the line data cache needs to be reset */
+    AgeStamp resetLineCacheAge;
 
 //- inherited from GLObject
 public:

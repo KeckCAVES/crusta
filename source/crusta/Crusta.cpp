@@ -178,7 +178,8 @@ public:
 };
 
 CrustaGlData::
-CrustaGlData()
+CrustaGlData() :
+    resetVideoCacheAge(0), resetLineCacheAge(0)
 {
     /* Initialize the required extensions: */
     if(!GLEXTFramebufferObject::isSupported())
@@ -279,7 +280,7 @@ CrustaGlData::
 
 
 void Crusta::
-init(const std::string& demFileBase, const std::string& colorFileBase)
+init()
 {
     //initialize the surface transformation tool
     SurfaceTool::init();
@@ -297,18 +298,40 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
     newVerticalScale = 1.0;
     linesDecorated   = false;
 
-    Triacontahedron polyhedron(SPHEROID_RADIUS);
+    resetVideoCacheAge = 0;
+    resetLineCacheAge  = 0;
 
-    cache    = new Cache(4096, 1024, 1024, this);
-    dataMan  = new DataManager(&polyhedron, demFileBase, colorFileBase, this);
-    mapMan   = new MapManager(crustaTool, this);
+    cache   = new Cache(4096, 1024, 1024, this);
+    dataMan = new DataManager(this);
+    mapMan  = new MapManager(crustaTool, this);
 
     ElevationRangeTool::init(crustaTool);
 
     globalElevationRange[0] =  Math::Constants<Scalar>::max;
     globalElevationRange[1] = -Math::Constants<Scalar>::max;
 
+    colorMapDirty = false;
+    static const int numColorMapEntries = 1024;
+    GLColorMap::Color dummyColorMap[numColorMapEntries];
+    colorMap = new GLColorMap(numColorMapEntries, dummyColorMap,
+                              GLdouble(globalElevationRange[0]),
+                              GLdouble(globalElevationRange[1]));
+}
+
+void Crusta::
+load(const std::string& demFileBase, const std::string& colorFileBase)
+{
+    //clear the currently loaded data
+    unload();
+
+    Triacontahedron polyhedron(SPHEROID_RADIUS);
     uint numPatches = polyhedron.getNumPatches();
+
+    dataMan->load(numPatches, demFileBase, colorFileBase);
+
+    globalElevationRange[0] =  Math::Constants<Scalar>::max;
+    globalElevationRange[1] = -Math::Constants<Scalar>::max;
+
     renderPatches.resize(numPatches);
     for (uint i=0; i<numPatches; ++i)
     {
@@ -320,13 +343,30 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
                                            Scalar(root.elevationRange[1]));
     }
 
-    colorMapDirty = true;
-    static const int numColorMapEntries = 1024;
-    GLColorMap::Color dummyColorMap[numColorMapEntries];
-    colorMap = new GLColorMap(numColorMapEntries, dummyColorMap,
-                              GLdouble(globalElevationRange[0]),
-                              GLdouble(globalElevationRange[1]));
+    colorMap->setScalarRange(GLdouble(globalElevationRange[0]),
+                             GLdouble(globalElevationRange[1]));
 }
+
+void Crusta::
+unload()
+{
+    //destroy all the current render patches
+    for (RenderPatches::iterator it=renderPatches.begin();
+         it!=renderPatches.end(); ++it)
+    {
+        delete *it;
+    }
+    renderPatches.clear();
+
+    //destroy all the current maps
+    mapMan->deleteAllShapes();
+
+    //reset all the caches
+    resetVideoCacheAge = getCurrentFrame();
+    resetLineCacheAge  = getCurrentFrame();
+    cache->getMainCache().reset();
+}
+
 
 void Crusta::
 shutdown()
@@ -804,6 +844,18 @@ display(GLContextData& contextData)
     CrustaGlData* glData = contextData.retrieveDataItem<CrustaGlData>(this);
     glData->videoCache = &getCache()->getVideoCache(contextData);
     glData->lineCache  = &getCache()->getGpuLineCache(contextData);
+
+//- reset OpenGL context dependent caches if required
+    if (glData->resetVideoCacheAge != resetVideoCacheAge)
+    {
+        glData->videoCache->reset();
+        glData->resetVideoCacheAge = resetVideoCacheAge;
+    }
+    if (glData->resetLineCacheAge != resetLineCacheAge)
+    {
+        glData->videoCache->reset();
+        glData->resetLineCacheAge = resetLineCacheAge;
+    }
 
 //- prepare the renderable representation
     std::vector<QuadNodeMainData*> renderNodes;
