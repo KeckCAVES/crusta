@@ -66,10 +66,6 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     crusta = new Crusta;
     crusta->init();
 
-    //load data passed through command line?
-    if (!demName.empty() || !colorName.empty())
-        crusta->load(demName, colorName);
-
     /* Create the sun lightsource: */
     sun=Vrui::getLightsourceManager()->createLightsource(false);
     updateSun();
@@ -92,6 +88,19 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
         paletteEditor->getColorMap());
     changeColorMapCallback(&initMap);
     resetNavigationCallback(NULL);
+
+    //load data passed through command line?
+    if (!demName.empty() || !colorName.empty())
+    {
+        crusta->load(demName, colorName);
+        dataDemFile->setLabel(demName.c_str());
+        dataColorFile->setLabel(colorName.c_str());
+    }
+    else
+    {
+        dataDemFile->setLabel("");
+        dataColorFile->setLabel("");
+    }
 }
 
 CrustaApp::
@@ -205,7 +214,6 @@ produceDataDialog()
     GLMotif::RowColumn* root = new GLMotif::RowColumn(
         "DataRoot", dataDialog, false);
 
-#if 1
     GLMotif::RowColumn* demRoot = new GLMotif::RowColumn(
         "DataDemRoot", root, false);
     demRoot->setNumMinorWidgets(2);
@@ -238,7 +246,6 @@ produceDataDialog()
     okButton->getSelectCallbacks().add(
         this, &CrustaApp::loadDataOkCallback);
     actionRoot->manageChild();
-#endif
 
     root->setNumMinorWidgets(1);
     root->manageChild();
@@ -255,40 +262,76 @@ showDataDialogCallback(GLMotif::Button::SelectCallbackData*)
 void CrustaApp::
 loadDemCallback(GLMotif::Button::SelectCallbackData* cbData)
 {
+    GLMotif::FileSelectionDialog* fileDialog =
+        new GLMotif::FileSelectionDialog(Vrui::getWidgetManager(),
+                                         "Load Crusta Elevation", 0, NULL);
+    fileDialog->getOKCallbacks().add(this,
+        &CrustaApp::loadDemFileOkCallback);
+    fileDialog->getCancelCallbacks().add(this,
+        &CrustaApp::loadDemFileCancelCallback);
+    Vrui::getWidgetManager()->popupPrimaryWidget(fileDialog,
+        Vrui::getWidgetManager()->calcWidgetTransformation(dataDialog));
 }
 
 void CrustaApp::
 loadDemFileOkCallback(
     GLMotif::FileSelectionDialog::OKCallbackData* cbData)
 {
+    //save the selected file in the corresponding label
+    dataDemFile->setLabel(cbData->selectedFileName.c_str());
+    //destroy the file selection dialog
+    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
 }
 
 void CrustaApp::
 loadDemFileCancelCallback(
     GLMotif::FileSelectionDialog::CancelCallbackData* cbData)
 {
+    //destroy the file selection dialog
+    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
 }
 
 void CrustaApp::
 loadColorCallback(GLMotif::Button::SelectCallbackData* cbData)
 {
+    GLMotif::FileSelectionDialog* fileDialog =
+        new GLMotif::FileSelectionDialog(Vrui::getWidgetManager(),
+                                         "Load Crusta Color", 0, NULL);
+    fileDialog->getOKCallbacks().add(this,
+        &CrustaApp::loadColorFileOkCallback);
+    fileDialog->getCancelCallbacks().add(this,
+        &CrustaApp::loadColorFileCancelCallback);
+    Vrui::getWidgetManager()->popupPrimaryWidget(fileDialog,
+        Vrui::getWidgetManager()->calcWidgetTransformation(dataDialog));
 }
 
 void CrustaApp::
 loadColorFileOkCallback(
     GLMotif::FileSelectionDialog::OKCallbackData* cbData)
 {
+    //save the selected file in the corresponding label
+    dataColorFile->setLabel(cbData->selectedFileName.c_str());
+    //destroy the file selection dialog
+    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
 }
 
 void CrustaApp::
 loadColorFileCancelCallback(
     GLMotif::FileSelectionDialog::CancelCallbackData* cbData)
 {
+    //destroy the file selection dialog
+    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
 }
 
 void CrustaApp::
-loadDataOkCallback(GLMotif::Button::SelectCallbackData* cbData)
+loadDataOkCallback(GLMotif::Button::SelectCallbackData*)
 {
+    //load the current data selection
+    std::string demFile(dataDemFile->getLabel());
+    std::string colorFile(dataColorFile->getLabel());
+
+    crusta->load(demFile, colorFile);
+
     //close the dialog
     Vrui::popdownPrimaryWidget(dataDialog);
 }

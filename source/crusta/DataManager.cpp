@@ -90,11 +90,8 @@ hasColorData() const
 void DataManager::
 loadRoot(TreeIndex rootIndex, const Scope& scope)
 {
-    bool existed = false;
-    MainCacheBuffer* rootBuf = crusta->getCache()->getMainCache().getBuffer(
-        rootIndex, &existed);
-    if (existed)
-        return;
+    MainCache& mainCache = crusta->getCache()->getMainCache();
+    MainCacheBuffer* rootBuf = mainCache.getBuffer(rootIndex);
     if (rootBuf == NULL)
     {
         Misc::throwStdErr("DataManager::loadRoot: failed to acquire cache "
@@ -111,7 +108,7 @@ loadRoot(TreeIndex rootIndex, const Scope& scope)
     sourceColor(NULL,root);
     generateGeometry(root);
 
-    crusta->getCache()->getMainCache().pin(rootBuf);
+    mainCache.pin(rootBuf);
 }
 
 void DataManager::

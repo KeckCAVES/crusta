@@ -99,7 +99,8 @@ BufferType* CacheUnit<BufferType>::
 getBuffer(const TreeIndex& index, bool* existed)
 {
 //- if the buffer already exists just return it
-    BufferType* buffer = findCached(index);
+    typename BufferPtrMap::const_iterator it = cached.find(index);
+    BufferType* buffer = it!=cached.end() ? it->second : NULL;
     if (buffer != NULL)
     {
 CRUSTA_DEBUG_OUT(10, "Cache%u::get: found %s\n", (unsigned int)cached.size(),

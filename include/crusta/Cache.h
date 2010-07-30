@@ -71,13 +71,14 @@ public:
     /** reset the unit, unpinning and invalidating all the current entries */
     void reset();
 
-    /** find a buffer within the cached set. Returns NULL if not found. */
+    /** find a valid buffer within the cached set. Returns NULL if not found. */
     BufferType* findCached(const TreeIndex& index) const;
     /** request a buffer from the cache. A non-NULL buffer is returned as long
-        as all the cache slots are not not pinned (either explicitly or because
+        as all the cache slots are not pinned (either explicitly or because
         they are in use for the current frame). Optionally the location to a
-        boolean can be passed and getBuffer will set if the buffer was already
-        present or not at that location. */
+        boolean can be passed that getBuffer will set if the buffer was already
+        present or not. Buffers can be returned that have invalid content. They
+        must be explicitly checked using isValid before use. */
     BufferType* getBuffer(const TreeIndex& index, bool* existed=NULL);
 
     /** check to see if the buffer is active in the current frame */

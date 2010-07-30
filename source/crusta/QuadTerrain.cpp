@@ -1359,22 +1359,23 @@ const QuadNodeGpuLineData& QuadTerrain::
 prepareGpuLineData(CrustaGlData* glData, QuadNodeMainData& mainData,
                    const AgeStamp& currentFrame)
 {
+    GpuLineCache* lineCache = glData->lineCache;
     bool existed;
-    GpuLineCacheBuffer* lineBuf = glData->lineCache->getBuffer(mainData.index,
-                                                               &existed);
-    if (existed && lineBuf->getData().age==mainData.lineCoverageAge)
+    GpuLineCacheBuffer* lineBuf = lineCache->getBuffer(mainData.index,&existed);
+    if (existed && lineCache->isValid(lineBuf) &&
+        lineBuf->getData().age==mainData.lineCoverageAge)
     {
         //we have cached and current data
-        glData->lineCache->touch(lineBuf);
+        lineCache->touch(lineBuf);
         return lineBuf->getData();
     }
     else
     {
         //in any case the data has to be transfered from main memory
         if (lineBuf)
-            glData->lineCache->touch(lineBuf);
+            lineCache->touch(lineBuf);
         else
-            lineBuf = glData->lineCache->getStreamBuffer();
+            lineBuf = lineCache->getStreamBuffer();
 
         QuadNodeGpuLineData& lineData = lineBuf->getData();
 
@@ -1398,21 +1399,21 @@ const QuadNodeVideoData& QuadTerrain::
 prepareVideoData(CrustaGlData* glData, QuadNodeMainData& mainData)
 {
     bool existed;
-    VideoCacheBuffer* videoBuf = glData->videoCache->getBuffer(mainData.index,
-                                                               &existed);
-    if (existed)
+    VideoCache* videoCache = glData->videoCache;
+    VideoCacheBuffer* videoBuf = videoCache->getBuffer(mainData.index,&existed);
+    if (existed && videoCache->isValid(videoBuf))
     {
         //if there was already a match in the cache, just use that data
-        glData->videoCache->touch(videoBuf);
+        videoCache->touch(videoBuf);
         return videoBuf->getData();
     }
     else
     {
         //in any case the data has to be transfered from main memory
         if (videoBuf)
-            glData->videoCache->touch(videoBuf);
+            videoCache->touch(videoBuf);
         else
-            videoBuf = glData->videoCache->getStreamBuffer();
+            videoBuf = videoCache->getStreamBuffer();
 
         const QuadNodeVideoData& videoData = videoBuf->getData();
 
