@@ -1274,7 +1274,7 @@ simply float processing the transformation */
     glGetIntegerv(GL_VIEWPORT, viewport);
 ///\todo query the coverage texture size don't have it hardcoded everywhere
     //set the viewport to match the coverage texture
-    glViewport(0,0,TILE_RESOLUTION>>1,TILE_RESOLUTION>>1);
+    glViewport(0, 0, Crusta::lineCoverageTexSize, Crusta::lineCoverageTexSize);
 
     //bind the coverage rendering framebuffer
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->coverageFbo);
@@ -1292,15 +1292,16 @@ simply float processing the transformation */
     glBlendFunc(GL_ONE, GL_ONE);
     glEnable(GL_BLEND);
 
-    const Coverage& coverage = node.lineCoverage;
-    const Colors&   offsets  = node.lineCoverageOffsets;
+    const Coverage&  coverage = node.lineCoverage;
+    const Vector2fs& offsets  = node.lineCoverageOffsets;
+
     glLineWidth(15.0f);
 
     glBegin(GL_LINES);
 
 #if 1
     //as the coverage is traversed also traverse the offsets
-    Colors::const_iterator oit = offsets.begin();
+    Vector2fs::const_iterator oit = offsets.begin();
     //traverse all the line in the coverage
     for (Coverage::const_iterator lit=coverage.begin(); lit!=coverage.end();
          ++lit)
@@ -1315,7 +1316,8 @@ simply float processing the transformation */
              ++hit, ++oit)
         {
             //pass the offset along
-            glColor4fv(oit->getComponents());
+            Color color((*oit)[0], (*oit)[0], (*oit)[0], (*oit)[1]);
+            glColor4fv(color.getComponents());
 
             Handle cur  = hit->handle;
             Handle next = cur; ++next;

@@ -33,6 +33,15 @@ BEGIN_CRUSTA
 #if CRUSTA_ENABLE_DEBUG
 int CRUSTA_DEBUG_LEVEL_MIN = 100;
 int CRUSTA_DEBUG_LEVEL_MAX = 100;
+
+bool CRUSTA_DEBUG_TOOL0      = false;
+bool CRUSTA_DEBUG_TOOL0_LAST = false;
+bool CRUSTA_DEBUG_TOOL1      = false;
+bool CRUSTA_DEBUG_TOOL1_LAST = false;
+bool CRUSTA_DEBUG_TOOL2      = false;
+bool CRUSTA_DEBUG_TOOL2_LAST = false;
+bool CRUSTA_DEBUG_TOOL3      = false;
+bool CRUSTA_DEBUG_TOOL3_LAST = false;
 #endif //CRUSTA_ENABLE_DEBUG
 
 #if DEBUG_INTERSECT_CRAP
@@ -45,6 +54,7 @@ bool DEBUG_INTERSECT = false;
 const int   Crusta::lineDataTexSize     = 8192;
 const float Crusta::lineDataCoordStep   = 1.0f / lineDataTexSize;
 const float Crusta::lineDataStartCoord  = 0.5f * lineDataCoordStep;
+const int   Crusta::lineCoverageTexSize = TILE_RESOLUTION>>2;
 
 ///\todo OMG this needs to be integrated into the code properly (VIS 2010)
 class RGBAImage

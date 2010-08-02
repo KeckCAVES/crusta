@@ -126,6 +126,8 @@ public:
 static const int   lineDataTexSize;
 static const float lineDataCoordStep;
 static const float lineDataStartCoord;
+/** the pixel resolution of the coverage maps */
+static const int lineCoverageTexSize;
 
 
 ///\todo debug

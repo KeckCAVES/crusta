@@ -54,7 +54,7 @@ struct QuadNodeMainData
 ///\todo integrate me properly into the caching scheme (VIS 2010)
 bool          lineCoverageDirty;
 AgeStamp      lineCoverageAge;
-Colors        lineCoverageOffsets;
+Vector2fs     lineCoverageOffsets;
 ShapeCoverage lineCoverage;
 Colors        lineData;
 

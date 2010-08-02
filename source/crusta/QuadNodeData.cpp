@@ -119,7 +119,7 @@ createTexture(GLuint& texture, GLint internalFormat, uint size)
 
 
 QuadNodeGpuLineData::
-QuadNodeGpuLineData(uint size) :
+QuadNodeGpuLineData(uint) :
     age(0)
 {
     glGenTextures(1, &data);
@@ -130,10 +130,10 @@ QuadNodeGpuLineData(uint size) :
                  GL_RGBA, GL_FLOAT, NULL);
     CHECK_GLA
 
-    uint mapSize = size>>1;
     glGenTextures(1, &coverage);
     glBindTexture(GL_TEXTURE_2D, coverage);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mapSize, mapSize, 0,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA,
+                 Crusta::lineCoverageTexSize, Crusta::lineCoverageTexSize, 0,
                  GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

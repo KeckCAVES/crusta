@@ -492,14 +492,14 @@ updateLineData(Nodes& nodes)
     typedef QuadNodeMainData::AgeStampedControlPointHandleList HandleList;
     typedef Shape::ControlPointHandle                          Handle;
 
-    static const int& lineTexSize = Crusta::lineDataTexSize;
+    const uint32 lineTexSize = static_cast<uint32>(Crusta::lineDataTexSize);
 
     //go through all the nodes provided
     for (Nodes::iterator nit=nodes.begin(); nit!=nodes.end(); ++nit)
     {
         QuadNodeMainData*                node     = *nit;
         QuadNodeMainData::ShapeCoverage& coverage = node->lineCoverage;
-        Colors&                          offsets  = node->lineCoverageOffsets;
+        Vector2fs&                       offsets  = node->lineCoverageOffsets;
         Colors&                          data     = node->lineData;
 
 /**\todo integrate check for deprecated data only to where nodes are added to
@@ -554,60 +554,38 @@ for (Coverage::iterator lit=coverage.begin(); lit!=coverage.end(); ++lit)
 }
 
         //determine texture space requirements
-        int numLines = static_cast<int>(coverage.size());
         int numSegs  = 0;
         for (Coverage::iterator lit=coverage.begin();lit!=coverage.end();++lit)
         {
             numSegs += static_cast<int>(lit->second.size());
         }
 
-///\todo hardcoded 2 samples for now (just end points)
-//uint32 baseOffsetX = curOffset[0];
-        int texelsNeeded = 5 + numLines*2 + numSegs*3;
-        //node data must fit into the line data texture
-        if (texelsNeeded >= lineTexSize)
-            continue;
-
 CRUSTA_DEBUG(50, std::cerr << "###REGEN n(" << node->index << ") :\n" <<
 coverage << "\n\n";)
 
     //- reset the offsets
         offsets.clear();
-        Colors off;
-        uint32 symbolOff;
         uint32 curOff = 0.0;
 
     //- dump the node dependent data, i.e.: relative to tile transform
         //dump the number of sections in this node
-        data.push_back(Color(numLines, 0, 0, 0));
+        data.push_back(Color(numSegs, 0, 0, 0));
         ++curOff;
-
-/**\todo insert another level here: collections of lines that use the same
-symbol from the atlas. Then dump the atlas info and the number of lines
-following that use it. For now just duplicate the atlas info */
 
     //- go through all the lines for that node and dump the data
         const Point3& centroid = node->centroid;
 
-        for (Coverage::iterator lit=coverage.begin();lit!=coverage.end();++lit)
+        for (Coverage::iterator lit=coverage.begin();
+             lit!=coverage.end() && curOff<lineTexSize; ++lit)
         {
             const Polyline* line = dynamic_cast<const Polyline*>(lit->first);
             assert(line != NULL);
             HandleList& handles = lit->second;
-
-        //- save the offset to the symbols definition
-            symbolOff = curOff;
-
-        //- dump the line dependent data, i.e.: atlas info, number of segments
             const Shape::Symbol& symbol = line->getSymbol();
-            data.push_back(symbol.originSize);
-            ++curOff;
-            data.push_back(Color(handles.size(), 0, 0, 0));
-            ++curOff;
 
         //- age stamp and dump all the segments for the current line
-            for (HandleList::iterator hit=handles.begin(); hit!=handles.end();
-                 ++hit)
+            for (HandleList::iterator hit=handles.begin();
+                 hit!=handles.end() && curOff<lineTexSize; ++hit)
             {
                 //age stamp the current data to the shape's age
                 hit->age = hit->handle->age;
@@ -629,11 +607,13 @@ following that use it. For now just duplicate the atlas info */
                 const Scalar& nextC = next->coord;
 
                 //save the offset to the data
-                Color coff((symbolOff&0xFF)             / 255.0f,
-                           (((symbolOff>>8)&0xFF) + 64) / 255.0f,
-                           (curOff&0xFF)                / 255.0f,
-                           ((curOff>>8)&0xFF)           / 255.0f);
+                Vector2f coff((curOff&0xFF)           / 255.0f,
+                              (((curOff>>8) & 0xFF) + 64) / 255.0f);
                 offsets.push_back(coff);
+
+                //the atlas information for this segment
+                data.push_back(symbol.originSize);
+                ++curOff;
 
                 //segment control points
                 data.push_back(Color( curPf[0],  curPf[1],  curPf[2],  curC));
@@ -642,7 +622,7 @@ following that use it. For now just duplicate the atlas info */
                 ++curOff;
 
                 //section normal
-                Vector3 normal = Geometry::cross(Vector3(nextP), Vector3(curP));
+                Vector3 normal = Geometry::cross(Vector3(curP), Vector3(nextP));
                 normal.normalize();
                 data.push_back(Color(normal[0], normal[1], normal[2], 0.0));
                 ++curOff;

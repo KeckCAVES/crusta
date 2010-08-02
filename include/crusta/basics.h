@@ -40,6 +40,15 @@ if (l>=CRUSTA_DEBUG_LEVEL_MIN && l<=CRUSTA_DEBUG_LEVEL_MAX) {\
 #define CRUSTA_DEBUG(l,x)
 #define CRUSTA_DEBUG_OUT(a, b, args...)
 
+extern bool CRUSTA_DEBUG_TOOL0;
+extern bool CRUSTA_DEBUG_TOOL0_LAST;
+extern bool CRUSTA_DEBUG_TOOL1;
+extern bool CRUSTA_DEBUG_TOOL1_LAST;
+extern bool CRUSTA_DEBUG_TOOL2;
+extern bool CRUSTA_DEBUG_TOOL2_LAST;
+extern bool CRUSTA_DEBUG_TOOL3;
+extern bool CRUSTA_DEBUG_TOOL3_LAST;
+
 #endif //CRUSTA_ENABLE_DEBUG
 
 #define DEBUG_INTERSECT_CRAP 0
@@ -74,6 +83,7 @@ typedef std::vector<Point3f>        Point3fs;
 typedef Geometry::Vector<float, 2>  Vector2f;
 typedef Geometry::Vector<Scalar, 3> Vector3;
 typedef Geometry::Vector<float, 3>  Vector3f;
+typedef std::vector<Vector2f>       Vector2fs;
 typedef std::vector<Vector3>        Vector3s;
 typedef std::vector<Vector3f>       Vector3fs;
 

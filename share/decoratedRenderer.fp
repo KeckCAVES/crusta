@@ -16,6 +16,23 @@ varying vec2 texCoord;
 
 const float EPSILON = 0.00001;
 
+#define NORMAL   1
+#define TWIST    1
+#define COVERAGE 0
+#define COLORIZE_COVERAGE 0
+
+///\todo move to uniform specification
+#define U_SCALE 0.15
+#define V_SCALE 3.0
+
+struct Segment
+{
+    vec4 symbol;
+    vec4 start;
+    vec4 end;
+    vec3 normal;
+};
+
 vec4 read(inout float coord)
 {
     vec4 r = texture1D(lineDataTex, coord);
@@ -23,26 +40,28 @@ vec4 read(inout float coord)
     return r;
 }
 
-#define NORMAL   1
-#define TWIST    1
-#define COVERAGE 0
-#define COLORIZE_COVERAGE 0
-
-#define U_SCALE 0.15
-#define V_SCALE 3.0
-
-#define computeLine computeLineNew
-
-void computeLineNew(in vec4 symbolOS, in vec4 startCP, in vec4 endCP,
-                 in vec3 sectionNormal, inout vec4 color)
+Segment readSegment(inout float coord)
 {
-//- Compute lateral coordinate v using simplified formula:
+    Segment segment;
+    segment.symbol = read(coord);
+    segment.start  = read(coord);
+    segment.end    = read(coord);
+    segment.normal = read(coord).xyz;
+    return segment;
+}
 
-    // Compute v without taking distortion into account:
-    float v = dot(position - startCP.xyz, sectionNormal);
+void computeSegment(in Segment segment, inout vec4 color)
+{
+//color = segment.symbol;
+//color.a = 1.0;
+//return;
+//- compute lateral coordinate v
+
+    //compute v without taking distortion into account:
+    float v = dot(position - segment.start.xyz, segment.normal);
 
     // Correct for distortion by dividing by sin(alpha):
-    float snn = dot(sectionNormal, normal);
+    float snn = dot(segment.normal, normal);
     v = v / sqrt(1.0 - snn * snn);
 
     // Scale v to normalize to the segment width
@@ -51,100 +70,37 @@ void computeLineNew(in vec4 symbolOS, in vec4 startCP, in vec4 endCP,
     //- Reject if v<-1 or v>1:
     if(abs(v) <= 1.0)
     {
-        //- Compute longitudinal coordinate u using simplified formula:
+    //- Compute longitudinal coordinate u using simplified formula:
 
         // Compute the normal vector of the plane containing center and
         // position and being orthogonal to the wedge:
-        vec3 b = cross(sectionNormal, position + center);
+        vec3 b = cross(segment.normal, position + center);
 
         // Compute the plane's intersection ration with the line's skeleton:
-        vec3 startToEnd = endCP.xyz - startCP.xyz;
-        float u = (dot(position, b) - dot(startCP.xyz, b)) / dot(startToEnd, b);
+        vec3 startToEnd = segment.end.xyz - segment.start.xyz;
+        float u = (dot(position, b) - dot(segment.start.xyz, b)) /
+                  dot(startToEnd, b);
 
         //- Reject if u<0 or u>1:
         if(u>=0.0 && u<=1.0)
         {
-//color = vec4(vec3(v), 0.3);
-            //compute the u coordinate wrt the length of the segment
-            u  = mix(startCP.w, endCP.w, u);
-            u *= U_SCALE*lineCoordScale;
-            u  = fract(u/symbolOS.b);
-
-            //fetch the color contribution from the texture atlas
-            vec2 symbolCoord = vec2(u, v);
-            symbolCoord     *= symbolOS.ba;
-            symbolCoord     += symbolOS.rg;
-            vec4 symbolColor = texture2D(symbolTex, symbolCoord);
-
-            //accumulate the contribution
-            color = mix(color, symbolColor, symbolColor.w);
-        }
-    }
-}
-
-void computeLineOld(in vec4 symbolOS, in vec4 startCP, in vec4 endCP,
-                 in vec3 sectionNormal, inout vec4 color)
-{
-    vec3 startToEnd = endCP.xyz - startCP.xyz;
-
-//- radially intersect segment to compute containment
-    //project position into the section
-    vec3 projP = position - dot(position, sectionNormal)*sectionNormal;
-
-    vec3 toOrig = -(position + center);
-    vec3 w0     = startCP.xyz - projP;
-
-    float a = dot(startToEnd, startToEnd);
-    float b = dot(startToEnd, toOrig);
-    float c = dot(toOrig, toOrig);
-    float d = dot(startToEnd, w0);
-    float e = dot(toOrig, w0);
-
-    float u = a*c - b*b;
-    u       = u<EPSILON ? -1.0 : (b*e - c*d) / u;
-
-    if (u>=0.0 && u<=1.0)
-    {
 #if NORMAL
-    //- use normal projection on the line segment instead for the u
-        vec3 startToPos = position  - startCP.xyz;
+            //compute the u coordinate as normal projection
+            vec3  startToPos = position  - segment.start.xyz;
+            float sqrLen     = dot(startToEnd, startToEnd);
+            u                = dot(startToPos, startToEnd);
+            u               /= sqrLen;
+#endif //NORMAL
 
-        //compute the u coordinate along the segment
-        float sqrLen = dot(startToEnd, startToEnd);
-        float u      = dot(startToPos, startToEnd);
-        u           /= sqrLen;
-#endif
-
-        //compute the line tangent
-        vec3 tangent = cross(normal, normalize(startToEnd));
-        float tangentLen = length(tangent);
-#if TWIST
-        if (tangentLen<EPSILON)
-            tangent = -lineWidth*sectionNormal;
-        else
-            tangent *= 3.0*lineWidth;
-#else
-        tangent = -lineWidth*sectionNormal;
-#endif
-
-        //intersect ray from position along tangent with section
-        float sectionOffset = -dot(startCP.xyz, sectionNormal);
-        float nume  = dot(position, sectionNormal) + sectionOffset;
-        float denom = dot(tangent, sectionNormal);
-        float v     = nume / denom;
-
-        if (v>=-1.0 && v<=1.0)
-        {
-//color = vec4(vec3(v), 0.3);
             //compute the u coordinate wrt the length of the segment
-            u  = mix(startCP.w, endCP.w, u);
-            u *= 0.15*lineCoordScale;
-            u  = fract(u/symbolOS.b);
+            u  = mix(segment.start.w, segment.end.w, u);
+            u *= U_SCALE*lineCoordScale;
+            u  = fract(u / segment.symbol.b);
 
             //fetch the color contribution from the texture atlas
             vec2 symbolCoord = vec2(u, v);
-            symbolCoord     *= symbolOS.ba;
-            symbolCoord     += symbolOS.rg;
+            symbolCoord     *= segment.symbol.ba;
+            symbolCoord     += segment.symbol.rg;
             vec4 symbolColor = texture2D(symbolTex, symbolCoord);
 
             //accumulate the contribution
@@ -166,9 +122,9 @@ void main()
 
     vec4 coverage = texture2D(lineCoverageTex, texCoord);
 #if COVERAGE
-    if (coverage.g < 0.5)
+    if (coverage.a < 0.5)
     {
-        if (coverage.r > 0.0)
+        if (coverage.a > 0.0)
             gl_FragColor.rgb = vec3(0.2, 0.8, 0.4);
         else
             gl_FragColor.rgb = vec3(0.0);
@@ -186,59 +142,38 @@ void main()
     vec4 color = vec4(0.0);
 
     //optimize for single coverage
-    if (coverage.g < 0.5)
+    if (coverage.a < 0.5)
     {
         vec2 coordShift = vec2(255.0, 255.0*256.0);
 
-        vec2 off        = coverage.rg * coordShift;
-        off.x          -= 64.0*256.0;
-        float symbolOff = off.x + off.y;
-
-        off              = coverage.ba * coordShift;
+        vec2 off         = coverage.ra * coordShift;
+        off.x           -= 64.0*256.0;
         float segmentOff = off.x + off.y;
 
-        //read in the symbol
-        coord         = lineStartCoord + symbolOff*lineCoordStep;
-        vec4 symbolOS = texture1D(lineDataTex, coord);
-
         //read in the segment data
-        coord              = lineStartCoord + segmentOff*lineCoordStep;
-        vec4 startCP       = read(coord);
-        vec4 endCP         = read(coord);
-        vec3 sectionNormal = read(coord).xyz;
+        coord           = lineStartCoord + segmentOff*lineCoordStep;
+        Segment segment = readSegment(coord);
 
-        //compute line and done
+        //compute segment and done
 #if COLORIZE_COVERAGE
         color = vec4(0.2, 0.8, 0.4, 0.2);
 #endif //COLORIZE_COVERAGE
-        computeLine(symbolOS, startCP, endCP, -sectionNormal, color);
+        computeSegment(segment, color);
     }
     else
     {
 #if COLORIZE_COVERAGE
         color = vec4(0.8, 0.4, 0.2, 0.2);
 #endif //COLORIZE_COVERAGE
-        //walk all the line bits for the node of the fragment
-        int lineBitsMax = int(read(coord).r) - 1;
+        //walk all the line segments for the node of the fragment
+        int segmentsMax = int(read(coord).r) - 1;
 
-        for (int i=0; i<128; ++i)
+        for (int i=0; i<2048; ++i)
         {
-            vec4 symbolOS = read(coord);
+            Segment segment = readSegment(coord);
+            computeSegment(segment, color);
 
-            int segmentsMax = int(read(coord).r) - 1;
-            for (int j=0; j<128; ++j)
-            {
-                vec4 startCP       = read(coord);
-                vec4 endCP         = read(coord);
-                vec3 sectionNormal = read(coord).xyz;
-
-                computeLine(symbolOS, startCP, endCP, -sectionNormal, color);
-
-                if (j == segmentsMax)
-                    break;
-            }
-
-            if (i == lineBitsMax)
+            if (i == segmentsMax)
                 break;
         }
     }

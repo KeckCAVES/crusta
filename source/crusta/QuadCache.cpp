@@ -249,7 +249,7 @@ upper level. TILE_RESOLUTION is assumed to be used internally!! */
 GpuLineCache::
 GpuLineCache(uint size, Crusta* iCrusta) :
     CacheUnit<GpuLineCacheBuffer>(size, iCrusta),
-    streamBuffer(TILE_RESOLUTION)
+    streamBuffer(Crusta::lineCoverageTexSize)
 {
 }
 
