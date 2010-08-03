@@ -33,15 +33,6 @@ BEGIN_CRUSTA
 #if CRUSTA_ENABLE_DEBUG
 int CRUSTA_DEBUG_LEVEL_MIN = 100;
 int CRUSTA_DEBUG_LEVEL_MAX = 100;
-
-bool CRUSTA_DEBUG_TOOL0      = false;
-bool CRUSTA_DEBUG_TOOL0_LAST = false;
-bool CRUSTA_DEBUG_TOOL1      = false;
-bool CRUSTA_DEBUG_TOOL1_LAST = false;
-bool CRUSTA_DEBUG_TOOL2      = false;
-bool CRUSTA_DEBUG_TOOL2_LAST = false;
-bool CRUSTA_DEBUG_TOOL3      = false;
-bool CRUSTA_DEBUG_TOOL3_LAST = false;
 #endif //CRUSTA_ENABLE_DEBUG
 
 #if DEBUG_INTERSECT_CRAP
@@ -336,6 +327,10 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
     colorMap = new GLColorMap(numColorMapEntries, dummyColorMap,
                               GLdouble(globalElevationRange[0]),
                               GLdouble(globalElevationRange[1]));
+
+#if CRUSTA_ENABLE_DEBUG
+debugTool = NULL;
+#endif //CRUSTA_ENABLE_DEBUG
 }
 
 void Crusta::
@@ -784,6 +779,11 @@ submitActives(const Actives& touched)
 void Crusta::
 frame()
 {
+#if CRUSTA_ENABLE_DEBUG
+if (debugTool!=NULL && debugTool->getButton(0))
+    fprintf(stderr, "d");
+#endif //CRUSTA_ENABLE_DEBUG
+
     ++currentFrame;
 CRUSTA_DEBUG_OUT(8, "\n\n\n--------------------------------------\n%u\n\n\n",
 static_cast<unsigned int>(currentFrame));

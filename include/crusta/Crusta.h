@@ -13,6 +13,11 @@
 #include <crusta/LightingShader.h>
 #include <crusta/map/Shape.h>
 
+#if CRUSTA_ENABLE_DEBUG
+#include <crusta/DebugTool.h>
+#endif //CRUSTA_ENABLE_DEBUG
+
+
 class GLColorMap;
 class GLContextData;
 
@@ -129,6 +134,9 @@ static const float lineDataStartCoord;
 /** the pixel resolution of the coverage maps */
 static const int lineCoverageTexSize;
 
+#if CRUSTA_ENABLE_DEBUG
+DebugTool* debugTool;
+#endif //CRUSTA_ENABLE_DEBUG
 
 ///\todo debug
 void confirmLineCoverageRemoval(Shape* shape, Shape::ControlPointHandle cp);

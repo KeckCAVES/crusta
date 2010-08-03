@@ -109,6 +109,8 @@ public:
     virtual void display(GLContextData& contextData) const;
     virtual void toolCreationCallback(
         Vrui::ToolManager::ToolCreationCallbackData* cbData);
+    virtual void toolDestructionCallback(
+        Vrui::ToolManager::ToolDestructionCallbackData* cbData);
 };
 
 END_CRUSTA

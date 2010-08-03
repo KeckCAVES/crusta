@@ -51,6 +51,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/CrustaComponent.h
     ../include/crusta/CrustaVisualizer.h
     ../include/crusta/DataManager.h
+    ../include/crusta/DebugTool.h
     ../include/crusta/DemSpecs.h
     ../include/crusta/ElevationRangeTool.h
     ../include/crusta/Ellipsoid.h
@@ -99,6 +100,7 @@ add_library(CrustaCore SHARED
     ../source/crusta/Crusta.cpp
     ../source/crusta/CrustaVisualizer.cpp
     ../source/crusta/DataManager.cpp
+    ../source/crusta/DebugTool.cpp
     ../source/crusta/DemSpecs.cpp
     ../source/crusta/ElevationRangeTool.cpp
     ../source/crusta/FocusViewEvaluator.cpp

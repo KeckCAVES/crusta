@@ -43,6 +43,10 @@
 #include <Vrui/ToolManager.h>
 #include <Vrui/Tools/SurfaceNavigationTool.h>
 
+#if CRUSTA_ENABLE_DEBUG
+#include <crusta/DebugTool.h>
+#endif //CRUSTA_ENABLE_DEBUG
+
 BEGIN_CRUSTA
 
 CrustaApp::
@@ -87,6 +91,10 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
         paletteEditor->getColorMap());
     changeColorMapCallback(&initMap);
     resetNavigationCallback(NULL);
+
+#if CRUSTA_ENABLE_DEBUG
+    DebugTool::init();
+#endif //CRUSTA_ENABLE_DEBUG
 }
 
 CrustaApp::
@@ -530,8 +538,26 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
     if (component != NULL)
         component->setupComponent(crusta);
 
+#if CRUSTA_ENABLE_DEBUG
+    //check for the creation of the debug tool
+    DebugTool* dbgTool = dynamic_cast<DebugTool*>(cbData->tool);
+    if (dbgTool!=NULL && crusta->debugTool==NULL)
+        crusta->debugTool = dbgTool;
+#endif //CRUSTA_ENABLE_DEBUG
+
+
     Vrui::Application::toolCreationCallback(cbData);
 }
+
+void CrustaApp::
+toolDestructionCallback(Vrui::ToolManager::ToolDestructionCallbackData* cbData)
+{
+#if CRUSTA_ENABLE_DEBUG
+    if (cbData->tool == crusta->debugTool)
+        crusta->debugTool = NULL;
+#endif //CRUSTA_ENABLE_DEBUG
+}
+
 
 
 END_CRUSTA
