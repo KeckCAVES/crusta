@@ -22,6 +22,8 @@
 #include <crusta/Triangle.h>
 
 
+#include <crusta/StatsManager.h>
+
 ///todo debug
 #include <crusta/CrustaVisualizer.h>
 #define CV(x) CrustaVisualizer::x
@@ -779,6 +781,8 @@ submitActives(const Actives& touched)
 void Crusta::
 frame()
 {
+statsMan.newFrame();
+
 #if CRUSTA_ENABLE_DEBUG
 if (debugTool!=NULL && debugTool->getButton(0))
     fprintf(stderr, "d");
@@ -825,6 +829,8 @@ display(GLContextData& contextData)
         (*it)->prepareDisplay(contextData, renderNodes);
         CHECK_GLA
     }
+
+statsMan.extractTileStats(renderNodes);
 
 ///\todo remove
 //std::cerr << "Num render nodes: " << renderNodes.size() << std::endl;

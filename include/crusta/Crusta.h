@@ -15,6 +15,7 @@
 
 #if CRUSTA_ENABLE_DEBUG
 #include <crusta/DebugTool.h>
+#include <crusta/Timer.h>
 #endif //CRUSTA_ENABLE_DEBUG
 
 
@@ -136,6 +137,7 @@ static const int lineCoverageTexSize;
 
 #if CRUSTA_ENABLE_DEBUG
 DebugTool* debugTool;
+Timer      debugTimers[10];
 #endif //CRUSTA_ENABLE_DEBUG
 
 ///\todo debug

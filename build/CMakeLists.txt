@@ -83,7 +83,9 @@ add_library(CrustaCore SHARED
     ../include/crusta/Scope.hpp
     ../include/crusta/Section.h
     ../include/crusta/Sphere.h
+    ../include/crusta/StatsManager.h
     ../include/crusta/SurfaceTool.h
+    ../include/crusta/Timer.h
     ../include/crusta/Tool.h
     ../include/crusta/TreeIndex.h
     ../include/crusta/Triacontahedron.h
@@ -121,6 +123,7 @@ add_library(CrustaCore SHARED
     ../source/crusta/Scope.cpp
     ../source/crusta/Sphere.cpp
     ../source/crusta/Section.cpp
+    ../source/crusta/StatsManager.cpp
     ../source/crusta/SurfaceTool.cpp
     ../source/crusta/Tool.cpp
     ../source/crusta/TreeIndex.cpp

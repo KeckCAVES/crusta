@@ -45,6 +45,8 @@
 #endif //CRUSTA_ENABLE_DEBUG
 #include <iostream>
 
+#include <crusta/StatsManager.h>
+
 #define CHECK_CONVERAGE_VALIDITY 0
 
 BEGIN_CRUSTA
@@ -433,6 +435,8 @@ CRUSTA_DEBUG(41, std::cerr << "--REM\n\n");
 void MapManager::
 inheritShapeCoverage(const QuadNodeMainData& parent, QuadNodeMainData& child)
 {
+statsMan.start(StatsManager::INHERITSHAPECOVERAGE);
+
     typedef QuadNodeMainData::ShapeCoverage                    Coverage;
     typedef QuadNodeMainData::AgeStampedControlPointHandleList HandleList;
     typedef Shape::ControlPointList::const_iterator            ConstHandle;
@@ -482,12 +486,16 @@ inheritShapeCoverage(const QuadNodeMainData& parent, QuadNodeMainData& child)
 #if CHECK_CONVERAGE_VALIDITY
 CRUSTA_DEBUG_ONLY(crusta->validateLineCoverage();)
 #endif //CHECK_CONVERAGE_VALIDITY
+
+statsMan.stop(StatsManager::INHERITSHAPECOVERAGE);
 }
 
 
 void MapManager::
 updateLineData(Nodes& nodes)
 {
+statsMan.start(StatsManager::UPDATELINEDATA);
+
     typedef QuadNodeMainData::ShapeCoverage                    Coverage;
     typedef QuadNodeMainData::AgeStampedControlPointHandleList HandleList;
     typedef Shape::ControlPointHandle                          Handle;
@@ -497,10 +505,10 @@ updateLineData(Nodes& nodes)
     //go through all the nodes provided
     for (Nodes::iterator nit=nodes.begin(); nit!=nodes.end(); ++nit)
     {
-        QuadNodeMainData*                node     = *nit;
-        QuadNodeMainData::ShapeCoverage& coverage = node->lineCoverage;
-        Vector2fs&                       offsets  = node->lineCoverageOffsets;
-        Colors&                          data     = node->lineData;
+        QuadNodeMainData* node     = *nit;
+        Coverage&         coverage = node->lineCoverage;
+        Vector2fs&        offsets  = node->lineCoverageOffsets;
+        Colors&           data     = node->lineData;
 
 /**\todo integrate check for deprecated data only to where nodes are added to
 the representation. For now just check deprecation here...
@@ -632,15 +640,21 @@ coverage << "\n\n";)
         //update the age of the line data
         node->lineCoverageAge = crusta->getCurrentFrame();
     }
+
+statsMan.stop(StatsManager::UPDATELINEDATA);
 }
 
 
 void MapManager::
 processVerticalScaleChange()
 {
+statsMan.start(StatsManager::PROCESSVERTICALSCALE);
+
     //need to recompute all the polylines' coordinates
     for (PolylinePtrs::iterator it=polylines.begin(); it!=polylines.end(); ++it)
         (*it)->recomputeCoords((*it)->getControlPoints().begin());
+
+statsMan.stop(StatsManager::PROCESSVERTICALSCALE);
 }
 
 void MapManager::

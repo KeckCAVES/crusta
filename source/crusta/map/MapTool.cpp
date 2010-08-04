@@ -13,6 +13,9 @@
 #include <crusta/map/MapManager.h>
 
 
+#include <crusta/StatsManager.h>
+
+
 BEGIN_CRUSTA
 
 
@@ -210,6 +213,8 @@ getFactory() const
 void MapTool::
 frame()
 {
+statsMan.start(StatsManager::EDITLINE);
+
     //handle motion
     Point3 pos = getPosition();
     pos = crusta->mapToUnscaledGlobe(pos);
@@ -259,6 +264,8 @@ frame()
         default:
             break;
     }
+
+statsMan.stop(StatsManager::EDITLINE);
 }
 
 void MapTool::
@@ -372,6 +379,8 @@ void MapTool::
 buttonCallback(int deviceIndex, int buttonIndex,
                Vrui::InputDevice::ButtonCallbackData* cbData)
 {
+statsMan.start(StatsManager::EDITLINE);
+
     Point3 pos = getPosition();
     pos        = crusta->mapToUnscaledGlobe(pos);
 
@@ -481,6 +490,8 @@ buttonCallback(int deviceIndex, int buttonIndex,
             }
         }
     }
+
+statsMan.stop(StatsManager::EDITLINE);
 }
 
 
