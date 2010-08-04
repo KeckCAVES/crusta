@@ -126,6 +126,7 @@ loadChild(MainCacheBuffer* parent, uint8 which, MainCacheBuffer* child)
 
     //clear the old line data
     childData.lineCoverage.clear();
+    childData.lineNumSegments = 0;
     childData.lineData.clear();
 
     //grab the proper data for the child

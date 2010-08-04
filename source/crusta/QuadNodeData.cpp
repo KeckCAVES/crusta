@@ -20,8 +20,8 @@ AgeStampedControlPointHandle(const AgeStamp& iAge,
 
 QuadNodeMainData::
 QuadNodeMainData(uint size) :
-    lineCoverageDirty(false), lineCoverageAge(0), index(TreeIndex::invalid),
-    boundingCenter(0,0,0), boundingRadius(0)
+    lineCoverageDirty(false), lineCoverageAge(0), lineNumSegments(0),
+    index(TreeIndex::invalid), boundingCenter(0,0,0), boundingRadius(0)
 {
     geometry = new Vertex[size*size];
     height   = new DemHeight[size*size];

@@ -1,6 +1,7 @@
 uniform float lineStartCoord;
 uniform float lineCoordStep;
 
+uniform int lineNumSegments;
 uniform float lineCoordScale;
 uniform float lineWidth;
 
@@ -114,10 +115,8 @@ void main()
     //setup the default color to whatever the vertex program computed
     gl_FragColor = gl_Color;
 
-    float coord = lineStartCoord;
-
     //does this node contain any lines?
-    if (coord == 0.0)
+    if (lineNumSegments == 0)
         return;
 
     vec4 coverage = texture2D(lineCoverageTex, texCoord);
@@ -151,8 +150,8 @@ void main()
         float segmentOff = off.x + off.y;
 
         //read in the segment data
-        coord           = lineStartCoord + segmentOff*lineCoordStep;
-        Segment segment = readSegment(coord);
+        segmentOff      = lineStartCoord + segmentOff*lineCoordStep;
+        Segment segment = readSegment(segmentOff);
 
         //compute segment and done
 #if COLORIZE_COVERAGE
@@ -166,15 +165,12 @@ void main()
         color = vec4(0.8, 0.4, 0.2, 0.2);
 #endif //COLORIZE_COVERAGE
         //walk all the line segments for the node of the fragment
-        int segmentsMax = int(read(coord).r) - 1;
 
-        for (int i=0; i<2048; ++i)
+        float coord = lineStartCoord;
+        for (int i=0; i<lineNumSegments; ++i)
         {
             Segment segment = readSegment(coord);
             computeSegment(segment, color);
-
-            if (i == segmentsMax)
-                break;
         }
     }
 

@@ -56,6 +56,7 @@ bool          lineCoverageDirty;
 AgeStamp      lineCoverageAge;
 Vector2fs     lineCoverageOffsets;
 ShapeCoverage lineCoverage;
+int           lineNumSegments;
 Colors        lineData;
 
     /** uniquely characterize this node's "position" in the tree. The tree

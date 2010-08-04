@@ -481,6 +481,7 @@ statsMan.start(StatsManager::INHERITSHAPECOVERAGE);
     }
 
     //invalidate the child's line data
+    child.lineNumSegments = 0;
     child.lineData.clear();
 
 #if CHECK_CONVERAGE_VALIDITY
@@ -505,10 +506,11 @@ statsMan.start(StatsManager::UPDATELINEDATA);
     //go through all the nodes provided
     for (Nodes::iterator nit=nodes.begin(); nit!=nodes.end(); ++nit)
     {
-        QuadNodeMainData* node     = *nit;
-        Coverage&         coverage = node->lineCoverage;
-        Vector2fs&        offsets  = node->lineCoverageOffsets;
-        Colors&           data     = node->lineData;
+        QuadNodeMainData* node        = *nit;
+        Coverage&         coverage    = node->lineCoverage;
+        Vector2fs&        offsets     = node->lineCoverageOffsets;
+        int&              numSegments = node->lineNumSegments;
+        Colors&           data        = node->lineData;
 
 /**\todo integrate check for deprecated data only to where nodes are added to
 the representation. For now just check deprecation here...
@@ -561,12 +563,10 @@ for (Coverage::iterator lit=coverage.begin(); lit!=coverage.end(); ++lit)
 }
 }
 
-        //determine texture space requirements
-        int numSegs  = 0;
+        //determine the number of segments covered by the tile
+        numSegments = 0;
         for (Coverage::iterator lit=coverage.begin();lit!=coverage.end();++lit)
-        {
-            numSegs += static_cast<int>(lit->second.size());
-        }
+            numSegments += static_cast<int>(lit->second.size());
 
 CRUSTA_DEBUG(50, std::cerr << "###REGEN n(" << node->index << ") :\n" <<
 coverage << "\n\n";)
@@ -574,11 +574,6 @@ coverage << "\n\n";)
     //- reset the offsets
         offsets.clear();
         uint32 curOff = 0.0;
-
-    //- dump the node dependent data, i.e.: relative to tile transform
-        //dump the number of sections in this node
-        data.push_back(Color(numSegs, 0, 0, 0));
-        ++curOff;
 
     //- go through all the lines for that node and dump the data
         const Point3& centroid = node->centroid;
@@ -752,6 +747,7 @@ CRUSTA_DEBUG(43, std::cerr << "+" << node->index;)
     chandles.push_back(CHandle(segment->age, segment));
 
     //invalidate current line data
+    node->lineNumSegments = 0;
     node->lineData.clear();
     //record the change for the culled tree if this is a leaf node
     if (isLeaf)
@@ -793,6 +789,7 @@ CRUSTA_DEBUG(43, std::cerr << "-" << node->index;)
         node->lineCoverage.erase(lit);
 
     //invalidate current line data
+    node->lineNumSegments = 0;
     node->lineData.clear();
     //record the change for the culled tree if this is a leaf node
     if (isLeaf)

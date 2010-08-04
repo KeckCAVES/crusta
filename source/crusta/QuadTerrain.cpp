@@ -1450,12 +1450,10 @@ drawNode(GLContextData& contextData, CrustaGlData* glData,
     if (linesDecorated)
     {
         //stream the line data to the GPU if necessary
-        if (mainData.lineData.empty())
-            glData->terrainShader.setLineStartCoord(0.0);
-        else
+        glData->terrainShader.setLineNumSegments(mainData.lineNumSegments);
+        CHECK_GLA
+        if (mainData.lineNumSegments != 0)
         {
-            glData->terrainShader.setLineStartCoord(Crusta::lineDataStartCoord);
-
             const QuadNodeGpuLineData& lineData =
                 prepareGpuLineData(glData, mainData, currentFrame);
 
@@ -1463,6 +1461,7 @@ drawNode(GLContextData& contextData, CrustaGlData* glData,
             glBindTexture(GL_TEXTURE_1D, lineData.data);
             glActiveTexture(GL_TEXTURE4);
             glBindTexture(GL_TEXTURE_2D, lineData.coverage);
+            CHECK_GLA
         }
     }
 

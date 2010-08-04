@@ -701,11 +701,13 @@ catch (std::exception& e){
         uniform = glGetUniformLocationARB(programObject, "symbolTex");
         glUniform1i(uniform, 5);
 
+        uniform = glGetUniformLocationARB(programObject, "lineStartCoord");
+        glUniform1f(uniform, crusta::Crusta::lineDataStartCoord);
         uniform = glGetUniformLocationARB(programObject, "lineCoordStep");
         glUniform1f(uniform, crusta::Crusta::lineDataCoordStep);
 
-        lineStartCoordUniform =
-            glGetUniformLocationARB(programObject, "lineStartCoord");
+        lineNumSegmentsUniform =
+            glGetUniformLocationARB(programObject, "lineNumSegments");
         lineCoordScaleUniform =
             glGetUniformLocationARB(programObject, "lineCoordScale");
         lineWidthUniform = glGetUniformLocationARB(programObject, "lineWidth");

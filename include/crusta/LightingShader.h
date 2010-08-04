@@ -69,7 +69,7 @@ class LightingShader
     GLint textureStepUniform;
     GLint verticalScaleUniform;
     GLint centroidUniform;
-    GLint lineStartCoordUniform;
+    GLint lineNumSegmentsUniform;
     GLint lineCoordScaleUniform;
     GLint lineWidthUniform;
 
@@ -127,9 +127,9 @@ class LightingShader
         glUniform3f(centroidUniform, x, y, z);
     }
 
-    void setLineStartCoord(float sc)
+    void setLineNumSegments(int ns)
     {
-        glUniform1f(lineStartCoordUniform, sc);
+        glUniform1i(lineNumSegmentsUniform, ns);
     }
     void setLineCoordScale(float lcs)
     {
