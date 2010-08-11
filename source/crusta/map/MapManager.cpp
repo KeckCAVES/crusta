@@ -563,6 +563,9 @@ for (Coverage::iterator lit=coverage.begin(); lit!=coverage.end(); ++lit)
 }
 }
 
+//record the update to this node
+statsMan.incrementDataUpdated();
+
         //determine the number of segments covered by the tile
         numSegments = 0;
         for (Coverage::iterator lit=coverage.begin();lit!=coverage.end();++lit)

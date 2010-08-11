@@ -25,6 +25,7 @@ protected:
     static int numSegments;
     static int maxSegmentsPerTile;
     static int numData;
+    static int numDataUpdated;
 
 public:
     enum Stat
@@ -43,6 +44,7 @@ public:
     static void stop(Stat stat);
 
     static void extractTileStats(std::vector<QuadNodeMainData*>& nodes);
+    static void incrementDataUpdated();
 };
 
 

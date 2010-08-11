@@ -20,6 +20,7 @@ int StatsManager::numTiles           = 0;
 int StatsManager::numSegments        = 0;
 int StatsManager::maxSegmentsPerTile = 0;
 int StatsManager::numData            = 0;
+int StatsManager::numDataUpdated     = 0;
 
 
 StatsManager::
@@ -42,8 +43,8 @@ newFrame()
     }
     //dump usage stats
     file << numTiles <<","<< numSegments <<","<< maxSegmentsPerTile <<","<<
-            numData <<","<< endl;
-    numTiles = numSegments = maxSegmentsPerTile = numData = 0;
+            numData <<","<< numDataUpdated <<","<< endl;
+    numTiles = numSegments = maxSegmentsPerTile = numData = numDataUpdated = 0;
 
     timers[0].resume();
 #endif //CRUSTA_RECORD_STATS
@@ -92,6 +93,14 @@ extractTileStats(std::vector<QuadNodeMainData*>& nodes)
             maxSegmentsPerTile = std::max(maxSegmentsPerTile, segsInTile);
         }
     }
+#endif //CRUSTA_RECORD_STATS
+}
+
+void StatsManager::
+incrementDataUpdated()
+{
+#if CRUSTA_RECORD_STATS
+    ++numDataUpdated;
 #endif //CRUSTA_RECORD_STATS
 }
 
