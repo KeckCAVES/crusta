@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-cmake_policy(SET CMP0011 NEW)
+#cmake_policy(SET CMP0011 NEW)
 
 
 project(CRUSTA)
@@ -13,7 +13,14 @@ find_package(VRUI REQUIRED HINTS ${CMAKE_SOURCE_DIR})
 #-------------------
 # Target independent configuration
 #-------------------
-set(CRUSTA_SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share"
+set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
+    CACHE INTERNAL "CMAKE_INSTALL_PREFIX")
+
+set(CRUSTA_EXECUTABLE_PATH "${CMAKE_INSTALL_PREFIX}/bin"
+    CACHE PATH "Crusta install executable path")
+set(CRUSTA_LIBRARY_PATH "${CMAKE_INSTALL_PREFIX}/lib"
+    CACHE PATH "Crusta install library path")
+set(CRUSTA_SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share/crusta"
     CACHE PATH "Crusta install share path")
 add_definitions(-DCRUSTA_SHARE_PATH=\"${CRUSTA_SHARE_PATH}\")
 
@@ -25,7 +32,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}")
+set(CMAKE_INSTALL_RPATH "${CRUSTA_LIBRARY_PATH}")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 #GDAL
@@ -236,7 +243,10 @@ target_link_libraries(construo CrustaCore ${GDAL_LIBRARY})
 #-------------------
 
 install(TARGETS CrustaCore  crusta construo CrustaVislet
-        DESTINATION .)
+        RUNTIME DESTINATION "${CRUSTA_EXECUTABLE_PATH}"
+        LIBRARY DESTINATION "${CRUSTA_LIBRARY_PATH}"
+        ARCHIVE DESTINATION "${CRUSTA_LIBRARY_PATH}"
+)
 
 set(CRUSTA_SHARES ../share/mapSymbolAtlas.rgba
                   ../share/mapSymbols.cfg
