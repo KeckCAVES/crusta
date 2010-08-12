@@ -47,7 +47,7 @@ bool DEBUG_INTERSECT = false;
 const int   Crusta::lineDataTexSize     = 8192;
 const float Crusta::lineDataCoordStep   = 1.0f / lineDataTexSize;
 const float Crusta::lineDataStartCoord  = 0.5f * lineDataCoordStep;
-const int   Crusta::lineCoverageTexSize = TILE_RESOLUTION>>2;
+const int   Crusta::lineCoverageTexSize = TILE_RESOLUTION>>1;
 
 ///\todo OMG this needs to be integrated into the code properly (VIS 2010)
 class RGBAImage
@@ -841,7 +841,8 @@ statsMan.extractTileStats(renderNodes);
 
     //update the map data
 ///\todo integrate properly (VIS 2010)
-    mapMan->updateLineData(renderNodes);
+    if (linesDecorated)
+        mapMan->updateLineData(renderNodes);
 
 //- draw the current terrain and map data
 ///\todo integrate properly (VIS 2010)

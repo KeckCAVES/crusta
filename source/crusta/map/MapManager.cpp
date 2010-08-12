@@ -519,12 +519,16 @@ code assumes this is going to happen is this flags redraws by updating the age
 of the changed segments (e.g. new symbol, new coords) */
 if (!data.empty())
 {
+    /* keep track of the offset in the texture. We don't want segments that are
+       not going to be added to the line data texture to prompt its refresh */
+    uint32 offset = 0;
     for (Coverage::iterator lit=coverage.begin();
-         lit!=coverage.end() && !data.empty(); ++lit)
+         lit!=coverage.end() && !data.empty() && offset<lineTexSize; ++lit)
     {
         HandleList& handles = lit->second;
 
-        for (HandleList::iterator hit=handles.begin();hit!=handles.end();++hit)
+        for (HandleList::iterator hit=handles.begin();
+             hit!=handles.end() && offset<lineTexSize; ++hit, offset+=4)
         {
             if (hit->age != hit->handle->age)
             {
