@@ -1330,9 +1330,12 @@ simply float processing the transformation */
 
             Point3 curPos  = p.transform(HPoint(cur->pos)).toPoint();
             Point3 nextPos = p.transform(HPoint(next->pos)).toPoint();
+            
+            Point3f curPosf (curPos[0],  curPos[1],  0.0f);
+            Point3f nextPosf(nextPos[0], nextPos[1], 0.0f);
 
-            glVertex3dv(curPos.getComponents());
-            glVertex3dv(nextPos.getComponents());
+            glVertex3fv(curPosf.getComponents());
+            glVertex3fv(nextPosf.getComponents());
 #else
             //let the GL transform the points
             glVertex3dv(cur->pos.getComponents());

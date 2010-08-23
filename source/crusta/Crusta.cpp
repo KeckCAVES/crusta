@@ -49,6 +49,41 @@ const float Crusta::lineDataCoordStep   = 1.0f / lineDataTexSize;
 const float Crusta::lineDataStartCoord  = 0.5f * lineDataCoordStep;
 const int   Crusta::lineCoverageTexSize = TILE_RESOLUTION>>1;
 
+#define CRUSTA_ENABLE_RECORD_FRAMERATE 0
+#if CRUSTA_ENABLE_RECORD_FRAMERATE
+class FrameRateRecorder
+{
+public:
+    FrameRateRecorder(double iSampleStep) :
+        sampleStep(iSampleStep), file("frames.txt")
+    {
+        schedule();
+    }
+    ~FrameRateRecorder()
+    {
+        file.close();
+    }
+
+protected:
+    void schedule()
+    {
+        Misc::TimerEventScheduler* tes = Vrui::getTimerEventScheduler();
+        double nextTickTime = tes->getCurrentTime() + sampleStep;
+        tes->scheduleEvent(nextTickTime,this,&FrameRateRecorder::tickCallback);
+    }
+
+    void tickCallback(Misc::TimerEventScheduler::CallbackData*)
+    {
+        file << 1.0 / Vrui::getCurrentFrameTime() << ",";
+        schedule();
+    }
+
+    double sampleStep;
+    std::ofstream file;
+};
+FrameRateRecorder* CRUSTA_FRAMERATE_RECORDER;
+#endif //CRUSTA_ENABLE_RECORD_FRAMERATE
+
 ///\todo OMG this needs to be integrated into the code properly (VIS 2010)
 class RGBAImage
 {
@@ -333,6 +368,9 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
 #if CRUSTA_ENABLE_DEBUG
 debugTool = NULL;
 #endif //CRUSTA_ENABLE_DEBUG
+#if CRUSTA_ENABLE_RECORD_FRAMERATE
+CRUSTA_FRAMERATE_RECORDER = new FrameRateRecorder(1.0/20.0);
+#endif //CRUSTA_ENABLE_RECORD_FRAMERATE
 }
 
 void Crusta::
@@ -346,6 +384,10 @@ shutdown()
     }
     delete dataMan;
     delete cache;
+
+#if CRUSTA_ENABLE_RECORD_FRAMERATE
+delete CRUSTA_FRAMERATE_RECORDER;
+#endif //CRUSTA_ENABLE_RECORD_FRAMERATE
 }
 
 Point3 Crusta::
@@ -784,8 +826,24 @@ frame()
 statsMan.newFrame();
 
 #if CRUSTA_ENABLE_DEBUG
-if (debugTool!=NULL && debugTool->getButton(0))
-    fprintf(stderr, "d");
+if (debugTool!=NULL)
+{
+    bool  b0  = debugTool->getButton(0);
+    bool& bl0 = debugTool->getButtonLast(0);
+    if (b0 && b0!=bl0)
+    {
+        bl0 = b0;
+        mapMan->load("/data/crusta/maps/azerbaijan/Crusta_Polylines.shp");
+    }
+
+    bool  b1  = debugTool->getButton(1);
+    bool& bl1 = debugTool->getButtonLast(1);
+    if (b1 && b1!=bl1)
+    {
+        bl1 = b1;
+        linesDecorated = true;
+    }
+}
 #endif //CRUSTA_ENABLE_DEBUG
 
     ++currentFrame;

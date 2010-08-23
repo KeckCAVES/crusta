@@ -6,7 +6,7 @@
 #include <crusta/basics.h>
 #include <crusta/Timer.h>
 
-#define CRUSTA_RECORD_STATS 1
+#define CRUSTA_RECORD_STATS 0
 
 
 BEGIN_CRUSTA

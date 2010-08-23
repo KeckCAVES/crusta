@@ -61,9 +61,11 @@ void computeSegment(in Segment segment, inout vec4 color)
     //compute v without taking distortion into account:
     float v = dot(position - segment.start.xyz, segment.normal);
 
+#if TWIST
     // Correct for distortion by dividing by sin(alpha):
     float snn = dot(segment.normal, normal);
     v = v / sqrt(1.0 - snn * snn);
+#endif //TWIST
 
     // Scale v to normalize to the segment width
     v /= V_SCALE*lineWidth;
