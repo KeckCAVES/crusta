@@ -163,7 +163,11 @@ int numFeature = 0;
 
                 //read in the symbol field and assign it
                 int symbolId = feature->GetFieldAsInteger(symbolFieldIndex);
-                out->setSymbol(symbolMap[symbolId]);
+                SymbolMap::iterator symbol = symbolMap.find(symbolId);
+                if (symbol != symbolMap.end())
+                    out->setSymbol(symbol->second);
+                else
+                    out->setSymbol(Shape::DEFAULT_SYMBOL);
 
             }
         }
@@ -693,15 +697,17 @@ openSymbolsGroupCallback(GLMotif::Button::SelectCallbackData* cbData)
 void MapManager::
 symbolChangedCallback(GLMotif::ListBox::ItemSelectedCallbackData* cbData)
 {
-    const char* symbolName = cbData->listBox->getItem(cbData->selectedItem);
-    int symbolId           = symbolNameMap[symbolName];
-    activeSymbol           = symbolMap[symbolId];
+    std::string symbolName(cbData->listBox->getParent()->getName());
+    symbolName  += std::string("-");
+    symbolName  += std::string(cbData->listBox->getItem(cbData->selectedItem));
+    int symbolId = symbolNameMap[symbolName];
+    activeSymbol = symbolMap[symbolId];
 
 ///\todo process the change for multiple activeShapes
     if (activeShape != NULL)
     {
         activeShape->setSymbol(activeSymbol);
-        mapSymbolLabel->setLabel(symbolName);
+        mapSymbolLabel->setLabel(symbolName.c_str());
     }
 }
 
@@ -883,6 +889,7 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
     bool isDefault = false;
 
     GLMotif::ScrolledListBox* symbolsGroup = NULL;
+    std::string groupName;
     std::string cfgLine;
     for (std::getline(symbolsConfig, cfgLine); !symbolsConfig.eof();
          std::getline(symbolsConfig, cfgLine))
@@ -903,30 +910,30 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
             isDefault = false;
 
             //read in the group name
-            iss >> token;
+            iss >> groupName;
 
             //create menu entry button to pop-up the group's list
             GLMotif::Button* groupButton = new GLMotif::Button(
-                token.c_str(), symbolsMenu, token.c_str());
+                groupName.c_str(), symbolsMenu, groupName.c_str());
             groupButton->getSelectCallbacks().add(
                 this, &MapManager::openSymbolsGroupCallback);
 
             //create the group's popup dialog
-            GLMotif::PopupWindow*& groupDialog = symbolGroupMap[token];
+            GLMotif::PopupWindow*& groupDialog = symbolGroupMap[groupName];
             groupDialog = new GLMotif::PopupWindow(
-                (token + "Dialog").c_str(), Vrui::getWidgetManager(),
-                (token + " Symbols").c_str());
+                (groupName + "Dialog").c_str(), Vrui::getWidgetManager(),
+                (groupName + " Symbols").c_str());
             GLMotif::RowColumn* groupRoot = new GLMotif::RowColumn(
-                (token + "Root").c_str(), groupDialog, false);
+                (groupName + "Root").c_str(), groupDialog, false);
             symbolsGroup = new GLMotif::ScrolledListBox(
-                (token + "List").c_str(), groupRoot,
+                groupName.c_str(), groupRoot,
                 GLMotif::ListBox::ALWAYS_ONE, 50, 15);
             symbolsGroup->showHorizontalScrollBar(true);
             symbolsGroup->getListBox()->getItemSelectedCallbacks().add(
                 this, &MapManager::symbolChangedCallback);
 
             GLMotif::Button* close = new GLMotif::Button(
-                token.c_str(), groupRoot, "Close");
+                groupName.c_str(), groupRoot, "Close");
             close->getSelectCallbacks().add(this,
                 &MapManager::closeSymbolsGroupCallback);
 
@@ -941,8 +948,8 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
             iss.seekg(0, std::ios::beg);
 
             //create a corresponding symbol
-            std::string symbolName;
-            iss >> symbolName;
+            iss >> token;
+            std::string symbolName(groupName+"-"+token);
 
             Shape::Symbol symbol;
             iss >> symbol.id >>
@@ -961,13 +968,14 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
             if (isDefault)
             {
 ///\todo create a menu entry for the default symbol and update that entry here
+                Shape::DEFAULT_SYMBOL = symbol;
                 //set the active shape to the default one
                 activeSymbol = symbol;
             }
             else
             {
                 //populate the current group
-                symbolsGroup->getListBox()->addItem(symbolName.c_str());
+                symbolsGroup->getListBox()->addItem(token.c_str());
             }
         }
     }

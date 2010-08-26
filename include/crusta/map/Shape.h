@@ -119,7 +119,7 @@ friend std::ostream& operator<<(std::ostream& os, const ControlId& cid);
         perform very poorly */
     bool isValid(const ControlId& control) const;
 
-    static const Symbol    DEFAULT_SYMBOL;
+    static       Symbol    DEFAULT_SYMBOL;
     static const ControlId BAD_ID;
 
 protected:

@@ -11,7 +11,7 @@
 
 BEGIN_CRUSTA
 
-const Shape::Symbol    Shape::DEFAULT_SYMBOL;
+      Shape::Symbol    Shape::DEFAULT_SYMBOL;
 const Shape::ControlId Shape::BAD_ID(CONTROL_INVALID, ControlPointHandle());
 
 
