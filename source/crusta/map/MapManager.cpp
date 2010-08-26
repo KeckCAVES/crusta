@@ -951,9 +951,8 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
                    symbol.originSize[0] >> symbol.originSize[1] >>
                    symbol.originSize[2] >> symbol.originSize[3];
 
-            /* flip the y scale to mirror the symbols (so that fragment program
-               doesn't have to) */
-            symbol.originSize[3] = -symbol.originSize[3];
+            //flip the Y to map to OpenGL texture reference
+            symbol.originSize[1] = 1.0 - symbol.originSize[1];
 
             symbolNameMap[symbolName]       = symbol.id;
             symbolReverseNameMap[symbol.id] = symbolName;
