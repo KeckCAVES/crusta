@@ -1,10 +1,13 @@
 #include <crusta/Crusta.h>
 
+#include <Images/Image.h>
+#include <Images/TargaImageFileReader.h>
 #include <Geometry/OrthogonalTransformation.h>
 #include <GL/Extensions/GLEXTFramebufferObject.h>
 #include <GL/GLColorMap.h>
 #include <GL/GLContextData.h>
 #include <GL/GLTransformationWrappers.h>
+#include <Misc/File.h>
 #include <Misc/ThrowStdErr.h>
 #include <Vrui/Vrui.h>
 
@@ -84,137 +87,6 @@ protected:
 FrameRateRecorder* CRUSTA_FRAMERATE_RECORDER;
 #endif //CRUSTA_ENABLE_RECORD_FRAMERATE
 
-///\todo OMG this needs to be integrated into the code properly (VIS 2010)
-class RGBAImage
-{
-public:
-    RGBAImage(int width, int height) : byteCount(4), pixels(NULL)
-    {
-        size[0] = width;
-    size[1] = height;
-    }
-    ~RGBAImage()
-    {
-        destroy();
-    }
-
-    bool load(const char* filename)
-    {
-        FILE* file;
-        file = fopen(filename, "rb");
-        if (file == NULL)
-            return false;
-
-        size_t imageSize = size[0]*size[1] * byteCount;
-
-        //allocate memory for image data
-        pixels = new uint8[imageSize];
-
-        //read in image data
-        size_t res = fread(pixels, sizeof(uint8), imageSize, file);
-
-        //close file
-        fclose(file);
-
-        return res==imageSize;
-    }
-
-    void destroy()
-    {
-        size[0] = size[1] = 0;
-        byteCount = 0;
-        delete[] pixels;
-        pixels = NULL;
-    }
-
-    int    size[2];
-    int    byteCount;
-    uint8* pixels;
-};
-
-///\todo OMG this needs to be integrated into the code properly (VIS 2010)
-class TargaImage
-{
-public:
-    TargaImage() : byteCount(0), pixels(NULL)
-    {
-        size[0] = size[1] = 0;
-    }
-    ~TargaImage()
-    {
-        destroy();
-    }
-
-    bool load(const char* filename)
-    {
-        FILE* file;
-        uint8 type[4];
-        uint8 info[6];
-
-        file = fopen(filename, "rb");
-        if (file == NULL)
-            return false;
-
-        size_t res = fread(&type, sizeof(char), 3, file);
-        if (res != 3)
-        {
-            fclose(file);
-            return false;
-        }
-
-        fseek(file, 12, SEEK_SET);
-
-        res = fread(&info, sizeof(char), 6, file);
-        if (res != 6)
-        {
-            fclose(file);
-            return false;
-        }
-
-        //image type either 2 (color) or 3 (greyscale)
-        if (type[1]!=0 || (type[2]!=2 && type[2]!=3))
-        {
-            fclose(file);
-            return false;
-        }
-
-        size[0]   = info[0] + info[1]*256;
-        size[1]   = info[2] + info[3]*256;
-        byteCount = info[4] / 8;
-
-        if (byteCount!=3 && byteCount!=4)
-        {
-            fclose(file);
-            return false;
-        }
-
-        size_t imageSize = size[0]*size[1] * byteCount;
-
-        //allocate memory for image data
-        pixels = new uint8[imageSize];
-
-        //read in image data
-        res = fread(pixels, sizeof(uint8), imageSize, file);
-
-        //close file
-        fclose(file);
-
-        return res==imageSize;
-    }
-
-    void destroy()
-    {
-        size[0] = size[1] = 0;
-        byteCount = 0;
-        delete[] pixels;
-        pixels = NULL;
-    }
-
-    int    size[2];
-    int    byteCount;
-    uint8* pixels;
-};
-
 CrustaGlData::
 CrustaGlData()
 {
@@ -246,24 +118,20 @@ CrustaGlData()
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-#if 0
-    TargaImage atlas;
-    std::string imgFile(CRUSTA_SHARE_PATH);
-    imgFile += "/mapSymbolAtlas.tga";
-    if (atlas.load(imgFile.c_str()))
-#else
-    RGBAImage atlas(1024, 1024);
-    std::string imgFile(CRUSTA_SHARE_PATH);
-    imgFile += "/mapSymbolAtlas.rgba";
-    if (atlas.load(imgFile.c_str()))
-#endif
+    std::string imgFileName(CRUSTA_SHARE_PATH);
+    imgFileName += "/mapSymbolAtlas.tga";
+    try
     {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas.size[0], atlas.size[1], 0,
-                     GL_RGBA, GL_UNSIGNED_BYTE, atlas.pixels);
+        Misc::File imgFile(imgFileName.c_str(), "r");
+        Images::TargaImageFileReader<Misc::File> imgFileReader(imgFile);
+        Images::Image<uint8,4> img =
+            imgFileReader.readImage<Images::Image<uint8,4> >();
 
-        atlas.destroy();
+        glBindTexture(GL_TEXTURE_2D, symbolTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.getWidth(), img.getHeight(),
+                     0, GL_RGBA, GL_UNSIGNED_BYTE, img.getPixels());
     }
-    else
+    catch (...)
     {
         float defaultTexel[4] = {1.0f, 1.0f, 1.0f, 1.0f};
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0,

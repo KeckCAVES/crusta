@@ -248,7 +248,7 @@ install(TARGETS CrustaCore  crusta construo CrustaVislet
         ARCHIVE DESTINATION "${CRUSTA_LIBRARY_PATH}"
 )
 
-set(CRUSTA_SHARES ../share/mapSymbolAtlas.rgba
+set(CRUSTA_SHARES ../share/mapSymbolAtlas.tga
                   ../share/mapSymbols.cfg
                   ../share/decoratedRenderer.fp
                   ../share/plainRenderer.fp
