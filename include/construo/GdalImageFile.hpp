@@ -1,6 +1,8 @@
 #include <Misc/File.h>
 
+#include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
 
 BEGIN_CRUSTA
@@ -68,7 +70,10 @@ GdalImageFileBase(const char* imageFileName)
             projectionFile.puts("Geotransform:\n");
             std::ostringstream oss;
             for (int i=0; i<6; ++i)
-                oss << geoXform[i] << " ";
+            {
+                oss << std::setprecision(std::numeric_limits<double>::digits10)
+                    << geoXform[i] << " ";
+            }
             oss << std::endl;
             projectionFile.puts(oss.str().c_str());
         }
