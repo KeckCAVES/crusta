@@ -356,18 +356,25 @@ produceTexturingSubmenu(GLMotif::Menu* mainMenu)
     GLMotif::SubMenu* texturingMenu =
         new GLMotif::SubMenu("Texturing", texturingMenuPopup, false);
 
-    GLMotif::Button* modeButton = new GLMotif::Button(
-        "Untextured", texturingMenu, "Untextured");
+    GLMotif::RadioBox* texturingBox =
+        new GLMotif::RadioBox("TexturingBox", texturingMenu, false);
+
+    GLMotif::ToggleButton* modeButton;
+    modeButton = new GLMotif::ToggleButton(
+        "Untextured", texturingBox, "Untextured");
     modeButton->getSelectCallbacks().add(
         this, &CrustaApp::changeTexturingModeCallback);
-    modeButton = new GLMotif::Button(
-        "ColorMap", texturingMenu, "Color Map");
+    modeButton = new GLMotif::ToggleButton(
+        "ColorMap", texturingBox, "Color Map");
     modeButton->getSelectCallbacks().add(
         this, &CrustaApp::changeTexturingModeCallback);
-    modeButton = new GLMotif::Button(
-        "Image", texturingMenu, "Image");
+    modeButton = new GLMotif::ToggleButton(
+        "Image", texturingBox, "Image");
     modeButton->getSelectCallbacks().add(
         this, &CrustaApp::changeTexturingModeCallback);
+
+    texturingBox->setSelectedToggle(modeButton);
+    texturingBox->manageChild();
 
     texturingMenu->manageChild();
 
@@ -474,15 +481,18 @@ alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
 
 void CrustaApp::
 changeTexturingModeCallback(
-    GLMotif::Button::SelectCallbackData* cbData)
+    GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 {
-    const char* button = cbData->button->getName();
-    if (strcmp(button, "Untextured") == 0)
-        crusta->setTexturingMode(0);
-    else if (strcmp(button, "ColorMap") == 0)
-        crusta->setTexturingMode(1);
-    else
-        crusta->setTexturingMode(2);
+    if (cbData->set)
+    {
+        const char* button = cbData->toggle->getName();
+        if (strcmp(button, "Untextured") == 0)
+            crusta->setTexturingMode(0);
+        else if (strcmp(button, "ColorMap") == 0)
+            crusta->setTexturingMode(1);
+        else
+            crusta->setTexturingMode(2);
+    }
 }
 
 void CrustaApp::

@@ -86,7 +86,7 @@ private:
     void alignSurfaceFrame(Vrui::NavTransform& surfaceFrame);
 
     void changeTexturingModeCallback(
-        GLMotif::Button::SelectCallbackData* cbData);
+        GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     void changeColorMapCallback(
         GLMotif::ColorMap::ColorMapChangedCallbackData* cbData);
 
