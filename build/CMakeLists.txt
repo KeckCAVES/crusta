@@ -57,6 +57,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/ColorTextureSpecs.h
     ../include/crusta/Crusta.h
     ../include/crusta/CrustaComponent.h
+    ../include/crusta/CrustaSettings.h
     ../include/crusta/CrustaVisualizer.h
     ../include/crusta/DataManager.h
     ../include/crusta/DebugTool.h
@@ -104,10 +105,12 @@ add_library(CrustaCore SHARED
     ../include/GLMotif/ColorHexagon.h
     ../include/GLMotif/ColorMap.h
     ../include/GLMotif/ColorPicker.h
+    ../include/GLMotif/ColorPickerWindow.h
     ../include/GLMotif/PaletteEditor.h
 
     ../source/crusta/ColorTextureSpecs.cpp
     ../source/crusta/Crusta.cpp
+    ../source/crusta/CrustaSettings.cpp
     ../source/crusta/CrustaVisualizer.cpp
     ../source/crusta/DataManager.cpp
     ../source/crusta/DebugTool.cpp
@@ -141,6 +144,7 @@ add_library(CrustaCore SHARED
     ../source/GLMotif/ColorHexagon.cpp
     ../source/GLMotif/ColorMap.cpp
     ../source/GLMotif/ColorPicker.cpp
+    ../source/GLMotif/ColorPickerWindow.cpp
     ../source/GLMotif/PaletteEditor.cpp
 )
 

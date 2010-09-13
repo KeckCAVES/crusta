@@ -302,7 +302,7 @@ prepareDisplay(GLContextData& contextData, Nodes& nodes)
 
 void QuadTerrain::
 display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes,
-        const AgeStamp& currentFrame, bool linesDecorated)
+        const AgeStamp& currentFrame, const CrustaSettings& crustaSettings)
 {
     //setup the GL
     GLint arrayBuffer;
@@ -310,9 +310,21 @@ display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes,
     GLint elementArrayBuffer;
     glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &elementArrayBuffer);
 
-    glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_POLYGON_BIT);
+    glPushAttrib(GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_LINE_BIT |
+                 GL_POLYGON_BIT);
+
     glEnable(GL_CULL_FACE);
     glEnable(GL_TEXTURE_2D);
+
+    glMaterialfv(GL_FRONT, GL_AMBIENT,
+                 crustaSettings.terrainAmbientColor.getComponents());
+    glMaterialfv(GL_FRONT, GL_DIFFUSE,
+                 crustaSettings.terrainDiffuseColor.getComponents());
+    glMaterialfv(GL_FRONT, GL_EMISSION,
+                 crustaSettings.terrainEmissiveColor.getComponents());
+    glMaterialfv(GL_FRONT, GL_SPECULAR,
+                 crustaSettings.terrainSpecularColor.getComponents());
+    glMaterialf(GL_FRONT, GL_SHININESS, crustaSettings.terrainShininess);
 
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -325,7 +337,7 @@ display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes,
     int numNodes = static_cast<int>(nodes.size());
     for (int i=0; i<numNodes; ++i)
         drawNode(contextData, glData, *(nodes[i]), currentFrame,
-                 linesDecorated);
+                 crustaSettings.decoratedVectorArt);
 
     //restore the GL transform as it was before
     glPopMatrix();
@@ -1330,7 +1342,7 @@ simply float processing the transformation */
 
             Point3 curPos  = p.transform(HPoint(cur->pos)).toPoint();
             Point3 nextPos = p.transform(HPoint(next->pos)).toPoint();
-            
+
             Point3f curPosf (curPos[0],  curPos[1],  0.0f);
             Point3f nextPosf(nextPos[0], nextPos[1], 0.0f);
 
@@ -1447,10 +1459,10 @@ prepareVideoData(CrustaGlData* glData, QuadNodeMainData& mainData)
 void QuadTerrain::
 drawNode(GLContextData& contextData, CrustaGlData* glData,
          QuadNodeMainData& mainData, const AgeStamp& currentFrame,
-         bool linesDecorated)
+         bool decoratedVectorArt)
 {
 ///\todo integrate me properly into the system (VIS 2010)
-    if (linesDecorated)
+    if (decoratedVectorArt)
     {
         //stream the line data to the GPU if necessary
         glData->terrainShader.setLineNumSegments(mainData.lineNumSegments);
@@ -1501,16 +1513,6 @@ drawNode(GLContextData& contextData, CrustaGlData* glData,
     CHECK_GLA
 //    glPolygonMode(GL_FRONT, GL_LINE);
 
-    static const float ambient[4]  = {0.4, 0.4, 0.4, 1.0};
-    static const float diffuse[4]  = {1.0, 1.0, 1.0, 1.0};
-    static const float specular[4] = {0.3, 0.3, 0.3, 1.0};
-    static const float emission[4] = {0.0, 0.0, 0.0, 1.0};
-    static const float shininess   = 55.0;
-    glMaterialfv(GL_FRONT, GL_AMBIENT,   ambient);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE,   diffuse);
-    glMaterialfv(GL_FRONT, GL_SPECULAR,  specular);
-    glMaterialfv(GL_FRONT, GL_EMISSION,  emission);
-    glMaterialf (GL_FRONT, GL_SHININESS, shininess);
     glDrawRangeElements(GL_TRIANGLE_STRIP, 0,
                         (TILE_RESOLUTION*TILE_RESOLUTION) - 1,
                         NUM_GEOMETRY_INDICES, GL_UNSIGNED_SHORT, 0);

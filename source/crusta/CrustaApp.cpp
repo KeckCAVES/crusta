@@ -80,6 +80,8 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
             Vrui::getViewer(i)->getHeadlight().isEnabled();
     }
 
+    specularSettings.setupComponent(crusta);
+
     produceMainMenu();
     produceVerticalScaleDialog();
     produceLightingDialog();
@@ -107,6 +109,145 @@ CrustaApp::
     crusta->shutdown();
     delete crusta;
 }
+
+
+void CrustaApp::Dialog::
+createMenuEntry(GLMotif::Container* menu)
+{
+    init();
+
+    parentMenu = menu;
+
+    GLMotif::ToggleButton* toggle = new GLMotif::ToggleButton(
+        (name+"Toggle").c_str(), parentMenu, label.c_str());
+    toggle->setToggle(false);
+    toggle->getValueChangedCallbacks().add(
+        this, &CrustaApp::Dialog::showCallback);
+}
+
+void CrustaApp::Dialog::
+init()
+{
+    dialog = new GLMotif::PopupWindow(
+        (name+"Dialog").c_str(), Vrui::getWidgetManager(), label.c_str());
+}
+
+void CrustaApp::Dialog::
+showCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+{
+    if(cbData->set)
+    {
+        //open the dialog at the same position as the menu:
+        Vrui::getWidgetManager()->popupPrimaryWidget(dialog,
+            Vrui::getWidgetManager()->calcWidgetTransformation(parentMenu));
+    }
+    else
+    {
+        //close the dialog:
+        Vrui::popdownPrimaryWidget(dialog);
+    }
+}
+
+
+CrustaApp::SpecularSettingsDialog::
+SpecularSettingsDialog() :
+    CrustaComponent(NULL), colorPicker("SpecularSettingsColorPicker",
+                                       Vrui::getWidgetManager(),
+                                       "Pick Specular Color")
+{
+    name  = "SpecularSettings";
+    label = "Specular Reflectance Settings";
+}
+
+void CrustaApp::SpecularSettingsDialog::
+init()
+{
+    Dialog::init();
+
+    const GLMotif::StyleSheet* style =
+        Vrui::getWidgetManager()->getStyleSheet();
+
+    colorPicker.getColorPicker()->getColorChangedCallbacks().add(
+            this, &CrustaApp::SpecularSettingsDialog::colorChangedCallback);
+
+
+    GLMotif::RowColumn* root = new GLMotif::RowColumn(
+        "Root", dialog, false);
+
+    GLMotif::RowColumn* colorRoot = new GLMotif::RowColumn(
+        "ColorRoot", root, false);
+
+    Color sc = crusta->getSettings().terrainSpecularColor;
+    new GLMotif::Label("SSColor", colorRoot, "Color: ");
+    colorButton = new GLMotif::Button("SSColorButton", colorRoot, "");
+    colorButton->setBackgroundColor(GLMotif::Color(sc[0], sc[1], sc[2], sc[3]));
+    colorButton->getSelectCallbacks().add(
+        this, &CrustaApp::SpecularSettingsDialog::colorButtonCallback);
+
+    colorRoot->setNumMinorWidgets(2);
+    colorRoot->manageChild();
+
+    GLMotif::RowColumn* shininessRoot = new GLMotif::RowColumn(
+        "ShininessRoot", root, false);
+
+    float shininess = crusta->getSettings().terrainShininess;
+    new GLMotif::Label("SSShininess", shininessRoot, "Shininess: ");
+    GLMotif::Slider* slider = new GLMotif::Slider(
+        "SSShininessSlider", shininessRoot, GLMotif::Slider::HORIZONTAL,
+        10.0 * style->fontHeight);
+    slider->setValue(log(shininess));
+    slider->setValueRange(0.00f, 7.0f, 0.00001f);
+    slider->getValueChangedCallbacks().add(
+        this, &CrustaApp::SpecularSettingsDialog::shininessChangedCallback);
+    shininessField = new GLMotif::TextField(
+        "SSShininessField", shininessRoot, 7);
+    shininessField->setPrecision(4);
+    shininessField->setValue(shininess);
+
+    shininessRoot->setNumMinorWidgets(3);
+    shininessRoot->manageChild();
+
+
+    root->setNumMinorWidgets(2);
+    root->manageChild();
+}
+
+void CrustaApp::SpecularSettingsDialog::
+colorButtonCallback(
+    GLMotif::Button::SelectCallbackData* cbData)
+{
+    GLMotif::WidgetManager* manager = Vrui::getWidgetManager();
+    if (!manager->isVisible(&colorPicker))
+    {
+        //bring up the color picker
+        manager->popupPrimaryWidget(
+            &colorPicker, manager->calcWidgetTransformation(cbData->button));
+    }
+    else
+    {
+        //close the color picker
+        Vrui::popdownPrimaryWidget(&colorPicker);
+    }
+}
+
+void CrustaApp::SpecularSettingsDialog::
+colorChangedCallback(
+        GLMotif::ColorPicker::ColorChangedCallbackData* cbData)
+{
+    const GLMotif::Color& c = cbData->newColor;
+    colorButton->setBackgroundColor(c);
+    crusta->setTerrainSpecularColor(Color(c[0], c[1], c[2], c[3]));
+}
+
+void CrustaApp::SpecularSettingsDialog::
+shininessChangedCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
+{
+    float shininess = pow(2, cbData->value) - 1.0f;
+    crusta->setTerrainShininess(shininess);
+    shininessField->setValue(shininess);
+}
+
+
 
 void CrustaApp::
 produceMainMenu()
@@ -146,19 +287,27 @@ produceMainMenu()
     showPaletteEditorToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::showPaletteEditorCallback);
 
-    /* Create the advanced submenu */
-    GLMotif::Popup* advancedMenuPopup =
-        new GLMotif::Popup("AdvancedMenuPopup", Vrui::getWidgetManager());
-
-    GLMotif::SubMenu* advancedMenu =
-        new GLMotif::SubMenu("Advanced", advancedMenuPopup, false);
+    /* Create settings submenu */
+    GLMotif::Popup* settingsMenuPopup =
+        new GLMotif::Popup("SettingsMenuPopup", Vrui::getWidgetManager());
+    GLMotif::SubMenu* settingsMenu =
+        new GLMotif::SubMenu("Settings", settingsMenuPopup, false);
 
     //line decoration toggle
     GLMotif::ToggleButton* decorateLinesToggle = new GLMotif::ToggleButton(
-        "DecorateLinesToggle", advancedMenu, "Decorate Lines");
+        "DecorateLinesToggle", settingsMenu, "Decorate Lines");
     decorateLinesToggle->setToggle(false);
     decorateLinesToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::decorateLinesCallback);
+
+    //specular settings dialog toggle
+    specularSettings.createMenuEntry(settingsMenu);
+
+    /* Create the advanced submenu */
+    GLMotif::Popup* advancedMenuPopup =
+        new GLMotif::Popup("AdvancedMenuPopup", Vrui::getWidgetManager());
+    GLMotif::SubMenu* advancedMenu =
+        new GLMotif::SubMenu("Advanced", advancedMenuPopup, false);
 
     //toogle display of the debugging grid
     GLMotif::ToggleButton* debugGridToggle = new GLMotif::ToggleButton(
@@ -175,10 +324,15 @@ produceMainMenu()
         this, &CrustaApp::debugSpheresCallback);
 
     advancedMenu->manageChild();
-
     GLMotif::CascadeButton* advancedMenuCascade = new GLMotif::CascadeButton(
-        "AdvancedMenuCascade", mainMenu, "Advanced");
+        "AdvancedMenuCascade", settingsMenu, "Advanced");
     advancedMenuCascade->setPopup(advancedMenuPopup);
+
+    settingsMenu->manageChild();
+    GLMotif::CascadeButton* settingsMenuCascade = new GLMotif::CascadeButton(
+        "SettingsMenuCascade", mainMenu, "Settings");
+    settingsMenuCascade->setPopup(settingsMenuPopup);
+
 
     /* Navigation reset: */
     GLMotif::Button* resetNavigationButton = new GLMotif::Button(
@@ -480,7 +634,7 @@ showPaletteEditorCallback(
 void CrustaApp::
 decorateLinesCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 {
-    crusta->setLinesDecorated(cbData->set);
+    crusta->setDecoratedVectorArt(cbData->set);
 }
 
 void CrustaApp::

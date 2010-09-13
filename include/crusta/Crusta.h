@@ -10,6 +10,7 @@
 #include <Threads/Mutex.h>
 
 #include <crusta/basics.h>
+#include <crusta/CrustaSettings.h>
 #include <crusta/LightingShader.h>
 #include <crusta/map/Shape.h>
 
@@ -98,11 +99,6 @@ public:
     /** retrieve the vertical exaggeration factor */
     double getVerticalScale() const;
 
-    /** toggle the decoration of the line mapping */
-    void setLinesDecorated(bool flag=true);
-    /** check status of decorated line rendering */
-    bool getLinesDecorated() const;
-
     /** query the color map for external update */
     GLColorMap* getColorMap();
     /** signal crusta that changes have been made to the color map */
@@ -126,6 +122,17 @@ public:
 
     void frame();
     void display(GLContextData& contextData);
+
+    /** query the crusta settings */
+    const CrustaSettings& getSettings() const;
+
+    /** toggle the decoration of the line mapping */
+    void setDecoratedVectorArt(bool flag=true);
+    /** change the specular color of the terrain surface */
+    void setTerrainSpecularColor(const Color& color);
+    /** change the shininess of the terrain surface */
+    void setTerrainShininess(const float& shininess);
+
 
 ///\todo integrate me into the system properly (VIS 2010)
 /** the size of the line data texture */
@@ -169,9 +176,6 @@ protected:
         changes up to the next frame call */
     Scalar newVerticalScale;
 
-    /** flags if line mapping should be rendered decorated or not */
-    bool linesDecorated;
-
     /** the cache management component */
     Cache* cache;
     /** the data management component */
@@ -196,6 +200,9 @@ protected:
     bool colorMapDirty;
     /** the color map used to color the elevation of the terrain */
     GLColorMap* colorMap;
+
+    /** user tweakable settings (both runtime and through configuration file */
+    CrustaSettings settings;
 
 //- inherited from GLObject
 public:

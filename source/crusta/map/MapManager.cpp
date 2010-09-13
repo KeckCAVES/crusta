@@ -671,7 +671,8 @@ frame()
 void MapManager::
 display(std::vector<QuadNodeMainData*>& nodes, GLContextData& contextData) const
 {
-    if (!crusta->getLinesDecorated())
+    const CrustaSettings& crustaSettings = crusta->getSettings();
+    if (!crustaSettings.decoratedVectorArt)
         polylineRenderer.display(nodes, contextData);
 }
 

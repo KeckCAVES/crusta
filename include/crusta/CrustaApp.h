@@ -9,7 +9,9 @@
 #include <Vrui/Geometry.h>
 
 #include <crusta/basics.h>
+#include <crusta/CrustaComponent.h>
 #include <GLMotif/ColorMap.h>
+#include <GLMotif/ColorPickerWindow.h>
 
 class GLContextData;
 class PaletteEditor;
@@ -40,6 +42,42 @@ public:
     ~CrustaApp();
 
 private:
+    class Dialog
+    {
+    public:
+        void createMenuEntry(GLMotif::Container* menu);
+
+    protected:
+        virtual void init();
+        void showCallback(
+            GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
+
+        std::string name;
+        std::string label;
+
+        GLMotif::PopupWindow* dialog;
+        GLMotif::Container*   parentMenu;
+    };
+
+    class SpecularSettingsDialog : public Dialog, public CrustaComponent
+    {
+    public:
+        SpecularSettingsDialog();
+    protected:
+        void init();
+    private:
+        void colorButtonCallback(
+            GLMotif::Button::SelectCallbackData* cbData);
+        void colorChangedCallback(
+            GLMotif::ColorPicker::ColorChangedCallbackData* cbData);
+        void shininessChangedCallback(
+            GLMotif::Slider::ValueChangedCallbackData* cbData);
+
+        GLMotif::ColorPickerWindow colorPicker;
+        GLMotif::Button*           colorButton;
+        GLMotif::TextField*        shininessField;
+    };
+
     void produceMainMenu();
     void produceTexturingSubmenu(GLMotif::Menu* mainMenu);
     void produceVerticalScaleDialog();
@@ -99,6 +137,8 @@ private:
     GLMotif::Slider* sunElevationSlider;
 
     PaletteEditor* paletteEditor;
+
+    SpecularSettingsDialog specularSettings;
 
     /** the crusta instance */
     Crusta* crusta;

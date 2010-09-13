@@ -201,7 +201,6 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
     texturingMode    = 2;
     verticalScale    = 0.0;
     newVerticalScale = 1.0;
-    linesDecorated   = false;
 
     Triacontahedron polyhedron(SPHEROID_RADIUS);
 
@@ -601,18 +600,6 @@ getVerticalScale() const
 }
 
 
-void Crusta::
-setLinesDecorated(bool flag)
-{
-    linesDecorated = flag;
-}
-
-bool Crusta::
-getLinesDecorated() const
-{
-    return linesDecorated;
-}
-
 GLColorMap* Crusta::
 getColorMap()
 {
@@ -709,7 +696,7 @@ if (debugTool!=NULL)
     if (b1 && b1!=bl1)
     {
         bl1 = b1;
-        linesDecorated = true;
+        settings.decoratedVectorArt = true;
     }
 }
 #endif //CRUSTA_ENABLE_DEBUG
@@ -767,13 +754,13 @@ statsMan.extractTileStats(renderNodes);
 
     //update the map data
 ///\todo integrate properly (VIS 2010)
-    if (linesDecorated)
+    if (settings.decoratedVectorArt)
         mapMan->updateLineData(renderNodes);
 
 //- draw the current terrain and map data
 ///\todo integrate properly (VIS 2010)
 //bind the texture that contains the symbol images
-if (linesDecorated)
+if (settings.decoratedVectorArt)
 {
     glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, glData->symbolTex);
@@ -797,7 +784,7 @@ if (linesDecorated)
     CHECK_GLA
 
     //draw the terrain
-    glData->terrainShader.setLinesDecorated(linesDecorated);
+    glData->terrainShader.setLinesDecorated(settings.decoratedVectorArt);
     glData->terrainShader.setTexturingMode(texturingMode);
     glData->terrainShader.update();
     glData->terrainShader.enable();
@@ -812,7 +799,7 @@ if (linesDecorated)
     glData->terrainShader.setTextureStep(TILE_TEXTURE_COORD_STEP);
 
 ///\todo this needs to be tweakable
-    if (linesDecorated)
+    if (settings.decoratedVectorArt)
     {
         float scaleFac = Vrui::getNavigationTransformation().getScaling();
         glData->terrainShader.setLineCoordScale(scaleFac);
@@ -821,7 +808,7 @@ if (linesDecorated)
     }
 
     QuadTerrain::display(contextData, glData, renderNodes, getCurrentFrame(),
-                         linesDecorated);
+                         settings);
 
     glData->terrainShader.disable();
 
@@ -831,6 +818,31 @@ if (linesDecorated)
 
     glPopAttrib();
     glActiveTexture(activeTexture);
+}
+
+
+const CrustaSettings& Crusta::
+getSettings() const
+{
+    return settings;
+}
+
+void Crusta::
+setDecoratedVectorArt(bool flag)
+{
+    settings.decoratedVectorArt = flag;
+}
+
+void Crusta::
+setTerrainSpecularColor(const Color& color)
+{
+    settings.terrainSpecularColor = color;
+}
+
+void Crusta::
+setTerrainShininess(const float& shininess)
+{
+    settings.terrainShininess = shininess;
 }
 
 

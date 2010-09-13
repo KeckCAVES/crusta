@@ -59,7 +59,7 @@ public:
     /** issues the drawing commands for the render set */
     static void display(GLContextData& contextData, CrustaGlData* glData,
                         Nodes& nodes, const AgeStamp& currentFrame,
-                        bool linesDecorated);
+                        const CrustaSettings& crustaSettings);
 
     /** generate the vertex stream template characterizing a node and
         stream it to the graphics card as a vertex buffer. This buffer
@@ -118,7 +118,7 @@ protected:
         point. */
     static void drawNode(GLContextData& contextData, CrustaGlData* glData,
         QuadNodeMainData& mainData, const AgeStamp& currentFrame,
-        bool linesDecorated);
+        bool decoratedVectorArt);
 
     /** draw the finest resolution node that are part of the currently terrain
         approximation */
