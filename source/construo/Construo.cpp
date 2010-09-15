@@ -47,7 +47,7 @@ using namespace crusta;
 
 int main(int argc, char* argv[])
 {
-	/* Parse the command line: */
+    /* Parse the command line: */
     typedef std::vector<const char*> Names;
     typedef std::vector<std::string> NodataStrings;
     typedef std::vector<double>      Scales;
@@ -60,25 +60,26 @@ int main(int argc, char* argv[])
     };
 
     //flag whether to create color or DEM mosaics
-	BuildType buildType = UNDEFINED_BUILD;
-	/* the current scaling factor to be applied to values of the input data.
+    BuildType buildType = UNDEFINED_BUILD;
+    /* the current scaling factor to be applied to values of the input data.
        This value can be changed on the command line during parsing by using
        the -scale flag */
-	double scale = 1.0;
-	/* the current grid type flag, defaults to area sampling */
-	bool pointSampled = false;
-	/* the current nodata string, initialized to the empty string */
-	std::string nodata;
+    double scale = 1.0;
+    /* the current grid type flag, defaults to area sampling */
+    bool pointSampled = false;
+    /* the current nodata string, initialized to the empty string */
+    std::string nodata;
 
     //the tile size should only be an internal parameter
     static const crusta::uint tileSize[2] = {TILE_RESOLUTION, TILE_RESOLUTION};
 
-	const char*       spheroidName = NULL;
-	Names             imagePatchNames;
-	Scales            imagePatchScales;
-	NodataStrings     imageNodataStrings;
-	GridSamplingFlags imageSamplingFlags;
-	for (int i=1; i<argc; ++i)
+    const char*       spheroidName = NULL;
+    std::string       settingsFile;
+    Names             imagePatchNames;
+    Scales            imagePatchScales;
+    NodataStrings     imageNodataStrings;
+    GridSamplingFlags imageSamplingFlags;
+    for (int i=1; i<argc; ++i)
     {
         if (strcasecmp(argv[i], "-dem") == 0)
         {
@@ -152,13 +153,28 @@ int main(int argc, char* argv[])
         {
             pointSampled = false;
         }
-		else
+        else if (strcasecmp(argv[i], "-settings") == 0)
         {
-			//gather the image patch name and scale factor for the values
-			imagePatchNames.push_back(argv[i]);
-			imagePatchScales.push_back(scale);
-			imageNodataStrings.push_back(nodata);
-			imageSamplingFlags.push_back(pointSampled);
+            //read the settings filename
+            ++i;
+            if (i<argc)
+            {
+                settingsFile = std::string(argv[i]);
+            }
+            else
+            {
+                std::cerr << "Dangling configuration file name argument" <<
+                             std::endl;
+                return 1;
+            }
+        }
+        else
+        {
+            //gather the image patch name and scale factor for the values
+            imagePatchNames.push_back(argv[i]);
+            imagePatchScales.push_back(scale);
+            imageNodataStrings.push_back(nodata);
+            imageSamplingFlags.push_back(pointSampled);
         }
     }
 
@@ -166,14 +182,14 @@ int main(int argc, char* argv[])
     {
         std::cerr << "Usage:" << std::endl << "construo -dem | -color "
                      "<database name> [-scale <scalar>] [-nodata " <<
-                     "<value>] [-pointsampling] [-areasampling] <input " <<
-                     "files>" << std::endl;
+                     "<value>] [-pointsampling] [-areasampling] " <<
+                     "[-settings <settings file>] <input files>" << std::endl;
         return 1;
     }
-	if (spheroidName == NULL)
+    if (spheroidName == NULL)
     {
-		std::cerr << "No spheroid file name provided" << std::endl;
-		return 1;
+        std::cerr << "No spheroid file name provided" << std::endl;
+        return 1;
     }
     if (imagePatchNames.empty())
     {
@@ -181,8 +197,10 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-	//reate the builder object
-	BuilderBase* builder = NULL;
+    CONSTRUO_SETTINGS.loadFromFile(settingsFile);
+
+    //reate the builder object
+    BuilderBase* builder = NULL;
     switch (buildType)
     {
         case DEM_BUILD:
@@ -199,28 +217,28 @@ int main(int argc, char* argv[])
             break;
     }
 
-	//load all image patches
-	int numPatches = static_cast<int>(imagePatchNames.size());
-	assert(numPatches == static_cast<int>(imagePatchScales.size()));
-	for (int i=0; i<numPatches; ++i)
+    //load all image patches
+    int numPatches = static_cast<int>(imagePatchNames.size());
+    assert(numPatches == static_cast<int>(imagePatchScales.size()));
+    for (int i=0; i<numPatches; ++i)
     {
-		try
+        try
         {
-			builder->addImagePatch(
+            builder->addImagePatch(
                 imagePatchNames[i], imagePatchScales[i], imageNodataStrings[i],
                 imageSamplingFlags[i]);
         }
-		catch(std::runtime_error err)
+        catch(std::runtime_error err)
         {
-			std::cerr << "Ignoring image patch " << imagePatchNames[i] <<
+            std::cerr << "Ignoring image patch " << imagePatchNames[i] <<
                          " due to exception " << err.what() << std::endl;
         }
     }
 
-	//update the spheroid
+    //update the spheroid
     builder->update();
 
-	//clean up and return
-	delete builder;
-	return 0;
+    //clean up and return
+    delete builder;
+    return 0;
 }
