@@ -1,4 +1,4 @@
-#include <crusta/CrustaSettings.h>
+#include <construo/ConstruoSettings.h>
 
 
 #include <iostream>
@@ -6,24 +6,18 @@
 #include <Misc/ConfigurationFile.h>
 #include <Misc/File.h>
 #include <Misc/StandardValueCoders.h>
-#include <GL/GLValueCoders.h>
 
 
 BEGIN_CRUSTA
 
 
-CrustaSettings::CrustaSettings() :
-    globeName("Sphere_Earth"), globeRadius(6371000.0),
-    decoratedVectorArt(false),
-    terrainAmbientColor(0.4f, 0.4f, 0.4f, 1.0f),
-    terrainDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f),
-    terrainEmissiveColor(0.0f, 0.0f, 0.0f, 1.0f),
-    terrainSpecularColor(0.3f, 0.3f, 0.3f, 1.0f),
-    terrainShininess(55.0f)
+ConstruoSettings::
+ConstruoSettings() :
+    globeName("Sphere_Earth"), globeRadius(6371000.0)
 {
 }
 
-void CrustaSettings::
+void ConstruoSettings::
 loadFromFile(std::string configurationFileName, bool merge)
 {
     Misc::ConfigurationFile cfgFile;
@@ -57,28 +51,10 @@ loadFromFile(std::string configurationFileName, bool merge)
         }
     }
 
-    //try to extract misc specifications
-    cfgFile.setCurrentSection("/Crusta");
-    decoratedVectorArt = cfgFile.retrieveValue<bool>(
-        "./decoratedVectorArt", decoratedVectorArt);
-
-    //try to extract the globe specifications
+    //try to extract the pertinent information from the configuration file
     cfgFile.setCurrentSection("/Crusta/Globe");
     globeName   = cfgFile.retrieveString("./name", globeName);
     globeRadius = cfgFile.retrieveValue<double>("./radius", globeRadius);
-
-    //try to extract the terrain properties
-    cfgFile.setCurrentSection("/Crusta/Terrain");
-    terrainAmbientColor = cfgFile.retrieveValue<Color>(
-        "./terrainAmbientColor", terrainAmbientColor);
-    terrainDiffuseColor = cfgFile.retrieveValue<Color>(
-        "./terrainDiffuseColor", terrainDiffuseColor);
-    terrainEmissiveColor = cfgFile.retrieveValue<Color>(
-        "./terrainEmissiveColor", terrainEmissiveColor);
-    terrainSpecularColor = cfgFile.retrieveValue<Color>(
-        "./terrainSpecularColor", terrainSpecularColor);
-    terrainShininess = cfgFile.retrieveValue<double>(
-        "./terrainShininess", terrainShininess);
 }
 
 END_CRUSTA

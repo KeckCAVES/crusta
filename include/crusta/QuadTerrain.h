@@ -99,14 +99,16 @@ protected:
 
     /** render the coverage map for the given node into the specified texture */
     static void renderGpuLineCoverageMap(CrustaGlData* glData,
-        const QuadNodeMainData& node, GLuint tex);
+        const QuadNodeMainData& node, GLuint tex,
+        const CrustaSettings& crustaSettings);
 
     /** make sure the required GL data for line data is available. In case a
         buffer cannot be associated with the specified node (cache is full),
         then a temporary buffer is provided that has had the data streamed to
         it */
     static const QuadNodeGpuLineData& prepareGpuLineData(CrustaGlData* glData,
-        QuadNodeMainData& mainData, const AgeStamp& currentFrame);
+        QuadNodeMainData& mainData, const AgeStamp& currentFrame,
+        const CrustaSettings& crustaSettings);
     /** make sure the required GL data for drawing is available. In case a
         buffer cannot be associated with the specified node (cache is full),
         then a temporary buffer is provided that has had the data streamed to
@@ -118,7 +120,7 @@ protected:
         point. */
     static void drawNode(GLContextData& contextData, CrustaGlData* glData,
         QuadNodeMainData& mainData, const AgeStamp& currentFrame,
-        bool decoratedVectorArt);
+        const CrustaSettings& crustaSettings);
 
     /** draw the finest resolution node that are part of the currently terrain
         approximation */

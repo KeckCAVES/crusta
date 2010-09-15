@@ -5,6 +5,7 @@
 
 #include <Misc/File.h>
 
+#include <construo/construoGlobals.h>
 #include <construo/Converters.h>
 
 BEGIN_CRUSTA
@@ -24,7 +25,7 @@ GdalTransform(const char* projectionFileName)
 
     //read in the transformations from the file
     char line[1024];
-	while (file.gets(line, sizeof(line)))
+    while (file.gets(line, sizeof(line)))
     {
         if (strcasecmp(line, "Geotransform:\n")==0)
         {
@@ -56,9 +57,11 @@ GdalTransform(const char* projectionFileName)
     }
 
     OGRSpatialReference worldSys;
-    worldSys.SetGeogCS("WGS 84", "WGS_1984", "WGS 84",
-                       SRS_WGS84_SEMIMAJOR, SRS_WGS84_INVFLATTENING,
-                       "Greenwich", 0.0, SRS_UA_RADIAN, 1.0);
+    worldSys.SetGeogCS(
+        (std::string("Crusta_")+CONSTRUO_SETTINGS.globeName).c_str(),
+        "Crusta_Sphere_Datum", CONSTRUO_SETTINGS.globeName.c_str(),
+        CONSTRUO_SETTINGS.globeRadius, 0.0, "Reference_Meridian", 0.0,
+        SRS_UA_RADIAN, 1.0);
 
     geoToWorld = OGRCreateCoordinateTransformation(&geoSys, &worldSys);
     if (geoToWorld == NULL)
@@ -99,8 +102,10 @@ getFinestResolution(const int size[2]) const
     Point left   = imageToWorld(half[0]+1, half[1]);
     Point up     = imageToWorld(half[0],   half[1]+1);
 
-    Point::Scalar lx = Converter::haversineDist(origin, left, SPHEROID_RADIUS);
-    Point::Scalar ly = Converter::haversineDist(origin,   up, SPHEROID_RADIUS);
+    Point::Scalar lx = Converter::haversineDist(origin, left,
+                                                CONSTRUO_SETTINGS.globeRadius);
+    Point::Scalar ly = Converter::haversineDist(origin, up,
+                                                CONSTRUO_SETTINGS.globeRadius);
 
     return std::min(lx, ly);
 }

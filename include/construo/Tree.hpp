@@ -2,6 +2,7 @@
 #include <sstream>
 
 #include <crusta/QuadtreeFileHeaders.h>
+#include <construo/construoGlobals.h>
 #include <construo/Converters.h>
 
 ///\todo remove
@@ -319,7 +320,7 @@ template <typename PixelParam, typename PolyhedronParam>
 Spheroid<PixelParam, PolyhedronParam>::
 Spheroid(const std::string& baseName, const uint tileResolution[2])
 {
-    PolyhedronParam polyhedron(SPHEROID_RADIUS);
+    PolyhedronParam polyhedron(CONSTRUO_SETTINGS.globeRadius);
     uint numPatches = polyhedron.getNumPatches();
 
     baseNodes.resize(numPatches);
@@ -349,7 +350,7 @@ Spheroid(const std::string& baseName, const uint tileResolution[2])
             assert(node->tileIndex==0 && file->getNumTiles()==1);
         }
     }
-    
+
     //initialize the geometry of the base nodes and link them
     uint orientations[4];
     BaseNode* neighbors[4];
@@ -361,7 +362,7 @@ Spheroid(const std::string& baseName, const uint tileResolution[2])
 ///\todo parametrize the Spheroid by the sphere coverage. use Static for now.
         node->coverage = StaticSphereCoverage(2, node->scope);
         node->computeResolution();
-        
+
         polyhedron.getConnectivity(i, connectivity);
         for (uint n=0; n<4; ++n)
         {

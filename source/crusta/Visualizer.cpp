@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include <Geometry/OrthogonalTransformation.h>
+#include <GL/GLColorTemplates.h>
 #include <GL/GLTransformationWrappers.h>
 #include <GLMotif/Button.h>
 #include <GLMotif/Menu.h>
@@ -21,7 +22,7 @@ BEGIN_CRUSTA
 
 
 Visualizer* Visualizer::vis          = NULL;
-Color       Visualizer::defaultColor = Color(1);
+Color       Visualizer::defaultColor = Color(1,1,1,1);
 
 Visualizer::Primitive::
 Primitive() :
@@ -236,7 +237,7 @@ display(GLContextData& contextData) const
         nav *= Vrui::NavTransform::translate(centroidTranslation);
         glLoadMatrix(nav);
 
-        glColor4fv(it->color.getComponents());
+        glColor(it->color);
         glVertexPointer(3, GL_DOUBLE, 0, &it->vertices.front());
         glDrawArrays(it->mode, 0, it->vertices.size());
 
@@ -258,7 +259,7 @@ display(GLContextData& contextData) const
             nav *= Vrui::NavTransform::translate(centroidTranslation);
             glLoadMatrix(nav);
 
-            glColor4fv(p.color.getComponents());
+            glColor(p.color);
             glVertexPointer(3, GL_DOUBLE, 0, &p.vertices.front());
             glDrawArrays(p.mode, 0, p.vertices.size());
 

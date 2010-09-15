@@ -39,10 +39,10 @@ struct QuadNodeMainData
 
     /** compute the bounding sphere. It is dependent on the vertical scale,
         so this method is a convinient API for such updates */
-    void computeBoundingSphere(Scalar verticalScale);
+    void computeBoundingSphere(Scalar radius, Scalar verticalScale);
     /** compute the various "cached values" (e.g. bounding sphere, centroid,
         etc.) */
-    void init(Scalar verticalScale);
+    void init(Scalar radius, Scalar verticalScale);
 
     /** 3D vertex data for the node's flat-sphere geometry */
     Vertex* geometry;

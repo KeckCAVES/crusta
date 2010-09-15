@@ -14,7 +14,12 @@ class CrustaSettings
 public:
     CrustaSettings();
 
-    void loadFromFile(std::string configurationFileName="");
+    void loadFromFile(std::string configurationFileName="", bool merge=true);
+
+    /** name of the sphere onto which data is mapped */
+    std::string globeName;
+    /** radius of the sphere onto which data is mapped */
+    double globeRadius;
 
     /** flags if line mapping should be rendered decorated or not */
     bool decoratedVectorArt;

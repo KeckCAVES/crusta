@@ -27,6 +27,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 #include <algorithm>
 
+#include <construo/construoGlobals.h>
 #include <construo/Converters.h>
 #include <construo/GeoTransform.h>
 
@@ -45,11 +46,13 @@ getFinestResolution(const int size[2]) const
         (Math::Constants<Point::Scalar>::pi-Math::abs(tl[1])) ? br[1] : tl[1];
 
     Point end(start[0]+Math::rad(scale[0]), start[1]);
-    Point::Scalar lx = Converter::haversineDist(start, end, SPHEROID_RADIUS);
+    Point::Scalar lx = Converter::haversineDist(start, end,
+                                                CONSTRUO_SETTINGS.globeRadius);
     end[0] = start[0];
     end[1] = start[1] + Math::rad(scale[1]);
-    Point::Scalar ly = Converter::haversineDist(start, end, SPHEROID_RADIUS);
-    
+    Point::Scalar ly = Converter::haversineDist(start, end,
+                                                CONSTRUO_SETTINGS.globeRadius);
+
     return std::min(lx, ly);
 }
 
@@ -153,10 +156,10 @@ worldToImage(const Box& worldBox) const
 bool GeoTransform::
 isCompatible(const ImageTransform& other) const
 {
-	if(dynamic_cast<const GeoTransform*>(&other)==0)
-		return false;
-    
-	return isSystemCompatible(other);
+    if(dynamic_cast<const GeoTransform*>(&other)==0)
+        return false;
+
+    return isSystemCompatible(other);
 }
 
 END_CRUSTA

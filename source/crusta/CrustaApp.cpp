@@ -59,15 +59,19 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
 {
     std::string demName;
     std::string colorName;
+    std::string settingsFile;
     for (int i=0; i<argc; ++i)
     {
         if (strcmp(argv[i], "-dem")==0)
             demName   = std::string(argv[++i]);
         if (strcmp(argv[i], "-color")==0)
             colorName = std::string(argv[++i]);
+        if (strcmp(argv[i], "-settings")==0)
+            settingsFile = std::string(argv[++i]);
     }
+
     crusta = new Crusta;
-    crusta->init(demName, colorName);
+    crusta->init(demName, colorName, settingsFile);
 
     /* Create the sun lightsource: */
     sun=Vrui::getLightsourceManager()->createLightsource(false);
@@ -195,7 +199,7 @@ init()
     GLMotif::Slider* slider = new GLMotif::Slider(
         "SSShininessSlider", shininessRoot, GLMotif::Slider::HORIZONTAL,
         10.0 * style->fontHeight);
-    slider->setValue(log(shininess));
+    slider->setValue(log(shininess)/log(2));
     slider->setValueRange(0.00f, 7.0f, 0.00001f);
     slider->getValueChangedCallbacks().add(
         this, &CrustaApp::SpecularSettingsDialog::shininessChangedCallback);
@@ -470,7 +474,7 @@ alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
     origin = crusta->mapToScaledGlobe(origin);
 
     //misuse the Geoid just to build a surface tangent frame
-    Geometry::Geoid<double> geoid(SPHEROID_RADIUS, 0.0);
+    Geometry::Geoid<double> geoid(crusta->getSettings().globeRadius, 0.0);
     Point3 lonLatEle = geoid.cartesianToGeodetic(origin);
     Geometry::Geoid<double>::Frame frame =
         geoid.geodeticToCartesianFrame(lonLatEle);
@@ -663,7 +667,8 @@ void CrustaApp::
 resetNavigationCallback(Misc::CallbackData* cbData)
 {
     /* Reset the Vrui navigation transformation: */
-    Vrui::setNavigationTransformation(Vrui::Point(0,0,0), 1.5*SPHEROID_RADIUS);
+    Vrui::setNavigationTransformation(Vrui::Point(0),
+                                      1.5*crusta->getSettings().globeRadius);
     Vrui::concatenateNavigationTransformation(Vrui::NavTransform::translate(
         Vrui::Vector(0,1,0)));
 }

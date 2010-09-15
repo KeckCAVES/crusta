@@ -192,6 +192,8 @@ add_executable(construo
     ../include/construo/ArcInfoBinaryGridImageFile.h
     ../include/construo/Builder.h
     ../include/construo/Builder.hpp
+    ../include/construo/construoGlobals.h
+    ../include/construo/ConstruoSettings.h
     ../include/construo/ConstruoVisualizer.h
     ../include/construo/Converters.h
     ../include/construo/DynamicFilter.h
@@ -221,6 +223,8 @@ add_executable(construo
 
     ../source/construo/ArcInfoBinaryGridImageFile.cpp
     ../source/construo/Construo.cpp
+    ../source/construo/construoGlobals.cpp
+    ../source/construo/ConstruoSettings.cpp
     ../source/construo/ConstruoVisualizer.cpp
     ../source/construo/Filter.cpp
     ../source/construo/GdalTransform.cpp

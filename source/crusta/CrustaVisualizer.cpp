@@ -8,7 +8,7 @@
 BEGIN_CRUSTA
 
 
-Color CrustaVisualizer::defaultScopeColor(1);
+Color CrustaVisualizer::defaultScopeColor(1,1,1,1);
 Color CrustaVisualizer::defaultSectionColor(0.7, 0.8, 1.0, 1.0);
 Color CrustaVisualizer::defaultTriangleColor(0.7, 0.6, 0.9, 1.0);
 Color CrustaVisualizer::defaultRayColor(0.3, 0.8, 0.4, 1.0);
@@ -83,7 +83,7 @@ addRay(const Ray& r, int temp, const Color& color)
     Point3s verts;
     verts.resize(2);
     verts[0] = r.getOrigin();
-    verts[1] = r(0.00001 * SPHEROID_RADIUS);
+    verts[1] = r(0.00001 * 6371000); //hardcoded earth radius
 
     newPrim.setVertices(verts);
 }
@@ -130,8 +130,8 @@ addSideIn(const int sideIn, const Scope& s, int temp, const Color& color)
 void CrustaVisualizer::
 resetNavigationCallback(Misc::CallbackData* cbData)
 {
-    /* Reset the Vrui navigation transformation: */
-    Vrui::setNavigationTransformation(Vrui::Point(0,0,0), 1.5*SPHEROID_RADIUS);
+    /* Reset the Vrui navigation transformation: (hardcoded earth radius) */
+    Vrui::setNavigationTransformation(Vrui::Point(0,0,0), 1.5*6371000);
 }
 
 

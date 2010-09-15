@@ -119,7 +119,7 @@ load(const char* filename)
 ///\todo check the feature set of the layer here to make sure it has the needed
 
     //create a sphere-geoid to convert the cartesian points to lat,lon,elevation
-    Geometry::Geoid<double> sphere(SPHEROID_RADIUS, 0.0);
+    Geometry::Geoid<double> sphere(crusta->getSettings().globeRadius, 0.0);
 
     //grab all the features and their control points (we assume polylines only)
     OGRFeature* feature = NULL;
@@ -212,10 +212,15 @@ save(const char* fileName, const char* format)
     //create a layer-field definition for outputting the symbol id
     OGRFieldDefn fieldDef("Symbol", OFTInteger);
 
+    const CrustaSettings& crustaSettings = crusta->getSettings();
 ///\todo create layers for all the different shape types to export
     //create a (georeferenced) layer for the polylines
     OGRSpatialReference crustaSys;
-    crustaSys.SetWellKnownGeogCS("WGS84");
+    crustaSys.SetGeogCS((string("Crusta_")+crustaSettings.globeName).c_str(),
+                       "Crusta_Sphere_Datum", crustaSettings.globeName.c_str(),
+                       crustaSettings.globeRadius, 0.0,
+                       "Reference_Meridian", 0.0, SRS_UA_DEGREE,
+                       atof(SRS_UA_DEGREE_CONV));
 
     OGRLayer* layer = source->CreateLayer("Crusta_Polylines", &crustaSys,
                                           wkbLineString25D);
@@ -236,7 +241,7 @@ save(const char* fileName, const char* format)
     }
 
     //create a sphere-geoid to convert the cartesian points to lat,lon,elevation
-    Geometry::Geoid<double> sphere(SPHEROID_RADIUS, 0.0);
+    Geometry::Geoid<double> sphere(crustaSettings.globeRadius, 0.0);
 
     for (PolylinePtrs::iterator in=polylines.begin(); in!=polylines.end(); ++in)
     {

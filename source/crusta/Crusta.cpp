@@ -185,8 +185,13 @@ CrustaGlData::
 
 
 void Crusta::
-init(const std::string& demFileBase, const std::string& colorFileBase)
+init(const std::string& demFileBase, const std::string& colorFileBase,
+     const std::string& settingsFile)
 {
+///\todo extend the interface to pass an optional configuration file
+    //initialize the crusta user settings
+    settings.loadFromFile(settingsFile);
+
     //initialize the surface transformation tool
     SurfaceTool::init();
     //initialize the abstract crusta tool (adds an entry to the VRUI menu)
@@ -202,7 +207,7 @@ init(const std::string& demFileBase, const std::string& colorFileBase)
     verticalScale    = 0.0;
     newVerticalScale = 1.0;
 
-    Triacontahedron polyhedron(SPHEROID_RADIUS);
+    Triacontahedron polyhedron(settings.globeRadius);
 
     cache    = new Cache(4096, 1024, 1024, this);
     dataMan  = new DataManager(&polyhedron, demFileBase, colorFileBase, this);
@@ -393,7 +398,7 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
         if (!hit.isValid())
         {
             Scalar height = node->height[offset[1]*TILE_RESOLUTION + offset[0]];
-            height       += SPHEROID_RADIUS + elevationOffset;
+            height       += settings.globeRadius + elevationOffset;
 
             Vector3 toPos = Vector3(pos);
             toPos.normalize();
@@ -422,7 +427,7 @@ CrustaVisualizer::peek();
     const Scalar& verticalScale = getVerticalScale();
 
     //intersect the ray with the global outer shells to determine starting point
-    Sphere shell(Point3(0), SPHEROID_RADIUS +
+    Sphere shell(Point3(0), settings.globeRadius +
                  verticalScale*globalElevationRange[1]);
     Scalar gin, gout;
     bool intersects = shell.intersectRay(ray, gin, gout);
@@ -431,7 +436,8 @@ CrustaVisualizer::peek();
     if (!intersects)
         return HitResult();
 
-    shell.setRadius(SPHEROID_RADIUS + verticalScale*globalElevationRange[0]);
+    shell.setRadius(settings.globeRadius +
+                    verticalScale*globalElevationRange[0]);
     HitResult hit = shell.intersectRay(ray);
     if (hit.isValid())
         gout = hit.getParameter();
@@ -483,7 +489,7 @@ CrustaVisualizer::peek();
     int    sideIn        = -1;
     int    sideOut       = -1;
     int    mapSide[4][4] = {{2,3,0,1}, {1,2,3,0}, {0,1,2,3}, {3,0,1,2}};
-    Triacontahedron polyhedron(SPHEROID_RADIUS);
+    Triacontahedron polyhedron(settings.globeRadius);
 #if DEBUG_INTERSECT_CRAP
 int patchesVisited = 0;
 #endif //DEBUG_INTERSECT_CRAP
@@ -551,7 +557,7 @@ intersect(Shape::ControlPointHandle start,
     int    sideIn        = -1;
     int    sideOut       = -1;
     int    mapSide[4][4] = {{2,3,0,1}, {1,2,3,0}, {0,1,2,3}, {3,0,1,2}};
-    Triacontahedron polyhedron(SPHEROID_RADIUS);
+    Triacontahedron polyhedron(settings.globeRadius);
     while (true)
     {
         patch->intersect(callback, ray, tin, sideIn, tout, sideOut);
@@ -626,7 +632,7 @@ mapToScaledGlobe(const Point3& pos)
     Vector3 toPoint(pos[0], pos[1], pos[2]);
     Vector3 onSurface(toPoint);
     onSurface.normalize();
-    onSurface *= SPHEROID_RADIUS;
+    onSurface *= settings.globeRadius;
     toPoint   -= onSurface;
     toPoint   *= verticalScale;
     toPoint   += onSurface;
@@ -640,7 +646,7 @@ mapToUnscaledGlobe(const Point3& pos)
     Vector3 toPoint(pos[0], pos[1], pos[2]);
     Vector3 onSurface(toPoint);
     onSurface.normalize();
-    onSurface *= SPHEROID_RADIUS;
+    onSurface *= settings.globeRadius;
     toPoint   -= onSurface;
     toPoint   /= verticalScale;
     toPoint   += onSurface;
@@ -854,7 +860,7 @@ confirmActives()
         QuadNodeMainData& node = (*it)->getData();
         if (node.verticalScaleAge < getLastScaleFrame())
         {
-            node.computeBoundingSphere(getVerticalScale());
+            node.computeBoundingSphere(settings.globeRadius,getVerticalScale());
             node.verticalScaleAge = getCurrentFrame();
         }
     }
