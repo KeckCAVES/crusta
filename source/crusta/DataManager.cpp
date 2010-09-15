@@ -146,7 +146,7 @@ void DataManager::
 generateGeometry(QuadNodeMainData& child)
 {
 ///\todo use average height to offset from the spheroid
-    double shellRadius = SPHEROID_RADIUS;
+    double shellRadius = crusta->getSettings().globeRadius;
     child.scope.getRefinement(shellRadius, TILE_RESOLUTION, geometryBuf);
 
     /* compute and store the centroid here, since node-creation level generation
@@ -253,7 +253,7 @@ sourceDem(QuadNodeMainData* parent, QuadNodeMainData& child)
                 heights[i] = demNodata;
         }
     }
-    child.init(crusta->getVerticalScale());
+    child.init(crusta->getSettings().globeRadius, crusta->getVerticalScale());
 }
 
 void DataManager::

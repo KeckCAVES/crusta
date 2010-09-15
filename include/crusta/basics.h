@@ -10,6 +10,7 @@
 #include <Geometry/Ray.h>
 #include <Geometry/Point.h>
 #include <Geometry/Vector.h>
+#include <GL/GLColor.h>
 
 #define BEGIN_CRUSTA namespace crusta {
 #define END_CRUSTA   } //namespace crusta
@@ -78,7 +79,7 @@ typedef std::vector<Vector2f>       Vector2fs;
 typedef std::vector<Vector3>        Vector3s;
 typedef std::vector<Vector3f>       Vector3fs;
 
-typedef Geometry::Vector<float, 4>  Color;
+typedef GLColor<float, 4>           Color;
 typedef std::vector<Color>          Colors;
 
 typedef Geometry::HitResult<Scalar> HitResult;
@@ -87,8 +88,6 @@ typedef Geometry::Ray<Scalar, 3>    Ray;
 
 static const uint   TILE_RESOLUTION          = 65;
 static const float  TILE_TEXTURE_COORD_STEP  = 1.0 / TILE_RESOLUTION;
-static const double SPHEROID_RADIUS          = 6371000.0;
-static const double INV_SPHEROID_RADIUS      = 1.0 / SPHEROID_RADIUS;
 
 END_CRUSTA
 

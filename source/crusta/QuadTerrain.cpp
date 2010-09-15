@@ -4,6 +4,8 @@
 #include <assert.h>
 
 #include <Geometry/OrthogonalTransformation.h>
+#include <GL/GLColorTemplates.h>
+#include <GL/GLMaterialTemplates.h>
 #include <GL/GLTransformationWrappers.h>
 #include <Vrui/DisplayState.h>
 #include <Vrui/ViewSpecification.h>
@@ -316,15 +318,16 @@ display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes,
     glEnable(GL_CULL_FACE);
     glEnable(GL_TEXTURE_2D);
 
-    glMaterialfv(GL_FRONT, GL_AMBIENT,
-                 crustaSettings.terrainAmbientColor.getComponents());
-    glMaterialfv(GL_FRONT, GL_DIFFUSE,
-                 crustaSettings.terrainDiffuseColor.getComponents());
-    glMaterialfv(GL_FRONT, GL_EMISSION,
-                 crustaSettings.terrainEmissiveColor.getComponents());
-    glMaterialfv(GL_FRONT, GL_SPECULAR,
-                 crustaSettings.terrainSpecularColor.getComponents());
-    glMaterialf(GL_FRONT, GL_SHININESS, crustaSettings.terrainShininess);
+    glMaterialAmbient(GLMaterialEnums::FRONT,
+                      crustaSettings.terrainAmbientColor);
+    glMaterialDiffuse(GLMaterialEnums::FRONT,
+                      crustaSettings.terrainDiffuseColor);
+    glMaterialEmission(GLMaterialEnums::FRONT,
+                       crustaSettings.terrainEmissiveColor);
+    glMaterialSpecular(GLMaterialEnums::FRONT,
+                       crustaSettings.terrainSpecularColor);
+    glMaterialShininess(GLMaterialEnums::FRONT,
+                        crustaSettings.terrainShininess);
 
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -336,8 +339,7 @@ display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes,
 
     int numNodes = static_cast<int>(nodes.size());
     for (int i=0; i<numNodes; ++i)
-        drawNode(contextData, glData, *(nodes[i]), currentFrame,
-                 crustaSettings.decoratedVectorArt);
+        drawNode(contextData,glData,*(nodes[i]),currentFrame,crustaSettings);
 
     //restore the GL transform as it was before
     glPopMatrix();
@@ -533,7 +535,7 @@ CrustaVisualizer::clear(5);
     const Scalar& verticalScale = crusta->getVerticalScale();
 
 //- check intersection with upper boundary
-    Sphere shell(Point3(0), SPHEROID_RADIUS +
+    Sphere shell(Point3(0), crusta->getSettings().globeRadius +
                  verticalScale*node.elevationRange[1]);
     Scalar t0, t1;
     bool intersects = shell.intersectRay(ray, t0, t1);
@@ -1197,7 +1199,7 @@ intersectLeaf(QuadNodeMainData& leaf, Ray& ray, Scalar tin, int sin,
 
 void QuadTerrain::
 renderGpuLineCoverageMap(CrustaGlData* glData, const QuadNodeMainData& node,
-    GLuint tex)
+    GLuint tex, const CrustaSettings& crustaSettings)
 {
     typedef QuadNodeMainData::ShapeCoverage                    Coverage;
     typedef QuadNodeMainData::AgeStampedControlPointHandleList HandleList;
@@ -1235,7 +1237,8 @@ renderGpuLineCoverageMap(CrustaGlData* glData, const QuadNodeMainData& node,
 
     Geometry::Plane<Scalar,3> plane;
     plane.setNormal(-normal);
-    plane.setPoint(Point3(normal*(SPHEROID_RADIUS+elevationRange[0])));
+    plane.setPoint(Point3(normal*(crustaSettings.globeRadius +
+                                  elevationRange[0])));
     for (int i=0; i<3; ++i)
     {
         Ray ray(Point3(0), srcs[i]);
@@ -1243,7 +1246,8 @@ renderGpuLineCoverageMap(CrustaGlData* glData, const QuadNodeMainData& node,
         assert(hit.isValid());
         srcs[i] = ray(hit.getParameter());
     }
-    plane.setPoint(Point3(normal*(SPHEROID_RADIUS+elevationRange[1])));
+    plane.setPoint(Point3(normal*(crustaSettings.globeRadius +
+                                  elevationRange[1])));
     for (int i=3; i<5; ++i)
     {
         Ray ray(Point3(0), srcs[i]);
@@ -1329,7 +1333,7 @@ simply float processing the transformation */
         {
             //pass the offset along
             Color color((*oit)[0], (*oit)[0], (*oit)[0], (*oit)[1]);
-            glColor4fv(color.getComponents());
+            glColor(color);
 
             Handle cur  = hit->handle;
             Handle next = cur; ++next;
@@ -1374,7 +1378,8 @@ simply float processing the transformation */
 
 const QuadNodeGpuLineData& QuadTerrain::
 prepareGpuLineData(CrustaGlData* glData, QuadNodeMainData& mainData,
-                   const AgeStamp& currentFrame)
+                   const AgeStamp& currentFrame,
+                   const CrustaSettings& crustaSettings)
 {
     bool existed;
     GpuLineCacheBuffer* lineBuf = glData->lineCache->getBuffer(mainData.index,
@@ -1398,10 +1403,11 @@ prepareGpuLineData(CrustaGlData* glData, QuadNodeMainData& mainData,
         //transfer the data proper
         glBindTexture(GL_TEXTURE_1D, lineData.data);
         glTexSubImage1D(GL_TEXTURE_1D, 0, 0, mainData.lineData.size(), GL_RGBA,
-                        GL_FLOAT, mainData.lineData.front().getComponents());
+                        GL_FLOAT, mainData.lineData.front().getRgba());
 
         //render a new coverage map
-        renderGpuLineCoverageMap(glData, mainData, lineData.coverage);
+        renderGpuLineCoverageMap(glData, mainData, lineData.coverage,
+                                 crustaSettings);
 
         //stamp the age of the new data
         lineData.age = currentFrame;
@@ -1459,10 +1465,10 @@ prepareVideoData(CrustaGlData* glData, QuadNodeMainData& mainData)
 void QuadTerrain::
 drawNode(GLContextData& contextData, CrustaGlData* glData,
          QuadNodeMainData& mainData, const AgeStamp& currentFrame,
-         bool decoratedVectorArt)
+         const CrustaSettings& crustaSettings)
 {
 ///\todo integrate me properly into the system (VIS 2010)
-    if (decoratedVectorArt)
+    if (crustaSettings.decoratedVectorArt)
     {
         //stream the line data to the GPU if necessary
         glData->terrainShader.setLineNumSegments(mainData.lineNumSegments);
@@ -1470,7 +1476,7 @@ drawNode(GLContextData& contextData, CrustaGlData* glData,
         if (mainData.lineNumSegments != 0)
         {
             const QuadNodeGpuLineData& lineData =
-                prepareGpuLineData(glData, mainData, currentFrame);
+                prepareGpuLineData(glData,mainData,currentFrame,crustaSettings);
 
             glActiveTexture(GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_1D, lineData.data);

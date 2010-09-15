@@ -66,16 +66,19 @@ CrustaVislet(int numArguments, const char* const arguments[])
 {
     std::string demName;
     std::string colorName;
+    std::string settingsFile;
     for (int i=0; i<numArguments; ++i)
     {
         if (strcmp(arguments[i], "-dem")==0)
             demName   = std::string(arguments[++i]);
         if (strcmp(arguments[i], "-color")==0)
             colorName = std::string(arguments[++i]);
+        if (strcmp(arguments[i], "-settings")==0)
+            settingsFile = std::string(arguments[++i]);
     }
 
     crusta = new Crusta();
-    crusta->init(demName, colorName);
+    crusta->init(demName, colorName, settingsFile);
 }
 
 CrustaVislet::

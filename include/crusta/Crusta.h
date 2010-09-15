@@ -74,7 +74,8 @@ class Crusta : public GLObject
 public:
     typedef std::vector<CacheBuffer<QuadNodeMainData>*> Actives;
 
-    void init(const std::string& demFileBase, const std::string& colorFileBase);
+    void init(const std::string& demFileBase, const std::string& colorFileBase,
+              const std::string& settingsFile);
     void shutdown();
 
 ///\todo potentially deprecate

@@ -2,7 +2,9 @@
 
 #include <Geometry/OrthogonalTransformation.h>
 #include <GL/gl.h>
+#include <GL/GLColorTemplates.h>
 #include <GL/GLContextData.h>
+#include <GL/GLGeometryWrappers.h>
 #include <GL/GLTransformationWrappers.h>
 #include <Vrui/DisplayState.h>
 #include <Vrui/Vrui.h>
@@ -89,19 +91,19 @@ display(std::vector<QuadNodeMainData*>& nodes, GLContextData& contextData) const
                 //draw visible fragment
                 glDepthFunc(GL_LEQUAL);
                 glLineWidth(2.0);
-                glColor4fv(symbolColor.getComponents());
+                glColor(symbolColor);
                 glBegin(GL_LINES);
-                    glVertex3fv(curPf.getComponents());
-                    glVertex3fv(nextPf.getComponents());
+                    glVertex(curPf);
+                    glVertex(nextPf);
                 glEnd();
 
                 //display hidden fragment
                 glDepthFunc(GL_GREATER);
                 glLineWidth(1.0);
-                glColor4fv(symbolColorDim.getComponents());
+                glColor(symbolColorDim);
                 glBegin(GL_LINES);
-                    glVertex3fv(curPf.getComponents());
-                    glVertex3fv(nextPf.getComponents());
+                    glVertex(curPf);
+                    glVertex(nextPf);
                 glEnd();
 
                 CHECK_GLA
