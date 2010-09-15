@@ -201,11 +201,12 @@ init(const std::string& demFileBase, const std::string& colorFileBase,
     that are initialized with 0. Thus if crustaFrameNumber starts at 0, the
     init code wouldn't be able to retrieve any cache buffers since all the
     buffers of the current and previous frame are locked */
-    currentFrame     = 2;
-    lastScaleFrame   = 2;
-    texturingMode    = 2;
-    verticalScale    = 0.0;
-    newVerticalScale = 1.0;
+    currentFrame         = 2;
+    lastScaleFrame       = 2;
+    texturingMode        = 2;
+    verticalScale        = 0.99999999999999;
+    newVerticalScale     = 1.0;
+    changedVerticalScale = 0.99999999999999;
 
     Triacontahedron polyhedron(settings.globeRadius);
 
@@ -711,12 +712,35 @@ if (debugTool!=NULL)
 CRUSTA_DEBUG_OUT(8, "\n\n\n--------------------------------------\n%u\n\n\n",
 static_cast<unsigned int>(currentFrame));
 
-    //check for scale changes since the last frame
-    if (verticalScale  != newVerticalScale)
+    //apply the vertical scale changes
+    if (verticalScale != changedVerticalScale)
     {
-        verticalScale  = newVerticalScale;
+        verticalScale  = changedVerticalScale;
         lastScaleFrame = currentFrame;
         mapMan->processVerticalScaleChange();
+    }
+
+    //check for scale changes since the last frame
+    if (changedVerticalScale  != newVerticalScale)
+    {
+        //compute the translation the scale change implies on the navigation
+        Point3 physicalCenter = Vrui::getDisplayCenter();
+        const Vrui::NavTransform& navXform =
+            Vrui::getNavigationTransformation();
+        Point3 navCenter = navXform.inverseTransform(physicalCenter);
+
+        Vector3 toCenter(navCenter[0], navCenter[1], navCenter[2]);
+        Scalar height = toCenter.mag();
+        Scalar altitude = (height - settings.globeRadius) / verticalScale;
+        Scalar newHeight = altitude*newVerticalScale + settings.globeRadius;
+        Vector3 newToCenter = toCenter * (newHeight / height);
+        Vector3 translation = toCenter - newToCenter;
+        Vrui::setNavigationTransformation(navXform*
+            Vrui::NavTransform::translate(translation));
+
+        /* changes to the navigation only get applied in the next frame. Delay
+           the processing to the frame that will have the proper navigation */
+        changedVerticalScale = newVerticalScale;
     }
 
     //make sure all the active nodes are current

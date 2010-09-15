@@ -173,9 +173,11 @@ protected:
     int texturingMode;
     /** the vertical scale to be applied to all surface elevations */
     Scalar verticalScale;
-    /** the vertical scale that has been externally set. Buffers the scales
-        changes up to the next frame call */
+    /** the vertical scale that has been externally set */
     Scalar newVerticalScale;
+    /** buffers the scales changes up to the next frame call to maintain
+        consistency with the change of the navigation transformation */
+    Scalar changedVerticalScale;
 
     /** the cache management component */
     Cache* cache;
