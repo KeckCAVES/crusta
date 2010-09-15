@@ -224,6 +224,8 @@ colorButtonCallback(
     if (!manager->isVisible(&colorPicker))
     {
         //bring up the color picker
+        colorPicker.getColorPicker()->setCurrentColor(
+            crusta->getSettings().terrainSpecularColor);
         manager->popupPrimaryWidget(
             &colorPicker, manager->calcWidgetTransformation(cbData->button));
     }
@@ -300,7 +302,7 @@ produceMainMenu()
     //line decoration toggle
     GLMotif::ToggleButton* decorateLinesToggle = new GLMotif::ToggleButton(
         "DecorateLinesToggle", settingsMenu, "Decorate Lines");
-    decorateLinesToggle->setToggle(false);
+    decorateLinesToggle->setToggle(crusta->getSettings().decoratedVectorArt);
     decorateLinesToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::decorateLinesCallback);
 
