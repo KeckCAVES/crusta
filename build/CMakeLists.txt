@@ -102,6 +102,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/ViewLod.h
     ../include/crusta/VisibilityEvaluator.h
     ../include/crusta/Visualizer.h
+    ../include/crusta/TextureAtlas.h
     ../include/GLMotif/ColorHexagon.h
     ../include/GLMotif/ColorMap.h
     ../include/GLMotif/ColorPicker.h
