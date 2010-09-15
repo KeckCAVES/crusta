@@ -242,16 +242,16 @@ const char* LightingShader::fetchTerrainColorAsConstant =
 
 const char* LightingShader::fetchTerrainColorFromColorMap =
 "\
-    float e = texture2D(heightTex, coord).r;\n\
+    float e = texture2D(heightTex, tcXForm(coord)).r;\n\
           e = (e-minColorMapElevation) * colorMapElevationInvRange;\n\
     vec4 mapColor     = texture1D(colorMap, e);\n\
-    vec4 terrainColor = texture2D(colorTex, coord);\n\
+    vec4 terrainColor = texture2D(colorTex, tcXForm(coord));\n\
     terrainColor      = mix(terrainColor, mapColor, mapColor.w);\
 ";
 
 const char* LightingShader::fetchTerrainColorFromTexture =
 "\
-    vec4 terrainColor = texture2D(colorTex, coord);\
+    vec4 terrainColor = texture2D(colorTex, tcXForm(coord));\
 ";
 
 /*****************************************
@@ -481,6 +481,9 @@ void LightingShader::compileShader()
         uniform float verticalScale;\n\
         uniform vec3  center;\n\
         \n\
+        uniform vec2 texOffset;\n\
+        uniform vec2 texScale;\n\
+        \n\
         varying vec3 position;\n\
         varying vec3 normal;\n\
         varying vec2 texCoord;\n\
@@ -488,16 +491,20 @@ void LightingShader::compileShader()
 
     vertexShaderFunctions +=
     "\
+        vec2 tcXForm(in vec2 tc)\n\
+        {\n\
+            return texOffset + (tc * texScale);\n\
+        }\n\
+        \n\
         vec3 surfacePoint(in vec2 coords)\n\
         {\n\
-            vec3 res      = texture2D(geometryTex, coords).rgb;\n\
+            vec3 res      = texture2D(geometryTex, tcXForm(coords)).rgb;\n\
             vec3 dir      = normalize(center + res);\n\
-            float height  = texture2D(heightTex, coords).r;\n\
+            float height  = texture2D(heightTex, tcXForm(coords)).r;\n\
             height       *= verticalScale;\n\
             res          += height * dir;\n\
             return res;\n\
         }\n\
-        \n\
     ";
 
     /* Create the main vertex shader starting boilerplate: */
@@ -690,6 +697,12 @@ catch (std::exception& e){
     textureStepUniform  =glGetUniformLocationARB(programObject,"texStep");
     verticalScaleUniform=glGetUniformLocationARB(programObject,"verticalScale");
     centroidUniform     =glGetUniformLocationARB(programObject,"center");
+
+    texScaleUniform = glGetUniformLocationARB(programObject, "texScale");
+    glUniform2f(texScaleUniform, 1.0f, 1.0f);
+
+    texOffsetUniform = glGetUniformLocationARB(programObject, "texOffset");
+    glUniform2f(texOffsetUniform, 0.0f, 0.0f);
 
 
     if (linesDecorated)
