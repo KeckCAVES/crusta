@@ -73,6 +73,10 @@ class LightingShader
     GLint lineCoordScaleUniform;
     GLint lineWidthUniform;
 
+    GLint texScaleUniform;
+    GLint texOffsetUniform;
+
+
     /* Private methods: */
     std::string createApplyLightFunction(const char* functionTemplate,int lightIndex) const;
 
@@ -138,6 +142,15 @@ class LightingShader
     void setLineWidth(float lw)
     {
         glUniform1f(lineWidthUniform, lw);
+    }
+
+    void setTexScale(float su, float sv)
+    {
+        glUniform2f(texScaleUniform, su, sv);
+    }
+    void setTexOffset(float ou, float ov)
+    {
+        glUniform2f(texOffsetUniform, ou, ov);
     }
 };
 
