@@ -675,14 +675,6 @@ getMapManager() const
 
 
 void Crusta::
-submitActives(const Actives& touched)
-{
-    Threads::Mutex::Lock lock(activesMutex);
-    actives.insert(actives.end(), touched.begin(), touched.end());
-}
-
-
-void Crusta::
 frame()
 {
 statsMan.newFrame();
@@ -730,9 +722,9 @@ static_cast<unsigned int>(currentFrame));
         Point3 navCenter = navXform.inverseTransform(physicalCenter);
 
         Vector3 toCenter(navCenter[0], navCenter[1], navCenter[2]);
-        Scalar height = toCenter.mag();
-        Scalar altitude = (height - settings.globeRadius) / verticalScale;
-        Scalar newHeight = altitude*newVerticalScale + settings.globeRadius;
+        Scalar height       = toCenter.mag();
+        Scalar altitude     = (height - settings.globeRadius) / verticalScale;
+        Scalar newHeight    = altitude*newVerticalScale + settings.globeRadius;
         Vector3 newToCenter = toCenter * (newHeight / height);
         Vector3 translation = toCenter - newToCenter;
         Vrui::setNavigationTransformation(navXform*
@@ -742,9 +734,6 @@ static_cast<unsigned int>(currentFrame));
            the processing to the frame that will have the proper navigation */
         changedVerticalScale = newVerticalScale;
     }
-
-    //make sure all the active nodes are current
-    confirmActives();
 
     //process the requests from the last frame
     cache->getMainCache().frame();
@@ -873,22 +862,6 @@ void Crusta::
 setTerrainShininess(const float& shininess)
 {
     settings.terrainShininess = shininess;
-}
-
-
-void Crusta::
-confirmActives()
-{
-    for (Actives::iterator it=actives.begin(); it!=actives.end(); ++it)
-    {
-        QuadNodeMainData& node = (*it)->getData();
-        if (node.verticalScaleAge < getLastScaleFrame())
-        {
-            node.computeBoundingSphere(settings.globeRadius,getVerticalScale());
-            node.verticalScaleAge = getCurrentFrame();
-        }
-    }
-    actives.clear();
 }
 
 

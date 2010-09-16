@@ -253,7 +253,8 @@ sourceDem(QuadNodeMainData* parent, QuadNodeMainData& child)
                 heights[i] = demNodata;
         }
     }
-    child.init(crusta->getSettings().globeRadius, crusta->getVerticalScale());
+    child.init(crusta->getSettings().globeRadius, crusta->getVerticalScale(),
+               crusta->getCurrentFrame());
 }
 
 void DataManager::

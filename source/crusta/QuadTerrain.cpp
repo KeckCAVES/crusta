@@ -285,9 +285,6 @@ prepareDisplay(GLContextData& contextData, Nodes& nodes)
     /* display could be multi-threaded. Buffer all the node data requests and
        merge them into the request list en block */
     MainCache::Requests dataRequests;
-    /* as for requests for new data, buffer all the active node sets and submit
-       them at the end */
-    NodeBufs actives;
 
     /* traverse the terrain tree, update as necessary and issue drawing commands
        for active nodes */
@@ -295,11 +292,10 @@ prepareDisplay(GLContextData& contextData, Nodes& nodes)
         crusta->getCache()->getMainCache().findCached(rootIndex);
     assert(rootBuf != NULL);
 
-    prepareDraw(visibility, lod, rootBuf, actives, nodes, dataRequests);
+    prepareDraw(visibility, lod, rootBuf, nodes, dataRequests);
 
-    //merge the data requests and active sets
+    //merge the data requests
     crusta->getCache()->getMainCache().request(dataRequests);
-    crusta->submitActives(actives);
 }
 
 void QuadTerrain::
@@ -1591,18 +1587,26 @@ glData->terrainShader.enable();
 
 void QuadTerrain::
 prepareDraw(FrustumVisibility& visibility, FocusViewEvaluator& lod,
-            MainCacheBuffer* node, NodeBufs& actives, Nodes& renders,
+            MainCacheBuffer* node, Nodes& renders,
             MainCache::Requests& requests)
 {
     MainCache&  mainCache = crusta->getCache()->getMainCache();
     MapManager* mapMan    = crusta->getMapManager();
 
     //confirm current node as being active
-    actives.push_back(node);
     mainCache.touch(node);
 
     QuadNodeMainData& mainData = node->getData();
 
+///\todo generalize this to an API that makes sure the node is ready for eval
+    //make sure we have proper bounding spheres
+    if (mainData.boundingAge < crusta->getLastScaleFrame())
+    {
+        mainData.computeBoundingSphere(crusta->getSettings().globeRadius,
+            crusta->getVerticalScale(), crusta->getCurrentFrame());
+    }
+
+//- evaluate
     float visible = visibility.evaluate(mainData);
     if (visible)
     {
@@ -1646,14 +1650,6 @@ prepareDraw(FrustumVisibility& visibility, FocusViewEvaluator& lod,
                     {
                         allgood = false;
                     }
-                    else if (childBuf->getData().verticalScaleAge <
-                             crusta->getLastScaleFrame())
-                    {
-                        //"request" it for update
-                        actives.push_back(childBuf);
-                        mainCache.touch(childBuf);
-                        allgood = false;
-                    }
                 }
             }
 /**\todo horrible Vis2010 HACK: integrate this in the proper way? I.e. don't
@@ -1675,10 +1671,7 @@ CRUSTA_DEBUG(60, std::cerr << "***COVDOWN parent(" << mainData.index <<
             if (allgood)
             {
                 for (int i=0; i<4; ++i)
-                {
-                    prepareDraw(visibility, lod, children[i], actives, renders,
-                                requests);
-                }
+                    prepareDraw(visibility,lod,children[i],renders,requests);
             }
             else
                 renders.push_back(&mainData);

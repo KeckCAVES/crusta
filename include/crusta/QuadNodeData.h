@@ -39,10 +39,12 @@ struct QuadNodeMainData
 
     /** compute the bounding sphere. It is dependent on the vertical scale,
         so this method is a convinient API for such updates */
-    void computeBoundingSphere(Scalar radius, Scalar verticalScale);
+    void computeBoundingSphere(Scalar radius, Scalar verticalScale,
+                               const AgeStamp& currentFrame);
     /** compute the various "cached values" (e.g. bounding sphere, centroid,
         etc.) */
-    void init(Scalar radius, Scalar verticalScale);
+    void init(Scalar radius, Scalar verticalScale,
+              const AgeStamp& currentFrame);
 
     /** 3D vertex data for the node's flat-sphere geometry */
     Vertex* geometry;
@@ -67,7 +69,7 @@ Colors        lineData;
     Scope scope;
 
 ///\todo integrate me properly into the caching scheme (VIS 2010)
-AgeStamp verticalScaleAge;
+AgeStamp boundingAge;
     /** center of the bounding sphere primitive */
     Scope::Vertex boundingCenter;
     /** radius of a sphere containing the node */
