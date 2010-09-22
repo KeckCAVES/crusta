@@ -125,7 +125,7 @@ protected:
     /** draw the finest resolution node that are part of the currently terrain
         approximation */
     void prepareDraw(FrustumVisibility& visibility, FocusViewEvaluator& lod,
-                     MainCacheBuffer* node, NodeBufs& actives, Nodes& renders,
+                     MainCacheBuffer* node, Nodes& renders,
                      MainCache::Requests& requests);
 
     /** index of the root patch for this terrain */

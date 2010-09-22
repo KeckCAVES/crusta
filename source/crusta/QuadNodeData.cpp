@@ -21,7 +21,8 @@ AgeStampedControlPointHandle(const AgeStamp& iAge,
 QuadNodeMainData::
 QuadNodeMainData(uint size) :
     lineCoverageDirty(false), lineCoverageAge(0), lineNumSegments(0),
-    index(TreeIndex::invalid), boundingCenter(0,0,0), boundingRadius(0)
+    index(TreeIndex::invalid),
+    boundingAge(0), boundingCenter(0,0,0), boundingRadius(0)
 {
     geometry = new Vertex[size*size];
     height   = new DemHeight[size*size];
@@ -47,7 +48,8 @@ QuadNodeMainData::
 }
 
 void QuadNodeMainData::
-computeBoundingSphere(Scalar radius, Scalar verticalScale)
+computeBoundingSphere(Scalar radius, Scalar verticalScale,
+                      const AgeStamp& currentFrame)
 {
     DemHeight avgElevation = (elevationRange[0] + elevationRange[1]);
     avgElevation          *= DemHeight(0.5)* verticalScale;
@@ -73,10 +75,13 @@ computeBoundingSphere(Scalar radius, Scalar verticalScale)
             boundingRadius = std::max(boundingRadius, norm);
         }
     }
+
+    //stamp the current bounding specification
+    boundingAge = currentFrame;
 }
 
 void QuadNodeMainData::
-init(Scalar radius, Scalar verticalScale)
+init(Scalar radius, Scalar verticalScale, const AgeStamp& currentFrame)
 {
     //compute the centroid on the average elevation (see split)
     Scope::Vertex scopeCentroid = scope.getCentroid(radius);
@@ -84,7 +89,7 @@ init(Scalar radius, Scalar verticalScale)
     centroid[1] = scopeCentroid[1];
     centroid[2] = scopeCentroid[2];
 
-    computeBoundingSphere(radius, verticalScale);
+    computeBoundingSphere(radius, verticalScale, currentFrame);
 }
 
 

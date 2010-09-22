@@ -72,8 +72,6 @@ struct CrustaGlData : public GLObject::DataItem
 class Crusta : public GLObject
 {
 public:
-    typedef std::vector<CacheBuffer<QuadNodeMainData>*> Actives;
-
     void init(const std::string& demFileBase, const std::string& colorFileBase,
               const std::string& settingsFile);
     void shutdown();
@@ -118,9 +116,6 @@ public:
     DataManager* getDataManager() const;
     MapManager*  getMapManager()  const;
 
-    /** inform crusta of nodes that must be kept current */
-    void submitActives(const Actives& touched);
-
     void frame();
     void display(GLContextData& contextData);
 
@@ -155,10 +150,6 @@ void validateLineCoverage();
 protected:
     typedef std::vector<QuadTerrain*> RenderPatches;
 
-    /** make sure the bounding objects used for visibility and LOD checks are
-        up-to-date wrt to the vertical scale */
-    void confirmActives();
-
     /** keep track of the number of frames processed. Used, for example, by the
         cache to perform LRU that is aware of currently active nodes (the ones
         from the previous frame) */
@@ -188,12 +179,6 @@ protected:
 
     /** the spheroid base patches used for rendering */
     RenderPatches renderPatches;
-
-    /** the nodes that have been touch during the traversals of the previous
-        frame */
-    Actives actives;
-    /** guarantee serial manipulation of the set of active nodes */
-    Threads::Mutex activesMutex;
 
     /** the global height range */
     Scalar globalElevationRange[2];
