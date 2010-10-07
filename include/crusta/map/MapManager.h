@@ -10,6 +10,7 @@
 #include <GLMotif/ToggleButton.h>
 
 #include <crusta/CrustaComponent.h>
+#include <crusta/DataManager.h>
 #include <crusta/map/PolylineRenderer.h>
 #include <crusta/map/Shape.h>
 
@@ -29,14 +30,12 @@ BEGIN_CRUSTA
 
 
 class Polyline;
-class QuadNodeMainData;
 
 
 class MapManager : public CrustaComponent
 {
 public:
-    typedef std::vector<QuadNodeMainData*> Nodes;
-    typedef std::vector<Polyline*>         PolylinePtrs;
+    typedef std::vector<Polyline*> PolylinePtrs;
 
 
     MapManager(Vrui::ToolFactory* parentToolFactory, Crusta* iCrusta);
@@ -76,16 +75,15 @@ public:
     void removeShapeCoverage(Shape* shape,
                              const Shape::ControlPointHandle& startCP,
                              const Shape::ControlPointHandle& endCP);
-    void inheritShapeCoverage(const QuadNodeMainData& parent,
-                              QuadNodeMainData& child);
+    void inheritShapeCoverage(const NodeData& parent, NodeData& child);
 
     /** generate line data for the subset of render nodes that are outdated */
-    void updateLineData(Nodes& nodes);
+    void updateLineData(DataManager::NodeMainDatas& nodes);
 
     void processVerticalScaleChange();
 
     void frame();
-    void display(std::vector<QuadNodeMainData*>& nodes,
+    void display(const DataManager::NodeMainDatas& nodes,
                  GLContextData& contextData) const;
 
     void addMenuEntry(GLMotif::Menu* mainMenu);
@@ -108,14 +106,14 @@ public:
     {
     //- inherited from Shape::IntersectionFunctor
     public:
-        virtual void operator()(QuadNodeMainData* node, bool isLeaf);
+        virtual void operator()(NodeData& node, bool isLeaf);
     };
 
     class ShapeCoverageRemover : public ShapeCoverageManipulator
     {
     //- inherited from Shape::IntersectionFunctor
     public:
-        virtual void operator()(QuadNodeMainData* node, bool isLeaf);
+        virtual void operator()(NodeData& node, bool isLeaf);
     };
 
     static const int BAD_TOOLID = -1;

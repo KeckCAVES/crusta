@@ -39,6 +39,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <sys/stat.h>
 #include <fstream>
 
+BEGIN_CRUSTA
 
 /*************************************************
 Static elements of class LightingShader:
@@ -242,16 +243,16 @@ const char* LightingShader::fetchTerrainColorAsConstant =
 
 const char* LightingShader::fetchTerrainColorFromColorMap =
 "\
-    float e = texture2D(heightTex, tcXForm(coord)).r;\n\
+    float e = sampleHeight(coord);\n\
           e = (e-minColorMapElevation) * colorMapElevationInvRange;\n\
     vec4 mapColor     = texture1D(colorMap, e);\n\
-    vec4 terrainColor = texture2D(colorTex, tcXForm(coord));\n\
+    vec4 terrainColor = sampleColor(coord);\n\
     terrainColor      = mix(terrainColor, mapColor, mapColor.w);\
 ";
 
 const char* LightingShader::fetchTerrainColorFromTexture =
 "\
-    vec4 terrainColor = texture2D(colorTex, tcXForm(coord));\
+    vec4 terrainColor = sampleColor(coord);\n\
 ";
 
 /*****************************************
@@ -470,9 +471,13 @@ void LightingShader::compileShader()
 
     vertexShaderUniforms +=
     "\
-        uniform sampler2D geometryTex;\n\
-        uniform sampler2D heightTex;\n\
-        uniform sampler2D colorTex;\n\
+        #extension GL_EXT_gpu_shader4   : enable\n\
+        #extension GL_EXT_texture_array : enable\n\
+        \n\
+        uniform sampler2DArray geometryTex;\n\
+        uniform sampler2DArray heightTex;\n\
+        uniform sampler2DArray colorTex;\n\
+        \n\
         uniform sampler1D colorMap;\n\
         \n\
         uniform float colorMapElevationInvRange;\n\
@@ -481,9 +486,15 @@ void LightingShader::compileShader()
         uniform float verticalScale;\n\
         uniform vec3  center;\n\
         \n\
-        uniform vec2 texOffset;\n\
-        uniform vec2 texScale;\n\
-        \n\
+        uniform vec3 heightTexOffset;\n\
+        uniform vec2 heightTexScale;\n\
+        uniform vec3 geometryTexOffset;\n\
+        uniform vec2 geometryTexScale;\n\
+        uniform vec3 colorTexOffset;\n\
+        uniform vec2 colorTexScale;\n\
+    ";
+
+    vertexShaderUniforms += "\n\
         varying vec3 position;\n\
         varying vec3 normal;\n\
         varying vec2 texCoord;\n\
@@ -491,16 +502,27 @@ void LightingShader::compileShader()
 
     vertexShaderFunctions +=
     "\
-        vec2 tcXForm(in vec2 tc)\n\
+        vec3 sampleGeometry(in vec2 tc)\n\
         {\n\
-            return texOffset + (tc * texScale);\n\
+            vec3 tc2 = geometryTexOffset + vec3((tc * geometryTexScale),0.0);\n\
+            return texture2DArray(geometryTex, tc2).xyz;\n\
+        }\n\
+        float sampleHeight(in vec2 tc)\n\
+        {\n\
+            vec3 tc2 = heightTexOffset + vec3((tc * heightTexScale),0.0);\n\
+            return texture2DArray(heightTex, tc2).x;\n\
+        }\n\
+        vec4 sampleColor(in vec2 tc)\n\
+        {\n\
+            vec3 tc2 = colorTexOffset + vec3((tc * colorTexScale),0.0);\n\
+            return texture2DArray(colorTex, tc2);\n\
         }\n\
         \n\
         vec3 surfacePoint(in vec2 coords)\n\
         {\n\
-            vec3 res      = texture2D(geometryTex, tcXForm(coords)).rgb;\n\
+            vec3 res      = sampleGeometry(coords);\n\
             vec3 dir      = normalize(center + res);\n\
-            float height  = texture2D(heightTex, tcXForm(coords)).r;\n\
+            float height  = sampleHeight(coords);\n\
             height       *= verticalScale;\n\
             res          += height * dir;\n\
             return res;\n\
@@ -519,10 +541,24 @@ void LightingShader::compileShader()
             vec2 coord = gl_Vertex.xy;\n\
             position   = surfacePoint(coord);\n\
             \n\
-            vec3 up    = surfacePoint(vec2(coord.x, coord.y + texStep));\n\
-            vec3 down  = surfacePoint(vec2(coord.x, coord.y - texStep));\n\
-            vec3 left  = surfacePoint(vec2(coord.x - texStep, coord.y));\n\
-            vec3 right = surfacePoint(vec2(coord.x + texStep, coord.y));\n\
+            float minTexCoord = texStep * 0.5;\n\
+            float maxTexCoord = 1.0 - (texStep * 0.5);\n\
+            \n\
+            vec2 ncoord = vec2(coord.x, coord.y + texStep);\n\
+            ncoord.y    = clamp(ncoord.y, minTexCoord, maxTexCoord);\n\
+            vec3 up     = surfacePoint(ncoord);\n\
+            \n\
+            ncoord      = vec2(coord.x, coord.y - texStep);\n\
+            ncoord.y    = clamp(ncoord.y, minTexCoord, maxTexCoord);\n\
+            vec3 down   = surfacePoint(ncoord);\n\
+            \n\
+            ncoord      = vec2(coord.x - texStep, coord.y);\n\
+            ncoord.x    = clamp(ncoord.x, minTexCoord, maxTexCoord);\n\
+            vec3 left   = surfacePoint(ncoord);\n\
+            \n\
+            ncoord      = vec2(coord.x + texStep, coord.y);\n\
+            ncoord.x    = clamp(ncoord.x, minTexCoord, maxTexCoord);\n\
+            vec3 right  = surfacePoint(ncoord);\n\
             \n\
             normal = cross((right - left), (up - down));\n\
             normal = normalize(normal);\n\
@@ -698,11 +734,20 @@ catch (std::exception& e){
     verticalScaleUniform=glGetUniformLocationARB(programObject,"verticalScale");
     centroidUniform     =glGetUniformLocationARB(programObject,"center");
 
-    texScaleUniform = glGetUniformLocationARB(programObject, "texScale");
-    glUniform2f(texScaleUniform, 1.0f, 1.0f);
+    geometryTexOffsetUniform = glGetUniformLocationARB(programObject,
+                                                       "geometryTexOffset");
+    geometryTexScaleUniform = glGetUniformLocationARB(programObject,
+                                                      "geometryTexScale");
 
-    texOffsetUniform = glGetUniformLocationARB(programObject, "texOffset");
-    glUniform2f(texOffsetUniform, 0.0f, 0.0f);
+    heightTexOffsetUniform = glGetUniformLocationARB(programObject,
+                                                     "heightTexOffset");
+    heightTexScaleUniform = glGetUniformLocationARB(programObject,
+                                                    "heightTexScale");
+
+    colorTexOffsetUniform = glGetUniformLocationARB(programObject,
+                                                    "colorTexOffset");
+    colorTexScaleUniform = glGetUniformLocationARB(programObject,
+                                                   "colorTexScale");
 
 
     if (linesDecorated)
@@ -715,15 +760,24 @@ catch (std::exception& e){
         glUniform1i(uniform, 5);
 
         uniform = glGetUniformLocationARB(programObject, "lineStartCoord");
-        glUniform1f(uniform, crusta::Crusta::lineDataStartCoord);
+        glUniform1f(uniform, crusta::SETTINGS->lineDataStartCoord);
         uniform = glGetUniformLocationARB(programObject, "lineCoordStep");
-        glUniform1f(uniform, crusta::Crusta::lineDataCoordStep);
+        glUniform1f(uniform, crusta::SETTINGS->lineDataCoordStep);
 
         lineNumSegmentsUniform =
             glGetUniformLocationARB(programObject, "lineNumSegments");
         lineCoordScaleUniform =
             glGetUniformLocationARB(programObject, "lineCoordScale");
         lineWidthUniform = glGetUniformLocationARB(programObject, "lineWidth");
+
+        coverageTexOffsetUniform = glGetUniformLocationARB(
+            programObject, "coverageTexOffset");
+        coverageTexScaleUniform = glGetUniformLocationARB(
+            programObject, "coverageTexScale");
+        lineDataTexOffsetUniform = glGetUniformLocationARB(
+            programObject, "lineDataTexOffset");
+        lineDataTexScaleUniform = glGetUniformLocationARB(
+            programObject, "lineDataTexScale");
     }
 
     glUseProgramObjectARB(0);
@@ -740,3 +794,4 @@ void LightingShader::disable()
     /* Disable the shader: */
     glUseProgramObjectARB(0);
     }
+END_CRUSTA

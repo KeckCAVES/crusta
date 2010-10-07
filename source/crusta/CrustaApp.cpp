@@ -181,7 +181,7 @@ init()
     GLMotif::RowColumn* colorRoot = new GLMotif::RowColumn(
         "ColorRoot", root, false);
 
-    Color sc = crusta->getSettings().terrainSpecularColor;
+    Color sc = SETTINGS->terrainSpecularColor;
     new GLMotif::Label("SSColor", colorRoot, "Color: ");
     colorButton = new GLMotif::Button("SSColorButton", colorRoot, "");
     colorButton->setBackgroundColor(GLMotif::Color(sc[0], sc[1], sc[2], sc[3]));
@@ -194,7 +194,7 @@ init()
     GLMotif::RowColumn* shininessRoot = new GLMotif::RowColumn(
         "ShininessRoot", root, false);
 
-    float shininess = crusta->getSettings().terrainShininess;
+    float shininess = SETTINGS->terrainShininess;
     new GLMotif::Label("SSShininess", shininessRoot, "Shininess: ");
     GLMotif::Slider* slider = new GLMotif::Slider(
         "SSShininessSlider", shininessRoot, GLMotif::Slider::HORIZONTAL,
@@ -225,7 +225,7 @@ colorButtonCallback(
     {
         //bring up the color picker
         colorPicker.getColorPicker()->setCurrentColor(
-            crusta->getSettings().terrainSpecularColor);
+            SETTINGS->terrainSpecularColor);
         manager->popupPrimaryWidget(
             &colorPicker, manager->calcWidgetTransformation(cbData->button));
     }
@@ -302,7 +302,7 @@ produceMainMenu()
     //line decoration toggle
     GLMotif::ToggleButton* decorateLinesToggle = new GLMotif::ToggleButton(
         "DecorateLinesToggle", settingsMenu, "Decorate Lines");
-    decorateLinesToggle->setToggle(crusta->getSettings().decoratedVectorArt);
+    decorateLinesToggle->setToggle(SETTINGS->decorateVectorArt);
     decorateLinesToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::decorateLinesCallback);
 
@@ -476,7 +476,7 @@ alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
     origin = crusta->mapToScaledGlobe(origin);
 
     //misuse the Geoid just to build a surface tangent frame
-    Geometry::Geoid<double> geoid(crusta->getSettings().globeRadius, 0.0);
+    Geometry::Geoid<double> geoid(SETTINGS->globeRadius, 0.0);
     Point3 lonLatEle = geoid.cartesianToGeodetic(origin);
     Geometry::Geoid<double>::Frame frame =
         geoid.geodeticToCartesianFrame(lonLatEle);
@@ -669,8 +669,7 @@ void CrustaApp::
 resetNavigationCallback(Misc::CallbackData* cbData)
 {
     /* Reset the Vrui navigation transformation: */
-    Vrui::setNavigationTransformation(Vrui::Point(0),
-                                      1.5*crusta->getSettings().globeRadius);
+    Vrui::setNavigationTransformation(Vrui::Point(0),1.5*SETTINGS->globeRadius);
     Vrui::concatenateNavigationTransformation(Vrui::NavTransform::translate(
         Vrui::Vector(0,1,0)));
 }

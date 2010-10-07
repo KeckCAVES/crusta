@@ -12,13 +12,14 @@
 #include <Geometry/Vector.h>
 #include <GL/GLColor.h>
 
+
 #define BEGIN_CRUSTA namespace crusta {
 #define END_CRUSTA   } //namespace crusta
 
 BEGIN_CRUSTA
 
 #ifndef CRUSTA_ENABLE_DEBUG
-#define CRUSTA_ENABLE_DEBUG 0
+#define CRUSTA_ENABLE_DEBUG !NDEBUG
 #endif //CRUSTA_ENABLE_DEBUG
 
 #if CRUSTA_ENABLE_DEBUG
@@ -26,7 +27,8 @@ BEGIN_CRUSTA
 extern int CRUSTA_DEBUG_LEVEL_MIN;
 extern int CRUSTA_DEBUG_LEVEL_MAX;
 
-#define CRUSTA_DEBUG_ONLY(x) {x}
+#define CRUSTA_DEBUG_ONLY(x) {x;}
+#define CRUSTA_DEBUG_ONLY_SINGLE(x) x
 #define CRUSTA_DEBUG(l,x) if (l>=CRUSTA_DEBUG_LEVEL_MIN &&\
                               l<=CRUSTA_DEBUG_LEVEL_MAX){x;}
 #ifndef CRUSTA_DEBUG_OUTPUT_DESTINATION
@@ -38,6 +40,7 @@ if (l>=CRUSTA_DEBUG_LEVEL_MIN && l<=CRUSTA_DEBUG_LEVEL_MAX) {\
 #else
 
 #define CRUSTA_DEBUG_ONLY(x)
+#define CRUSTA_DEBUG_ONLY_SINGLE(x)
 #define CRUSTA_DEBUG(l,x)
 #define CRUSTA_DEBUG_OUT(a, b, args...)
 
@@ -61,10 +64,8 @@ typedef int64_t     int64;
 
 typedef uint        error;
 
-typedef uint64                AgeStamp;
-typedef std::vector<AgeStamp> AgeStamps;
-///\todo need to deprecate FrameNumber in favor of AgeStamp
-typedef uint64      FrameNumber; ///<< DEPRECATED
+typedef double                  FrameStamp;
+typedef std::vector<FrameStamp> FrameStamps;
 
 typedef double      Scalar;
 
@@ -89,6 +90,8 @@ typedef Geometry::Ray<Scalar, 3>    Ray;
 static const uint   TILE_RESOLUTION          = 65;
 static const float  TILE_TEXTURE_COORD_STEP  = 1.0 / TILE_RESOLUTION;
 
+
 END_CRUSTA
+
 
 #endif //_basics_H_

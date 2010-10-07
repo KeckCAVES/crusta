@@ -1,7 +1,5 @@
 #include <crusta/StatsManager.h>
 
-#include <crusta/QuadNodeData.h>
-
 using namespace std;
 
 
@@ -67,26 +65,27 @@ stop(Stat stat)
 }
 
 void StatsManager::
-extractTileStats(std::vector<QuadNodeMainData*>& nodes)
+extractTileStats(const DataManager::NodeMainDatas& nodes)
 {
 #if CRUSTA_RECORD_STATS
-    typedef std::vector<QuadNodeMainData*>                     Nodes;
-    typedef QuadNodeMainData::ShapeCoverage                    Coverage;
+    typedef std::vector<NodeData>   Nodes;
+    typedef NodeData::ShapeCoverage Coverage;
 
     numTiles = static_cast<int>(nodes.size());
 
     //go through all the nodes provided
-    for (Nodes::iterator nit=nodes.begin(); nit!=nodes.end(); ++nit)
+    for (Nodes::const_iterator nit=nodes.begin(); nit!=nodes.end(); ++nit)
     {
-        QuadNodeMainData* node     = *nit;
-        Coverage&         coverage = node->lineCoverage;
+        const NodeData* const node     = nit->node;
+        const Coverage&       coverage = node->lineCoverage;
 
         if (coverage.empty())
             continue;
 
         ++numData;
 
-        for (Coverage::iterator lit=coverage.begin();lit!=coverage.end();++lit)
+        for (Coverage::const_iterator lit=coverage.begin();
+             lit!=coverage.end(); ++lit)
         {
             int segsInTile     = static_cast<int>(lit->second.size());
             numSegments       += segsInTile;

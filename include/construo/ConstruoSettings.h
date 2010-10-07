@@ -1,4 +1,5 @@
 #ifndef _ConstruoSettings_H_
+#define _ConstruoSettings_H_
 
 
 #include <string>

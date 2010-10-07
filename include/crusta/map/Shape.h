@@ -11,7 +11,7 @@
 BEGIN_CRUSTA
 
 
-class QuadNodeMainData;
+class NodeData;
 
 /**\todo should shape really be a crusta component and interact with the map
 manager directly? Vis2010 */
@@ -27,16 +27,17 @@ public:
     {
         ControlPoint();
         ControlPoint(const ControlPoint& other);
-        ControlPoint(const AgeStamp& iAge, const Point3& iPos);
+        ControlPoint(const FrameStamp& iAge, const Point3& iPos);
 
-        AgeStamp age;
-        Point3   pos;
-        Scalar   coord;
+        FrameStamp age;
+        Point3     pos;
+        Scalar     coord;
     };
-    typedef std::list<ControlPoint>       ControlPointList;
+    typedef std::list<ControlPoint>          ControlPointList;
 ///\todo this should actually be a const_iterator
-    typedef ControlPointList::iterator    ControlPointHandle;
-    typedef std::list<ControlPointHandle> ControlPointHandleList;
+    typedef ControlPointList::iterator       ControlPointHandle;
+    typedef ControlPointList::const_iterator ControlPointConstHandle;
+    typedef std::list<ControlPointHandle>    ControlPointHandleList;
 
     enum ControlType
     {
@@ -87,7 +88,7 @@ friend std::ostream& operator<<(std::ostream& os, const ControlId& cid);
     {
     public:
         virtual ~IntersectionFunctor() {}
-        virtual void operator()(QuadNodeMainData* node, bool isLeaf) = 0;
+        virtual void operator()(NodeData& node, bool isLeaf) = 0;
     };
 
     Shape(Crusta* iCrusta);
@@ -126,10 +127,6 @@ protected:
     IdGenerator32::Id id;
     Symbol            symbol;
     ControlPointList  controlPoints;
-    /** newestAge is used to make sure that when new control points are added,
-        no old cached data can be accidentally used (since the control ids are
-        reused) */
-    AgeStamp          newestAge;
 };
 
 

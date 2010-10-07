@@ -3,6 +3,7 @@
 
 
 #include <crusta/basics.h>
+#include <crusta/DataManager.h>
 #include <crusta/CrustaComponent.h>
 
 
@@ -12,14 +13,12 @@ class GLContextData;
 BEGIN_CRUSTA
 
 
-class QuadNodeMainData;
-
 class PolylineRenderer : public CrustaComponent
 {
 public:
     PolylineRenderer(Crusta* iCrusta);
 
-    void display(std::vector<QuadNodeMainData*>& renderNodes,
+    void display(const DataManager::NodeMainDatas& renderNodes,
                  GLContextData& contextData) const;
 };
 

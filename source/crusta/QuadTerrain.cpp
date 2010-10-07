@@ -36,6 +36,7 @@
 
 ///\todo debug remove
 #include <Geometry/ProjectiveTransformation.h>
+#define COVERAGE_PROJECTION_IN_GL 0
 
 BEGIN_CRUSTA
 
@@ -47,33 +48,38 @@ static const float TEXTURE_COORD_END   = 1.0 - TEXTURE_COORD_START;
 bool QuadTerrain::displayDebuggingBoundingSpheres = false;
 bool QuadTerrain::displayDebuggingGrid            = false;
 
+QuadTerrain::GlData QuadTerrain::glData;
+
+
+
 QuadTerrain::
 QuadTerrain(uint8 patch, const Scope& scope, Crusta* iCrusta) :
     CrustaComponent(iCrusta), rootIndex(patch)
 {
-    crusta->getDataManager()->loadRoot(rootIndex, scope);
+    DATAMANAGER->loadRoot(crusta, rootIndex, scope);
 }
 
 
-const QuadNodeMainData& QuadTerrain::
+const QuadTerrain::MainBuffer QuadTerrain::
+getRootBuffer() const
+{
+    MainBuffer rootBuf;
+    DATAMANAGER->find(rootIndex, rootBuf);
+    assert(DATAMANAGER->isComplete(rootBuf));
+    return rootBuf;
+}
+
+const QuadTerrain::MainData QuadTerrain::
 getRootNode() const
 {
-    MainCacheBuffer* root =
-        crusta->getCache()->getMainCache().findCached(rootIndex);
-    assert(root != NULL);
-
-    return root->getData();
+    return DATAMANAGER->getData(getRootBuffer());
 }
 
 HitResult QuadTerrain::
 intersect(const Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout,
           const Scalar gout) const
 {
-    MainCacheBuffer* nodeBuf =
-        crusta->getCache()->getMainCache().findCached(rootIndex);
-    assert(nodeBuf != NULL);
-
-    return intersectNode(nodeBuf, ray, tin, sin, tout, sout, gout);
+    return intersectNode(getRootBuffer(), ray, tin, sin, tout, sout, gout);
 }
 
 
@@ -151,19 +157,14 @@ void QuadTerrain::
 intersect(Shape::IntersectionFunctor& callback, Ray& ray, Scalar tin, int sin,
           Scalar& tout, int& sout) const
 {
-    MainCache& mainCache     = crusta->getCache()->getMainCache();
-    MainCacheBuffer* nodeBuf = mainCache.findCached(rootIndex);
-    assert(nodeBuf != NULL);
-
-    intersectNode(callback, nodeBuf, ray, tin, sin, tout, sout);
+    intersectNode(callback, getRootBuffer(), ray, tin, sin, tout, sout);
 }
 
 
 void QuadTerrain::
-intersectNodeSides(const QuadNodeMainData& node, const Ray& ray,
+intersectNodeSides(const Scope& scope, const Ray& ray,
                    Scalar& tin, int& sin, Scalar& tout, int& sout)
 {
-    const Scope& scope  = node.scope;
     Section sections[4] = { Section(scope.corners[3], scope.corners[2]),
                             Section(scope.corners[2], scope.corners[0]),
                             Section(scope.corners[0], scope.corners[1]),
@@ -193,6 +194,161 @@ intersectNodeSides(const QuadNodeMainData& node, const Ray& ray,
 }
 
 
+void QuadTerrain::
+renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
+{
+    typedef NodeData::ShapeCoverage        Coverage;
+    typedef Shape::ControlPointHandleList  HandleList;
+    typedef Shape::ControlPointConstHandle Handle;
+
+    NodeData& node = *nodeData.node;
+
+    //compute projection matrix
+    Homography toNormalized;
+    //destinations are fll, flr, ful, bll, bur
+    toNormalized.setDestination(Point3(-1,-1,-1), Point3(1,-1,-1),
+        Point3(-1,1,-1), Point3(-1,-1,1), Point3(1,1,1));
+
+    //the elevation range might be flat. Make sure to give the frustum depth
+    DemHeight elevationRange[2] = { node.elevationRange[0],
+                                    node.elevationRange[1] };
+    Scalar sideLen = Geometry::dist(node.scope.corners[0],
+                                    node.scope.corners[1]);
+    if (Math::abs(elevationRange[0]-elevationRange[1]) < sideLen)
+    {
+        DemHeight midElevation = (elevationRange[0] + elevationRange[1]) * 0.5;
+        sideLen *= 0.5;
+        elevationRange[0] = midElevation - sideLen;
+        elevationRange[1] = midElevation + sideLen;
+    }
+
+    Point3 srcs[5];
+    srcs[0] = node.scope.corners[0];
+    srcs[1] = node.scope.corners[1];
+    srcs[2] = node.scope.corners[2];
+    srcs[3] = node.scope.corners[0];
+    srcs[4] = node.scope.corners[3];
+
+    //map the source points to planes
+    Vector3 normal(node.centroid);
+    normal.normalize();
+
+    Geometry::Plane<Scalar,3> plane;
+    plane.setNormal(-normal);
+    plane.setPoint(Point3(normal*(SETTINGS->globeRadius +
+                                  elevationRange[0])));
+    for (int i=0; i<3; ++i)
+    {
+        Ray ray(Point3(0), srcs[i]);
+        HitResult hit = plane.intersectRay(ray);
+        assert(hit.isValid());
+        srcs[i] = ray(hit.getParameter());
+    }
+    plane.setPoint(Point3(normal*(SETTINGS->globeRadius +
+                                  elevationRange[1])));
+    for (int i=3; i<5; ++i)
+    {
+        Ray ray(Point3(0), srcs[i]);
+        HitResult hit = plane.intersectRay(ray);
+        assert(hit.isValid());
+        srcs[i] = ray(hit.getParameter());
+    }
+
+    toNormalized.setSource(srcs[0], srcs[1], srcs[2], srcs[3], srcs[4]);
+
+    toNormalized.computeProjective();
+
+    //switch to the line coverage rendering shader
+    GlData::Item* glItem = contextData.retrieveDataItem<GlData::Item>(&glData);
+    glItem->lineCoverageShader.useProgram();
+/**\todo it seems there might be an issue in converting the matrix to float or
+simply float processing the transformation */
+#if COVERAGE_PROJECTION_IN_GL
+    //convert the projection matrix to floating point and assign to the shader
+    GLfloat projMat[16];
+    for (int j=0; j<4; ++j)
+    {
+        for (int i=0; i<4; ++i)
+        {
+#if 0
+            projMat[j*4+i] = i==j ? 1.0 : 0.0;
+#else
+            projMat[j*4+i] = toNormalized.getProjective().getMatrix()(i,j);
+#endif
+        }
+    }
+    glUniformMatrix4fv(glItem->lineCoverageTransformUniform, 1, true, projMat);
+#endif //COVERAGE_PROJECTION_IN_GL
+
+    //setup openGL for rendering the texture
+    glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_COLOR_BUFFER_BIT);
+
+    //clear the old coverage map
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glDisable(GL_DEPTH_TEST);
+    glBlendFunc(GL_ONE, GL_ONE);
+    glEnable(GL_BLEND);
+
+    const Coverage&  coverage = node.lineCoverage;
+    const Vector2fs& offsets  = node.lineCoverageOffsets;
+
+    glLineWidth(15.0f);
+
+    glBegin(GL_LINES);
+
+    //as the coverage is traversed also traverse the offsets
+    Vector2fs::const_iterator oit = offsets.begin();
+    //traverse all the line in the coverage
+    for (Coverage::const_iterator lit=coverage.begin(); lit!=coverage.end();
+         ++lit)
+    {
+#if DEBUG
+        const Polyline* line = dynamic_cast<const Polyline*>(lit->first);
+        assert(line != NULL);
+#endif //DEBUG
+        const HandleList& handles = lit->second;
+
+        for (HandleList::const_iterator hit=handles.begin(); hit!=handles.end();
+             ++hit, ++oit)
+        {
+            //pass the offset along
+            Color color((*oit)[0], (*oit)[0], (*oit)[0], (*oit)[1]);
+            glColor(color);
+
+            Handle cur  = *hit;
+            Handle next = cur; ++next;
+
+#if 1
+            //manually transform the points before passing to the GL
+            typedef Geometry::HVector<double,3> HPoint;
+
+            const Homography::Projective& p = toNormalized.getProjective();
+
+            Point3 curPos  = p.transform(HPoint(cur->pos)).toPoint();
+            Point3 nextPos = p.transform(HPoint(next->pos)).toPoint();
+
+            Point3f curPosf (curPos[0],  curPos[1],  0.0f);
+            Point3f nextPosf(nextPos[0], nextPos[1], 0.0f);
+
+            glVertex3fv(curPosf.getComponents());
+            glVertex3fv(nextPosf.getComponents());
+#else
+            //let the GL transform the points
+            glVertex3dv(cur->pos.getComponents());
+            glVertex3dv(next->pos.getComponents());
+#endif
+        }
+    }
+
+    glEnd();
+
+    //clean up all the state changes
+    glPopAttrib();
+}
+
+
 static GLFrustum<Scalar>
 getFrustumFromVrui(GLContextData& contextData)
 {
@@ -202,7 +358,7 @@ getFrustumFromVrui(GLContextData& contextData)
     Vrui::NavTransform inv = Vrui::getInverseNavigationTransformation();
 
     GLFrustum<Scalar> frustum;
-#if 1
+
     for (int i=0; i<8; ++i)
         frustum.setFrustumVertex(i,inv.transform(viewSpec.getFrustumVertex(i)));
 
@@ -244,36 +400,13 @@ getFrustumFromVrui(GLContextData& contextData)
 
     /* Calculate the inverse pixel size: */
     frustum.setPixelSize(Math::sqrt((Scalar(viewport[2])*Scalar(viewport[3]))/screenArea));
-#else
-    for (int i=0; i<8; ++i)
-        frustum.setFrustumVertex(i,inv.transform(viewSpec.getFrustumVertex(i)));
-    for (int i=0; i<6; ++i)
-    {
-        Vrui::Plane plane = viewSpec.getFrustumPlane(i);
-        frustum.setFrustumPlane(i, plane.transform(inv));
-    }
-
-    Vrui::Plane screenPlane = viewSpec.getScreenPlane();
-    frustum.setScreenEye(screenPlane.transform(inv),
-                         inv.transform(viewSpec.getEye()));
-
-
-    Vector3 fv10 = frustum.getFrustumVertex(1) - frustum.getFrustumVertex(0);
-    Vector3 fv20 = frustum.getFrustumVertex(2) - frustum.getFrustumVertex(0);
-
-    const int* vSize  = viewSpec.getViewportSize();
-    Scalar screenArea = Geometry::mag(Geometry::cross(fv20,fv10));
-    Scalar pixelSize  = Math::sqrt((vSize[0]*vSize[1]) / screenArea);
-
-    frustum.setPixelSize(pixelSize);
-#endif
 
     return frustum;
 }
 
 
 void QuadTerrain::
-prepareDisplay(GLContextData& contextData, Nodes& nodes)
+prepareDisplay(GLContextData& contextData, MainDatas& nodes)
 {
     //setup the evaluators
     FrustumVisibility visibility;
@@ -284,25 +417,23 @@ prepareDisplay(GLContextData& contextData, Nodes& nodes)
 
     /* display could be multi-threaded. Buffer all the node data requests and
        merge them into the request list en block */
-    MainCache::Requests dataRequests;
+    DataManager::Requests dataRequests;
 
-    /* traverse the terrain tree, update as necessary and issue drawing commands
-       for active nodes */
-    MainCacheBuffer* rootBuf =
-        crusta->getCache()->getMainCache().findCached(rootIndex);
-    assert(rootBuf != NULL);
-
-    prepareDraw(visibility, lod, rootBuf, nodes, dataRequests);
+    /* traverse the terrain tree, update as necessary and collect the current
+       tree front */
+    MainBuffer rootBuf = getRootBuffer();
+    prepareDisplay(visibility, lod, rootBuf, nodes, dataRequests);
 
     //merge the data requests
-    crusta->getCache()->getMainCache().request(dataRequests);
+    DATAMANAGER->request(dataRequests);
 }
 
 void QuadTerrain::
-display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes,
-        const AgeStamp& currentFrame, const CrustaSettings& crustaSettings)
+display(GLContextData& contextData, CrustaGlData* crustaGl, MainDatas& nodes)
 {
-    //setup the GL
+    GpuCache& gpuCache = CACHE->getGpuCache(contextData);
+
+//- setup the GL
     GLint arrayBuffer;
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &arrayBuffer);
     GLint elementArrayBuffer;
@@ -310,32 +441,70 @@ display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes,
 
     glPushAttrib(GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_LINE_BIT |
                  GL_POLYGON_BIT);
+    CHECK_GLA
 
     glEnable(GL_CULL_FACE);
+
+    //setup the texturing
     glEnable(GL_TEXTURE_2D);
 
+    glActiveTexture(GL_TEXTURE0);
+    gpuCache.geometry.bind();
+    glActiveTexture(GL_TEXTURE1);
+    gpuCache.height.bind();
+    glActiveTexture(GL_TEXTURE2);
+    gpuCache.imagery.bind();
+    CHECK_GLA
+
+    if (SETTINGS->decorateVectorArt)
+    {
+        glEnable(GL_TEXTURE_1D);
+
+        glActiveTexture(GL_TEXTURE3);
+        gpuCache.lineData.bind();
+        glActiveTexture(GL_TEXTURE4);
+        gpuCache.coverage.bind();
+        CHECK_GLA;
+    }
+
     glMaterialAmbient(GLMaterialEnums::FRONT,
-                      crustaSettings.terrainAmbientColor);
+                      SETTINGS->terrainAmbientColor);
     glMaterialDiffuse(GLMaterialEnums::FRONT,
-                      crustaSettings.terrainDiffuseColor);
+                      SETTINGS->terrainDiffuseColor);
     glMaterialEmission(GLMaterialEnums::FRONT,
-                       crustaSettings.terrainEmissiveColor);
+                       SETTINGS->terrainEmissiveColor);
     glMaterialSpecular(GLMaterialEnums::FRONT,
-                       crustaSettings.terrainSpecularColor);
+                       SETTINGS->terrainSpecularColor);
     glMaterialShininess(GLMaterialEnums::FRONT,
-                        crustaSettings.terrainShininess);
+                        SETTINGS->terrainShininess);
+    CHECK_GLA;
 
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
     glEnableClientState(GL_VERTEX_ARRAY);
+    CHECK_GLA;
 
     /* save the current openGL transform. We are going to replace it during
        traversal with a scope centroid centered one to alleviate floating point
        issues with rotating vertices far off the origin */
     glPushMatrix();
 
-    int numNodes = static_cast<int>(nodes.size());
-    for (int i=0; i<numNodes; ++i)
-        drawNode(contextData,glData,*(nodes[i]),currentFrame,crustaSettings);
+    //render the terrain nodes in batches
+    MainDatas batchNodes;
+    GpuDatas  batchDatas;
+    DATAMANAGER->startGpuBatch(contextData, nodes, batchNodes, batchDatas);
+    while (!batchNodes.empty())
+    {
+        //draw the nodes of the current batch
+        GpuDatas::const_iterator git = batchDatas.begin();
+        for (MainDatas::const_iterator mit=batchNodes.begin();
+             mit!=batchNodes.end(); ++mit, ++git)
+        {
+            drawNode(contextData, crustaGl, *mit, *git);
+        }
+
+        //grab the next batch
+        DATAMANAGER->nextGpuBatch(contextData, batchNodes, batchDatas);
+    }
 
     //restore the GL transform as it was before
     glPopMatrix();
@@ -345,6 +514,56 @@ display(GLContextData& contextData, CrustaGlData* glData, Nodes& nodes,
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
+}
+
+
+QuadTerrain::GlData::Item::
+Item()
+{
+    //create the mesh attributes
+    generateVertexAttributeTemplate(vertexAttributeTemplate);
+    generateIndexTemplate(indexTemplate);
+
+    //create the shader to process the line coverages into the corresponding map
+    std::string vp;
+#if COVERAGE_PROJECTION_IN_GL
+    vp += "uniform mat4 transform;\n";
+#endif //COVERAGE_PROJECTION_IN_GL
+    vp += "void main()\n{\n";
+#if COVERAGE_PROJECTION_IN_GL
+    vp += "gl_Position = transform * gl_Vertex;\n";
+#else
+    vp += "gl_Position = gl_Vertex;\n";
+#endif //COVERAGE_PROJECTION_IN_GL
+    vp += "gl_FrontColor = gl_Color;\n}\n";
+
+    std::string fp = "void main()\n{\ngl_FragColor = gl_Color;\n}\n";
+
+    lineCoverageShader.compileVertexShaderFromString(vp.c_str());
+    lineCoverageShader.compileFragmentShaderFromString(fp.c_str());
+    lineCoverageShader.linkShader();
+
+#if COVERAGE_PROJECTION_IN_GL
+    lineCoverageShader.useProgram();
+    lineCoverageTransformUniform = lineCoverageShader.getUniformLocation(
+        "transform");
+    lineCoverageShader.disablePrograms();
+#endif //COVERAGE_PROJECTION_IN_GL
+}
+
+QuadTerrain::GlData::Item::
+~Item()
+{
+    glDeleteBuffers(1, &vertexAttributeTemplate);
+    glDeleteBuffers(1, &indexTemplate);
+}
+
+
+void QuadTerrain::GlData::
+initContext(GLContextData& contextData) const
+{
+    Item* item = new Item;
+    contextData.addDataItem(this, item);
 }
 
 
@@ -372,11 +591,19 @@ generateVertexAttributeTemplate(GLuint& vertexAttributeTemplate)
     }
 
     //generate the vertex buffer and stream in the data
+    CHECK_GL_CLEAR_ERROR;
+
+    GLint arrayBuffer;
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &arrayBuffer);
+
     glGenBuffers(1, &vertexAttributeTemplate);
     glBindBuffer(GL_ARRAY_BUFFER, vertexAttributeTemplate);
     glBufferData(GL_ARRAY_BUFFER, numTexCoords*sizeof(float), positionsInMemory,
                  GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
+
+    CHECK_GL_THROW_ERROR;
 
     //clean-up
     delete[] positionsInMemory;
@@ -421,11 +648,17 @@ generateIndexTemplate(GLuint& indexTemplate)
     }
 
     //generate the index buffer and stream in the data
+    CHECK_GL_CLEAR_ERROR;
+
+    GLint elementArrayBuffer;
+    glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &elementArrayBuffer);
+
     glGenBuffers(1, &indexTemplate);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexTemplate);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, NUM_GEOMETRY_INDICES*sizeof(uint16),
                  indicesInMemory, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    CHECK_GL_THROW_ERROR;
 
     //clean-up
     delete[] indicesInMemory;
@@ -433,11 +666,12 @@ generateIndexTemplate(GLuint& indexTemplate)
 
 
 HitResult QuadTerrain::
-intersectNode(MainCacheBuffer* nodeBuf, const Ray& ray,
+intersectNode(const MainBuffer& nodeBuf, const Ray& ray,
               Scalar tin, int sin, Scalar& tout, int& sout,
               const Scalar gout) const
 {
-    const QuadNodeMainData& node = nodeBuf->getData();
+    MainData mainData = DATAMANAGER->getData(nodeBuf);
+    const NodeData& node = *mainData.node;
 
 //- determine the exit point and side
     tout = Math::Constants<Scalar>::max;
@@ -531,7 +765,7 @@ CrustaVisualizer::clear(5);
     const Scalar& verticalScale = crusta->getVerticalScale();
 
 //- check intersection with upper boundary
-    Sphere shell(Point3(0), crusta->getSettings().globeRadius +
+    Sphere shell(Point3(0), SETTINGS->globeRadius +
                  verticalScale*node.elevationRange[1]);
     Scalar t0, t1;
     bool intersects = shell.intersectRay(ray, t0, t1);
@@ -544,10 +778,9 @@ CrustaVisualizer::clear(5);
 
 //- perform leaf intersection?
     //is it even possible to retrieve higher res data?
-    if (node.childDemTiles[0]   ==   DemFile::INVALID_TILEINDEX &&
-        node.childColorTiles[0] == ColorFile::INVALID_TILEINDEX)
+    if (DATAMANAGER->existsChildData(mainData))
     {
-        return intersectLeaf(node, ray, tin, sin, gout);
+        return intersectLeaf(mainData, ray, tin, sin, gout);
     }
 
 //- determine starting child
@@ -613,9 +846,9 @@ CrustaVisualizer::clear(5);
     childId = leftRight | upDown;
 
 //- continue traversal
-    MainCache& mainCache      = crusta->getCache()->getMainCache();
-    TreeIndex childIndex      = node.index.down(childId);
-    MainCacheBuffer* childBuf = mainCache.findCached(childIndex);
+    TreeIndex childIndex = node.index.down(childId);
+    MainBuffer childBuf;
+    bool childExists = DATAMANAGER->find(childIndex, childBuf);
 
     Scalar ctin  = tin;
     Scalar ctout = Scalar(0);
@@ -628,13 +861,7 @@ int childrenVisited = 0;
 
     while (true)
     {
-        if (childBuf == NULL)
-        {
-///\todo Vis2010 simplify. Don't allow loads of nodes from here
-//            mainCache.request(MainCache::Request(0.0, nodeBuf, childId));
-            return intersectLeaf(node, ray, tin, sin, gout);
-        }
-        else
+        if (childExists)
         {
             //recurse
             HitResult hit = intersectNode(childBuf, ray, ctin, csin,
@@ -667,12 +894,12 @@ int oldCsin    = csin;
 MainCacheBuffer* oldBuf = childBuf;
 #endif //DEBUG_INTERSECT_CRAP
 
-                childIndex = node.index.down(childId);
-                childBuf   = mainCache.findCached(childIndex);
+                childIndex  = node.index.down(childId);
+                childExists = DATAMANAGER->find(childIndex, childBuf);
 
 #if DEBUG_INTERSECT_CRAP
 ++childrenVisited;
-if (childBuf != NULL)
+if (childExists)
 {
     Scalar E = 0.00001;
     int sides[4][2] = {{3,2}, {2,0}, {0,1}, {1,3}};
@@ -685,6 +912,12 @@ if (childBuf != NULL)
 #endif //DEBUG_INTERSECT_CRAP
             }
         }
+        else
+        {
+///\todo Vis2010 simplify. Don't allow loads of nodes from here
+//            mainCache.request(MainCache::Request(0.0, nodeBuf, childId));
+            return intersectLeaf(mainData, ray, tin, sin, gout);
+        }
     }
 
     //execution should never reach this point
@@ -693,9 +926,11 @@ if (childBuf != NULL)
 }
 
 HitResult QuadTerrain::
-intersectLeaf(const QuadNodeMainData& leaf, const Ray& ray,
+intersectLeaf(const MainData& leafData, const Ray& ray,
               Scalar param, int side, const Scalar gout) const
 {
+    NodeData& leaf = *leafData.node;
+
 #if DEBUG_INTERSECT_CRAP
 if (DEBUG_INTERSECT) {
 CrustaVisualizer::addScope(leaf.scope, -1, Color(1,0,0,1));
@@ -952,11 +1187,11 @@ int traversedCells = 0;
 #endif //DEBUG_INTERSECT_CRAP
     Scalar verticalScale = crusta->getVerticalScale();
     int offset = cellY*tileRes + cellX;
-    QuadNodeMainData::Vertex* cellV = leaf.geometry + offset;
-    DemHeight*                cellH = leaf.height   + offset;
+    Vertex*    cellV = leafData.geometry + offset;
+    DemHeight* cellH = leafData.height   + offset;
     while (true)
     {
-        const QuadNodeMainData::Vertex::Position* positions[4] = {
+        const Vertex::Position* positions[4] = {
             &(cellV->position), &((cellV+1)->position),
             &((cellV+tileRes)->position), &((cellV+tileRes+1)->position) };
         const DemHeight* heights[4] = {
@@ -1098,8 +1333,8 @@ std::cerr << "traversedCells: " << traversedCells << std::endl;
             return HitResult();
 
         offset = cellY*tileRes + cellX;
-        cellV  = leaf.geometry + offset;
-        cellH  = leaf.height   + offset;
+        cellV  = leafData.geometry + offset;
+        cellH  = leafData.height   + offset;
 
         side = next[side][2];
 #if DEBUG_INTERSECT_CRAP
@@ -1112,29 +1347,30 @@ std::cerr << "traversedCells: " << traversedCells << std::endl;
 
 
 void QuadTerrain::
-intersectNode(Shape::IntersectionFunctor& callback, MainCacheBuffer* nodeBuf,
+intersectNode(Shape::IntersectionFunctor& callback, const MainBuffer& nodeBuf,
               Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout) const
 {
-    QuadNodeMainData& node = nodeBuf->getData();
+    MainData  nodeData = DATAMANAGER->getData(nodeBuf);
+    NodeData& node     = *nodeData.node;
 
 //- continue traversal
-    Point3 entry              = ray(tin);
-    int childId               = computeContainingChild(entry, sin, node.scope);
-    MainCache& mainCache      = crusta->getCache()->getMainCache();
-    TreeIndex childIndex      = node.index.down(childId);
-    MainCacheBuffer* childBuf = mainCache.findCached(childIndex);
+    Point3 entry         = ray(tin);
+    int childId          = computeContainingChild(entry, sin, node.scope);
+    TreeIndex childIndex = node.index.down(childId);
+    MainBuffer childBuf;
+    bool childExists = DATAMANAGER->find(childIndex, childBuf);
 
-    if (childBuf==NULL || !mainCache.isActive(childBuf))
+    if (!childExists)
     {
         //callback for the current node
-        callback(&node, true);
+        callback(node, true);
         intersectLeaf(node, ray, tin, sin, tout, sout);
         return;
     }
     else
     {
         //callback for the current node
-        callback(&node, false);
+        callback(node, false);
 
         //recurse
         while (true)
@@ -1155,9 +1391,9 @@ intersectNode(Shape::IntersectionFunctor& callback, MainCacheBuffer* nodeBuf,
             if (childId == -1)
                 return;
 
-            childIndex = node.index.down(childId);
-            childBuf   = mainCache.findCached(childIndex);
-            assert(childBuf != NULL);
+            childIndex  = node.index.down(childId);
+            childExists = DATAMANAGER->find(childIndex, childBuf);
+            assert(childExists);
         }
     }
 
@@ -1166,7 +1402,7 @@ intersectNode(Shape::IntersectionFunctor& callback, MainCacheBuffer* nodeBuf,
 }
 
 void QuadTerrain::
-intersectLeaf(QuadNodeMainData& leaf, Ray& ray, Scalar tin, int sin,
+intersectLeaf(NodeData& leaf, Ray& ray, Scalar tin, int sin,
               Scalar& tout, int& sout) const
 {
     const Scope& scope  = leaf.scope;
@@ -1194,325 +1430,47 @@ intersectLeaf(QuadNodeMainData& leaf, Ray& ray, Scalar tin, int sin,
 
 
 void QuadTerrain::
-renderGpuLineCoverageMap(CrustaGlData* glData, const QuadNodeMainData& node,
-    GLuint tex, const CrustaSettings& crustaSettings)
+drawNode(GLContextData& contextData, CrustaGlData* crustaGl,
+         const MainData& mainData, const GpuData& gpuData)
 {
-    typedef QuadNodeMainData::ShapeCoverage                    Coverage;
-    typedef QuadNodeMainData::AgeStampedControlPointHandleList HandleList;
-    typedef Shape::ControlPointHandle                          Handle;
+    NodeData& main = *mainData.node;
 
-    //compute projection matrix
-    Homography toNormalized;
-    //destinations are fll, flr, ful, bll, bur
-    toNormalized.setDestination(Point3(-1,-1,-1), Point3(1,-1,-1),
-        Point3(-1,1,-1), Point3(-1,-1,1), Point3(1,1,1));
+    //enable the terrain rendering shader
+    crustaGl->terrainShader.enable();
 
-    //the elevation range might be flat. Make sure to give the frustum depth
-    DemHeight elevationRange[2] = { node.elevationRange[0],
-                                    node.elevationRange[1] };
-    Scalar sideLen = Geometry::dist(node.scope.corners[0],
-                                    node.scope.corners[1]);
-    if (Math::abs(elevationRange[0]-elevationRange[1]) < sideLen)
-    {
-        DemHeight midElevation = (elevationRange[0] + elevationRange[1]) * 0.5;
-        sideLen *= 0.5;
-        elevationRange[0] = midElevation - sideLen;
-        elevationRange[1] = midElevation + sideLen;
-    }
-
-    Point3 srcs[5];
-    srcs[0] = node.scope.corners[0];
-    srcs[1] = node.scope.corners[1];
-    srcs[2] = node.scope.corners[2];
-    srcs[3] = node.scope.corners[0];
-    srcs[4] = node.scope.corners[3];
-
-    //map the source points to planes
-    Vector3 normal(node.centroid);
-    normal.normalize();
-
-    Geometry::Plane<Scalar,3> plane;
-    plane.setNormal(-normal);
-    plane.setPoint(Point3(normal*(crustaSettings.globeRadius +
-                                  elevationRange[0])));
-    for (int i=0; i<3; ++i)
-    {
-        Ray ray(Point3(0), srcs[i]);
-        HitResult hit = plane.intersectRay(ray);
-        assert(hit.isValid());
-        srcs[i] = ray(hit.getParameter());
-    }
-    plane.setPoint(Point3(normal*(crustaSettings.globeRadius +
-                                  elevationRange[1])));
-    for (int i=3; i<5; ++i)
-    {
-        Ray ray(Point3(0), srcs[i]);
-        HitResult hit = plane.intersectRay(ray);
-        assert(hit.isValid());
-        srcs[i] = ray(hit.getParameter());
-    }
-
-    toNormalized.setSource(srcs[0], srcs[1], srcs[2], srcs[3], srcs[4]);
-
-    toNormalized.computeProjective();
-
-    //switch to the line coverage rendering shader
-    glData->lineCoverageShader.useProgram();
-/**\todo it seems there might be an issue in converting the matrix to float or
-simply float processing the transformation */
-#if 0
-    //convert the projection matrix to floating point and assign to the shader
-    GLfloat projMat[16];
-    for (int j=0; j<4; ++j)
-    {
-        for (int i=0; i<4; ++i)
-        {
-#if 0
-            projMat[j*4+i] = i==j ? 1.0 : 0.0;
-#else
-            projMat[j*4+i] = toNormalized.getProjective().getMatrix()(i,j);
-#endif
-        }
-    }
-    glUniformMatrix4fv(glData->lineCoverageTransformUniform, 1, true, projMat);
-#endif
-
-    //setup openGL for rendering the texture
-    glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_COLOR_BUFFER_BIT);
-
-///\todo query this from the GL only once per frame, pass info along in glData
-    //save the current viewport specification
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-///\todo query the coverage texture size don't have it hardcoded everywhere
-    //set the viewport to match the coverage texture
-    glViewport(0, 0, Crusta::lineCoverageTexSize, Crusta::lineCoverageTexSize);
-
-    //bind the coverage rendering framebuffer
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, glData->coverageFbo);
-    //attach the appropriate coverage map
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
-                              GL_TEXTURE_2D, tex, 0);
-    assert(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) ==
-             GL_FRAMEBUFFER_COMPLETE_EXT);
-
-    //clear the old coverage map
-    glClearColor(0.0, 0.0, 0.0, 0.0);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    glDisable(GL_DEPTH_TEST);
-    glBlendFunc(GL_ONE, GL_ONE);
-    glEnable(GL_BLEND);
-
-    const Coverage&  coverage = node.lineCoverage;
-    const Vector2fs& offsets  = node.lineCoverageOffsets;
-
-    glLineWidth(15.0f);
-
-    glBegin(GL_LINES);
-
-#if 1
-    //as the coverage is traversed also traverse the offsets
-    Vector2fs::const_iterator oit = offsets.begin();
-    //traverse all the line in the coverage
-    for (Coverage::const_iterator lit=coverage.begin(); lit!=coverage.end();
-         ++lit)
-    {
-#if DEBUG
-        const Polyline* line = dynamic_cast<const Polyline*>(lit->first);
-        assert(line != NULL);
-#endif //DEBUG
-        const HandleList& handles = lit->second;
-
-        for (HandleList::const_iterator hit=handles.begin(); hit!=handles.end();
-             ++hit, ++oit)
-        {
-            //pass the offset along
-            Color color((*oit)[0], (*oit)[0], (*oit)[0], (*oit)[1]);
-            glColor(color);
-
-            Handle cur  = hit->handle;
-            Handle next = cur; ++next;
-
-#if 1
-            //manually transform the points before passing to the GL
-            typedef Geometry::HVector<double,3> HPoint;
-
-            const Homography::Projective& p = toNormalized.getProjective();
-
-            Point3 curPos  = p.transform(HPoint(cur->pos)).toPoint();
-            Point3 nextPos = p.transform(HPoint(next->pos)).toPoint();
-
-            Point3f curPosf (curPos[0],  curPos[1],  0.0f);
-            Point3f nextPosf(nextPos[0], nextPos[1], 0.0f);
-
-            glVertex3fv(curPosf.getComponents());
-            glVertex3fv(nextPosf.getComponents());
-#else
-            //let the GL transform the points
-            glVertex3dv(cur->pos.getComponents());
-            glVertex3dv(next->pos.getComponents());
-#endif
-        }
-    }
-#endif
-
-    glEnd();
-
-    //bind back the default framebuffer
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-    //restore the viewport
-    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
-
-    //clean up all the state changes
-    glPopAttrib();
-
-    //re-enable the terrain rendering shader
-    glData->terrainShader.enable();
-}
-
-
-const QuadNodeGpuLineData& QuadTerrain::
-prepareGpuLineData(CrustaGlData* glData, QuadNodeMainData& mainData,
-                   const AgeStamp& currentFrame,
-                   const CrustaSettings& crustaSettings)
-{
-    bool existed;
-    GpuLineCacheBuffer* lineBuf = glData->lineCache->getBuffer(mainData.index,
-                                                               &existed);
-    if (existed && lineBuf->getData().age==mainData.lineCoverageAge)
-    {
-        //we have cached and current data
-        glData->lineCache->touch(lineBuf);
-        return lineBuf->getData();
-    }
-    else
-    {
-        //in any case the data has to be transfered from main memory
-        if (lineBuf)
-            glData->lineCache->touch(lineBuf);
-        else
-            lineBuf = glData->lineCache->getStreamBuffer();
-
-        QuadNodeGpuLineData& lineData = lineBuf->getData();
-
-        //transfer the data proper
-        glBindTexture(GL_TEXTURE_1D, lineData.data);
-        glTexSubImage1D(GL_TEXTURE_1D, 0, 0, mainData.lineData.size(), GL_RGBA,
-                        GL_FLOAT, mainData.lineData.front().getRgba());
-
-        //render a new coverage map
-        renderGpuLineCoverageMap(glData, mainData, lineData.coverage,
-                                 crustaSettings);
-
-        //stamp the age of the new data
-        lineData.age = currentFrame;
-
-        //return the data
-        return lineData;
-    }
-}
-
-const QuadNodeVideoData& QuadTerrain::
-prepareVideoData(CrustaGlData* glData, QuadNodeMainData& mainData)
-{
-    bool existed;
-    VideoCacheBuffer* videoBuf = glData->videoCache->getBuffer(mainData.index,
-                                                               &existed);
-    if (existed)
-    {
-        //if there was already a match in the cache, just use that data
-        glData->videoCache->touch(videoBuf);
-        return videoBuf->getData();
-    }
-    else
-    {
-        //in any case the data has to be transfered from main memory
-        if (videoBuf)
-            glData->videoCache->touch(videoBuf);
-        else
-            videoBuf = glData->videoCache->getStreamBuffer();
-
-        const QuadNodeVideoData& videoData = videoBuf->getData();
-
-        //transfer the geometry
-        glBindTexture(GL_TEXTURE_2D, videoData.geometry);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
-                        TILE_RESOLUTION, TILE_RESOLUTION, GL_RGB, GL_FLOAT,
-                        mainData.geometry);
-
-        //transfer the evelation
-        glBindTexture(GL_TEXTURE_2D, videoData.height);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
-                        TILE_RESOLUTION, TILE_RESOLUTION, GL_RED, GL_FLOAT,
-                        mainData.height);
-
-        //transfer the color
-        glBindTexture(GL_TEXTURE_2D, videoData.color);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
-                        TILE_RESOLUTION, TILE_RESOLUTION, GL_RGB,
-                        GL_UNSIGNED_BYTE, mainData.color);
-
-        //return the data
-        return videoData;
-    }
-}
-
-void QuadTerrain::
-drawNode(GLContextData& contextData, CrustaGlData* glData,
-         QuadNodeMainData& mainData, const AgeStamp& currentFrame,
-         const CrustaSettings& crustaSettings)
-{
-///\todo integrate me properly into the system (VIS 2010)
-    if (crustaSettings.decoratedVectorArt)
-    {
-        //stream the line data to the GPU if necessary
-        glData->terrainShader.setLineNumSegments(mainData.lineNumSegments);
-        CHECK_GLA
-        if (mainData.lineNumSegments != 0)
-        {
-            const QuadNodeGpuLineData& lineData =
-                prepareGpuLineData(glData,mainData,currentFrame,crustaSettings);
-
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_1D, lineData.data);
-            glActiveTexture(GL_TEXTURE4);
-            glBindTexture(GL_TEXTURE_2D, lineData.coverage);
-            CHECK_GLA
-        }
-    }
-
-///\todo accommodate for lazy data fetching
-    const QuadNodeVideoData& data = prepareVideoData(glData, mainData);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, data.geometry);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, data.height);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, data.color);
-
-    glBindBuffer(GL_ARRAY_BUFFER,         glData->vertexAttributeTemplate);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glData->indexTemplate);
+    GlData::Item* glItem = contextData.retrieveDataItem<GlData::Item>(&glData);
+    glBindBuffer(GL_ARRAY_BUFFER,         glItem->vertexAttributeTemplate);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glItem->indexTemplate);
 
     glVertexPointer(2, GL_FLOAT, 0, 0);
-    glIndexPointer(GL_SHORT, 0, 0);
     CHECK_GLA
 
-#if 1
     //load the centroid relative translated navigation transformation
     glPushMatrix();
     Vrui::Vector centroidTranslation(
-        mainData.centroid[0], mainData.centroid[1], mainData.centroid[2]);
+        main.centroid[0], main.centroid[1], main.centroid[2]);
     Vrui::NavTransform nav =
     Vrui::getDisplayState(contextData).modelviewNavigational;
     nav *= Vrui::NavTransform::translate(centroidTranslation);
     glLoadMatrix(nav);
 
-    glData->terrainShader.setCentroid(
-        mainData.centroid[0], mainData.centroid[1], mainData.centroid[2]);
-
+    crustaGl->terrainShader.setCentroid(
+        Point3f(main.centroid[0], main.centroid[1], main.centroid[2]));
+    crustaGl->terrainShader.setGeometrySubRegion(*gpuData.geometry);
+    crustaGl->terrainShader.setHeightSubRegion(*gpuData.height);
+    crustaGl->terrainShader.setColorSubRegion(*gpuData.imagery);
     CHECK_GLA
+
+    if (SETTINGS->decorateVectorArt)
+    {
+        //setup the shader for decorated line drawing
+        crustaGl->terrainShader.setLineNumSegments(main.lineNumSegments);
+        crustaGl->terrainShader.setCoverageSubRegion(*gpuData.coverage);
+        crustaGl->terrainShader.setLineDataSubRegion(
+            (SubRegion)(*gpuData.lineData));
+        CHECK_GLA
+    }
+
 //    glPolygonMode(GL_FRONT, GL_LINE);
 
     glDrawRangeElements(GL_TRIANGLE_STRIP, 0,
@@ -1520,11 +1478,10 @@ drawNode(GLContextData& contextData, CrustaGlData* glData,
                         NUM_GEOMETRY_INDICES, GL_UNSIGNED_SHORT, 0);
     glPopMatrix();
     CHECK_GLA
-#endif
 
 if (displayDebuggingBoundingSpheres)
 {
-glData->terrainShader.disable();
+crustaGl->terrainShader.disable();
     GLint activeTexture;
     glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT);
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
@@ -1535,20 +1492,20 @@ glData->terrainShader.disable();
     glPolygonMode(GL_FRONT, GL_LINE);
     glPushMatrix();
     glColor3f(0.5f,0.5f,0.5f);
-    glTranslatef(mainData.boundingCenter[0], mainData.boundingCenter[1],
-                 mainData.boundingCenter[2]);
-    glDrawSphereIcosahedron(mainData.boundingRadius, 1);
+    glTranslatef(main.boundingCenter[0], main.boundingCenter[1],
+                 main.boundingCenter[2]);
+    glDrawSphereIcosahedron(main.boundingRadius, 1);
 
     glPopMatrix();
     glPopAttrib();
     glActiveTexture(activeTexture);
-glData->terrainShader.enable();
+crustaGl->terrainShader.enable();
+    CHECK_GLA
 }
 
 if (displayDebuggingGrid)
 {
-    CHECK_GLA
-glData->terrainShader.disable();
+crustaGl->terrainShader.disable();
     CHECK_GLA
     GLint activeTexture;
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
@@ -1561,7 +1518,7 @@ glData->terrainShader.disable();
     glDisable(GL_TEXTURE_2D);
 
     CHECK_GLA
-    Point3* c = mainData.scope.corners;
+    Point3* c = main.scope.corners;
     glBegin(GL_LINE_STRIP);
         glColor3f(1.0f, 0.0f, 0.0f);
         glVertex3f(c[0][0], c[0][1], c[0][2]);
@@ -1579,105 +1536,85 @@ glData->terrainShader.disable();
     glPopAttrib();
     glActiveTexture(activeTexture);
     CHECK_GLA
-glData->terrainShader.enable();
+crustaGl->terrainShader.enable();
     CHECK_GLA
 }
 
 }
 
 void QuadTerrain::
-prepareDraw(FrustumVisibility& visibility, FocusViewEvaluator& lod,
-            MainCacheBuffer* node, Nodes& renders,
-            MainCache::Requests& requests)
+prepareDisplay(FrustumVisibility& visibility, FocusViewEvaluator& lod,
+               MainBuffer& buf, MainDatas& renders,
+               DataManager::Requests& requests)
 {
-    MainCache&  mainCache = crusta->getCache()->getMainCache();
-    MapManager* mapMan    = crusta->getMapManager();
+    MapManager* mapMan = crusta->getMapManager();
 
     //confirm current node as being active
-    mainCache.touch(node);
+    DATAMANAGER->touch(buf);
 
-    QuadNodeMainData& mainData = node->getData();
+    DataManager::NodeMainData data = DATAMANAGER->getData(buf);
 
 ///\todo generalize this to an API that makes sure the node is ready for eval
     //make sure we have proper bounding spheres
-    if (mainData.boundingAge < crusta->getLastScaleFrame())
+    if (data.node->boundingAge < crusta->getLastScaleStamp())
     {
-        mainData.computeBoundingSphere(crusta->getSettings().globeRadius,
-            crusta->getVerticalScale(), crusta->getCurrentFrame());
+        data.node->computeBoundingSphere(SETTINGS->globeRadius,
+            crusta->getVerticalScale());
     }
 
 //- evaluate
-    float visible = visibility.evaluate(mainData);
+    float visible = visibility.evaluate(*data.node);
     if (visible)
     {
         //evaluate node for splitting
-        float lodValue = lod.evaluate(mainData);
+        float lodValue = lod.evaluate(*data.node);
         if (lodValue>1.0)
         {
-            bool allgood = false;
-            //check if any of the children actually have data
-            for (int i=0; i<4; ++i)
-            {
-                if (mainData.childDemTiles[i]  !=  DemFile::INVALID_TILEINDEX ||
-                    mainData.childColorTiles[i]!=ColorFile::INVALID_TILEINDEX)
-                {
-                    allgood = true;
-                }
-            }
-            //check if all the children are cached
-            MainCacheBuffer* children[4];
+            //does there exist child data for refinement
+            bool allgood = DATAMANAGER->existsChildData(data);
+            //check if all the children are available
+            DataManager::NodeMainBuffer children[4];
             if (allgood)
             {
                 for (int i=0; i<4; ++i)
                 {
-                    children[i] = crusta->getCache()->getMainCache().findCached(
-                        mainData.index.down(i));
-                    if (children[i] == NULL)
+                    if (!DATAMANAGER->find(data.node->index.down(i),
+                                           children[i]))
                     {
                         //request the data be loaded
-                        requests.push_back(MainCache::Request(lodValue,node,i));
+                        requests.push_back(DataManager::Request(
+                            crusta, lodValue, buf, i));
                         allgood = false;
                     }
                 }
             }
-            //check that all the children are current
-            if (allgood)
-            {
-                for (int i=0; i<4; ++i)
-                {
-                    MainCacheBuffer* childBuf = children[i];
-                    if (!mainCache.isValid(childBuf))
-                    {
-                        allgood = false;
-                    }
-                }
-            }
+
 /**\todo horrible Vis2010 HACK: integrate this in the proper way? I.e. don't
 stall here, but defer the update. */
-if (allgood && mainData.lineCoverageDirty)
+if (allgood && data.node->lineCoverageDirty)
 {
     for (int i=0; i<4; ++i)
     {
-        QuadNodeMainData& child = children[i]->getData();
-CRUSTA_DEBUG(60, std::cerr << "***COVDOWN parent(" << mainData.index <<
-")    " << "n(" << child.index << ")\n\n";)
-        mapMan->inheritShapeCoverage(mainData, child);
+        DataManager::NodeMainData child = DATAMANAGER->getData(children[i]);
+CRUSTA_DEBUG(60, std::cerr << "***COVDOWN parent(" << data.node->index <<
+")    " << "n(" << data.node->index << ")\n\n";)
+        mapMan->inheritShapeCoverage(*data.node, *child.node);
     }
     //reset the dirty flag
-    mainData.lineCoverageDirty = false;
+    data.node->lineCoverageDirty = false;
 }
 
             //still all good then recurse to the children
             if (allgood)
             {
                 for (int i=0; i<4; ++i)
-                    prepareDraw(visibility,lod,children[i],renders,requests);
+                    prepareDisplay(visibility,lod,children[i],renders,requests);
             }
             else
-                renders.push_back(&mainData);
+                renders.push_back(data);
         }
         else
-            renders.push_back(&mainData);
+            renders.push_back(data);
     }
 }
 
@@ -1685,81 +1622,67 @@ CRUSTA_DEBUG(60, std::cerr << "***COVDOWN parent(" << mainData.index <<
 
 
 void QuadTerrain::
-confirmLineCoverageRemoval(const QuadNodeMainData* node, Shape* shape,
+confirmLineCoverageRemoval(const MainData& nodeData, Shape* shape,
                            Shape::ControlPointHandle cp)
 {
-    MainCache& mainCache = crusta->getCache()->getMainCache();
+    typedef NodeData::ShapeCoverage        Coverage;
+    typedef Shape::ControlPointHandleList  HandleList;
+    typedef Shape::ControlPointConstHandle Handle;
 
-    MainCacheBuffer* children[4];
+    NodeData& node = *nodeData.node;
 
     //validate current node's coverage
-    QuadNodeMainData::ShapeCoverage::const_iterator lit =
-        node->lineCoverage.find(shape);
-    if (lit != node->lineCoverage.end())
+    Coverage::const_iterator lit = node.lineCoverage.find(shape);
+    if (lit != node.lineCoverage.end())
     {
         //check all the control point handles
-        const QuadNodeMainData::AgeStampedControlPointHandleList& handles =
-            lit->second;
+        const HandleList& handles = lit->second;
         if (!handles.empty())
         {
-            QuadNodeMainData::AgeStampedControlPointHandleList::const_iterator
-                hit;
-            for (hit=handles.begin();hit!=handles.end()&&hit->handle!=cp;++hit);
+            HandleList::const_iterator hit;
+            for (hit=handles.begin(); hit!=handles.end() && *hit!=cp; ++hit);
             assert(hit == handles.end());
         }
     }
 
-    //recurse
-    bool allgood = false;
-    //children existance
-    for (int i=0; i<4; ++i)
-    {
-        if (node->childDemTiles[i]  !=  DemFile::INVALID_TILEINDEX ||
-            node->childColorTiles[i]!=ColorFile::INVALID_TILEINDEX)
-        {
-            allgood = false;
-        }
-    }
+//- recurse
+    MainBuffer children[4];
+
+    //does there exist child data for refinement
+    bool allgood = DATAMANAGER->existsChildData(nodeData);
     //check cached
     if (allgood)
     {
         for (int i=0; i<4; ++i)
         {
-            children[i] = mainCache.findCached(node->index.down(i));
-            if (children[i] == NULL)
-                allgood = false;
-        }
-    }
-    //check active
-    if (allgood)
-    {
-        for (int i=0; i<4; ++i)
-        {
-            if (!mainCache.isActive(children[i]))
-                allgood = false;
+            if (!DATAMANAGER->find(node.index.down(i), children[i]))
+                    allgood = false;
         }
     }
     //if good to go still, then the children are part of the active repr.
     if (allgood)
     {
         for (int i=0; i<4; ++i)
-            confirmLineCoverageRemoval(&children[i]->getData(), shape, cp);
+            confirmLineCoverageRemoval(DATAMANAGER->getData(children[i]),
+                                       shape, cp);
     }
 }
 
 void QuadTerrain::
-validateLineCoverage(const QuadNodeMainData* node)
+validateLineCoverage(const MainData& nodeData)
 {
-    MainCache&  mainCache = crusta->getCache()->getMainCache();
-    MapManager* mapMan    = crusta->getMapManager();
+    typedef NodeData::ShapeCoverage        Coverage;
+    typedef Shape::ControlPointHandleList  HandleList;
+    typedef Shape::ControlPointConstHandle Handle;
 
-    MapManager::PolylinePtrs& lines = mapMan->getPolylines();
+    NodeData& node = *nodeData.node;
 
-    MainCacheBuffer* children[4];
+    MapManager*               mapMan = crusta->getMapManager();
+    MapManager::PolylinePtrs& lines  = mapMan->getPolylines();
 
     //validate current node's coverage
-    for (QuadNodeMainData::ShapeCoverage::const_iterator lit=
-         node->lineCoverage.begin(); lit!=node->lineCoverage.end(); ++lit)
+    for (Coverage::const_iterator lit=node.lineCoverage.begin();
+         lit!=node.lineCoverage.end(); ++lit)
     {
         //check that this line exists
         MapManager::PolylinePtrs::iterator lfit = std::find(lines.begin(),
@@ -1767,66 +1690,49 @@ validateLineCoverage(const QuadNodeMainData* node)
         assert(lfit != lines.end());
 
         //grab the polyline's controlpoints
-        Shape::ControlPointList& cpl = (*lfit)->getControlPoints();
+        const Shape::ControlPointList& cpl = (*lfit)->getControlPoints();
 
         //check all the control point handles
-        const QuadNodeMainData::AgeStampedControlPointHandleList& handles =
-            lit->second;
+        const HandleList& handles = lit->second;
         assert(!handles.empty());
 
-        for (QuadNodeMainData::AgeStampedControlPointHandleList::const_iterator
-             hit=handles.begin(); hit!=handles.end(); ++hit)
+        for (HandleList::const_iterator hit=handles.begin(); hit!=handles.end();
+             ++hit)
         {
             //check existance
-            Shape::ControlPointHandle cfit;
-            for (cfit=cpl.begin(); cfit!=cpl.end()&&cfit!=hit->handle; ++cfit);
+            Handle cfit;
+            for (cfit=cpl.begin(); cfit!=cpl.end() && cfit!=*hit; ++cfit);
             assert(cfit != cpl.end());
 
             //check overlap
-            Shape::ControlPointHandle end = hit->handle; ++end;
-            Ray ray(hit->handle->pos, end->pos);
+            Handle end = *hit; ++end;
+            Ray ray((*hit)->pos, end->pos);
             Scalar tin, tout;
             int sin, sout;
-            intersectNodeSides(*node, ray, tin, sin, tout, sout);
+            intersectNodeSides(node.scope, ray, tin, sin, tout, sout);
             assert(tin<1.0 && tout>0.0);
         }
     }
 
-    //recurse
-    bool allgood = false;
-    //children existance
-    for (int i=0; i<4; ++i)
-    {
-        if (node->childDemTiles[i]  !=  DemFile::INVALID_TILEINDEX ||
-            node->childColorTiles[i]!=ColorFile::INVALID_TILEINDEX)
-        {
-            allgood = false;
-        }
-    }
+//- recurse
+    MainBuffer children[4];
+
+    //does there exist child data for refinement
+    bool allgood = DATAMANAGER->existsChildData(nodeData);
     //check cached
     if (allgood)
     {
         for (int i=0; i<4; ++i)
         {
-            children[i] = mainCache.findCached(node->index.down(i));
-            if (children[i] == NULL)
-                allgood = false;
-        }
-    }
-    //check active
-    if (allgood)
-    {
-        for (int i=0; i<4; ++i)
-        {
-            if (!mainCache.isActive(children[i]))
-                allgood = false;
+            if (!DATAMANAGER->find(node.index.down(i), children[i]))
+                    allgood = false;
         }
     }
     //if good to go still, then the children are part of the active repr.
     if (allgood)
     {
         for (int i=0; i<4; ++i)
-            validateLineCoverage(&children[i]->getData());
+            validateLineCoverage(DATAMANAGER->getData(children[i]));
     }
 }
 

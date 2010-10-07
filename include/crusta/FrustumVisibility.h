@@ -16,10 +16,10 @@ class FrustumVisibility : public VisibilityEvaluator
 public:
     /** the specification of the viewing parameters */
     GLFrustum<double> frustum;
-    
+
 //- inherited from VisibilityEvaluator
 public:
-    virtual bool evaluate(const QuadNodeMainData& mainData);
+    virtual bool evaluate(const NodeData& node);
 };
 
 END_CRUSTA

@@ -26,12 +26,13 @@ PolylineRenderer(Crusta* iCrusta) :
 
 
 void PolylineRenderer::
-display(std::vector<QuadNodeMainData*>& nodes, GLContextData& contextData) const
+display(const DataManager::NodeMainDatas& nodes,
+        GLContextData& contextData) const
 {
-    typedef std::vector<QuadNodeMainData*>                     Nodes;
-    typedef QuadNodeMainData::ShapeCoverage                    Coverage;
-    typedef QuadNodeMainData::AgeStampedControlPointHandleList HandleList;
-    typedef Shape::ControlPointHandle                          Handle;
+    typedef DataManager::NodeMainDatas     Nodes;
+    typedef NodeData::ShapeCoverage        Coverage;
+    typedef Shape::ControlPointHandleList  HandleList;
+    typedef Shape::ControlPointConstHandle Handle;
 
     CHECK_GLA
 
@@ -45,11 +46,11 @@ display(std::vector<QuadNodeMainData*>& nodes, GLContextData& contextData) const
     glPolygonOffset(1.0f, 50.0f);
 
     //draw the fragments of each node
-    for (Nodes::iterator nit=nodes.begin(); nit!=nodes.end(); ++nit)
+    for (Nodes::const_iterator nit=nodes.begin(); nit!=nodes.end(); ++nit)
     {
-        QuadNodeMainData*                node     = *nit;
-        QuadNodeMainData::ShapeCoverage& coverage = node->lineCoverage;
-        const Point3&                    centroid = node->centroid;
+        const NodeData&                node     = *nit->node;
+        const NodeData::ShapeCoverage& coverage = node.lineCoverage;
+        const Point3&                  centroid = node.centroid;
 
         //setup the transformation for the given node
         glPushMatrix();
@@ -61,23 +62,23 @@ display(std::vector<QuadNodeMainData*>& nodes, GLContextData& contextData) const
 
 
         //iterate through all the lines for the given node
-        for (Coverage::iterator lit=coverage.begin(); lit!=coverage.end();
+        for (Coverage::const_iterator lit=coverage.begin(); lit!=coverage.end();
              ++lit)
         {
-            const Shape* const shape = lit->first;
-            HandleList& handles      = lit->second;
+            const Shape* const shape  = lit->first;
+            const HandleList& handles = lit->second;
             assert(handles.size() > 0);
             assert(dynamic_cast<const Polyline*>(shape) != NULL);
 
-            Color symbolColor    = shape->getSymbol().color;
-            Color symbolColorDim = symbolColor;
-            symbolColorDim[3]   *= 0.33f;
+            const Color& symbolColor = shape->getSymbol().color;
+            Color symbolColorDim     = symbolColor;
+            symbolColorDim[3]       *= 0.33f;
 
             //iterate over all the fragments of a line
-            for (HandleList::iterator hit=handles.begin(); hit!=handles.end();
-                 ++hit)
+            for (HandleList::const_iterator hit=handles.begin();
+                 hit!=handles.end(); ++hit)
             {
-                Handle cur  = hit->handle;
+                Handle cur  = *hit;
                 Handle next = cur; ++cur;
 
                 //generate proper coordinates for the fragment

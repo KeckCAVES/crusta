@@ -3,9 +3,6 @@
 
 
 #include <GL/GLObject.h>
-#include <Threads/Cond.h>
-#include <Threads/Mutex.h>
-#include <Threads/Thread.h>
 
 #include <crusta/Cache.h>
 #include <crusta/QuadNodeData.h>
@@ -13,130 +10,140 @@
 
 BEGIN_CRUSTA
 
-typedef CacheBuffer<QuadNodeMainData>    MainCacheBuffer;
-typedef CacheBuffer<QuadNodeVideoData>   VideoCacheBuffer;
-typedef CacheBuffer<QuadNodeGpuLineData> GpuLineCacheBuffer;
 
-
-class MainCache : public CacheUnit<MainCacheBuffer>
+template <typename BufferParam>
+class Main2dCache : public CacheUnit<BufferParam>
 {
 public:
-    /** information required to process the fetch/generation of data */
-    class Request
-    {
-        friend class MainCache;
-
-    public:
-        Request();
-        Request(float iLod, MainCacheBuffer* iParent, uint8 iChild);
-
-        bool operator ==(const Request& other) const;
-        bool operator <(const Request& other) const;
-
-    protected:
-        /** lod value used for prioritizing the requests */
-        float lod;
-        /** pointer to the parent of the requested */
-        MainCacheBuffer* parent;
-        /** index of the child to be loaded */
-        uint8 child;
-    };
-
-    typedef std::vector<Request> Requests;
-
-    MainCache(uint size, Crusta* iCrusta);
-    ~MainCache();
-
-    /** process requests */
-    void frame();
-    /** request data fetch/generation for a node */
-    void request(const Request& req);
-    /** request data fetch/generation for a set of tree indices */
-    void request(const Requests& reqs);
-
+    void init(int size, int iTileSize);
+    virtual void initData(typename BufferParam::DataType& data);
 protected:
-    struct FetchRequest
-    {
-        MainCacheBuffer* parent;
-        MainCacheBuffer* child;
-        uint8            which;
-
-        FetchRequest();
-        bool operator ==(const FetchRequest& other) const;
-        bool operator <(const FetchRequest& other) const;
-    };
-    typedef std::list<FetchRequest> FetchRequests;
-
-    /** fetch thread function: process the generation/reading of the data */
-    void* fetchThreadFunc();
-
-    /** keep track of pending child requests */
-    Requests childRequests;
-
-    /** impose a limit on the number of outstanding fetch requests. This
-        minimizes processing outdated requests */
-    int maxFetchRequests;
-    /** buffer for fetch requests to the fetch thread */
-    FetchRequests fetchRequests;
-    /** buffer for fetch results that have been processed by the fetch thread */
-    FetchRequests fetchResults;
-
-    /** used to protect access to any of the buffers. For simplicity fetching
-        is stalled as a frame is processed */
-    Threads::Mutex requestMutex;
-    /** allow the fetching thread to blocking wait for requests */
-    Threads::Cond fetchCond;
-
-    /** thread handling fetch request processing */
-    Threads::Thread fetchThread;
+    int tileSize;
 };
 
-class VideoCache : public CacheUnit<VideoCacheBuffer>
+template <typename BufferParam>
+class Gpu2dAtlasCache : public CacheUnit<BufferParam>
 {
 public:
-    VideoCache(uint size, Crusta* iCrusta);
+    ~Gpu2dAtlasCache();
 
-    /** retrieve the temporary video buffer that can be used for streaming
-        data */
-    VideoCacheBuffer* getStreamBuffer();
+    void init(int size, int tileSize, GLenum internalFormat, GLenum filterMode);
+    virtual void initData(typename BufferParam::DataType& data);
+
+    void bind() const;
+    void stream(const SubRegion& sub, GLenum dataFormat, GLenum dataType,
+                void* data);
 
 protected:
-    VideoCacheBuffer streamBuffer;
+    GLuint texture;
+    int texSize;
+    int texLayers;
+
+    Point3f  subOffset;
+    Vector2f subSize;
+    Vector2f pixSize;
 };
 
-class GpuLineCache : public CacheUnit<GpuLineCacheBuffer>
+template <typename BufferParam>
+class Gpu2dRenderAtlasCache : public Gpu2dAtlasCache<BufferParam>
 {
 public:
-    GpuLineCache(uint size, Crusta* iCrusta);
+    ~Gpu2dRenderAtlasCache();
 
-    /** retrieve the temporary video buffer that can be used for streaming
-        data */
-    GpuLineCacheBuffer* getStreamBuffer();
+    void init(int size, int tileSize, GLenum internalFormat, GLenum filterMode);
+    void beginRender(const SubRegion& sub);
+    void endRender();
 
 protected:
-    GpuLineCacheBuffer streamBuffer;
+    GLuint renderFbo;
+    GLint  oldViewport[4];
+    GLint  oldFbo;
+    GLint  oldDrawBuf;
+    GLint  oldReadBuf;
+};
+
+template <typename BufferParam>
+class Gpu1dAtlasCache : public CacheUnit<BufferParam>
+{
+public:
+    ~Gpu1dAtlasCache();
+
+    void init(int size, int tileSize, GLenum internalFormat, GLenum filterMode);
+    virtual void initData(typename BufferParam::DataType& data);
+
+    void bind() const;
+    void stream(const SubRegion& sub, GLenum dataFormat, GLenum dataType,
+                void* data);
+
+protected:
+    GLuint texture;
+    int texWidth;
+    int texHeight;
+
+    Point3f  subOffset;
+    Vector2f subSize;
+    Vector2f pixSize;
+};
+
+
+END_CRUSTA
+#include <crusta/QuadCache.hpp>
+BEGIN_CRUSTA
+
+
+typedef CacheBuffer<NodeData>  NodeBuffer;
+typedef CacheUnit<NodeBuffer>  NodeCache;
+
+typedef GLVertex<void, 0, void, 0, void, float, 3> Vertex;
+typedef CacheArrayBuffer<Vertex>    GeometryBuffer;
+typedef Main2dCache<GeometryBuffer> GeometryCache;
+
+typedef CacheArrayBuffer<DemHeight> HeightBuffer;
+typedef Main2dCache<HeightBuffer>   HeightCache;
+
+typedef CacheArrayBuffer<TextureColor> ImageryBuffer;
+typedef Main2dCache<ImageryBuffer>     ImageryCache;
+
+
+typedef CacheBuffer<SubRegion> SubRegionBuffer;
+typedef Gpu2dAtlasCache<SubRegionBuffer> GpuGeometryCache;
+typedef Gpu2dAtlasCache<SubRegionBuffer> GpuHeightCache;
+typedef Gpu2dAtlasCache<SubRegionBuffer> GpuImageryCache;
+
+typedef Gpu2dRenderAtlasCache<SubRegionBuffer> GpuCoverageCache;
+
+typedef CacheBuffer<StampedSubRegion> StampedSubRegionBuffer;
+typedef Gpu1dAtlasCache<StampedSubRegionBuffer> GpuLineDataCache;
+
+
+
+struct MainCache
+{
+    NodeCache     node;
+    GeometryCache geometry;
+    HeightCache   height;
+    ImageryCache  imagery;
+};
+
+struct GpuCache
+{
+    GpuGeometryCache geometry;
+    GpuHeightCache   height;
+    GpuImageryCache  imagery;
+    GpuCoverageCache coverage;
+    GpuLineDataCache lineData;
 };
 
 class Cache : public GLObject
 {
 public:
-    Cache(uint mainSize, uint videoSize, uint gpuLineSize, Crusta* iCrusta);
+    Cache();
 
-    /** retrieve the main memory cache unit */
     MainCache& getMainCache();
-    /** retrieve the video memory cache unit */
-    VideoCache& getVideoCache(GLContextData& contextData);
-    /** retrieve the gpu line data cache unit */
-    GpuLineCache& getGpuLineCache(GLContextData& contextData);
+    GpuCache&  getGpuCache(GLContextData& contextData);
 
 protected:
-    /** needed during initContext, specified during construction */
-    uint videoCacheSize;
-    /** needed during initContext, specified during construction */
-    uint gpuLineCacheSize;
-    /** needed during initContext, specified during construction */
-    Crusta* crustaInstance;
-    /** the main memory cache unit */
+    /** the main memory caches */
     MainCache mainCache;
 
 //- inherited from GLObject
@@ -146,14 +153,13 @@ public:
 protected:
     struct GlData : public GLObject::DataItem
     {
-        GlData(uint videoSize, uint lineSize, Crusta* crustaInstance);
-
-        /** the video memory cache unit for the GL context */
-        VideoCache videoCache;
-        /** the gpu line data cache unit for the GL context */
-        GpuLineCache lineCache;
+        /** the gpu memory cache unit for the GL context */
+        GpuCache gpuCache;
     };
 };
+
+
+extern Cache* CACHE;
 
 
 END_CRUSTA

@@ -24,9 +24,19 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #ifndef _LightingShader_H_
 #define _LightingShader_H_
 
+#include <cassert>
+#include <iostream>
 #include <string>
+
 #include <GL/gl.h>
 #include <GL/Extensions/GLARBShaderObjects.h>
+
+#include <crusta/basics.h>
+#include <crusta/QuadNodeData.h>
+
+
+BEGIN_CRUSTA
+
 
 class LightingShader
 {
@@ -73,9 +83,16 @@ class LightingShader
     GLint lineCoordScaleUniform;
     GLint lineWidthUniform;
 
-    GLint texScaleUniform;
-    GLint texOffsetUniform;
-
+    GLint geometryTexOffsetUniform;
+    GLint geometryTexScaleUniform;
+    GLint heightTexOffsetUniform;
+    GLint heightTexScaleUniform;
+    GLint colorTexOffsetUniform;
+    GLint colorTexScaleUniform;
+    GLint coverageTexOffsetUniform;
+    GLint coverageTexScaleUniform;
+    GLint lineDataTexOffsetUniform;
+    GLint lineDataTexScaleUniform;
 
     /* Private methods: */
     std::string createApplyLightFunction(const char* functionTemplate,int lightIndex) const;
@@ -126,9 +143,9 @@ class LightingShader
     {
         glUniform1f(verticalScaleUniform, vs);
     }
-    void setCentroid(float x, float y, float z)
+    void setCentroid(const Point3f& c)
     {
-        glUniform3f(centroidUniform, x, y, z);
+        glUniform3f(centroidUniform, c[0], c[1], c[2]);
     }
 
     void setLineNumSegments(int ns)
@@ -144,14 +161,44 @@ class LightingShader
         glUniform1f(lineWidthUniform, lw);
     }
 
-    void setTexScale(float su, float sv)
+    void setGeometrySubRegion(const SubRegion& s)
     {
-        glUniform2f(texScaleUniform, su, sv);
+        glUniform3f(geometryTexOffsetUniform,
+                    s.offset[0], s.offset[1], s.offset[2]);
+        glUniform2f(geometryTexScaleUniform, s.size[0], s.size[1]);
     }
-    void setTexOffset(float ou, float ov)
+
+   void setHeightSubRegion(const SubRegion& s)
     {
-        glUniform2f(texOffsetUniform, ou, ov);
+        glUniform3f(heightTexOffsetUniform,
+                    s.offset[0], s.offset[1], s.offset[2]);
+        glUniform2f(heightTexScaleUniform, s.size[0], s.size[1]);
+    }
+
+    void setColorSubRegion(const SubRegion& s)
+    {
+        glUniform3f(colorTexOffsetUniform,
+                    s.offset[0], s.offset[1], s.offset[2]);
+        glUniform2f(colorTexScaleUniform, s.size[0], s.size[1]);
+    }
+
+    void setCoverageSubRegion(const SubRegion& s)
+    {
+        glUniform3f(coverageTexOffsetUniform,
+                    s.offset[0], s.offset[1], s.offset[2]);
+        glUniform2f(coverageTexScaleUniform, s.size[0], s.size[1]);
+    }
+
+    void setLineDataSubRegion(const SubRegion& s)
+    {
+        glUniform3f(lineDataTexOffsetUniform,
+                    s.offset[0], s.offset[1], s.offset[2]);
+        glUniform2f(lineDataTexScaleUniform, s.size[0], s.size[1]);
     }
 };
+
+
+END_CRUSTA
+
 
 #endif //_LightingShader_H_

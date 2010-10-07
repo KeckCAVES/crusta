@@ -1,61 +1,82 @@
 #include <algorithm>
 #include <iostream>
-
 #include <cassert>
 
-#include <crusta/Crusta.h>
+#include <Math/Constants.h>
+#include <Vrui/Vrui.h>
 
 BEGIN_CRUSTA
 
 
-#define CRUSTA_CACHE_INVALID_FRAMENUMBER        FrameNumber(~0)
-#define CRUSTA_CACHE_INVALID_FRAMENUMBER_USABLE FrameNumber((~0)-1)
+template <typename DataParam>
+const FrameStamp CacheBuffer<DataParam>::
+OLDEST_FRAMESTAMP(0);
 
-template <typename NodeDataType>
-CacheBuffer<NodeDataType>::
-CacheBuffer(uint size) :
-    frameNumber(0), data(size)
-{}
+template <typename DataParam>
+CacheBuffer<DataParam>::
+CacheBuffer() :
+    frameStamp(OLDEST_FRAMESTAMP)
+{
+    state.valid  = 0;
+    state.pinned = 0;
+}
 
-template <typename NodeDataType>
-NodeDataType& CacheBuffer<NodeDataType>::
+template <typename DataParam>
+DataParam& CacheBuffer<DataParam>::
 getData()
 {
-    return data;
+    return this->data;
 }
 
-template <typename NodeDataType>
-const NodeDataType& CacheBuffer<NodeDataType>::
+template <typename DataParam>
+const DataParam& CacheBuffer<DataParam>::
 getData() const
 {
-    return data;
-}
-
-template <typename NodeDataType>
-FrameNumber CacheBuffer<NodeDataType>::
-getFrameNumber() const
-{
-    return frameNumber;
+    return this->data;
 }
 
 
-template <typename BufferType>
-CacheUnit<BufferType>::
-CacheUnit(uint size, Crusta* iCrusta) :
-    CrustaComponent(iCrusta), sortFrameNumber(0)
+template <typename DataParam>
+CacheArrayBuffer<DataParam>::
+~CacheArrayBuffer()
 {
-    //fill the cache with buffers with no valid content
-    for (uint i=0; i<size; ++i)
+    delete[] this->data;
+}
+
+
+template <typename BufferParam>
+IndexedBuffer<BufferParam>::
+IndexedBuffer(TreeIndex iIndex, BufferParam* iBuffer) :
+    index(iIndex), buffer(iBuffer)
+{
+}
+
+template <typename BufferParam>
+bool IndexedBuffer<BufferParam>::
+operator >(const IndexedBuffer& other) const
+{
+    if (buffer->state.valid == 0)
     {
-        BufferType* buffer = new BufferType(TILE_RESOLUTION);
-        TreeIndex dummyIndex(~0,~0,~0,i);
-        cached.insert(typename BufferPtrMap::value_type(dummyIndex, buffer));
-        lruCached.push_back(IndexedBuffer(dummyIndex, buffer));
+        return other.buffer->state.valid==0 ?
+               buffer->frameStamp > other.buffer->frameStamp : false;
+    }
+    else
+    {
+        return other.buffer->state.valid==0 ?
+               true : buffer->frameStamp > other.buffer->frameStamp;
     }
 }
 
-template <typename BufferType>
-CacheUnit<BufferType>::
+
+template <typename BufferParam>
+CacheUnit<BufferParam>::
+CacheUnit() :
+    pinUnpinLruDirty(true), touchResetLruDirty(true)
+{
+}
+
+template <typename BufferParam>
+CacheUnit<BufferParam>::
 ~CacheUnit()
 {
     //deallocate all the cached buffers
@@ -67,15 +88,110 @@ CacheUnit<BufferType>::
 }
 
 
-template <typename BufferType>
-BufferType* CacheUnit<BufferType>::
-findCached(const TreeIndex& index) const
+template <typename BufferParam>
+void CacheUnit<BufferParam>::
+init(int size)
+{
+    //fill the cache with buffers with no valid content
+    for (int i=0; i<size; ++i)
+    {
+        BufferParam* buffer = new BufferParam;
+        initData(buffer->getData());
+        TreeIndex dummyIndex(~0,~0,~0,i);
+        cached.insert(typename BufferPtrMap::value_type(dummyIndex, buffer));
+    }
+}
+
+template <typename BufferParam>
+void CacheUnit<BufferParam>::
+initData(typename BufferParam::DataType&)
+{
+}
+
+
+template <typename BufferParam>
+bool CacheUnit<BufferParam>::
+isValid(const BufferParam* const buffer) const
+{
+    return buffer->state.valid==1;
+}
+
+template <typename BufferParam>
+bool CacheUnit<BufferParam>::
+isPinned(const BufferParam* const buffer) const
+{
+    return buffer->state.pinned>0;
+}
+
+template <typename BufferParam>
+bool CacheUnit<BufferParam>::
+isCurrent(const BufferParam* const buffer) const
+{
+    return isValid(buffer) && buffer->frameStamp == Vrui::getApplicationTime();
+}
+
+
+template <typename BufferParam>
+void CacheUnit<BufferParam>::
+touch(BufferParam* buffer)
+{
+    buffer->frameStamp  = Vrui::getApplicationTime();
+    buffer->state.valid = 1;
+    touchResetLruDirty  = true;
+}
+
+template <typename BufferParam>
+void CacheUnit<BufferParam>::
+reset(BufferParam* buffer)
+{
+    buffer->state.valid  = 0;
+    buffer->state.pinned = 0;
+    buffer->frameStamp   = BufferParam::OLDEST_FRAMESTAMP;
+    pinUnpinLruDirty     = true;
+}
+
+template <typename BufferParam>
+void CacheUnit<BufferParam>::
+reset(int numBuffers)
+{
+    //make sure we have an LRU to manipulate
+    refreshLru();
+
+    //reset numBuffers starting at the tail of the LRU
+    typename IndexedBuffers::reverse_iterator lit = lruCached.rbegin();
+    for (int i=0; i<numBuffers && lit!=lruCached.rend(); ++i, ++lit)
+        reset(lit->buffer);
+}
+
+template <typename BufferParam>
+void CacheUnit<BufferParam>::
+pin(BufferParam* buffer)
+{
+    ++buffer->state.pinned;
+    if (buffer->state.pinned==0)
+        --buffer->state.pinned;
+    pinUnpinLruDirty = true;
+}
+
+template <typename BufferParam>
+void CacheUnit<BufferParam>::
+unpin(BufferParam* buffer)
+{
+    if (buffer->state.pinned!=0)
+        --buffer->state.pinned;
+    pinUnpinLruDirty = true;
+}
+
+
+template <typename BufferParam>
+BufferParam* CacheUnit<BufferParam>::
+find(const TreeIndex& index) const
 {
     typename BufferPtrMap::const_iterator it = cached.find(index);
-    if (it!=cached.end() && isValid(it->second))
+    if (it!=cached.end())
     {
-CRUSTA_DEBUG_OUT(10, "Cache%u::find: found %s\n", (unsigned int)cached.size(),
-index.med_str().c_str());
+CRUSTA_DEBUG_OUT(10, "Cache%u::find: found %c%s\n", (unsigned int)cached.size(),
+isPinned(it->second)? '*' : ' ', index.med_str().c_str());
         return it->second;
     }
     else
@@ -86,35 +202,24 @@ index.med_str().c_str());
     }
 }
 
-template <typename BufferType>
-BufferType* CacheUnit<BufferType>::
-getBuffer(const TreeIndex& index, bool* existed)
+template <typename BufferParam>
+BufferParam* CacheUnit<BufferParam>::
+getBuffer(const TreeIndex& index, bool checkCurrent)
 {
-//- if the buffer already exists just return it
-    BufferType* buffer = findCached(index);
-    if (buffer != NULL)
-    {
-CRUSTA_DEBUG_OUT(10, "Cache%u::get: found %s\n", (unsigned int)cached.size(),
-index.med_str().c_str());
-        if (existed != NULL)
-            *existed = true;
-        return buffer;
-    }
-    if (existed != NULL)
-        *existed = false;
+CRUSTA_DEBUG_ONLY_SINGLE(size_t cacheSize = cached.size());
+assert(cached.find(index)==cached.end());
 
 //- try to swap from the LRU
     refreshLru();
 
     //check the tail of the LRU sequence for valid buffers
-    IndexedBuffer lruBuf(TreeIndex(), NULL);
-    while (lruBuf.buffer==NULL && !lruCached.empty())
+    IndexedBuffer<BufferParam> lruBuf(TreeIndex(), NULL);
+
+    if (!lruCached.empty())
     {
-        //extract the tail
+        //make sure the tail suffices the conditions
         lruBuf = lruCached.back();
-        lruCached.pop_back();
-        //verify that the buffer hasn't been touch during this frame
-        if (lruBuf.buffer->getFrameNumber() >= crusta->getCurrentFrame())
+        if (checkCurrent && isCurrent(lruBuf.buffer))
             lruBuf.buffer = NULL;
     }
 
@@ -124,8 +229,12 @@ index.med_str().c_str());
 CRUSTA_DEBUG_OUT(5, "Cache%u::get: swaped %s for %s\n",
 (unsigned int)cached.size(), lruBuf.index.med_str().c_str(),
 index.med_str().c_str());
+        assert(cached.find(lruBuf.index)!=cached.end());
+        //reuse the buffer under a new index
         cached.erase(lruBuf.index);
         cached.insert(typename BufferPtrMap::value_type(index, lruBuf.buffer));
+        //since we manipulated the cache, the LRU will have to be recomputed
+        pinUnpinLruDirty = true;
     }
     else
     {
@@ -133,117 +242,59 @@ CRUSTA_DEBUG_OUT(3, "Cache%u::get: unable to provide for %s\n",
 (unsigned int)cached.size(), index.med_str().c_str());
     }
 
+CRUSTA_DEBUG_ONLY_SINGLE(assert(cacheSize==cached.size()));
+
     return lruBuf.buffer;
 }
 
-
-template <typename BufferType>
-bool CacheUnit<BufferType>::
-isActive(const BufferType* const buffer) const
+template <typename BufferParam>
+void CacheUnit<BufferParam>::
+printLru(const char* cause)
 {
-    return buffer->frameNumber == crusta->getCurrentFrame();
+    fprintf(CRUSTA_DEBUG_OUTPUT_DESTINATION, "RefreshLRU%s%d: frame %f\n",
+            cause, static_cast<int>(cached.size()), Vrui::getApplicationTime());
+    for (typename IndexedBuffers::const_iterator it=lruCached.begin();
+         it!=lruCached.end(); ++it)
+    {
+        fprintf(CRUSTA_DEBUG_OUTPUT_DESTINATION, "%s.%f ",
+                it->index.med_str().c_str(), it->buffer->frameStamp);
+    }
+    fprintf(CRUSTA_DEBUG_OUTPUT_DESTINATION, "\n");
 }
 
-template <typename BufferType>
-bool CacheUnit<BufferType>::
-isValid(const BufferType* const buffer) const
-{
-    return buffer->frameNumber!=0 &&
-           buffer->frameNumber!=CRUSTA_CACHE_INVALID_FRAMENUMBER;
-}
-
-template <typename BufferType>
-void CacheUnit<BufferType>::
-touch(BufferType* buffer) const
-{
-    buffer->frameNumber = std::max(buffer->frameNumber,
-                                   crusta->getCurrentFrame());
-}
-
-template <typename BufferType>
-void CacheUnit<BufferType>::
-invalidate(BufferType* buffer) const
-{
-    buffer->frameNumber = 0;
-}
-
-template <typename BufferType>
-void CacheUnit<BufferType>::
-pin(BufferType* buffer, bool asUsable) const
-{
-    buffer->frameNumber = asUsable ? CRUSTA_CACHE_INVALID_FRAMENUMBER_USABLE :
-                                     CRUSTA_CACHE_INVALID_FRAMENUMBER;
-}
-
-template <typename BufferType>
-void CacheUnit<BufferType>::
-unpin(BufferType* buffer) const
-{
-    buffer->frameNumber = 0;
-}
-
-
-template <typename BufferType>
-CacheUnit<BufferType>::IndexedBuffer::
-IndexedBuffer(TreeIndex iIndex, BufferType* iBuffer) :
-    index(iIndex), buffer(iBuffer)
-{
-}
-
-template <typename BufferType>
-bool CacheUnit<BufferType>::IndexedBuffer::
-operator >(const IndexedBuffer& other) const
-{
-    return buffer->getFrameNumber() > other.buffer->getFrameNumber();
-}
-
-
-template <typename BufferType>
-void CacheUnit<BufferType>::
+template <typename BufferParam>
+void CacheUnit<BufferParam>::
 refreshLru()
 {
-    //update the LRU view if necessary
-    if (sortFrameNumber != crusta->getCurrentFrame())
+    if (pinUnpinLruDirty)
     {
+        //repopulate
         lruCached.clear();
         for (typename BufferPtrMap::const_iterator it=cached.begin();
              it!=cached.end(); ++it)
         {
-            /* don't add the buffer used during the last frame, since they will
-               be the data of the starting approximation */
-            if (it->second->getFrameNumber() < (crusta->getCurrentFrame()-1))
-                lruCached.push_back(IndexedBuffer(it->first, it->second));
+            if (!isPinned(it->second))
+            {
+                lruCached.push_back(
+                    IndexedBuffer<BufferParam>(it->first, it->second));
+            }
         }
+        //resort
         std::sort(lruCached.begin(), lruCached.end(),
-                  std::greater<IndexedBuffer>());
-
-CRUSTA_DEBUG_OUT(6, "RefreshLRU%u: frame %u last sort %u\n",
-(unsigned int)cached.size(), (unsigned int)crusta->getCurrentFrame(),
-(unsigned int)sortFrameNumber);
-        for (typename IndexedBuffers::const_iterator it=lruCached.begin();
-             it!=lruCached.end(); ++it)
-        {
-CRUSTA_DEBUG_OUT(6, "%s.%u ", it->index.med_str().c_str(),
-(unsigned int)(it->buffer->getFrameNumber()));
-        }
-CRUSTA_DEBUG_OUT(6, "\n");
-
-CRUSTA_DEBUG(1,
-bool encounteredNonInvalid = false;
-for (typename IndexedBuffers::reverse_iterator it=lruCached.rbegin();
-     it!=lruCached.rend(); ++it)
-{
-    if (isValid(it->buffer))
-        encounteredNonInvalid = true;
-    else if (encounteredNonInvalid)
+                  std::greater< IndexedBuffer<BufferParam> >());
+CRUSTA_DEBUG(7, printLru("Pin"));
+    }
+    else if (touchResetLruDirty)
     {
-        std::cout << "FRAKAMUNDO!";
-        assert(false && "bad LRU, can't find something inbetween invalids");
+        //resort only
+        std::sort(lruCached.begin(), lruCached.end(),
+                  std::greater< IndexedBuffer<BufferParam> >());
+CRUSTA_DEBUG(7, printLru("Touch"));
     }
-}
-)
-        sortFrameNumber = crusta->getCurrentFrame();
-    }
+
+    //clear the dirty flags
+    pinUnpinLruDirty   = false;
+    touchResetLruDirty = false;
 }
 
 

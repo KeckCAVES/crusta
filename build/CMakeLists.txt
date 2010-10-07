@@ -80,6 +80,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/PixelSpecs.h
     ../include/crusta/Polyhedron.h
     ../include/crusta/QuadCache.h
+    ../include/crusta/QuadCache.hpp
     ../include/crusta/QuadNodeData.h
     ../include/crusta/QuadTerrain.h
     ../include/crusta/QuadtreeFile.h

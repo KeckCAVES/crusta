@@ -14,9 +14,9 @@ LodEvaluator::
 {}
 
 float LodEvaluator::
-evaluate(const QuadNodeMainData& mainData)
+evaluate(const NodeData& node)
 {
-    return (scale * compute(mainData)) + bias;
+    return (scale * compute(node)) + bias;
 }
 
 END_CRUSTA

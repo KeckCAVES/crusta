@@ -14,12 +14,31 @@ BEGIN_CRUSTA
 
 CrustaSettings::CrustaSettings() :
     globeName("Sphere_Earth"), globeRadius(6371000.0),
-    decoratedVectorArt(false),
+
+    decorateVectorArt(false),
+
     terrainAmbientColor(0.4f, 0.4f, 0.4f, 1.0f),
     terrainDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f),
     terrainEmissiveColor(0.0f, 0.0f, 0.0f, 1.0f),
     terrainSpecularColor(0.3f, 0.3f, 0.3f, 1.0f),
-    terrainShininess(55.0f)
+    terrainShininess(55.0f),
+
+    cacheMainNodeSize(4096),
+    cacheMainGeometrySize(4096),
+    cacheMainHeightSize(4096),
+    cacheMainImagerySize(4096),
+    cacheGpuGeometrySize(1024),
+    cacheGpuHeightSize(1024),
+    cacheGpuImagerySize(1024),
+    cacheGpuCoverageSize(1024),
+    cacheGpuLineDataSize(1024),
+
+    dataManMaxFetchRequests(16),
+
+    lineDataTexSize(8192),
+    lineDataCoordStep(1.0f / lineDataTexSize),
+    lineDataStartCoord(0.5f * lineDataCoordStep),
+    lineCoverageTexSize(TILE_RESOLUTION>>1)
 {
 }
 
@@ -57,11 +76,6 @@ loadFromFile(std::string configurationFileName, bool merge)
         }
     }
 
-    //try to extract misc specifications
-    cfgFile.setCurrentSection("/Crusta");
-    decoratedVectorArt = cfgFile.retrieveValue<bool>(
-        "./decoratedVectorArt", decoratedVectorArt);
-
     //try to extract the globe specifications
     cfgFile.setCurrentSection("/Crusta/Globe");
     globeName   = cfgFile.retrieveString("./name", globeName);
@@ -79,6 +93,45 @@ loadFromFile(std::string configurationFileName, bool merge)
         "./terrainSpecularColor", terrainSpecularColor);
     terrainShininess = cfgFile.retrieveValue<double>(
         "./terrainShininess", terrainShininess);
+
+    //try to extract the cache settings
+    cfgFile.setCurrentSection("/Crusta/Cache");
+    cacheMainNodeSize = cfgFile.retrieveValue<int>(
+        "./mainNodeSize", cacheMainNodeSize);
+    cacheMainGeometrySize = cfgFile.retrieveValue<int>(
+        "./mainGeometrySize", cacheMainGeometrySize);
+    cacheMainHeightSize = cfgFile.retrieveValue<int>(
+        "./mainHeightSize", cacheMainHeightSize);
+    cacheMainImagerySize = cfgFile.retrieveValue<int>(
+        "./mainImagerySize", cacheMainImagerySize);
+    cacheGpuGeometrySize = cfgFile.retrieveValue<int>(
+        "./gpuGeometrySize", cacheGpuGeometrySize);
+    cacheGpuHeightSize = cfgFile.retrieveValue<int>(
+        "./gpuHeightSize", cacheGpuHeightSize);
+    cacheGpuImagerySize = cfgFile.retrieveValue<int>(
+        "./gpuImagerySize", cacheGpuImagerySize);
+    cacheGpuCoverageSize = cfgFile.retrieveValue<int>(
+        "./gpuCoverageSize", cacheGpuCoverageSize);
+    cacheGpuLineDataSize = cfgFile.retrieveValue<int>(
+        "./gpuLineDataSize", cacheGpuLineDataSize);
+
+    //try to extract the data manager settings
+    cfgFile.setCurrentSection("/Crusta/DataManager");
+    dataManMaxFetchRequests = cfgFile.retrieveValue<int>(
+        "./maxFetchRequests", dataManMaxFetchRequests);
+
+    //try to extract the line decoration settings
+    cfgFile.setCurrentSection("/Crusta/DecoratedArt");
+    decorateVectorArt = cfgFile.retrieveValue<bool>(
+        "./decorateVectorArt", decorateVectorArt);
+    lineDataTexSize = cfgFile.retrieveValue<int>(
+        "./dataTexSize", lineDataTexSize);
+    lineDataCoordStep  = 1.0f / lineDataTexSize;
+    lineDataStartCoord = 0.5f * lineDataCoordStep;
 }
+
+
+CrustaSettings* SETTINGS;
+
 
 END_CRUSTA
