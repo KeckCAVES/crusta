@@ -20,7 +20,7 @@ Polyline(Crusta* iCrusta) :
 void Polyline::
 recomputeCoords(ControlPointHandle cur)
 {
-    FrameStamp curStamp = Vrui::getApplicationTime();
+    FrameStamp curStamp = CURRENT_FRAME;
 
     assert(cur != controlPoints.end());
 

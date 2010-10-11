@@ -36,8 +36,8 @@ BEGIN_CRUSTA
 
 
 #if CRUSTA_ENABLE_DEBUG
-int CRUSTA_DEBUG_LEVEL_MIN = 3;
-int CRUSTA_DEBUG_LEVEL_MAX = 10;
+int CRUSTA_DEBUG_LEVEL_MIN = 1;
+int CRUSTA_DEBUG_LEVEL_MAX = 17;
 #endif //CRUSTA_ENABLE_DEBUG
 
 #if DEBUG_INTERSECT_CRAP
@@ -45,6 +45,10 @@ int CRUSTA_DEBUG_LEVEL_MAX = 10;
 bool DEBUG_INTERSECT = false;
 #define DEBUG_INTERSECT_PEEK 0
 #endif //DEBUG_INTERSECT_CRAP
+
+
+FrameStamp CURRENT_FRAME(0);
+
 
 #define CRUSTA_ENABLE_RECORD_FRAMERATE 0
 #if CRUSTA_ENABLE_RECORD_FRAMERATE
@@ -628,6 +632,14 @@ getMapManager() const
 void Crusta::
 frame()
 {
+///\todo split crusta and planet
+///\todo hack. allow for the cache processing to happen as a display post-proc
+    //process the requests from the last frame
+    DATAMANAGER->frame();
+
+    CURRENT_FRAME = Vrui::getApplicationTime();
+
+///\todo hack. start the actual new frame
 statsMan.newFrame();
 
 #if CRUSTA_ENABLE_DEBUG
@@ -652,13 +664,13 @@ if (debugTool!=NULL)
 #endif //CRUSTA_ENABLE_DEBUG
 
 CRUSTA_DEBUG_OUT(8, "\n\n\n--------------------------------------\n%f\n\n\n",
-Vrui::getApplicationTime());
+CURRENT_FRAME);
 
     //apply the vertical scale changes
     if (verticalScale != changedVerticalScale)
     {
         verticalScale  = changedVerticalScale;
-        lastScaleStamp = Vrui::getApplicationTime();
+        lastScaleStamp = CURRENT_FRAME;
         mapMan->processVerticalScaleChange();
     }
 
@@ -684,10 +696,6 @@ Vrui::getApplicationTime());
            the processing to the frame that will have the proper navigation */
         changedVerticalScale = newVerticalScale;
     }
-
-///\todo split crusta and planet
-    //process the requests from the last frame
-    DATAMANAGER->frame();
 
     //let the map manager update all the mapping stuff
     mapMan->frame();

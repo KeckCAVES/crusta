@@ -154,16 +154,15 @@ protected:
     typedef std::list<FetchRequest> FetchRequests;
 
     /** get main buffers from the managed caches */
-    const NodeMainBuffer getMainBuffer(const TreeIndex& index,
-                                       bool checkCurrent=true) const;
-    /** get gpu buffers from the managed caches. Returns true if all the
-        required buffers could be acquired. */
-    bool getGpuBuffer(GpuCache& gpuCache, const TreeIndex& index,
-                      const NodeMainData& main, NodeGpuBuffer& buf) const;
+    const NodeMainBuffer grabMainBuffer(const TreeIndex& index,
+                                        bool grabCurrent) const;
+    /** release main buffers to the managed caches */
+    void releaseMainBuffer(const TreeIndex& index,
+                           const NodeMainBuffer& buffer) const;
 
     /** stream required data to the gpu */
-    void streamGpuData(GLContextData& contextData, GpuCache& cache,
-                       NodeMainData& main, NodeGpuBuffer& gpu);
+    bool streamGpuData(GLContextData& contextData,
+                       NodeMainData& main, NodeGpuData& gpu);
 
     /** load the data required for the child of the specified node */
     void loadChild(Crusta* crusta, NodeMainData& parent, uint8 which,

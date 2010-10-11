@@ -58,8 +58,9 @@ protected:
 
     struct State
     {
-        uint8 valid  : 1;
-        uint8 pinned : 7;
+        uint8 grabbed : 1;
+        uint8 valid   : 1;
+        uint8 pinned  : 6;
     };
 
     /** state of the buffer */
@@ -108,7 +109,7 @@ public:
     virtual ~CacheUnit();
 
     /** initialize the cache */
-    void init(int size);
+    void init(const std::string& iName, int size);
     /** initialize the data of the buffers */
     virtual void initData(typename BufferParam::DataType& data);
 
@@ -116,6 +117,8 @@ public:
     bool isValid(const BufferParam* const buffer) const;
     /** check to see if the buffer is pinned */
     bool isPinned(const BufferParam* const buffer) const;
+    /** check to see if the buffer is grabbed (removed from the cache) */
+    bool isGrabbed(const BufferParam* const buffer) const;
     /** check to see if the buffer has been touched in this frame */
     bool isCurrent(const BufferParam* const buffer) const;
 
@@ -132,13 +135,21 @@ public:
 
     /** find a buffer within the cached set. Returns NULL if not found. */
     BufferParam* find(const TreeIndex& index) const;
-    /** request a buffer from the cache. A non-NULL buffer is returned as long
-        as all the cache slots are not not pinned. Optionally the cache can
-        be instructed not to provide current buffers.
+    /** request a buffer from the cache. The least recently used that is not
+        pinned buffer is returned. An additional filter may limit available
+        buffer to ones that are not current. The buffer is removed from the
+        cache as a result.
         WARNING: it is assumed that a call to findCached was issued prior.
-                 getBuffer does not verify that an appropriate buffer is already
-                 cached. */
-    BufferParam* getBuffer(const TreeIndex& index, bool checkCurrent=true);
+                 grabBuffer does not verify that an appropriate buffer is
+                 already cached. */
+    BufferParam* grabBuffer(bool grabCurrent);
+    /** return a buffer to the cache. The buffer will be reinserted into the
+        cache with the given index */
+    void releaseBuffer(const TreeIndex& index, BufferParam* buffer);
+
+///\todo move back to the protected group
+    /** prints the content of the cache in LRU order */
+    void printCache();
 
 protected:
     typedef PortableTable<TreeIndex,BufferParam*,TreeIndex::hash> BufferPtrMap;
@@ -149,6 +160,9 @@ protected:
     /** make sure the LRU prioritized sequence of the cached buffers is up to
         date*/
     void refreshLru();
+
+    /** a string identifier for the cache (mainly used for debugging) */
+    std::string name;
 
     /** keep a record of all the buffers cached by the unit */
     BufferPtrMap cached;

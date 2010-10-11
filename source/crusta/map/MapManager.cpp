@@ -647,7 +647,7 @@ coverage << "\n\n";)
         }
 
         //update the age of the line data
-        dataAge = Vrui::getApplicationTime();
+        dataAge = CURRENT_FRAME;
     }
 
 statsMan.stop(StatsManager::UPDATELINEDATA);

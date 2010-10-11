@@ -54,7 +54,7 @@ computeBoundingSphere(Scalar radius, Scalar verticalScale)
     }
 
     //stamp the current bounding specification
-    boundingAge = Vrui::getApplicationTime();
+    boundingAge = CURRENT_FRAME;
 }
 
 void NodeData::

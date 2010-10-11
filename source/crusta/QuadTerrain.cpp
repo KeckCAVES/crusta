@@ -1574,6 +1574,7 @@ prepareDisplay(FrustumVisibility& visibility, FocusViewEvaluator& lod,
             bool allgood = DATAMANAGER->existsChildData(data);
             //check if all the children are available
             DataManager::NodeMainBuffer children[4];
+            bool validChildren[4] = {false, false, false, false};
             if (allgood)
             {
                 for (int i=0; i<4; ++i)
@@ -1586,6 +1587,8 @@ prepareDisplay(FrustumVisibility& visibility, FocusViewEvaluator& lod,
                             crusta, lodValue, buf, i));
                         allgood = false;
                     }
+                    else
+                        validChildren[i] = true;
                 }
             }
 
@@ -1611,7 +1614,16 @@ CRUSTA_DEBUG(60, std::cerr << "***COVDOWN parent(" << data.node->index <<
                     prepareDisplay(visibility,lod,children[i],renders,requests);
             }
             else
+            {
+                //make sure to hold on to the children that are already cached
+                for (int i=0; i<4; ++i)
+                {
+                    if (validChildren[i])
+                        DATAMANAGER->touch(children[i]);
+                }
+                //add the current node to the current representation
                 renders.push_back(data);
+            }
         }
         else
             renders.push_back(data);

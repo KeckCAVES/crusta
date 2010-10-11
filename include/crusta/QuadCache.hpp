@@ -9,10 +9,10 @@ BEGIN_CRUSTA
 
 template <typename BufferParam>
 void Main2dCache<BufferParam>::
-init(int size, int iTileSize)
+init(const std::string& iName, int size, int iTileSize)
 {
     tileSize = iTileSize;
-    CacheUnit<BufferParam>::init(size);
+    CacheUnit<BufferParam>::init(iName, size);
 }
 
 template <typename BufferParam>
@@ -34,7 +34,8 @@ Gpu2dAtlasCache<BufferParam>::
 
 template <typename BufferParam>
 void Gpu2dAtlasCache<BufferParam>::
-init(int size, int tileSize, GLenum internalFormat, GLenum filterMode)
+init(const std::string& iName, int size, int tileSize,
+     GLenum internalFormat, GLenum filterMode)
 {
 //- compute the 2D-layered layout
     int maxTextureSize = 0;
@@ -73,7 +74,7 @@ init(int size, int tileSize, GLenum internalFormat, GLenum filterMode)
 
 //- initialize the buffers
     size = texLayers*bestNum*bestNum;
-    CacheUnit<BufferParam>::init(size);
+    CacheUnit<BufferParam>::init(iName, size);
 
 //- create the texture object storage
     CHECK_GL_CLEAR_ERROR;
@@ -155,9 +156,11 @@ Gpu2dRenderAtlasCache<BufferParam>::
 
 template <typename BufferParam>
 void Gpu2dRenderAtlasCache<BufferParam>::
-init(int size, int tileSize, GLenum internalFormat, GLenum filterMode)
+init(const std::string& iName, int size, int tileSize,
+     GLenum internalFormat, GLenum filterMode)
 {
-    Gpu2dAtlasCache<BufferParam>::init(size,tileSize,internalFormat,filterMode);
+    Gpu2dAtlasCache<BufferParam>::init(iName, size, tileSize,
+                                       internalFormat, filterMode);
 
     CHECK_GL_CLEAR_ERROR;
     //create the framebuffer to be used to attach and render the coverage maps
@@ -207,7 +210,8 @@ endRender()
 
 template <typename BufferParam>
 void Gpu1dAtlasCache<BufferParam>::
-init(int size, int tileSize, GLenum internalFormat, GLenum filterMode)
+init(const std::string& iName, int size, int tileSize,
+     GLenum internalFormat, GLenum filterMode)
 {
 //- compute the 1+1D layout
     int maxTextureSize = 0;
@@ -243,7 +247,7 @@ init(int size, int tileSize, GLenum internalFormat, GLenum filterMode)
 
 //- initialize the buffers
     size = texHeight*bestNum;
-    CacheUnit<BufferParam>::init(size);
+    CacheUnit<BufferParam>::init(iName, size);
 
 //- create the texture object storage
     CHECK_GL_CLEAR_ERROR;

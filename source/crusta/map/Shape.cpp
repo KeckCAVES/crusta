@@ -240,7 +240,7 @@ selectExtremity(const Point3& pos, double& dist, End& end)
 void Shape::
 setControlPoints(const Point3s& newControlPoints)
 {
-    FrameStamp curStamp = Vrui::getApplicationTime();
+    FrameStamp curStamp = CURRENT_FRAME;
     MapManager* mapMan  = crusta->getMapManager();
 
     //delete the old control points to the coverage hierarchy
@@ -261,7 +261,7 @@ setControlPoints(const Point3s& newControlPoints)
 Shape::ControlId Shape::
 addControlPoint(const Point3& pos, End end)
 {
-    FrameStamp curStamp = Vrui::getApplicationTime();
+    FrameStamp curStamp = CURRENT_FRAME;
     MapManager* mapMan  = crusta->getMapManager();
 
     if (end == END_FRONT)
@@ -301,7 +301,7 @@ moveControlPoint(const ControlId& id, const Point3& pos)
 ///\todo only works for single map tool: ids can't be invalidated outside tool
     assert(isValid(id));
 
-    FrameStamp curStamp = Vrui::getApplicationTime();
+    FrameStamp curStamp = CURRENT_FRAME;
     MapManager* mapMan  = crusta->getMapManager();
 
 CRUSTA_DEBUG(40, std::cerr << "++++MoveCP " << id << " \n";)
@@ -331,7 +331,7 @@ removeControlPoint(const ControlId& id)
 ///\todo only works for single map tool: ids can't be invalidated outside tool
     assert(isValid(id));
 
-    FrameStamp curStamp = Vrui::getApplicationTime();
+    FrameStamp curStamp = CURRENT_FRAME;
     MapManager* mapMan  = crusta->getMapManager();
 
 CRUSTA_DEBUG(40, std::cerr << "++++DelCP " << id << " \n";)
@@ -369,7 +369,7 @@ refine(const ControlId& id, const Point3& pos)
 ///\todo only works for single map tool: ids can't be invalidated outside tool
     assert(isValid(id));
 
-    FrameStamp curStamp = Vrui::getApplicationTime();
+    FrameStamp curStamp = CURRENT_FRAME;
     MapManager* mapMan  = crusta->getMapManager();
 
 CRUSTA_DEBUG(40, std::cerr << "++++RefineSeg " << id << " \n";)
@@ -464,7 +464,7 @@ setSymbol(const Symbol& nSymbol)
 {
     symbol = nSymbol;
     //dirty the whole shape to prompt an update of the display representation
-    FrameStamp curStamp = Vrui::getApplicationTime();
+    FrameStamp curStamp = CURRENT_FRAME;
     for (ControlPointList::iterator it=controlPoints.begin();
          it!=controlPoints.end(); ++it)
     {

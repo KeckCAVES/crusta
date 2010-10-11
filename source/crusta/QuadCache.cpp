@@ -14,10 +14,13 @@ Cache::
 Cache()
 {
     //initialize all the main memory caches
-    mainCache.node.init(SETTINGS->cacheMainNodeSize);
-    mainCache.geometry.init(SETTINGS->cacheMainGeometrySize, TILE_RESOLUTION);
-    mainCache.height.init(SETTINGS->cacheMainHeightSize, TILE_RESOLUTION);
-    mainCache.imagery.init(SETTINGS->cacheMainImagerySize, TILE_RESOLUTION);
+    mainCache.node.init("MainNode", SETTINGS->cacheMainNodeSize);
+    mainCache.geometry.init("MainGeometry", SETTINGS->cacheMainGeometrySize,
+                            TILE_RESOLUTION);
+    mainCache.height.init("MainHeight", SETTINGS->cacheMainHeightSize,
+                          TILE_RESOLUTION);
+    mainCache.imagery.init("MainImagery", SETTINGS->cacheMainImagerySize,
+                           TILE_RESOLUTION);
 }
 
 
@@ -42,18 +45,18 @@ initContext(GLContextData& contextData) const
     GpuCache& gpuCache = glData->gpuCache;
 
     //initialize all the gpu memory caches
-    gpuCache.geometry.init(SETTINGS->cacheGpuGeometrySize, TILE_RESOLUTION,
-                           GL_RGB32F_ARB, GL_LINEAR);
-    gpuCache.height.init(SETTINGS->cacheGpuHeightSize, TILE_RESOLUTION,
-                         GL_INTENSITY32F_ARB, GL_LINEAR);
-    gpuCache.imagery.init(SETTINGS->cacheGpuImagerySize, TILE_RESOLUTION,
-                          GL_RGB, GL_LINEAR);
-    gpuCache.lineData.init(
-        SETTINGS->cacheGpuLineDataSize, SETTINGS->lineDataTexSize,
-        GL_RGBA32F_ARB, GL_LINEAR);
-    gpuCache.coverage.init(
-        SETTINGS->cacheGpuCoverageSize, SETTINGS->lineCoverageTexSize,
-        GL_LUMINANCE_ALPHA, GL_NEAREST);
+    gpuCache.geometry.init("GpuGeometry", SETTINGS->cacheGpuGeometrySize,
+                           TILE_RESOLUTION, GL_RGB32F_ARB, GL_LINEAR);
+    gpuCache.height.init("GpuHeight", SETTINGS->cacheGpuHeightSize,
+                         TILE_RESOLUTION, GL_INTENSITY32F_ARB, GL_LINEAR);
+    gpuCache.imagery.init("GpuImagery", SETTINGS->cacheGpuImagerySize,
+                          TILE_RESOLUTION, GL_RGB, GL_LINEAR);
+    gpuCache.lineData.init("GpuLineData", SETTINGS->cacheGpuLineDataSize,
+                           SETTINGS->lineDataTexSize,
+                           GL_RGBA32F_ARB, GL_LINEAR);
+    gpuCache.coverage.init("GpuCoverage", SETTINGS->cacheGpuCoverageSize,
+                           SETTINGS->lineCoverageTexSize,
+                           GL_LUMINANCE_ALPHA, GL_NEAREST);
 
     contextData.addDataItem(this, glData);
 }

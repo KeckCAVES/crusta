@@ -91,6 +91,12 @@ static const uint   TILE_RESOLUTION          = 65;
 static const float  TILE_TEXTURE_COORD_STEP  = 1.0 / TILE_RESOLUTION;
 
 
+/**\todo this framestamp is currently used as a hack around doing synchronized
+post display processing, by handling it at the begining of a new frame and
+explicitely setting the current frame stamp afterward */
+extern FrameStamp CURRENT_FRAME;
+
+
 END_CRUSTA
 
 

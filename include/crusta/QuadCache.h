@@ -15,7 +15,7 @@ template <typename BufferParam>
 class Main2dCache : public CacheUnit<BufferParam>
 {
 public:
-    void init(int size, int iTileSize);
+    void init(const std::string& iName, int size, int iTileSize);
     virtual void initData(typename BufferParam::DataType& data);
 protected:
     int tileSize;
@@ -27,7 +27,8 @@ class Gpu2dAtlasCache : public CacheUnit<BufferParam>
 public:
     ~Gpu2dAtlasCache();
 
-    void init(int size, int tileSize, GLenum internalFormat, GLenum filterMode);
+    void init(const std::string& iName, int size, int tileSize,
+              GLenum internalFormat, GLenum filterMode);
     virtual void initData(typename BufferParam::DataType& data);
 
     void bind() const;
@@ -50,7 +51,8 @@ class Gpu2dRenderAtlasCache : public Gpu2dAtlasCache<BufferParam>
 public:
     ~Gpu2dRenderAtlasCache();
 
-    void init(int size, int tileSize, GLenum internalFormat, GLenum filterMode);
+    void init(const std::string& iName, int size, int tileSize,
+              GLenum internalFormat, GLenum filterMode);
     void beginRender(const SubRegion& sub);
     void endRender();
 
@@ -68,7 +70,8 @@ class Gpu1dAtlasCache : public CacheUnit<BufferParam>
 public:
     ~Gpu1dAtlasCache();
 
-    void init(int size, int tileSize, GLenum internalFormat, GLenum filterMode);
+    void init(const std::string& iName, int size, int tileSize,
+              GLenum internalFormat, GLenum filterMode);
     virtual void initData(typename BufferParam::DataType& data);
 
     void bind() const;
