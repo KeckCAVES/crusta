@@ -502,7 +502,7 @@ statsMan.stop(StatsManager::INHERITSHAPECOVERAGE);
 
 
 void MapManager::
-updateLineData(DataManager::NodeMainDatas& nodes)
+updateLineData(SurfaceApproximation& surface)
 {
 statsMan.start(StatsManager::UPDATELINEDATA);
 
@@ -513,10 +513,10 @@ statsMan.start(StatsManager::UPDATELINEDATA);
     const uint32 lineTexSize = static_cast<uint32>(SETTINGS->lineDataTexSize);
 
     //go through all the nodes provided
-    for (DataManager::NodeMainDatas::iterator nit=nodes.begin();
-         nit!=nodes.end(); ++nit)
+    size_t numNodes = surface.visibles.size();
+    for (size_t i=0; i<numNodes; ++i)
     {
-        NodeData&   node        = *(nit->node);
+        NodeData&   node        = *surface.visible(i).node;
         Coverage&   coverage    = node.lineCoverage;
         FrameStamp& dataAge     = node.lineCoverageAge;
         Vector2fs&  offsets     = node.lineCoverageOffsets;
@@ -672,11 +672,10 @@ frame()
 }
 
 void MapManager::
-display(const DataManager::NodeMainDatas& nodes,
-        GLContextData& contextData) const
+display(GLContextData& contextData, const SurfaceApproximation& surface) const
 {
     if (!SETTINGS->decorateVectorArt)
-        polylineRenderer.display(nodes, contextData);
+        polylineRenderer.display(contextData, surface);
 }
 
 

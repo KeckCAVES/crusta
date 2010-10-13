@@ -3,8 +3,8 @@
 
 
 #include <crusta/basics.h>
-#include <crusta/DataManager.h>
 #include <crusta/CrustaComponent.h>
+#include <crusta/SurfaceApproximation.h>
 
 
 class GLContextData;
@@ -18,8 +18,8 @@ class PolylineRenderer : public CrustaComponent
 public:
     PolylineRenderer(Crusta* iCrusta);
 
-    void display(const DataManager::NodeMainDatas& renderNodes,
-                 GLContextData& contextData) const;
+    void display(GLContextData& contextData,
+                 const SurfaceApproximation& surface) const;
 };
 
 

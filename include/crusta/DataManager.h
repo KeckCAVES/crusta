@@ -5,14 +5,20 @@
 #include <Threads/Mutex.h>
 #include <Threads/Thread.h>
 
-#include <crusta/QuadCache.h>
+#include <crusta/QuadNodeData.h>
 #include <crusta/QuadtreeFileSpecs.h>
+#include <crusta/SurfaceApproximation.h>
+
+
+class GLContextData;
 
 
 BEGIN_CRUSTA
 
+
 class Crusta;
 class Polyhedron;
+
 
 /**\todo define proper handle to client specific information (requesting globe,
 database of the requested data, etc.). For now I'm using Crusta pointers */
@@ -22,47 +28,12 @@ public:
     typedef std::vector<DemFile*>   DemFiles;
     typedef std::vector<ColorFile*> ColorFiles;
 
-    struct NodeMainBuffer
+    struct BatchElement
     {
-        NodeMainBuffer();
-        NodeBuffer*     node;
-        GeometryBuffer* geometry;
-        HeightBuffer*   height;
-        ImageryBuffer*  imagery;
+        NodeMainData main;
+        NodeGpuData  gpu;
     };
-    typedef std::vector<NodeMainBuffer> NodeMainBuffers;
-
-    struct NodeMainData
-    {
-        NodeMainData();
-        NodeData*     node;
-        Vertex*       geometry;
-        DemHeight*    height;
-        TextureColor* imagery;
-    };
-    typedef std::vector<NodeMainData> NodeMainDatas;
-
-    struct NodeGpuBuffer
-    {
-        NodeGpuBuffer();
-        SubRegionBuffer*        geometry;
-        SubRegionBuffer*        height;
-        SubRegionBuffer*        imagery;
-        SubRegionBuffer*        coverage;
-        StampedSubRegionBuffer* lineData;
-    };
-    typedef std::vector<NodeGpuBuffer> NodeGpuBuffers;
-
-    struct NodeGpuData
-    {
-        NodeGpuData();
-        SubRegion*        geometry;
-        SubRegion*        height;
-        SubRegion*        imagery;
-        SubRegion*        coverage;
-        StampedSubRegion* lineData;
-    };
-    typedef std::vector<NodeGpuData> NodeGpuDatas;
+    typedef std::vector<BatchElement> Batch;
 
     /** information required to process the fetch/generation of data */
     class Request
@@ -121,12 +92,10 @@ public:
     /** setup batching gpu data for specified nodes and return the first
         batch */
     void startGpuBatch(GLContextData& contextData,
-                       const NodeMainDatas& renderNodes,
-                       NodeMainDatas& batchNodes,
-                       NodeGpuDatas& batchDatas);
+                       const SurfaceApproximation& surface, Batch& batch);
     /** continue a started gpu batching sequence */
-    void nextGpuBatch(GLContextData& contextData, NodeMainDatas& batchNodes,
-                      NodeGpuDatas& batchDatas);
+    void nextGpuBatch(GLContextData& contextData,
+                      const SurfaceApproximation& surface, Batch& batch);
 
     /** check if all main buffers were acquired */
     bool isComplete(const NodeMainBuffer& mainBuf) const;
@@ -161,8 +130,7 @@ protected:
                            const NodeMainBuffer& buffer) const;
 
     /** stream required data to the gpu */
-    bool streamGpuData(GLContextData& contextData,
-                       NodeMainData& main, NodeGpuData& gpu);
+    bool streamGpuData(GLContextData& contextData, BatchElement& batchel);
 
     /** load the data required for the child of the specified node */
     void loadChild(Crusta* crusta, NodeMainData& parent, uint8 which,
@@ -192,8 +160,9 @@ protected:
     /** value for "no-data" colors */
     TextureColor colorNodata;
 
-    /** nodes remaining to be batched */
-    NodeMainDatas remainingRenderNodes;
+    /** index into the first node of the surface that needs to be considered
+        for the next gpu batch */
+    size_t batchIndex;
 
     /** temporary storage for computing the high-precision surface geometry */
     double* tempGeometryBuf;

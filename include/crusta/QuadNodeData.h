@@ -13,7 +13,9 @@
 
 BEGIN_CRUSTA
 
-/** stores crusta internal data related to a node of the terrain tree
+
+///\todo change name to more appropriate NodeDynamicData
+/** stores crusta internal transient data related to a node of the terrain tree
     hierarchy */
 struct NodeData
 {
@@ -83,7 +85,6 @@ struct StampedSubRegion : SubRegion
     StampedSubRegion(const Point3f& iOffset, const Vector2f& iSize);
     FrameStamp age;
 };
-
 
 
 ///\todo debug, remove

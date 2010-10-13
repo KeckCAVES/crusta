@@ -14,32 +14,6 @@
 BEGIN_CRUSTA
 
 
-DataManager::NodeMainBuffer::
-NodeMainBuffer() :
-    node(NULL), geometry(NULL), height(NULL), imagery(NULL)
-{
-}
-
-DataManager::NodeMainData::
-NodeMainData() :
-    node(NULL), geometry(NULL), height(NULL), imagery(NULL)
-{
-}
-
-
-DataManager::NodeGpuBuffer::
-NodeGpuBuffer() :
-    geometry(NULL), height(NULL), imagery(NULL), coverage(NULL), lineData(NULL)
-{
-}
-
-DataManager::NodeGpuData::
-NodeGpuData() :
-    geometry(NULL), height(NULL), imagery(NULL), coverage(NULL), lineData(NULL)
-{
-}
-
-
 DataManager::Request::
 Request() :
     crusta(NULL), lod(0), child(~0)
@@ -288,7 +262,7 @@ request(const Requests& reqs)
 }
 
 
-const DataManager::NodeMainData DataManager::
+const NodeMainData DataManager::
 getData(const NodeMainBuffer& mainBuf) const
 {
     NodeMainData ret;
@@ -299,7 +273,7 @@ getData(const NodeMainBuffer& mainBuf) const
     return ret;
 }
 
-const DataManager::NodeGpuData DataManager::
+const NodeGpuData DataManager::
 getData(const NodeGpuBuffer& gpuBuf) const
 {
     NodeGpuData ret;
@@ -345,41 +319,35 @@ find(const TreeIndex& index, NodeMainBuffer& mainBuf) const
 
 
 void DataManager::
-startGpuBatch(GLContextData& contextData, const NodeMainDatas& renderNodes,
-              NodeMainDatas& batchNodes, NodeGpuDatas& batchDatas)
+startGpuBatch(GLContextData& contextData, const SurfaceApproximation& surface,
+              Batch& batch)
 {
-    remainingRenderNodes = renderNodes;
-    batchNodes.clear();
-    batchDatas.clear();
+    batch.clear();
 
     //go through all the render nodes and collect the appropriate data
-    NodeMainDatas::iterator it = remainingRenderNodes.begin();
-    for (; it!=remainingRenderNodes.end(); ++it)
+    size_t numNodes = surface.visibles.size();
+    for (batchIndex=0; batchIndex<numNodes; ++batchIndex)
     {
         //make sure the cached data is up to date
-        NodeGpuData gpuData;
-        if (!streamGpuData(contextData, *it, gpuData))
+        BatchElement batchel;
+        batchel.main = surface.visible(batchIndex);
+        if (!streamGpuData(contextData, batchel))
             break;
         CHECK_GLA;
 
         //add the node and data to the current batch
-        batchNodes.push_back(*it);
-        batchDatas.push_back(gpuData);
+        batch.push_back(batchel);
     }
-
-    //remove all the nodes that made it to the current batch
-    remainingRenderNodes.erase(remainingRenderNodes.begin(), it);
 }
 
 void DataManager::
-nextGpuBatch(GLContextData& contextData, NodeMainDatas& batchNodes,
-             NodeGpuDatas& batchDatas)
+nextGpuBatch(GLContextData& contextData, const SurfaceApproximation& surface,
+             Batch& batch)
 {
-    batchNodes.clear();
-    batchDatas.clear();
+    batch.clear();
 
     //are any more batches even possible
-    int numNodes = static_cast<int>(remainingRenderNodes.size());
+    size_t numNodes = surface.visibles.size() - batchIndex;
     if (numNodes == 0)
         return;
 
@@ -391,21 +359,19 @@ nextGpuBatch(GLContextData& contextData, NodeMainDatas& batchNodes,
     gpuCache.coverage.reset(numNodes);
     gpuCache.lineData.reset(numNodes);
 
-    NodeMainDatas::iterator it = remainingRenderNodes.begin();
-    for (; it!=remainingRenderNodes.end(); ++it)
+    numNodes = surface.visibles.size();
+    for (; batchIndex<numNodes; ++batchIndex)
     {
         //make sure the cached data is up to date
-        NodeGpuData gpuData;
-        if (!streamGpuData(contextData, *it, gpuData))
+        BatchElement batchel;
+        batchel.main = surface.visible(batchIndex);
+        if (!streamGpuData(contextData, batchel))
             break;
+        CHECK_GLA;
 
         //add the node and data to the current batch
-        batchNodes.push_back(*it);
-        batchDatas.push_back(gpuData);
+        batch.push_back(batchel);
     }
-
-    //remove all the nodes that made it to the current batch
-    remainingRenderNodes.erase(remainingRenderNodes.begin(), it);
 }
 
 
@@ -483,7 +449,7 @@ ret = cache.find(index);\
 if (ret == NULL)\
     ret = cache.grabBuffer(check)
 
-const DataManager::NodeMainBuffer DataManager::
+const NodeMainBuffer DataManager::
 grabMainBuffer(const TreeIndex& index, bool grabCurrent) const
 {
     MainCache& mc = CACHE->getMainCache();
@@ -513,10 +479,11 @@ releaseMainBuffer(const TreeIndex& index, const NodeMainBuffer& buffer) const
 
 
 bool DataManager::
-streamGpuData(GLContextData& contextData,
-              NodeMainData& main, NodeGpuData& gpu)
+streamGpuData(GLContextData& contextData, BatchElement& batchel)
 {
     GpuCache& cache        = CACHE->getGpuCache(contextData);
+    NodeMainData& main     = batchel.main;
+    NodeGpuData&  gpu      = batchel.gpu;
     const TreeIndex& index = main.node->index;
 
     CHECK_GLA;

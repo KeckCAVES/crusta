@@ -406,7 +406,7 @@ getFrustumFromVrui(GLContextData& contextData)
 
 
 void QuadTerrain::
-prepareDisplay(GLContextData& contextData, MainDatas& nodes)
+prepareDisplay(GLContextData& contextData, SurfaceApproximation& surface)
 {
     //setup the evaluators
     FrustumVisibility visibility;
@@ -422,14 +422,15 @@ prepareDisplay(GLContextData& contextData, MainDatas& nodes)
     /* traverse the terrain tree, update as necessary and collect the current
        tree front */
     MainBuffer rootBuf = getRootBuffer();
-    prepareDisplay(visibility, lod, rootBuf, nodes, dataRequests);
+    prepareDisplay(visibility, lod, rootBuf, surface, dataRequests);
 
     //merge the data requests
     DATAMANAGER->request(dataRequests);
 }
 
 void QuadTerrain::
-display(GLContextData& contextData, CrustaGlData* crustaGl, MainDatas& nodes)
+display(GLContextData& contextData, CrustaGlData* crustaGl,
+        SurfaceApproximation& surface)
 {
     GpuCache& gpuCache = CACHE->getGpuCache(contextData);
 
@@ -489,21 +490,19 @@ display(GLContextData& contextData, CrustaGlData* crustaGl, MainDatas& nodes)
     glPushMatrix();
 
     //render the terrain nodes in batches
-    MainDatas batchNodes;
-    GpuDatas  batchDatas;
-    DATAMANAGER->startGpuBatch(contextData, nodes, batchNodes, batchDatas);
-    while (!batchNodes.empty())
+    DataManager::Batch batch;
+    DATAMANAGER->startGpuBatch(contextData, surface, batch);
+    while (!batch.empty())
     {
         //draw the nodes of the current batch
-        GpuDatas::const_iterator git = batchDatas.begin();
-        for (MainDatas::const_iterator mit=batchNodes.begin();
-             mit!=batchNodes.end(); ++mit, ++git)
+        for (DataManager::Batch::const_iterator it=batch.begin();
+             it!=batch.end(); ++it)
         {
-            drawNode(contextData, crustaGl, *mit, *git);
+            drawNode(contextData, crustaGl, it->main, it->gpu);
         }
 
         //grab the next batch
-        DATAMANAGER->nextGpuBatch(contextData, batchNodes, batchDatas);
+        DATAMANAGER->nextGpuBatch(contextData, surface, batch);
     }
 
     //restore the GL transform as it was before
@@ -1544,7 +1543,7 @@ crustaGl->terrainShader.enable();
 
 void QuadTerrain::
 prepareDisplay(FrustumVisibility& visibility, FocusViewEvaluator& lod,
-               MainBuffer& buf, MainDatas& renders,
+               MainBuffer& buf, SurfaceApproximation& surface,
                DataManager::Requests& requests)
 {
     MapManager* mapMan = crusta->getMapManager();
@@ -1552,7 +1551,7 @@ prepareDisplay(FrustumVisibility& visibility, FocusViewEvaluator& lod,
     //confirm current node as being active
     DATAMANAGER->touch(buf);
 
-    DataManager::NodeMainData data = DATAMANAGER->getData(buf);
+    NodeMainData data = DATAMANAGER->getData(buf);
 
 ///\todo generalize this to an API that makes sure the node is ready for eval
     //make sure we have proper bounding spheres
@@ -1573,7 +1572,7 @@ prepareDisplay(FrustumVisibility& visibility, FocusViewEvaluator& lod,
             //does there exist child data for refinement
             bool allgood = DATAMANAGER->existsChildData(data);
             //check if all the children are available
-            DataManager::NodeMainBuffer children[4];
+            NodeMainBuffer children[4];
             bool validChildren[4] = {false, false, false, false};
             if (allgood)
             {
@@ -1598,7 +1597,7 @@ if (allgood && data.node->lineCoverageDirty)
 {
     for (int i=0; i<4; ++i)
     {
-        DataManager::NodeMainData child = DATAMANAGER->getData(children[i]);
+        NodeMainData child = DATAMANAGER->getData(children[i]);
 CRUSTA_DEBUG(60, std::cerr << "***COVDOWN parent(" << data.node->index <<
 ")    " << "n(" << data.node->index << ")\n\n";)
         mapMan->inheritShapeCoverage(*data.node, *child.node);
@@ -1611,7 +1610,7 @@ CRUSTA_DEBUG(60, std::cerr << "***COVDOWN parent(" << data.node->index <<
             if (allgood)
             {
                 for (int i=0; i<4; ++i)
-                    prepareDisplay(visibility,lod,children[i],renders,requests);
+                    prepareDisplay(visibility,lod,children[i],surface,requests);
             }
             else
             {
@@ -1622,12 +1621,14 @@ CRUSTA_DEBUG(60, std::cerr << "***COVDOWN parent(" << data.node->index <<
                         DATAMANAGER->touch(children[i]);
                 }
                 //add the current node to the current representation
-                renders.push_back(data);
+                surface.add(data, true);
             }
         }
         else
-            renders.push_back(data);
+            surface.add(data, true);
     }
+    else
+        surface.add(data, false);
 }
 
 

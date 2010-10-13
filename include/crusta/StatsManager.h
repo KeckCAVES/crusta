@@ -42,7 +42,7 @@ public:
     static void start(Stat stat);
     static void stop(Stat stat);
 
-    static void extractTileStats(const DataManager::NodeMainDatas& nodes);
+    static void extractTileStats(const SurfaceApproximation& surface);
     static void incrementDataUpdated();
 };
 

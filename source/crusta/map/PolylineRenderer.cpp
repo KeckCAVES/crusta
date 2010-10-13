@@ -26,10 +26,8 @@ PolylineRenderer(Crusta* iCrusta) :
 
 
 void PolylineRenderer::
-display(const DataManager::NodeMainDatas& nodes,
-        GLContextData& contextData) const
+display(GLContextData& contextData, const SurfaceApproximation& surface) const
 {
-    typedef DataManager::NodeMainDatas     Nodes;
     typedef NodeData::ShapeCoverage        Coverage;
     typedef Shape::ControlPointHandleList  HandleList;
     typedef Shape::ControlPointConstHandle Handle;
@@ -46,9 +44,10 @@ display(const DataManager::NodeMainDatas& nodes,
     glPolygonOffset(1.0f, 50.0f);
 
     //draw the fragments of each node
-    for (Nodes::const_iterator nit=nodes.begin(); nit!=nodes.end(); ++nit)
+    size_t numNodes = surface.visibles.size();
+    for (size_t i=0; i<numNodes; ++i)
     {
-        const NodeData&                node     = *nit->node;
+        const NodeData&                node     = *surface.visible(i).node;
         const NodeData::ShapeCoverage& coverage = node.lineCoverage;
         const Point3&                  centroid = node.centroid;
 

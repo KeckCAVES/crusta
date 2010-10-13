@@ -65,19 +65,18 @@ stop(Stat stat)
 }
 
 void StatsManager::
-extractTileStats(const DataManager::NodeMainDatas& nodes)
+extractTileStats(const SurfaceApproximation& surface)
 {
 #if CRUSTA_RECORD_STATS
-    typedef std::vector<NodeData>   Nodes;
     typedef NodeData::ShapeCoverage Coverage;
 
-    numTiles = static_cast<int>(nodes.size());
+    numTiles = static_cast<int>(surface.visibles.size());
 
     //go through all the nodes provided
-    for (Nodes::const_iterator nit=nodes.begin(); nit!=nodes.end(); ++nit)
+    for (int i=0; i<numTiles; ++i))
     {
-        const NodeData* const node     = nit->node;
-        const Coverage&       coverage = node->lineCoverage;
+        const NodeData& node     = *surface.visible(i).node;
+        const Coverage& coverage = node.lineCoverage;
 
         if (coverage.empty())
             continue;

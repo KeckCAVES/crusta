@@ -14,6 +14,7 @@
 #include <crusta/FocusViewEvaluator.h>
 #include <crusta/map/Shape.h>
 #include <crusta/QuadCache.h>
+#include <crusta/SurfaceApproximation.h>
 
 BEGIN_CRUSTA
 
@@ -32,11 +33,11 @@ struct CrustaGlData;
 class QuadTerrain : public CrustaComponent
 {
 public:
-    typedef DataManager::NodeMainBuffer MainBuffer;
-    typedef DataManager::NodeMainData   MainData;
-    typedef DataManager::NodeMainDatas  MainDatas;
-    typedef DataManager::NodeGpuData    GpuData;
-    typedef DataManager::NodeGpuDatas   GpuDatas;
+    typedef NodeMainBuffer       MainBuffer;
+    typedef NodeMainData         MainData;
+    typedef NodeMainDatas        MainDatas;
+    typedef NodeGpuData          GpuData;
+    typedef NodeGpuDatas         GpuDatas;
 
     QuadTerrain(uint8 patch, const Scope& scope, Crusta* iCrusta);
 
@@ -64,10 +65,11 @@ public:
     /** prepareDiplay has several functions:
         1. issue requests for loading in new nodes (from splits or merges)
         2. provide the list of nodes that will be rendered for the frame */
-    void prepareDisplay(GLContextData& contextData, MainDatas& nodes);
+    void prepareDisplay(GLContextData& contextData,
+                        SurfaceApproximation& surface);
     /** issues the drawing commands for the render set */
     static void display(GLContextData& contextData, CrustaGlData* crustaGl,
-                        MainDatas& nodes);
+                        SurfaceApproximation& surface);
 
 /** display bounding spheres for debugging purposes or not */
 static bool displayDebuggingBoundingSpheres;
@@ -143,7 +145,7 @@ protected:
     /** traverse the terrain tree, compute the appropriate surface approximation
         and populate data requests for need uncached data */
     void prepareDisplay(FrustumVisibility& visibility, FocusViewEvaluator& lod,
-                     MainBuffer& buffer, MainDatas& renders,
+                     MainBuffer& buffer, SurfaceApproximation& surface,
                      DataManager::Requests& requests);
 
     /** index of the root patch for this terrain */

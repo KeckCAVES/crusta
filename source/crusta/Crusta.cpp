@@ -36,8 +36,8 @@ BEGIN_CRUSTA
 
 
 #if CRUSTA_ENABLE_DEBUG
-int CRUSTA_DEBUG_LEVEL_MIN = 1;
-int CRUSTA_DEBUG_LEVEL_MAX = 17;
+int CRUSTA_DEBUG_LEVEL_MIN = 100;
+int CRUSTA_DEBUG_LEVEL_MAX = 100;
 #endif //CRUSTA_ENABLE_DEBUG
 
 #if DEBUG_INTERSECT_CRAP
@@ -188,7 +188,7 @@ init(const std::string& demFileBase, const std::string& colorFileBase,
     for (uint i=0; i<numPatches; ++i)
     {
         renderPatches[i] = new QuadTerrain(i, polyhedron.getScope(i), this);
-        const DataManager::NodeMainData& root = renderPatches[i]->getRootNode();
+        const NodeMainData& root = renderPatches[i]->getRootNode();
         globalElevationRange[0] = std::min(
             globalElevationRange[0], Scalar(root.node->elevationRange[0]));
         globalElevationRange[1] = std::max(
@@ -232,8 +232,8 @@ delete CRUSTA_FRAMERATE_RECORDER;
 Point3 Crusta::
 snapToSurface(const Point3& pos, Scalar elevationOffset)
 {
-    typedef DataManager::NodeMainBuffer MainBuffer;
-    typedef DataManager::NodeMainData   MainData;
+    typedef NodeMainBuffer MainBuffer;
+    typedef NodeMainData   MainData;
 
 //- find the base patch
     MainData nodeData;
@@ -422,7 +422,7 @@ CrustaVisualizer::peek();
     Point3 entry = ray(gin);
     const QuadTerrain* patch = NULL;
     NodeData*          node  = NULL;
-    DataManager::NodeMainData nodeData;
+    NodeMainData nodeData;
     for (RenderPatches::const_iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
     {
@@ -506,7 +506,7 @@ intersect(Shape::ControlPointHandle start,
     const Point3&      entry = start->pos;
     const QuadTerrain* patch = NULL;
     const NodeData*    node  = NULL;
-    DataManager::NodeMainData nodeData;
+    NodeMainData nodeData;
 
     for (RenderPatches::const_iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
@@ -709,21 +709,21 @@ display(GLContextData& contextData)
     CrustaGlData* glData = contextData.retrieveDataItem<CrustaGlData>(this);
     glData->gpuCache = &CACHE->getGpuCache(contextData);
 
-//- prepare the renderable representation
-    DataManager::NodeMainDatas renderNodes;
+//- prepare the surface approximation and renderable representation
+    SurfaceApproximation surface;
 
     //generate the terrain representation
     for (RenderPatches::const_iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
     {
-        (*it)->prepareDisplay(contextData, renderNodes);
+        (*it)->prepareDisplay(contextData, surface);
         CHECK_GLA
     }
 
-statsMan.extractTileStats(renderNodes);
+statsMan.extractTileStats(surface);
 
-///\todo remove
-//std::cerr << "Num render nodes: " << renderNodes.size() << std::endl;
+CRUSTA_DEBUG_OUT(50, "Number of nodes to render: %i\n",
+                 static_cast<int>(surface.visibles.size()));
 
     GLint activeTexture;
     glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
@@ -733,7 +733,7 @@ statsMan.extractTileStats(renderNodes);
 ///\todo integrate properly (VIS 2010)
     if (SETTINGS->decorateVectorArt)
     {
-        mapMan->updateLineData(renderNodes);
+        mapMan->updateLineData(surface);
         CHECK_GLA
     }
 
@@ -790,14 +790,14 @@ if (SETTINGS->decorateVectorArt)
     }
     CHECK_GLA
 
-    QuadTerrain::display(contextData, glData, renderNodes);
+    QuadTerrain::display(contextData, glData, surface);
     CHECK_GLA
 
     glData->terrainShader.disable();
     CHECK_GLA
 
     //let the map manager draw all the mapping stuff
-    mapMan->display(renderNodes, contextData);
+    mapMan->display(contextData, surface);
     CHECK_GLA
 
     glPopAttrib();
@@ -839,7 +839,7 @@ confirmLineCoverageRemoval(Shape* shape, Shape::ControlPointHandle cp)
     for (RenderPatches::const_iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
     {
-        const DataManager::NodeMainData& root = (*it)->getRootNode();
+        const NodeMainData& root = (*it)->getRootNode();
         (*it)->confirmLineCoverageRemoval(root, shape, cp);
     }
 }
@@ -850,7 +850,7 @@ validateLineCoverage()
     for (RenderPatches::const_iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
     {
-        const DataManager::NodeMainData& root = (*it)->getRootNode();
+        const NodeMainData& root = (*it)->getRootNode();
         (*it)->validateLineCoverage(root);
     }
 }

@@ -78,13 +78,13 @@ public:
     void inheritShapeCoverage(const NodeData& parent, NodeData& child);
 
     /** generate line data for the subset of render nodes that are outdated */
-    void updateLineData(DataManager::NodeMainDatas& nodes);
+    void updateLineData(SurfaceApproximation& surface);
 
     void processVerticalScaleChange();
 
     void frame();
-    void display(const DataManager::NodeMainDatas& nodes,
-                 GLContextData& contextData) const;
+    void display(GLContextData& contextData,
+                 const SurfaceApproximation& surface) const;
 
     void addMenuEntry(GLMotif::Menu* mainMenu);
     void openSymbolsGroupCallback(GLMotif::Button::SelectCallbackData* cbData);

@@ -82,6 +82,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/QuadCache.h
     ../include/crusta/QuadCache.hpp
     ../include/crusta/QuadNodeData.h
+    ../include/crusta/QuadNodeDataBundles.h
     ../include/crusta/QuadTerrain.h
     ../include/crusta/QuadtreeFile.h
     ../include/crusta/QuadtreeFile.hpp
@@ -94,6 +95,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/Section.h
     ../include/crusta/Sphere.h
     ../include/crusta/StatsManager.h
+    ../include/crusta/SurfaceApproximation.h
     ../include/crusta/SurfaceTool.h
     ../include/crusta/Timer.h
     ../include/crusta/Tool.h
@@ -132,11 +134,13 @@ add_library(CrustaCore SHARED
     ../source/crusta/map/Shape.cpp
     ../source/crusta/QuadCache.cpp
     ../source/crusta/QuadNodeData.cpp
+    ../source/crusta/QuadNodeDataBundles.cpp
     ../source/crusta/QuadTerrain.cpp
     ../source/crusta/Scope.cpp
     ../source/crusta/Sphere.cpp
     ../source/crusta/Section.cpp
     ../source/crusta/StatsManager.cpp
+    ../source/crusta/SurfaceApproximation.cpp
     ../source/crusta/SurfaceTool.cpp
     ../source/crusta/Tool.cpp
     ../source/crusta/TreeIndex.cpp
