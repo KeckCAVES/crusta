@@ -262,9 +262,9 @@ showDataDialogCallback(GLMotif::Button::SelectCallbackData*)
 void CrustaApp::
 loadDemCallback(GLMotif::Button::SelectCallbackData* cbData)
 {
-    GLMotif::FileSelectionDialog* fileDialog =
-        new GLMotif::FileSelectionDialog(Vrui::getWidgetManager(),
-                                         "Load Crusta Elevation", 0, NULL);
+    GLMotif::FileAndFolderSelectionDialog* fileDialog =
+        new GLMotif::FileAndFolderSelectionDialog(Vrui::getWidgetManager(),
+            "Load Crusta Elevation", 0, NULL);
     fileDialog->getOKCallbacks().add(this,
         &CrustaApp::loadDemFileOkCallback);
     fileDialog->getCancelCallbacks().add(this,
@@ -275,7 +275,7 @@ loadDemCallback(GLMotif::Button::SelectCallbackData* cbData)
 
 void CrustaApp::
 loadDemFileOkCallback(
-    GLMotif::FileSelectionDialog::OKCallbackData* cbData)
+    GLMotif::FileAndFolderSelectionDialog::OKCallbackData* cbData)
 {
     //save the selected file in the corresponding label
     dataDemFile->setLabel(cbData->selectedFileName.c_str());
@@ -285,18 +285,18 @@ loadDemFileOkCallback(
 
 void CrustaApp::
 loadDemFileCancelCallback(
-    GLMotif::FileSelectionDialog::CancelCallbackData* cbData)
+    GLMotif::FileAndFolderSelectionDialog::CancelCallbackData* cbData)
 {
     //destroy the file selection dialog
     Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
 }
 
 void CrustaApp::
-loadColorCallback(GLMotif::Button::SelectCallbackData* cbData)
+loadColorCallback(GLMotif::Button::SelectCallbackData*)
 {
-    GLMotif::FileSelectionDialog* fileDialog =
-        new GLMotif::FileSelectionDialog(Vrui::getWidgetManager(),
-                                         "Load Crusta Color", 0, NULL);
+    GLMotif::FileAndFolderSelectionDialog* fileDialog =
+        new GLMotif::FileAndFolderSelectionDialog(Vrui::getWidgetManager(),
+            "Load Crusta Color", 0, NULL);
     fileDialog->getOKCallbacks().add(this,
         &CrustaApp::loadColorFileOkCallback);
     fileDialog->getCancelCallbacks().add(this,
@@ -307,7 +307,7 @@ loadColorCallback(GLMotif::Button::SelectCallbackData* cbData)
 
 void CrustaApp::
 loadColorFileOkCallback(
-    GLMotif::FileSelectionDialog::OKCallbackData* cbData)
+    GLMotif::FileAndFolderSelectionDialog::OKCallbackData* cbData)
 {
     //save the selected file in the corresponding label
     dataColorFile->setLabel(cbData->selectedFileName.c_str());
@@ -317,7 +317,7 @@ loadColorFileOkCallback(
 
 void CrustaApp::
 loadColorFileCancelCallback(
-    GLMotif::FileSelectionDialog::CancelCallbackData* cbData)
+    GLMotif::FileAndFolderSelectionDialog::CancelCallbackData* cbData)
 {
     //destroy the file selection dialog
     Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);

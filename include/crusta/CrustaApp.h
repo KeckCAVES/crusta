@@ -2,7 +2,7 @@
 #define _CrustaApp_H_
 
 #include <GLMotif/Button.h>
-#include <GLMotif/FileSelectionDialog.h>
+#include <GLMotif/FileAndFolderSelectionDialog.h>
 #include <GLMotif/Slider.h>
 #include <GLMotif/ToggleButton.h>
 
@@ -47,14 +47,14 @@ private:
     void showDataDialogCallback(GLMotif::Button::SelectCallbackData* cbData);
     void loadDemCallback(GLMotif::Button::SelectCallbackData* cbData);
     void loadDemFileOkCallback(
-        GLMotif::FileSelectionDialog::OKCallbackData* cbData);
+        GLMotif::FileAndFolderSelectionDialog::OKCallbackData* cbData);
     void loadDemFileCancelCallback(
-        GLMotif::FileSelectionDialog::CancelCallbackData* cbData);
+        GLMotif::FileAndFolderSelectionDialog::CancelCallbackData* cbData);
     void loadColorCallback(GLMotif::Button::SelectCallbackData* cbData);
     void loadColorFileOkCallback(
-        GLMotif::FileSelectionDialog::OKCallbackData* cbData);
+        GLMotif::FileAndFolderSelectionDialog::OKCallbackData* cbData);
     void loadColorFileCancelCallback(
-        GLMotif::FileSelectionDialog::CancelCallbackData* cbData);
+        GLMotif::FileAndFolderSelectionDialog::CancelCallbackData* cbData);
     void loadDataOkCallback(GLMotif::Button::SelectCallbackData* cbData);
     void loadDataCancelCallback(GLMotif::Button::SelectCallbackData* cbData);
 
