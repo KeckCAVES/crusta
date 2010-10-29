@@ -237,7 +237,7 @@ const char* LightingShader::applyAttenuatedSpotLightTemplate=
 
 const char* LightingShader::fetchTerrainColorAsConstant =
 "\
-    vec4 terrainColor = vec4(1.0); //white\n\
+    vec4 terrainColor = vec4(0.6); //60% grey\n\
 ";
 
 const char* LightingShader::fetchTerrainColorFromColorMap =

@@ -213,6 +213,9 @@ getFactory() const
 void MapTool::
 frame()
 {
+if (PROJECTION_FAILED)
+    return;
+
 statsMan.start(StatsManager::EDITLINE);
 
     //handle motion

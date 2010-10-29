@@ -115,6 +115,7 @@ frame()
             transformedDevice->setDeviceRayDirection(
                 dev->getDeviceRayDirection());
             projectionFailed = true;
+PROJECTION_FAILED = true;
             return;
         }
 
@@ -127,6 +128,7 @@ frame()
             physicalFrame.getTranslation(), physicalFrame.getRotation()));
 
         projectionFailed = false;
+PROJECTION_FAILED = false;
     }
     else
     {

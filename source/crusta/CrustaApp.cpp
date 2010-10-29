@@ -47,6 +47,9 @@
 #include <crusta/DebugTool.h>
 #endif //CRUSTA_ENABLE_DEBUG
 
+///\todo debug remove
+#include <crusta/SurfaceTool.h>
+
 BEGIN_CRUSTA
 
 CrustaApp::
@@ -723,6 +726,9 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
 void CrustaApp::
 toolDestructionCallback(Vrui::ToolManager::ToolDestructionCallbackData* cbData)
 {
+    SurfaceTool* surface = dynamic_cast<SurfaceTool*>(cbData->tool);
+    if (surface != NULL)
+        PROJECTION_FAILED = false;
 #if CRUSTA_ENABLE_DEBUG
     if (cbData->tool == crusta->debugTool)
         crusta->debugTool = NULL;

@@ -89,6 +89,8 @@ typedef Geometry::Ray<Scalar, 3>    Ray;
 static const uint   TILE_RESOLUTION          = 65;
 static const float  TILE_TEXTURE_COORD_STEP  = 1.0 / TILE_RESOLUTION;
 
+extern bool PROJECTION_FAILED;
+
 END_CRUSTA
 
 #endif //_basics_H_

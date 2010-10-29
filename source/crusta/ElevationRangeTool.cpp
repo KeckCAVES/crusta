@@ -186,7 +186,10 @@ getFactory() const
 void ElevationRangeTool::
 frame()
 {
-    //grab the current tool position and map it to the unscaled globe
+ if (PROJECTION_FAILED)
+    return;
+
+   //grab the current tool position and map it to the unscaled globe
     Point3 pos;
     if (Vrui::isMaster())
     {
