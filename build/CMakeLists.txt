@@ -106,6 +106,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/VisibilityEvaluator.h
     ../include/crusta/Visualizer.h
     ../include/crusta/TextureAtlas.h
+    ../include/GL/Extensions/GLEXTTextureArray.h
     ../include/GLMotif/ColorHexagon.h
     ../include/GLMotif/ColorMap.h
     ../include/GLMotif/ColorPicker.h
@@ -147,6 +148,7 @@ add_library(CrustaCore SHARED
     ../source/crusta/Triacontahedron.cpp
     ../source/crusta/ViewLod.cpp
     ../source/crusta/Visualizer.cpp
+    ../source/GL/Extensions/GLEXTTextureArray.cpp
     ../source/GLMotif/ColorHexagon.cpp
     ../source/GLMotif/ColorMap.cpp
     ../source/GLMotif/ColorPicker.cpp

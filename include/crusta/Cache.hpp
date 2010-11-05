@@ -287,6 +287,7 @@ template <typename BufferParam>
 void CacheUnit<BufferParam>::
 printCache()
 {
+#if CRUSTA_ENABLE_DEBUG
 if (name != std::string("GpuGeometry"))
     return;
 
@@ -318,12 +319,14 @@ if (name != std::string("GpuGeometry"))
                 it->index.med_str().c_str(), it->buffer->frameStamp);
     }
     fprintf(CRUSTA_DEBUG_OUTPUT_DESTINATION, "\n\n");
+#endif //CRUSTA_ENABLE_DEBUG
 }
 
 template <typename BufferParam>
 void CacheUnit<BufferParam>::
 printLru(const char* cause)
 {
+#if CRUSTA_ENABLE_DEBUG
 if (name != std::string("GpuGeometry"))
     return;
 
@@ -338,6 +341,7 @@ if (name != std::string("GpuGeometry"))
                 it->index.med_str().c_str(), it->buffer->frameStamp);
     }
     fprintf(CRUSTA_DEBUG_OUTPUT_DESTINATION, "\n\n");
+#endif //CRUSTA_ENABLE_DEBUG
 }
 
 template <typename BufferParam>

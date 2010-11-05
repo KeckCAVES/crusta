@@ -41,6 +41,13 @@ getGpuCache(GLContextData& contextData)
 void Cache::
 initContext(GLContextData& contextData) const
 {
+    //initialize the required extensions
+    if(!GLEXTTextureArray::isSupported())
+    {
+        Misc::throwStdErr("Cache: GL_EXT_texture_array not supported");
+    }
+    GLEXTTextureArray::initExtension();
+
     GlData*   glData   = new GlData;
     GpuCache& gpuCache = glData->gpuCache;
 
