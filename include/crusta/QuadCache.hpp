@@ -1,4 +1,3 @@
-#include <GL/Extensions/GLEXTTextureArray.h>
 #include <Math/Constants.h>
 #include <Misc/ThrowStdErr.h>
 

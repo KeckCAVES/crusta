@@ -3,6 +3,7 @@
 
 #include <map>
 
+#include <GL/GlewObject.h>
 #include <GL/GLVertex.h>
 
 #include <crusta/map/Shape.h>

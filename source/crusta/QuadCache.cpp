@@ -41,13 +41,6 @@ getGpuCache(GLContextData& contextData)
 void Cache::
 initContext(GLContextData& contextData) const
 {
-    //initialize the required extensions
-    if(!GLEXTTextureArray::isSupported())
-    {
-        Misc::throwStdErr("Cache: GL_EXT_texture_array not supported");
-    }
-    GLEXTTextureArray::initExtension();
-
     GlData*   glData   = new GlData;
     GpuCache& gpuCache = glData->gpuCache;
 
@@ -63,7 +56,7 @@ initContext(GLContextData& contextData) const
                            GL_RGBA32F_ARB, GL_LINEAR);
     gpuCache.coverage.init("GpuCoverage", SETTINGS->cacheGpuCoverageSize,
                            SETTINGS->lineCoverageTexSize,
-                           GL_LUMINANCE_ALPHA, GL_NEAREST);
+                           GL_RG, GL_NEAREST);
 
     contextData.addDataItem(this, glData);
 }

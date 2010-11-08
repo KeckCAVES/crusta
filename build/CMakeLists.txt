@@ -22,7 +22,7 @@ set(CRUSTA_LIBRARY_PATH "${CMAKE_INSTALL_PREFIX}/lib"
     CACHE PATH "Crusta install library path")
 set(CRUSTA_SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share/crusta"
     CACHE PATH "Crusta install share path")
-add_definitions(-DCRUSTA_SHARE_PATH=\"${CRUSTA_SHARE_PATH}\")
+add_definitions(-DCRUSTA_SHARE_PATH=\"${CRUSTA_SHARE_PATH}\" -DGLEW_MX)
 
 include_directories(${VRUI_INCLUDE_DIR})
 include_directories(../include)
@@ -66,7 +66,6 @@ add_library(CrustaCore SHARED
     ../include/crusta/Ellipsoid.h
     ../include/crusta/FocusViewEvaluator.h
     ../include/crusta/FrustumVisibility.h
-    ../include/crusta/GlProgram.h
     ../include/crusta/Homography.h
     ../include/crusta/IdGenerator.h
     ../include/crusta/LightingShader.h
@@ -106,7 +105,10 @@ add_library(CrustaCore SHARED
     ../include/crusta/VisibilityEvaluator.h
     ../include/crusta/Visualizer.h
     ../include/crusta/TextureAtlas.h
-    ../include/GL/Extensions/GLEXTTextureArray.h
+    ../include/GL/glew.h
+    ../include/GL/GlewObject.h
+    ../include/GL/GlProgram.h
+    ../include/GL/glxew.h
     ../include/GLMotif/ColorHexagon.h
     ../include/GLMotif/ColorMap.h
     ../include/GLMotif/ColorPicker.h
@@ -123,7 +125,6 @@ add_library(CrustaCore SHARED
     ../source/crusta/ElevationRangeTool.cpp
     ../source/crusta/FocusViewEvaluator.cpp
     ../source/crusta/FrustumVisibility.cpp
-    ../source/crusta/GlProgram.cpp
     ../source/crusta/Homography.cpp
     ../source/crusta/LightingShader.cpp
     ../source/crusta/LodEvaluator.cpp
@@ -148,7 +149,9 @@ add_library(CrustaCore SHARED
     ../source/crusta/Triacontahedron.cpp
     ../source/crusta/ViewLod.cpp
     ../source/crusta/Visualizer.cpp
-    ../source/GL/Extensions/GLEXTTextureArray.cpp
+    ../source/GL/glew.c
+    ../source/GL/GlewObject.cpp
+    ../source/GL/GlProgram.cpp
     ../source/GLMotif/ColorHexagon.cpp
     ../source/GLMotif/ColorMap.cpp
     ../source/GLMotif/ColorPicker.cpp

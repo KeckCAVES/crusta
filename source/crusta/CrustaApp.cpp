@@ -1,3 +1,5 @@
+#include <GL/GlewObject.h> //must be included before gl.h
+
 #include <crusta/CrustaApp.h>
 
 #include <sstream>
@@ -685,6 +687,7 @@ frame()
 void CrustaApp::
 display(GLContextData& contextData) const
 {
+    GlewObject::enableGlew(contextData);
     crusta->display(contextData);
 }
 

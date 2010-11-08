@@ -1,3 +1,5 @@
+#include <GL/GlewObject.h> //must be included before gl.h
+
 #include <crusta/map/MapManager.h>
 
 #include <algorithm>

@@ -4,9 +4,8 @@
 #include <string>
 #include <vector>
 
-#include <GL/gl.h>
+#include <GL/GlewObject.h>
 #include <GL/GLObject.h>
-#include <GL/GLShader.h>
 #include <Threads/Mutex.h>
 
 #include <crusta/basics.h>

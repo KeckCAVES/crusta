@@ -48,7 +48,8 @@ static const float TEXTURE_COORD_END   = 1.0 - TEXTURE_COORD_START;
 bool QuadTerrain::displayDebuggingBoundingSpheres = false;
 bool QuadTerrain::displayDebuggingGrid            = false;
 
-QuadTerrain::GlData QuadTerrain::glData;
+///\todo this is wrong since it won't ever be deleted. Just to test GlewObject
+QuadTerrain::GlData* QuadTerrain::glData = 0;
 
 
 
@@ -57,6 +58,9 @@ QuadTerrain(uint8 patch, const Scope& scope, Crusta* iCrusta) :
     CrustaComponent(iCrusta), rootIndex(patch)
 {
     DATAMANAGER->loadRoot(crusta, rootIndex, scope);
+///\todo this is bad. Just to test GlewObject
+    if (glData == NULL)
+        glData = new GlData;
 }
 
 
@@ -259,8 +263,9 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
     toNormalized.computeProjective();
 
     //switch to the line coverage rendering shader
-    GlData::Item* glItem = contextData.retrieveDataItem<GlData::Item>(&glData);
-    glItem->lineCoverageShader.useProgram();
+///\todo this is bad. Just to test GlewObject
+    GlData::Item* glItem = contextData.retrieveDataItem<GlData::Item>(glData);
+    glItem->lineCoverageShader.push();
 /**\todo it seems there might be an issue in converting the matrix to float or
 simply float processing the transformation */
 #if COVERAGE_PROJECTION_IN_GL
@@ -314,7 +319,7 @@ simply float processing the transformation */
              ++hit, ++oit)
         {
             //pass the offset along
-            Color color((*oit)[0], (*oit)[0], (*oit)[0], (*oit)[1]);
+            Color color((*oit)[0], (*oit)[1], (*oit)[0], (*oit)[1]);
             glColor(color);
 
             Handle cur  = *hit;
@@ -346,6 +351,7 @@ simply float processing the transformation */
 
     //clean up all the state changes
     glPopAttrib();
+    glItem->lineCoverageShader.pop();
 }
 
 
@@ -538,15 +544,15 @@ Item()
 
     std::string fp = "void main()\n{\ngl_FragColor = gl_Color;\n}\n";
 
-    lineCoverageShader.compileVertexShaderFromString(vp.c_str());
-    lineCoverageShader.compileFragmentShaderFromString(fp.c_str());
-    lineCoverageShader.linkShader();
+    lineCoverageShader.addString(GL_VERTEX_SHADER_ARB, vp);
+    lineCoverageShader.addString(GL_FRAGMENT_SHADER_ARB, fp);
+    lineCoverageShader.link();
 
 #if COVERAGE_PROJECTION_IN_GL
-    lineCoverageShader.useProgram();
+    lineCoverageShader.push();
     lineCoverageTransformUniform = lineCoverageShader.getUniformLocation(
         "transform");
-    lineCoverageShader.disablePrograms();
+    lineCoverageShader.pop();
 #endif //COVERAGE_PROJECTION_IN_GL
 }
 
@@ -561,6 +567,9 @@ QuadTerrain::GlData::Item::
 void QuadTerrain::GlData::
 initContext(GLContextData& contextData) const
 {
+///\todo fixme, GlProgram shouldn't require code here
+    GlewObject::enableGlew(contextData); //needed for the GlProgram
+
     Item* item = new Item;
     contextData.addDataItem(this, item);
 }
@@ -1437,7 +1446,8 @@ drawNode(GLContextData& contextData, CrustaGlData* crustaGl,
     //enable the terrain rendering shader
     crustaGl->terrainShader.enable();
 
-    GlData::Item* glItem = contextData.retrieveDataItem<GlData::Item>(&glData);
+///\todo this is bad. Just to test GlewObject
+    GlData::Item* glItem = contextData.retrieveDataItem<GlData::Item>(glData);
     glBindBuffer(GL_ARRAY_BUFFER,         glItem->vertexAttributeTemplate);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glItem->indexTemplate);
 
@@ -1464,9 +1474,12 @@ drawNode(GLContextData& contextData, CrustaGlData* crustaGl,
     {
         //setup the shader for decorated line drawing
         crustaGl->terrainShader.setLineNumSegments(main.lineNumSegments);
-        crustaGl->terrainShader.setCoverageSubRegion(*gpuData.coverage);
-        crustaGl->terrainShader.setLineDataSubRegion(
-            (SubRegion)(*gpuData.lineData));
+        if (main.lineNumSegments > 0)
+        {
+            crustaGl->terrainShader.setCoverageSubRegion(*gpuData.coverage);
+            crustaGl->terrainShader.setLineDataSubRegion(
+                (SubRegion)(*gpuData.lineData));
+        }
         CHECK_GLA
     }
 

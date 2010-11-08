@@ -19,7 +19,7 @@ const float EPSILON = 0.00001;
 
 #define NORMAL   1
 #define TWIST    1
-#define COVERAGE 0
+#define COVERAGE 1
 #define COLORIZE_COVERAGE 0
 
 ///\todo move to uniform specification
@@ -123,9 +123,9 @@ void main()
 
     vec4 coverage = texture2D(lineCoverageTex, texCoord);
 #if COVERAGE
-    if (coverage.a < 0.5)
+    if (coverage.g < 0.5)
     {
-        if (coverage.a > 0.0)
+        if (coverage.g > 0.0)
             gl_FragColor.rgb = vec3(0.2, 0.8, 0.4);
         else
             gl_FragColor.rgb = vec3(0.0);
@@ -143,11 +143,11 @@ void main()
     vec4 color = vec4(0.0);
 
     //optimize for single coverage
-    if (coverage.a < 0.5)
+    if (coverage.g < 0.5)
     {
         vec2 coordShift = vec2(255.0, 255.0*256.0);
 
-        vec2 off         = coverage.ra * coordShift;
+        vec2 off         = coverage.rg * coordShift;
         off.x           -= 64.0*256.0;
         float segmentOff = off.x + off.y;
 

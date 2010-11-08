@@ -28,8 +28,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <iostream>
 #include <string>
 
-#include <GL/gl.h>
-#include <GL/Extensions/GLARBShaderObjects.h>
+#include <GL/GlewObject.h>
 
 #include <crusta/basics.h>
 #include <crusta/QuadNodeData.h>
@@ -106,6 +105,7 @@ class LightingShader
     void update();
     void updateLightingState(); // Updates tracked lighting state; returns true if shader needs to be recompiled
     void compileShader(void); // Recompiles the point-based lighting shader based on the current states of all OpenGL light sources
+    void compileShaderFromString(GLhandleARB shaderObject,const char* shaderSource);
     void enable(void); // Enables point-based lighting in the current OpenGL context
     void disable(void); // Disables point-based lighting in the current OpenGL context
 

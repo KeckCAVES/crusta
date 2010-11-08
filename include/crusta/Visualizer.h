@@ -24,7 +24,8 @@
 
 #include <vector>
 
-#include <GL/gl.h>
+#include <GL/GlewObject.h>
+
 #include <GL/GLContextData.h>
 #include <GLMotif/Button.h>
 #include <GLMotif/PopupMenu.h>

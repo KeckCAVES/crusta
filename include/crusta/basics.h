@@ -1,6 +1,8 @@
 #ifndef _basics_H_
 #define _basics_H_
 
+#include <GL/GlewObject.h> //must be included before gl.h
+
 #include <cstdlib>
 #include <cstdio>
 #include <stdint.h>

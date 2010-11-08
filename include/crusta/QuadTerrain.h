@@ -5,7 +5,7 @@
 
 #include <GL/GLContextData.h>
 #include <GL/GLObject.h>
-#include <GL/GLShader.h>
+#include <GL/GlProgram.h>
 
 #include <crusta/CrustaComponent.h>
 #include <crusta/CrustaSettings.h>
@@ -102,7 +102,7 @@ protected:
                 transform of the line coverage rendering shader */
             GLint lineCoverageTransformUniform;
             /** line coverage rendering shader */
-            GLShader lineCoverageShader;
+            GlProgram lineCoverageShader;
         };
 
     //- inherited from GLObject
@@ -152,7 +152,7 @@ protected:
     TreeIndex rootIndex;
 
     /** gl data for general terrain use */
-    static GlData glData;
+    static GlData* glData;
 };
 
 END_CRUSTA

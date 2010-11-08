@@ -26,11 +26,6 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <stdio.h>
 #include <iostream>
 #include <Misc/ThrowStdErr.h>
-#include <GL/gl.h>
-#include <GL/GLExtensionManager.h>
-#include <GL/Extensions/GLARBShaderObjects.h>
-#include <GL/Extensions/GLARBVertexShader.h>
-#include <GL/Extensions/GLARBFragmentShader.h>
 
 ///\todo integrate properly (VIS 2010)
 #include <crusta/Crusta.h>
@@ -322,19 +317,6 @@ LightingShader::LightingShader() :
     /* Initialize the light state array: */
     lightStates=new LightState[maxNumLights];
     updateLightingState();
-
-    /* Check for the required OpenGL extensions: */
-    if(!GLARBShaderObjects::isSupported())
-        Misc::throwStdErr("GLShader::GLShader: GL_ARB_shader_objects not supported");
-    if(!GLARBVertexShader::isSupported())
-        Misc::throwStdErr("GLShader::GLShader: GL_ARB_vertex_shader not supported");
-    if(!GLARBFragmentShader::isSupported())
-        Misc::throwStdErr("GLShader::GLShader: GL_ARB_fragment_shader not supported");
-
-    /* Initialize the required extensions: */
-    GLARBShaderObjects::initExtension();
-    GLARBVertexShader::initExtension();
-    GLARBFragmentShader::initExtension();
 
     /* Create the vertex and fragment shaders: */
     vertexShader=glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
@@ -670,7 +652,7 @@ void LightingShader::compileShader()
     std::string vertexShaderSource = vertexShaderUniforms  +
                                      vertexShaderFunctions +
                                      vertexShaderMain;
-    glCompileShaderFromString(vertexShader,vertexShaderSource.c_str());
+    compileShaderFromString(vertexShader,vertexShaderSource.c_str());
 
     /* Compile the standard fragment shader: */
     std::string fragmentShaderSource;
@@ -682,11 +664,11 @@ void LightingShader::compileShader()
     readFileToString(progFile.c_str(), fragmentShaderSource);
 
 try{
-    glCompileShaderFromString(fragmentShader,fragmentShaderSource.c_str());
+    compileShaderFromString(fragmentShader,fragmentShaderSource.c_str());
 }
 catch (std::exception& e){
     std::cerr << e.what() << std::endl;
-    glCompileShaderFromString(fragmentShader, "void main(){gl_FragColor=vec4(1.0);}");
+    compileShaderFromString(fragmentShader, "void main(){gl_FragColor=vec4(1.0);}");
 }
 
     /* Link the program object: */
@@ -702,15 +684,10 @@ catch (std::exception& e){
         GLsizei linkLogSize;
         glGetInfoLogARB(programObject,sizeof(linkLogBuffer),&linkLogSize,linkLogBuffer);
 
-#if 1
         std::cerr << linkLogBuffer << std::endl;
-        glCompileShaderFromString(fragmentShader,
+        compileShaderFromString(fragmentShader,
                                   "void main(){gl_FragColor=vec4(1.0);}");
         glLinkProgramARB(programObject);
-#else
-        /* Signal an error: */
-        Misc::throwStdErr("Error \"%s\" while linking shader program",linkLogBuffer);
-#endif
     }
 
     glUseProgramObjectARB(programObject);
@@ -781,6 +758,33 @@ catch (std::exception& e){
     }
 
     glUseProgramObjectARB(0);
+}
+
+void LightingShader::compileShaderFromString(GLhandleARB shaderObject,const char* shaderSource)
+{
+	/* Determine the length of the source string: */
+	GLint shaderSourceLength=GLint(strlen(shaderSource));
+	
+	/* Upload the shader source into the shader object: */
+	const GLcharARB* ss=reinterpret_cast<const GLcharARB*>(shaderSource);
+	glShaderSourceARB(shaderObject,1,&ss,&shaderSourceLength);
+	
+	/* Compile the shader source: */
+	glCompileShaderARB(shaderObject);
+	
+	/* Check if the shader compiled successfully: */
+	GLint compileStatus;
+	glGetObjectParameterivARB(shaderObject,GL_OBJECT_COMPILE_STATUS_ARB,&compileStatus);
+	if(!compileStatus)
+    {
+		/* Get some more detailed information: */
+		GLcharARB compileLogBuffer[2048];
+		GLsizei compileLogSize;
+		glGetInfoLogARB(shaderObject,sizeof(compileLogBuffer),&compileLogSize,compileLogBuffer);
+		
+		/* Signal an error: */
+		Misc::throwStdErr("glCompileShaderFromString: Error \"%s\" while compiling shader",compileLogBuffer);
+    }
 }
 
 void LightingShader::enable()

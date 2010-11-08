@@ -3,7 +3,6 @@
 #include <Images/Image.h>
 #include <Images/TargaImageFileReader.h>
 #include <Geometry/OrthogonalTransformation.h>
-#include <GL/Extensions/GLEXTFramebufferObject.h>
 #include <GL/GLColorMap.h>
 #include <GL/GLContextData.h>
 #include <GL/GLTransformationWrappers.h>
@@ -89,14 +88,6 @@ CrustaGlData::
 CrustaGlData() :
     gpuCache(NULL)
 {
-    /* Initialize the required extensions: */
-    if(!GLEXTFramebufferObject::isSupported())
-    {
-        Misc::throwStdErr("LightingShader: GL_EXT_framebuffer_object not"
-                          " supported");
-    }
-    GLEXTFramebufferObject::initExtension();
-
     glPushAttrib(GL_TEXTURE_BIT);
 
     glGenTextures(1, &symbolTex);

@@ -3,9 +3,8 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
 
+#include <GL/GlewObject.h>
 #include <Misc/ThrowStdErr.h>
 
 #include <crusta/basics.h>
