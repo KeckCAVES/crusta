@@ -3,22 +3,23 @@
 
 
 #include <list>
+#include <string>
 
-#include <GL/GlewObject.h>
+#include <GL/VruiGlew.h>
 
 
 class GlProgram
 {
 public:
     /** type for list of shader object handles */
-	typedef std::list<GLhandleARB> ShaderList;
+    typedef std::list<GLhandleARB> ShaderList;
     /** type for a handle to an added shader */
     typedef ShaderList::iterator ShaderHandle;
 
     /** creates an "empty" shader */
-	GlProgram();
+    GlProgram();
     /** destroys a shader */
-	~GlProgram();
+    ~GlProgram();
 
     /** loads the shader source from the specified file and compiles it into the
         specified shader component (OpenGL shader type enum) */
@@ -32,38 +33,38 @@ public:
     void clear();
 
     /** links all previously loaded shaders into a shader program */
-	void link();
+    void link();
 
     /** returns the index of a uniform variable defined in the shader program */
-	int getUniformLocation(const std::string& uniformName) const;
+    int getUniformLocation(const std::string& uniformName) const;
     /** returns the index of an attribute defined in the shader program */
     int getAttribLocation(const std::string& attribName) const;
 
     /** installs the shader program in the current OpenGL context and records
         the previously active program.
         \note: only supports a single push/pop. Stack depth = 1 */
-	void push();
+    void push();
     /** restores the program that was active before the push */
-	void pop();
+    void pop();
 
 protected:
      /** loads a shader's source code from a file and returns it as a string */
     std::string load(const std::string& sourceFile) const;
     /** compiles a shader's source code into an existing shader object */
-	void compile(GLhandleARB shader, const std::string& sourceString) const;
-	
+    void compile(GLhandleARB shader, const std::string& sourceString) const;
+
     /** list of handles of compiled shader objects */
-	ShaderList shaders;
+    ShaderList shaders;
     /** handle for the shader program */
-	GLhandleARB program;
+    GLhandleARB program;
     /** index of the previous program recorded at push */
     GLint previousProgram;
-	
+
 private:
     /** prohibit copy constructor */
-	GlProgram(const GlProgram& source);
+    GlProgram(const GlProgram& source);
     /** prohibit assignment operator */
-	GlProgram& operator=(const GlProgram& source);
+    GlProgram& operator=(const GlProgram& source);
 };
 
 #endif //_GlProgram_H_

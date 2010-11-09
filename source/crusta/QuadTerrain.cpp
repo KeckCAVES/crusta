@@ -48,7 +48,7 @@ static const float TEXTURE_COORD_END   = 1.0 - TEXTURE_COORD_START;
 bool QuadTerrain::displayDebuggingBoundingSpheres = false;
 bool QuadTerrain::displayDebuggingGrid            = false;
 
-///\todo this is wrong since it won't ever be deleted. Just to test GlewObject
+///\todo dependency on VruiGlew must be dynamically allocated after VruiGlew
 QuadTerrain::GlData* QuadTerrain::glData = 0;
 
 
@@ -58,9 +58,6 @@ QuadTerrain(uint8 patch, const Scope& scope, Crusta* iCrusta) :
     CrustaComponent(iCrusta), rootIndex(patch)
 {
     DATAMANAGER->loadRoot(crusta, rootIndex, scope);
-///\todo this is bad. Just to test GlewObject
-    if (glData == NULL)
-        glData = new GlData;
 }
 
 
@@ -522,6 +519,20 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
 }
 
 
+void QuadTerrain::
+initGlData()
+{
+    assert(glData == NULL);
+    glData = new GlData;
+}
+
+void QuadTerrain::
+deleteGlData()
+{
+    assert(glData != NULL);
+    delete glData;
+}
+
 QuadTerrain::GlData::Item::
 Item()
 {
@@ -567,8 +578,10 @@ QuadTerrain::GlData::Item::
 void QuadTerrain::GlData::
 initContext(GLContextData& contextData) const
 {
-///\todo fixme, GlProgram shouldn't require code here
-    GlewObject::enableGlew(contextData); //needed for the GlProgram
+/** \todo fixme, GlProgram shouldn't require code here, but the contextData is
+needed for the VruiGlew initialization and GlProgram assumes it is already "in
+context" */
+    VruiGlew::enable(contextData); //needed for the GlProgram
 
     Item* item = new Item;
     contextData.addDataItem(this, item);

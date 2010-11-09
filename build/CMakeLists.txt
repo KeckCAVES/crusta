@@ -106,9 +106,9 @@ add_library(CrustaCore SHARED
     ../include/crusta/Visualizer.h
     ../include/crusta/TextureAtlas.h
     ../include/GL/glew.h
-    ../include/GL/GlewObject.h
     ../include/GL/GlProgram.h
     ../include/GL/glxew.h
+    ../include/GL/VruiGlew.h
     ../include/GLMotif/ColorHexagon.h
     ../include/GLMotif/ColorMap.h
     ../include/GLMotif/ColorPicker.h
@@ -150,8 +150,8 @@ add_library(CrustaCore SHARED
     ../source/crusta/ViewLod.cpp
     ../source/crusta/Visualizer.cpp
     ../source/GL/glew.c
-    ../source/GL/GlewObject.cpp
     ../source/GL/GlProgram.cpp
+    ../source/GL/VruiGlew.cpp
     ../source/GLMotif/ColorHexagon.cpp
     ../source/GLMotif/ColorMap.cpp
     ../source/GLMotif/ColorPicker.cpp

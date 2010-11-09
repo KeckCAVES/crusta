@@ -24,7 +24,7 @@
 
 #include <vector>
 
-#include <GL/GlewObject.h>
+#include <GL/VruiGlew.h> //must be included before gl.h
 
 #include <GL/GLContextData.h>
 #include <GLMotif/Button.h>
@@ -66,7 +66,7 @@ public:
 
     static Color defaultColor;
 
-	Visualizer(int& argc,char**& argv,char**& appDefaults);
+    Visualizer(int& argc,char**& argv,char**& appDefaults);
     ~Visualizer();
 
     static void init();
@@ -83,11 +83,11 @@ public:
     static void peek();
     static void show(const char* message=NULL);
 
-	virtual void display(GLContextData& contextData) const;
-	virtual void frame();
+    virtual void display(GLContextData& contextData) const;
+    virtual void frame();
 
     virtual void resetNavigationCallback(Misc::CallbackData* cbData);
-	void continueCallback(Misc::CallbackData* cbData);
+    void continueCallback(Misc::CallbackData* cbData);
 
 protected:
     static Visualizer*     vis;
@@ -99,11 +99,11 @@ protected:
     Primitive  tempPrimitives[10][2];
     int shownSlot;
 
-	GLMotif::PopupMenu*   popMenu;
+    GLMotif::PopupMenu*   popMenu;
     GLMotif::PopupWindow* continueWindow;
     GLMotif::Button*      continueButton;
 
-	void produceMainMenu();
+    void produceMainMenu();
     void produceContinueWindow();
 
     static Primitive& getNewPrimitive(int temp);

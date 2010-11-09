@@ -1,4 +1,4 @@
-#include <GL/GlewObject.h> //must be included before gl.h
+#include <GL/VruiGlew.h> //must be included before gl.h
 
 #include <crusta/ElevationRangeTool.h>
 

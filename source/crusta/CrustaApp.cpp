@@ -1,4 +1,4 @@
-#include <GL/GlewObject.h> //must be included before gl.h
+#include <GL/VruiGlew.h> //must be included before gl.h
 
 #include <crusta/CrustaApp.h>
 
@@ -687,7 +687,9 @@ frame()
 void CrustaApp::
 display(GLContextData& contextData) const
 {
-    GlewObject::enableGlew(contextData);
+    //make sure the glew context has been made current before any other display
+    VruiGlew::enable(contextData);
+    //let crusta do its thing
     crusta->display(contextData);
 }
 

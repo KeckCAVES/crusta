@@ -1,5 +1,5 @@
-#ifndef _GlewObject_H_
-#define _GlewObject_H_
+#ifndef _VruiGlew_H_
+#define _VruiGlew_H_
 
 
 #include <GL/glew.h>
@@ -9,21 +9,20 @@
 
 class GLContextData;
 
-/** convenience class to add GLEW support to a VRUI application. You application
-    should inherit from GlewObject and make sure to call the enableGlew() during
-    the display call */
-class GlewObject : public GLObject
+/** convenience class to add GLEW support to a VRUI applications. Any glew
+    dependent calls should be made after enable() has been called */
+class VruiGlew : public GLObject
 {
 public:
-    GlewObject();
+    VruiGlew();
 
     /** sets up the GLEW context. Must be called before making any extension
         GL calls */
-    static void enableGlew(GLContextData& contextData);
+    static void enable(GLContextData& contextData);
 
     /** retrieve the GLEW context for the active thread */
-    static GLEWContext* glewGetContext();
-    
+    static GLEWContext* getContext();
+
 private:
     /** stores the GLEW context in the VRUI GL context data */
     struct Item : public GLObject::DataItem
@@ -32,15 +31,17 @@ private:
     };
 
     /** pointer to the glew per thread global context */
-    static GL_THREAD_LOCAL(GlewObject) glewObjectInstance;
+    static GL_THREAD_LOCAL(VruiGlew) singleton;
 
+    /** the current glew context */
     GLEWContext* glewContext;
+
 //- inherited from GLObject
 public:
     virtual void initContext(GLContextData& contextData) const;
 };
 
-#define glewGetContext GlewObject::glewGetContext
+#define glewGetContext VruiGlew::getContext
 
 
-#endif //_GlewObject_H_
+#endif //_VruiGlew_H_

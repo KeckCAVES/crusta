@@ -1,3 +1,6 @@
+#extension GL_EXT_gpu_shader4   : enable
+#extension GL_EXT_texture_array : enable
+
 uniform float lineStartCoord;
 uniform float lineCoordStep;
 
@@ -7,9 +10,14 @@ uniform float lineWidth;
 
 uniform vec3 center;
 
-uniform sampler1D lineDataTex;
-uniform sampler2D lineCoverageTex;
-uniform sampler2D symbolTex;
+uniform vec2  lineDataTexOffset;
+uniform float lineDataTexScale;
+uniform vec3  coverageTexOffset;
+uniform vec2  coverageTexScale;
+
+uniform sampler2D      symbolTex;
+uniform sampler2D      lineDataTex;
+uniform sampler2DArray lineCoverageTex;
 
 varying vec3 position;
 varying vec3 normal;
@@ -19,8 +27,8 @@ const float EPSILON = 0.00001;
 
 #define NORMAL   1
 #define TWIST    1
-#define COVERAGE 1
-#define COLORIZE_COVERAGE 0
+#define COVERAGE 0
+#define COLORIZE_COVERAGE 1
 
 ///\todo move to uniform specification
 #define U_SCALE 0.15
@@ -34,9 +42,23 @@ struct Segment
     vec3 normal;
 };
 
+vec4 sampleLineData(in float tc)
+{
+return texture2D(lineDataTex, vec2(tc, 0.0));
+
+    vec2 tc2 = lineDataTexOffset + vec2((tc * lineDataTexScale), 0.0);
+    return texture2D(lineDataTex, tc2);
+}
+
+vec2 sampleCoverage(in vec2 tc)
+{
+    vec3 tc2 = coverageTexOffset + vec3((tc * coverageTexScale), 0.0);
+    return texture2DArray(lineCoverageTex, tc2).rg;
+}
+
 vec4 read(inout float coord)
 {
-    vec4 r = texture1D(lineDataTex, coord);
+    vec4 r = sampleLineData(coord);
     coord += lineCoordStep;
     return r;
 }
@@ -53,9 +75,9 @@ Segment readSegment(inout float coord)
 
 void computeSegment(in Segment segment, inout vec4 color)
 {
-//color = segment.symbol;
-//color.a = 1.0;
-//return;
+color.rgb = segment.end - position;
+color.a = 1.0;
+return;
 //- compute lateral coordinate v
 
     //compute v without taking distortion into account:
@@ -121,7 +143,7 @@ void main()
     if (lineNumSegments == 0)
         return;
 
-    vec4 coverage = texture2D(lineCoverageTex, texCoord);
+    vec2 coverage = sampleCoverage(texCoord);
 #if COVERAGE
     if (coverage.g < 0.5)
     {
@@ -137,17 +159,17 @@ void main()
 #endif
 
     //do lines overlap this fragment?
-    if (coverage == vec4(0.0))
+    if (false)//coverage == vec2(0.0))
         return;
 
     vec4 color = vec4(0.0);
 
     //optimize for single coverage
-    if (coverage.g < 0.5)
+    if (false)//coverage.g < 0.5)
     {
         vec2 coordShift = vec2(255.0, 255.0*256.0);
 
-        vec2 off         = coverage.rg * coordShift;
+        vec2 off         = coverage * coordShift;
         off.x           -= 64.0*256.0;
         float segmentOff = off.x + off.y;
 

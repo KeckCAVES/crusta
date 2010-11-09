@@ -28,7 +28,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <iostream>
 #include <string>
 
-#include <GL/GlewObject.h>
+#include <GL/VruiGlew.h>
 
 #include <crusta/basics.h>
 #include <crusta/QuadNodeData.h>
@@ -191,9 +191,8 @@ class LightingShader
 
     void setLineDataSubRegion(const SubRegion& s)
     {
-        glUniform3f(lineDataTexOffsetUniform,
-                    s.offset[0], s.offset[1], s.offset[2]);
-        glUniform2f(lineDataTexScaleUniform, s.size[0], s.size[1]);
+        glUniform2f(lineDataTexOffsetUniform, s.offset[0], s.offset[1]);
+        glUniform1f(lineDataTexScaleUniform, s.size[0]);
     }
 };
 

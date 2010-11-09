@@ -1,6 +1,8 @@
 #ifndef _QuadTerrain_H_
 #define _QuadTerrain_H_
 
+#include <GL/VruiGlew.h> //must be included before gl.h
+
 #include <list>
 
 #include <GL/GLContextData.h>
@@ -70,6 +72,15 @@ public:
     /** issues the drawing commands for the render set */
     static void display(GLContextData& contextData, CrustaGlData* crustaGl,
                         SurfaceApproximation& surface);
+
+/** initialize the static gl data.
+\todo required because only the VruiGlew can be statically allocated to make
+sure the glew context is initialized before any other GL initialization. Fix
+involves switching VRUI over to GLEW entirely and having it take care of all the
+context crap */
+static void initGlData();
+/** destroy the static gl data */
+static void deleteGlData();
 
 /** display bounding spheres for debugging purposes or not */
 static bool displayDebuggingBoundingSpheres;
@@ -151,7 +162,8 @@ protected:
     /** index of the root patch for this terrain */
     TreeIndex rootIndex;
 
-    /** gl data for general terrain use */
+    /** gl data for general terrain use.
+    \todo due to VruiGlew dependency must be dynamically allocated */
     static GlData* glData;
 };
 

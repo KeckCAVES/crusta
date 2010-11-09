@@ -561,14 +561,14 @@ streamGpuData(GLContextData& contextData, BatchElement& batchel)
         bool updatedLine = false;
         if (cache.lineData.isGrabbed(lineData) ||
             !cache.lineData.isValid(lineData)  ||
-            gpu.lineData->age != main.node->lineCoverageAge)
+            gpu.lineData->age < main.node->lineCoverageAge)
         {
             //stream the line data from the main representation
             cache.lineData.stream((SubRegion)(*gpu.lineData), GL_RGBA,
                                   GL_FLOAT, &main.node->lineData.front());
             CHECK_GLA;
             //stamp the age of the new data
-            main.node->lineCoverageAge = CURRENT_FRAME;
+            gpu.lineData->age = CURRENT_FRAME;
             updatedLine = true;
         }
         //validate buffer

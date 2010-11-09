@@ -312,10 +312,17 @@ stream(const SubRegion& sub, GLenum dataFormat, GLenum dataType, void* data)
     glPushAttrib(GL_TEXTURE_BIT);
 
     glBindTexture(GL_TEXTURE_2D, texture);
+#if 0
     glTexSubImage2D(
         GL_TEXTURE_2D, 0,
         GLint(sub.offset[0]*texWidth), GLint(sub.offset[1]*texHeight),
-        GLsizei(sub.size[0]*texWidth), GLsizei(sub.size[1]*texHeight),
+        GLsizei(sub.size[0]*texWidth), 1,
+        dataFormat, dataType, data);
+#endif
+    glTexSubImage2D(
+        GL_TEXTURE_2D, 0,
+        0, 0,
+        texWidth, 1,
         dataFormat, dataType, data);
 
     glPopAttrib();

@@ -166,6 +166,8 @@ init(const std::string& demFileBase, const std::string& colorFileBase,
 ///\todo separate crusta the application from a planet instance (current)
     CACHE       = new Cache;
     DATAMANAGER = new DataManager(polyhedron, demFileBase, colorFileBase);
+///\todo VruiGlew dependent dynamic allocation
+    QuadTerrain::initGlData();
 
     mapMan = new MapManager(crustaTool, this);
 
@@ -214,6 +216,8 @@ shutdown()
 ///\todo separate crusta the application from a planet instance (current)
     delete DATAMANAGER;
     delete CACHE;
+///\todo VruiGlew dependent dynamic allocation
+    QuadTerrain::deleteGlData();
 
 #if CRUSTA_ENABLE_RECORD_FRAMERATE
 delete CRUSTA_FRAMERATE_RECORDER;
