@@ -3,15 +3,11 @@
 
 #include <construo/SphereCoverage.h>
 
-#include <crusta/QuadtreeFile.h>
+#include <crusta/GlobeFile.h>
 #include <crusta/Scope.h>
 #include <crusta/TreeIndex.h>
 
 BEGIN_CRUSTA
-
-template <typename PixelParam>
-class TreeState
-{};
 
 /** Data elements providing the basis for a quadtree structure where elements
     are dynamically allocated and interconnected through pointers */
@@ -19,7 +15,9 @@ template <typename PixelParam>
 class TreeNode
 {
 public:
-    typedef TreeState<PixelParam> State;
+    typedef GlobeDataTraits<PixelParam> Traits;
+    typedef Traits::File                File;
+    typedef Traits::File::TileIndex     TileIndex;
 
     TreeNode();
     virtual ~TreeNode();
@@ -51,10 +49,10 @@ public:
     TreeNode* children;
 
 //- Construo node data
-    State* treeState;
+    static GlobeFile<PixelParam>* globeFile;
 
     TreeIndex treeIndex;
-    typename State::File::TileIndex tileIndex;
+    TileIndex tileIndex;
 
     Scope scope;
     SphereCoverage coverage;
@@ -79,7 +77,7 @@ public:
     ExplicitNeighborNode();
     void setNeighbors(ExplicitNeighborNode* nodes[4],
                       const uint orientations[4]);
-    
+
     ///pointers to the neighboring nodes
     ExplicitNeighborNode* neighbors[4];
     ///orientations of the neighboring nodes
@@ -92,15 +90,14 @@ class Spheroid
 public:
     typedef ExplicitNeighborNode<PixelParam> BaseNode;
     typedef std::vector<BaseNode>            BaseNodes;
-    typedef TreeState<PixelParam>            BaseState;
-    typedef std::vector<BaseState>           BaseStates;
-    typedef typename BaseState::File         TreeFile;
 
     Spheroid(const std::string& baseName, const uint tileResolution[2]);
     ~Spheroid();
 
-    BaseNodes  baseNodes;
-    BaseStates baseStates;
+    void createBaseFolder(const std::string& path, bool parent=false);
+
+    BaseNodes             baseNodes;
+    GlobeFile<PixelParam> globeFile;
 };
 
 END_CRUSTA

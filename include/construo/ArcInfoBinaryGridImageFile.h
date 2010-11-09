@@ -28,7 +28,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <Threads/Mutex.h>
 
 #include <construo/ImageFile.h>
-#include <crusta/DemSpecs.h>
+#include <crusta/GlobeDataTopographyTraits.h>
 
 BEGIN_CRUSTA
 
@@ -36,39 +36,39 @@ class ArcInfoBinaryGridImageFile : public ImageFile<DemHeight>
 {
 public:
     ///data type for pixel values
-	typedef DemHeight Pixel;
+    typedef DemHeight Pixel;
 
     ///opens an Arc/Info binary grid file for read-only access
-	ArcInfoBinaryGridImageFile(const char* fileName);
-	virtual ~ArcInfoBinaryGridImageFile();
+    ArcInfoBinaryGridImageFile(const char* fileName);
+    virtual ~ArcInfoBinaryGridImageFile();
 
     ///returns tile size as array
-	const int* getTileSize(void) const;
+    const int* getTileSize(void) const;
     ///returns tile size in one dimension
-	int getTileSize(int dimension) const;
+    int getTileSize(int dimension) const;
     ///returns number of tiles as array
-	const int* getNumTiles(void) const;
+    const int* getNumTiles(void) const;
     ///returns number of tiles in one dimension
-	int getNumTiles(int dimension) const;
+    int getNumTiles(int dimension) const;
 
 private:
     ///mutex protecting the tiled image file during reading
-	mutable Threads::Mutex fileMutex;
+    mutable Threads::Mutex fileMutex;
     ///handle of tiled image file
-	mutable Misc::LargeFile file;
+    mutable Misc::LargeFile file;
     ///size of each image tile (width x height)
-	int tileSize[2];
+    int tileSize[2];
     ///number of tiles in the image (width x height)
-	int numTiles[2];
+    int numTiles[2];
     ///array of tile offsets
-	Misc::LargeFile::Offset* tileOffsets;
+    Misc::LargeFile::Offset* tileOffsets;
     ///array of tiles sizes in bytes
-	unsigned int* tileSizes;
+    unsigned int* tileSizes;
 
 //- inherited from ImageFileBase
 public:
     virtual void setNodata(const std::string& nodataString);
-	virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
+    virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
                                Pixel* rectBuffer) const;
 };
 

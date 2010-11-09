@@ -27,8 +27,8 @@ BEGIN_CRUSTA
 
 template <class PixelParam>
 inline
-ImageFileBase<PixelParam>::
-ImageFileBase() :
+ImageFile<PixelParam>::
+ImageFile() :
     pixelScale(1.0)
 {
     size[0] = size[1] = 0;
@@ -36,13 +36,14 @@ ImageFileBase() :
 
 template <class PixelParam>
 inline
-ImageFileBase<PixelParam>::
-~ImageFileBase()
-{}
+ImageFile<PixelParam>::
+~ImageFile()
+{
+}
 
 template <class PixelParam>
 inline void
-ImageFileBase<PixelParam>::
+ImageFile<PixelParam>::
 setPixelScale(double scale)
 {
     pixelScale = scale;
@@ -50,7 +51,7 @@ setPixelScale(double scale)
 
 template <class PixelParam>
 inline double
-ImageFileBase<PixelParam>::
+ImageFile<PixelParam>::
 getPixelScale() const
 {
     return pixelScale;
@@ -58,7 +59,7 @@ getPixelScale() const
 
 template <class PixelParam>
 inline
-const Nodata<PixelParam>& ImageFileBase<PixelParam>::
+const ImageFile<PixelParam>::Traits::Nodata& ImageFile<PixelParam>::
 getNodata() const
 {
     return nodata;
@@ -66,7 +67,15 @@ getNodata() const
 
 template <class PixelParam>
 inline
-const int* ImageFileBase<PixelParam>::
+void ImageFile<PixelParam>::
+setNodata(const Traits::Nodata& nodataValue)
+{
+    nodata = nodataValue;
+}
+
+template <class PixelParam>
+inline
+const int* ImageFile<PixelParam>::
 getSize() const
 {
     return size;

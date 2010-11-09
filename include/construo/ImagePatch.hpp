@@ -12,13 +12,20 @@ ImagePatch() :
 template <typename PixelParam>
 ImagePatch<PixelParam>::
 ImagePatch(const std::string patchName, double pixelScale,
-           const std::string& nodata, bool pointSampled) :
+           const std::string& nodataString, bool pointSampled) :
     image(NULL), transform(NULL), imageCoverage(NULL), sphereCoverage(NULL)
 {
+    typedef GlobeDataTraits<PixelParam> Traits;
+
     //load the image file
     image = ImageFileLoader<PixelParam>::loadImageFile(patchName.c_str());
     image->setPixelScale(pixelScale);
-    image->setNodata(nodata);
+    if (!nodata.empty())
+    {
+        Traits::Nodata nodata = Traits::Nodata::parse(nodataString);
+        image->setNodata(nodata);
+        std::cout << "Forced nodata value:\n" << nodataString << "\n";
+    }
     const int* imgSize = image->getSize();
 
     //remove the extension from the image file name

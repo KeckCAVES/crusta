@@ -1,6 +1,6 @@
 /***********************************************************************
 TpmImageFile - Class to represent image files in binary PPM format.
-Copyright (c) 2005-2008 Oliver Kreylos
+Copyright (c) 2005-2008 Oliver Kreylos, Tony Bernardin
 
 This file is part of the DEM processing and visualization package.
 
@@ -28,55 +28,38 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 #include <construo/ImageFile.h>
 #include <construo/TpmFile.h>
-#include <crusta/ColorTextureSpecs.h>
-#include <crusta/DemSpecs.h>
+
 
 BEGIN_CRUSTA
 
-class TpmDemImageFile : public ImageFile<DemHeight>
+
+template <typename PixelParam>
+class TpmImageFile : public ImageFile<PixelParam>
 {
 public:
     ///type of base class
-	typedef ImageFile<DemHeight> Base;
+    typedef ImageFile<PixelParam> Base;
 
     ///opens an image file by name
-	TpmDemImageFile(const char* imageFileName);
+    TpmImageFile(const char* imageFileName);
 
 protected:
     ///mutex protecting the tpm file during reading
-	mutable Threads::Mutex tpmFileMutex;
+    mutable Threads::Mutex tpmFileMutex;
     ///the underlying TPM file driver
     mutable TpmFile tpmFile;
 
 //- inherited from ImageFileBase
 public:
-    virtual void setNodata(const std::string& nodataString);
-	virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
-                               Pixel* rectBuffer) const;
+    virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
+                               PixelParam* rectBuffer) const;
 };
 
-class TpmColorImageFile : public ImageFile<TextureColor>
-{
-public:
-    ///type of base class
-	typedef ImageFile<TextureColor> Base;
-
-    ///opens an image file by name
-	TpmColorImageFile(const char* imageFileName);
-
-protected:
-    ///mutex protecting the tpm file during reading
-	mutable Threads::Mutex tpmFileMutex;
-    ///the underlying TPM file driver
-    mutable TpmFile tpmFile;
-
-//- inherited from ImageFileBase
-public:
-    virtual void setNodata(const std::string& nodataString);
-	virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
-                               Pixel* rectBuffer) const;
-};
 
 END_CRUSTA
+
+
+#include <construo/TpmImageFile.hpp>
+
 
 #endif //_TpmImageFile_H_

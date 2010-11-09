@@ -12,7 +12,7 @@ class Triacontahedron : public Polyhedron
 {
 //- inherited from Polyhedron
 public:
-    Triacontahedron(Scope::Scalar sphereRadius);
+    Triacontahedron(Scope::Scalar sphereRadius=1.0);
 
     virtual uint  getNumPatches();
     virtual Scope getScope(uint patchId);

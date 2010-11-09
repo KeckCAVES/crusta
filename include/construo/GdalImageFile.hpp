@@ -5,9 +5,10 @@
 
 BEGIN_CRUSTA
 
+
 template <typename PixelParam>
 GdalImageFileBase<PixelParam>::
-GdalImageFileBase(const char* imageFileName)
+GdalImageFileBase(const std::string& imageFileName)
 {
     if (!GdalAllRegisteredCalled)
     {
@@ -15,9 +16,12 @@ GdalImageFileBase(const char* imageFileName)
         GdalAllRegisteredCalled = true;
     }
 
-    dataset = (GDALDataset*)GDALOpen(imageFileName, GA_ReadOnly);
+    dataset = (GDALDataset*)GDALOpen(imageFileName.c_str(), GA_ReadOnly);
     if (dataset == NULL)
-        Misc::throwStdErr("GdalImageFileBase: could not open %s",imageFileName);
+    {
+        Misc::throwStdErr("GdalImageFileBase: could not open %s",
+                          imageFileName.c_str());
+    }
 
     ImageBase::size[0] = dataset->GetRasterXSize();
     ImageBase::size[1] = dataset->GetRasterYSize();
@@ -27,12 +31,12 @@ GdalImageFileBase(const char* imageFileName)
     char projection[1024];
     bool hasGeoXform = false;
 
-	//read the image's projection file
+    //read the image's projection file
     std::string fileName(imageFileName);
     size_t dotPos = fileName.rfind('.');
     std::string baseName(fileName, 0, dotPos);
-	std::string projectionFileName(baseName);
-	projectionFileName.append(".proj");
+    std::string projectionFileName(baseName);
+    projectionFileName.append(".proj");
 
     try
     {
@@ -107,5 +111,99 @@ GdalImageFileBase<PixelParam>::
     if (dataset != NULL)
         GDALClose((GDALDatasetH)dataset);
 }
+
+
+template <>
+GdalImageFile<DemHeight>::
+GdalImageFile(const std::string& imageFileName) :
+    Base(imageFileName)
+{
+    //retrieve raster bands from the data set
+    int numBands = dataset->GetRasterCount();
+    if (numBands < 1)
+        Misc::throwStdErr("GdalImageFile:DEM: no raster bands in the file");
+
+    GDALRasterBand* band = dataset->GetRasterBand(1);
+
+    //try to retrieve the nodata value from the band
+    nodata.value = band->GetNoDataValue();
+
+    //output the no-data value
+    std::cout << "Internal nodata value:\n" << nodata.value << "\n";
+}
+
+template <>
+void GdalImageFile<DemHeight>::
+readRectangle(const int rectOrigin[2], const int rectSize[2],
+              DemHeight* rectBuffer) const
+{
+    //retrieve raster bands from the data set
+    int numBands = dataset->GetRasterCount();
+    if (numBands < 1)
+        Misc::throwStdErr("GdalImageFile:DEM: no raster bands in the file");
+
+    GDALRasterBand* band = dataset->GetRasterBand(1);
+
+    //clip the rectangle against the image's valid region
+    int min[2], max[2];
+    for (int i=0; i<2; ++i)
+    {
+///\todo remove
+assert(rectOrigin[i]>=0);
+        min[i] = std::max(0,       rectOrigin[i]);
+///\todo remove, oh but also fix the max[i]
+assert(rectOrigin[i]+rectSize[i]-1 < size[i]);
+        max[i] = std::min(size[i], rectOrigin[i]+rectSize[i]);
+    }
+
+    int readSize[2] = { max[0] - min[0], max[1] - min[1] };
+    int rowWidth  = rectSize[0] * sizeof(Pixel);
+    DemHeight* dst = rectBuffer + ( (min[1]-rectOrigin[1])*rectSize[0] +
+                                    (min[0]-rectOrigin[0]) );
+
+    band->RasterIO(GF_Read, min[0], min[1], readSize[0], readSize[1],
+                   dst, readSize[0], readSize[1], GDT_Float32,
+                   sizeof(DemHeight), rowWidth);
+
+    //scale the pixel values
+    if (pixelScale != 1.0)
+    {
+        for (DemHeight* p=rectBuffer; p<rectBuffer + rectSize[0]*rectSize[1];
+             ++p)
+        {
+            *p = pixelScale * (*p);
+        }
+    }
+}
+
+
+template <>
+GdalImageFile<TextureColor>::
+GdalImageFile(const std::string& imageFileName) :
+    Base(imageFileName)
+{
+    //retrieve raster bands from the data set
+    int numBands = dataset->GetRasterCount();
+    if (numBands < 1)
+        Misc::throwStdErr("GdalImageFile:Color: no raster bands in the file");
+
+    std::vector<GDALRasterBand*> bands;
+    bands.push_back(dataset->GetRasterBand(1));
+
+    int numChannels = Traits::numChannels();
+
+    for (int i=1; i<numChannels; ++i)
+        bands.push_back(numBands<i+1 ?bands[i-1] :dataset->GetRasterBand(i+1));
+
+    for (int i=0; i<numChannels; ++i)
+        nodata.value[i] = bands[i]->GetNoDataValue();
+
+    //output the no-data value
+    std::cout << "Internal nodata value:\n(";
+    for (int i=0; i<numChannels; ++i)
+        std::cout << nodata.value[i] << ", ";
+    std::cout << ")\n";
+}
+
 
 END_CRUSTA

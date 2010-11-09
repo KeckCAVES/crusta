@@ -8,7 +8,9 @@
 #include <construo/ImagePatch.h>
 #include <construo/Tree.h>
 
+
 BEGIN_CRUSTA
+
 
 class BuilderBase
 {
@@ -61,6 +63,9 @@ protected:
     void updateCoarser(Node* node, int level);
     ///regenerate interior hierarchy nodes that have had finer levels updated
     void updateCoarserLevels(int depth);
+
+    ///generate the configuration of the globe file
+    void finalize();
 
     ///new or existing database containing the hierarchy to be updated
     Globe* globe;

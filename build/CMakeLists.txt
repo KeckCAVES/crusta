@@ -46,16 +46,21 @@ add_library(CrustaCore SHARED
     ../include/crusta/Cache.h
     ../include/crusta/Cache.hpp
     ../include/crusta/checkGl.h
-    ../include/crusta/ColorTextureSpecs.h
     ../include/crusta/Crusta.h
     ../include/crusta/CrustaComponent.h
     ../include/crusta/CrustaVisualizer.h
     ../include/crusta/DataManager.h
-    ../include/crusta/DemSpecs.h
     ../include/crusta/ElevationRangeTool.h
     ../include/crusta/Ellipsoid.h
     ../include/crusta/FocusViewEvaluator.h
     ../include/crusta/FrustumVisibility.h
+    ../include/crusta/GlobeColorTextureTraits.h
+    ../include/crusta/GlobeDataTraits.h
+    ../include/crusta/GlobeDiskFile.h
+    ../include/crusta/GlobeDiskFile.hpp
+    ../include/crusta/GlobeFile.h
+    ../include/crusta/GlobeFile.hpp
+    ../include/crusta/GlobeTopographyTraits.h
     ../include/crusta/GlProgram.h
     ../include/crusta/Homography.h
     ../include/crusta/IdGenerator.h
@@ -96,11 +101,9 @@ add_library(CrustaCore SHARED
     ../include/GLMotif/FileAndFolderSelectionDialog.h
     ../include/GLMotif/PaletteEditor.h
 
-    ../source/crusta/ColorTextureSpecs.cpp
     ../source/crusta/Crusta.cpp
     ../source/crusta/CrustaVisualizer.cpp
     ../source/crusta/DataManager.cpp
-    ../source/crusta/DemSpecs.cpp
     ../source/crusta/ElevationRangeTool.cpp
     ../source/crusta/FocusViewEvaluator.cpp
     ../source/crusta/FrustumVisibility.cpp
@@ -174,7 +177,6 @@ endif(APPLE)
 #-------------------
 
 add_executable(construo
-    ../include/construo/ArcInfoBinaryGridImageFile.h
     ../include/construo/Builder.h
     ../include/construo/Builder.hpp
     ../include/construo/ConstruoVisualizer.h
@@ -200,23 +202,21 @@ add_executable(construo
     ../include/construo/SphereCoverage.h
     ../include/construo/TpmFile.h
     ../include/construo/TpmImageFile.h
+    ../include/construo/TpmImageFile.hpp
     ../include/construo/Tree.h
     ../include/construo/Tree.hpp
     ../include/construo/UtmTransform.h
 
-    ../source/construo/ArcInfoBinaryGridImageFile.cpp
     ../source/construo/Construo.cpp
     ../source/construo/ConstruoVisualizer.cpp
     ../source/construo/Filter.cpp
     ../source/construo/GdalTransform.cpp
-    ../source/construo/GdalImageFile.cpp
     ../source/construo/GeoTransform.cpp
     ../source/construo/ImageCoverage.cpp
     ../source/construo/ImageTransform.cpp
     ../source/construo/ImageTransformReader.cpp
     ../source/construo/SphereCoverage.cpp
     ../source/construo/TpmFile.cpp
-    ../source/construo/TpmImageFile.cpp
     ../source/construo/UtmTransform.cpp
 )
 

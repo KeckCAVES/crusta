@@ -142,6 +142,13 @@ public:
 
     File* file;
 };
+
+template <>
+const char*
+globeDataType<DemHeight>()
+{
+    return "Topography";
+}
 #endif //CONSTRUO_BUILD
 
 template <>

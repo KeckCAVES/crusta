@@ -823,6 +823,13 @@ updateCoarserLevels(int depth)
 
 template <typename PixelParam, typename PolyhedronParam>
 void Builder<PixelParam, PolyhedronParam>::
+finalize()
+{
+}
+
+
+template <typename PixelParam, typename PolyhedronParam>
+void Builder<PixelParam, PolyhedronParam>::
 addImagePatch(const std::string& patchName, double pixelScale,
               const std::string& nodata, bool pointSampled)
 {
@@ -839,6 +846,7 @@ update()
 {
     int depth = updateFinestLevels();
     updateCoarserLevels(depth);
+    finalize();
 }
 
 ///\todo remove

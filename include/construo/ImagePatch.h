@@ -8,7 +8,9 @@
 #include <construo/ImageTransform.h>
 #include <construo/SphereCoverage.h>
 
+
 BEGIN_CRUSTA
+
 
 /**
     Structure describing a source image patch
@@ -34,7 +36,9 @@ public:
     ~ImagePatch();
 };
 
+
 END_CRUSTA
+
 
 #include <construo/ImagePatch.hpp>
 

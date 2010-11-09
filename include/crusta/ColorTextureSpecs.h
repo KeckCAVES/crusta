@@ -194,6 +194,13 @@ public:
 
     File* file;
 };
+
+template <>
+const char*
+globeDataType<TextureColor>()
+{
+    return "ImageRGB";
+}
 #endif //CONSTRUO_BUILD
 
 template <>

@@ -1,5 +1,6 @@
 #include <cassert>
 #include <sstream>
+#include <sys/stat.h>
 
 #include <crusta/QuadtreeFileHeaders.h>
 #include <construo/Converters.h>
@@ -13,7 +14,7 @@ BEGIN_CRUSTA
 template <typename PixelParam>
 TreeNode<PixelParam>::
 TreeNode() :
-    parent(NULL), children(NULL), treeState(NULL),
+    parent(NULL), children(NULL),
     tileIndex(State::File::INVALID_TILEINDEX),
     data(NULL), mustBeUpdated(false), isExplicitNeighborNode(false)
 {}
@@ -228,7 +229,6 @@ createChildren()
     {
         TreeNode& child = children[i];
         child.parent    = this;
-        child.treeState = treeState;
         child.treeIndex = treeIndex.down(i);
         child.scope     = childScopes[i];
 ///\todo parametrize the TreeNode by the coverage type?
@@ -244,11 +244,12 @@ loadMissingChildren()
 {
     /* read the children's tile indices from the file. Only allocate the
        children if valid counterparts exist in the file */
-    assert(treeState!=NULL && treeState->file!=NULL && "uninitialized state");
-    typename State::File::TileIndex childIndices[4];
-    if (!treeState->file->readTile(tileIndex, childIndices))
+    assert(globeFile!=NULL && "uninitialized globe file");
+    File& file = globeFile->getPatch(treeIndex.patch);
+    TileIndex childIndices[4];
+    if (!file.readTile(tileIndex, childIndices))
         return;
-    if (childIndices[0] == State::File::INVALID_TILEINDEX)
+    if (childIndices[0] == File::INVALID_TILEINDEX)
         return;
 
     //create the new in-memory representations
@@ -322,8 +323,14 @@ Spheroid(const std::string& baseName, const uint tileResolution[2])
     PolyhedronParam polyhedron(SPHEROID_RADIUS);
     uint numPatches = polyhedron.getNumPatches();
 
+    //open the globe file
+    globeFile.open<PolyhedonParam>(baseName);
+
+    //create the base nodes
     baseNodes.resize(numPatches);
-    baseStates.resize(numPatches);
+    for (uint i=0; i<numPatches; ++i)
+    {
+    }
 
     //create the base nodes and open the corresponding quadtree file
     for (uint i=0; i<numPatches; ++i)
@@ -337,7 +344,7 @@ Spheroid(const std::string& baseName, const uint tileResolution[2])
 
         //open/create the quadtreefile
         std::ostringstream oss;
-        oss << baseName << "_" << i << ".qtf";
+        oss << baseName << "/patch_" << i << ".qtf";
         TreeFile*& file = baseStates[i].file;
         file = new TreeFile(oss.str().c_str(), tileResolution);
 
@@ -349,7 +356,7 @@ Spheroid(const std::string& baseName, const uint tileResolution[2])
             assert(node->tileIndex==0 && file->getNumTiles()==1);
         }
     }
-    
+
     //initialize the geometry of the base nodes and link them
     uint orientations[4];
     BaseNode* neighbors[4];
@@ -361,7 +368,7 @@ Spheroid(const std::string& baseName, const uint tileResolution[2])
 ///\todo parametrize the Spheroid by the sphere coverage. use Static for now.
         node->coverage = StaticSphereCoverage(2, node->scope);
         node->computeResolution();
-        
+
         polyhedron.getConnectivity(i, connectivity);
         for (uint n=0; n<4; ++n)
         {
@@ -427,5 +434,49 @@ Spheroid<PixelParam, PolyhedronParam>::
         delete it->file;
     }
 }
+
+template <typename PixelParam, typename PolyhedronParam>
+void Spheroid<PixelParam, PolyhedronParam>::
+createBaseFolder(const std::string& path, bool parent)
+{
+    //check if a file or directory of the given name already exists
+    struct stat statBuffer;
+    if (stat(path.c_str(), &statBuffer) == 0)
+    {
+        //check if it's a folder
+        if (S_ISDIR(statBuffer.st_mode))
+        {
+            if (!parent)
+            {
+                struct stat statCfg;
+                std::string cfg = path + std::string("/crustaPyramid.cfg");
+                if (stat(cfg.c_str(), &statCfg) != 0)
+                {
+                    Misc::throwStdErr("File %s already exists and is "
+                                      "not a crusta pyramid", path.c_str());
+                }
+            }
+        }
+        else
+        {
+            Misc::throwStdErr("File %s already exists and is not a folder "
+                              "in the output pyramid path", path.c_str());
+        }
+    }
+    else
+    {
+        //create the parent path
+        size_t delim = path.find_last_of("/\\");
+        createBaseFolder(path.substr(0, delim), true);
+
+        //create the base folder
+        if(mkdir(path.c_str(), 0777) < 0)
+        {
+            Misc::throwStdErr("Could not create output pyramid path %s",
+                              path.c_str());
+        }
+    }
+}
+
 
 END_CRUSTA

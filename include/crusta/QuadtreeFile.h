@@ -32,23 +32,18 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 BEGIN_CRUSTA
 
-template <class PixelParam, class FileHeaderParam, class TileHeaderParam>
+template <typename PixelParam,
+          typename FileHeaderParam,
+          typename TileHeaderParam>
 class QuadtreeFile
 {
 public:
     ///data type of pixel values stored in image tiles
-	typedef PixelParam Pixel;
+    typedef PixelParam Pixel;
     ///type for extra data in the file header
-	typedef FileHeaderParam FileHeader;
+    typedef FileHeaderParam FileHeader;
     ///type for extra data in each tile header
-	typedef TileHeaderParam TileHeader;
-    /** type of an index to a tile within the hierarchy.
-        \note the unsigned int type here restricts the trees to ~4 billion
-              tiles. Since the indices to children are stored for each tile
-              this has been done for storage space preservation purposes */
-    typedef unsigned int TileIndex;
-
-    static const TileIndex INVALID_TILEINDEX = ~0x0U;
+    typedef TileHeaderParam TileHeader;
 
     ///required meta-data for all quadtree files
     class Header
@@ -69,20 +64,20 @@ public:
     };
 
     ///opens an existing quadtree file for update or creates a new one
-	QuadtreeFile(const char* quadtreeFileName, const uint iTileSize[2]);
-	~QuadtreeFile();
+    QuadtreeFile(const char* quadtreeFileName, const uint iTileSize[2]);
+    ~QuadtreeFile();
 
     ///returns the file's meta data
-	FileHeader& getCustomFileHeader() const;
+    FileHeader& getCustomFileHeader() const;
 
 #if CONSTRUO_BUILD
     ///sets the default pixel value for out-of-bounds tiles
-	void setDefaultPixelValue(const Pixel& newDefaultPixelValue);
+    void setDefaultPixelValue(const Pixel& newDefaultPixelValue);
 #endif //CONSTRUO_BUILD
     ///returns the pixel value for out-of-bounds tiles
-	const Pixel& getDefaultPixelValue() const;
+    const Pixel& getDefaultPixelValue() const;
     ///returns size of an individual image tile
-	const uint32* getTileSize() const;
+    const uint32* getTileSize() const;
     ///return the number of tiles stored in the hierarchy
     TileIndex getNumTiles() const;
     ///retrieve the default value filled data buffer
@@ -92,7 +87,7 @@ public:
     void readHeader();
 #if CONSTRUO_BUILD
     ///writes the quadtree file header to the file again
-	void writeHeader();
+    void writeHeader();
 #endif
 
     ///check the existence of a tile (does not create a new one)
@@ -104,22 +99,22 @@ public:
 #endif //CONSTRUO_BUILD
 
     ///reads the tile of given index into the given buffer
-	bool readTile(TileIndex tileIndex, TileIndex childPointers[4],
+    bool readTile(TileIndex tileIndex, TileIndex childPointers[4],
                   TileHeader& tileHeader, Pixel* tileBuffer=NULL);
-	bool readTile(TileIndex tileIndex, Pixel* tileBuffer);
-	bool readTile(TileIndex tileIndex, TileIndex childPointers[4],
+    bool readTile(TileIndex tileIndex, Pixel* tileBuffer);
+    bool readTile(TileIndex tileIndex, TileIndex childPointers[4],
                   Pixel* tileBuffer=NULL);
-	bool readTile(TileIndex tileIndex, TileHeader& tileHeader,
+    bool readTile(TileIndex tileIndex, TileHeader& tileHeader,
                   Pixel* tileBuffer=NULL);
 
     ///writes the tile in the given buffer to the given index
 #if CONSTRUO_BUILD
-	void writeTile(TileIndex tileIndex, const TileIndex childPointers[4],
+    void writeTile(TileIndex tileIndex, const TileIndex childPointers[4],
                    const TileHeader& tileHeader, const Pixel* tileBuffer=NULL);
-	void writeTile(TileIndex tileIndex, const Pixel* tileBuffer);
-	void writeTile(TileIndex tileIndex, const TileIndex childPointers[4],
+    void writeTile(TileIndex tileIndex, const Pixel* tileBuffer);
+    void writeTile(TileIndex tileIndex, const TileIndex childPointers[4],
                    const Pixel* tileBuffer=NULL);
-	void writeTile(TileIndex tileIndex, const TileHeader& tileHeader,
+    void writeTile(TileIndex tileIndex, const TileHeader& tileHeader,
                    const Pixel* tileBuffer=NULL);
 #endif //CONSTRUO_BUILD
 
@@ -132,18 +127,18 @@ TileIndex getLastChildPointer(int childIndex) const;
 const TileHeader& getLastTileHeader() const;
 
     ///handle of the quadtree file for local quadtree files
-	Misc::LargeFile* quadtreeFile;
+    Misc::LargeFile* quadtreeFile;
     ///Header containing the basic meta-data
     Header header;
     ///custom header meta data for the file scope
-	FileHeader fileHeader;
+    FileHeader fileHeader;
 
     ///number of pixels in each tile
-	int tileNumPixels;
+    int tileNumPixels;
     ///offset to the first tile
-	Misc::LargeFile::Offset firstTileOffset;
+    Misc::LargeFile::Offset firstTileOffset;
     ///size of an image tile in the file
-	Misc::LargeFile::Offset fileTileSize;
+    Misc::LargeFile::Offset fileTileSize;
 
     ///last ignored child pointers
     TileIndex lastTileChildPointers[4];
