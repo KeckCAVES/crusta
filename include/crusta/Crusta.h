@@ -4,14 +4,14 @@
 #include <string>
 #include <vector>
 
-#include <GL/gl.h>
+#include <GL/VruiGlew.h>
 #include <GL/GLObject.h>
-#include <GL/GLShader.h>
 #include <Threads/Mutex.h>
 
 #include <crusta/basics.h>
 #include <crusta/CrustaSettings.h>
 #include <crusta/LightingShader.h>
+#include <crusta/QuadCache.h>
 #include <crusta/map/Shape.h>
 
 #if CRUSTA_ENABLE_DEBUG
@@ -28,46 +28,31 @@ BEGIN_CRUSTA
 template <typename NodeDataType>
 class CacheBuffer;
 
-class Cache;
-class DataManager;
-class GpuLineCache;
 class MapManager;
-class QuadNodeMainData;
+class NodeData;
 class QuadTerrain;
-class VideoCache;
 
 struct CrustaGlData : public GLObject::DataItem
 {
     CrustaGlData();
     ~CrustaGlData();
 
-    /** store a handle to the video cache of this context for convenient
+///\todo it should be possible to remove this here
+    /** store a handle to the gpu cache of this context for convenient
         access */
-    VideoCache* videoCache;
-    /** store a handle to the line cache of this context for convenient
-        access */
-    GpuLineCache* lineCache;
+    GpuCache* gpuCache;
 
-    /** basic data being passed to the GL to represent a vertex. The
-        template provides simply texel-centered, normalized texture
-        coordinates that are used to address the corresponding data in the
-        geometry, elevation and color textures */
-    GLuint vertexAttributeTemplate;
-    /** defines a triangle-string triangulation of the vertices */
-    GLuint indexTemplate;
-
-    GLuint coverageFbo;
-
+    /** texture object for the atlas containing the visual symbol
+        reprepsentations */
     GLuint symbolTex;
-
+    /** texture object for the elevation color ramp */
     GLuint colorMap;
 
+    /** the surface rendering shader */
     LightingShader terrainShader;
-
-    GLint    lineCoverageTransformUniform;
-    GLShader lineCoverageShader;
 };
 
+///\todo separate crusta the application from a planet instance (current)
 /** Main crusta class */
 class Crusta : public GLObject
 {
@@ -87,8 +72,7 @@ public:
     void intersect(Shape::ControlPointHandle start,
                    Shape::IntersectionFunctor& callback) const;
 
-    const FrameNumber& getCurrentFrame()   const;
-    const FrameNumber& getLastScaleFrame() const;
+    const FrameStamp& getLastScaleStamp() const;
 
     /** configure the display of the terrain to use a texture or not */
     void setTexturingMode(int mode);
@@ -112,15 +96,10 @@ public:
         the corresponding point in an unscaled representation */
     Point3 mapToUnscaledGlobe(const Point3& pos);
 
-    Cache*       getCache()       const;
-    DataManager* getDataManager() const;
-    MapManager*  getMapManager()  const;
+    MapManager* getMapManager()  const;
 
     void frame();
     void display(GLContextData& contextData);
-
-    /** query the crusta settings */
-    const CrustaSettings& getSettings() const;
 
     /** toggle the decoration of the line mapping */
     void setDecoratedVectorArt(bool flag=true);
@@ -129,14 +108,6 @@ public:
     /** change the shininess of the terrain surface */
     void setTerrainShininess(const float& shininess);
 
-
-///\todo integrate me into the system properly (VIS 2010)
-/** the size of the line data texture */
-static const int   lineDataTexSize;
-static const float lineDataCoordStep;
-static const float lineDataStartCoord;
-/** the pixel resolution of the coverage maps */
-static const int lineCoverageTexSize;
 
 #if CRUSTA_ENABLE_DEBUG
 DebugTool* debugTool;
@@ -150,15 +121,11 @@ void validateLineCoverage();
 protected:
     typedef std::vector<QuadTerrain*> RenderPatches;
 
-    /** keep track of the number of frames processed. Used, for example, by the
-        cache to perform LRU that is aware of currently active nodes (the ones
-        from the previous frame) */
-    FrameNumber currentFrame;
-    /** keep track of the last frame at which the vertical scale was modified.
+    /** keep track of the last stamp at which the vertical scale was modified.
         The vertical scale affects the bounding primitives for the nodes and
         these must be updated each time the scale changes. Validity of a node's
         semi-static data can be verified by comparison with this number */
-    FrameNumber lastScaleFrame;
+    FrameStamp lastScaleStamp;
 
     /** texturing mode to use for terrain rendering */
     int texturingMode;
@@ -170,10 +137,6 @@ protected:
         consistency with the change of the navigation transformation */
     Scalar changedVerticalScale;
 
-    /** the cache management component */
-    Cache* cache;
-    /** the data management component */
-    DataManager* dataMan;
     /** the mapping management component */
     MapManager* mapMan;
 
@@ -188,9 +151,6 @@ protected:
     bool colorMapDirty;
     /** the color map used to color the elevation of the terrain */
     GLColorMap* colorMap;
-
-    /** user tweakable settings (both runtime and through configuration file */
-    CrustaSettings settings;
 
 //- inherited from GLObject
 public:

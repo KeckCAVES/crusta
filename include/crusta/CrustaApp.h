@@ -1,7 +1,10 @@
 #ifndef _CrustaApp_H_
 #define _CrustaApp_H_
 
+
 #include <GLMotif/Button.h>
+#include <GLMotif/ColorMap.h>
+#include <GLMotif/ColorPickerWindow.h>
 #include <GLMotif/Slider.h>
 #include <GLMotif/ToggleButton.h>
 
@@ -10,8 +13,7 @@
 
 #include <crusta/basics.h>
 #include <crusta/CrustaComponent.h>
-#include <GLMotif/ColorMap.h>
-#include <GLMotif/ColorPickerWindow.h>
+
 
 class GLContextData;
 class PaletteEditor;

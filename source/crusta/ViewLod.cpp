@@ -7,10 +7,10 @@
 BEGIN_CRUSTA
 
 float ViewLod::
-compute(const QuadNodeMainData& mainData)
+compute(const NodeData& node)
 {
-    float lod = frustum.calcProjectedRadius(mainData.boundingCenter,
-                                            mainData.boundingRadius);
+    float lod = frustum.calcProjectedRadius(node.boundingCenter,
+                                            node.boundingRadius);
     lod /= (TILE_RESOLUTION * 0.55f);
     lod = log(lod);
     return lod;

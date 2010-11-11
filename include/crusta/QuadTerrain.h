@@ -1,18 +1,22 @@
 #ifndef _QuadTerrain_H_
 #define _QuadTerrain_H_
 
+#include <GL/VruiGlew.h> //must be included before gl.h
+
 #include <list>
 
 #include <GL/GLContextData.h>
 #include <GL/GLObject.h>
-#include <GL/GLShader.h>
+#include <GL/GlProgram.h>
 
 #include <crusta/CrustaComponent.h>
-
+#include <crusta/CrustaSettings.h>
+#include <crusta/DataManager.h>
 #include <crusta/FrustumVisibility.h>
 #include <crusta/FocusViewEvaluator.h>
 #include <crusta/map/Shape.h>
 #include <crusta/QuadCache.h>
+#include <crusta/SurfaceApproximation.h>
 
 BEGIN_CRUSTA
 
@@ -31,13 +35,18 @@ struct CrustaGlData;
 class QuadTerrain : public CrustaComponent
 {
 public:
-    typedef std::vector<MainCacheBuffer*>  NodeBufs;
-    typedef std::vector<QuadNodeMainData*> Nodes;
+    typedef NodeMainBuffer       MainBuffer;
+    typedef NodeMainData         MainData;
+    typedef NodeMainDatas        MainDatas;
+    typedef NodeGpuData          GpuData;
+    typedef NodeGpuDatas         GpuDatas;
 
     QuadTerrain(uint8 patch, const Scope& scope, Crusta* iCrusta);
 
+    /** query the patch's root node buffer */
+    const MainBuffer getRootBuffer() const;
     /** query the patch's root node data */
-    const QuadNodeMainData& getRootNode() const;
+    const MainData getRootNode() const;
 
     /** ray patch intersection */
     HitResult intersect(const Ray& ray, Scalar tin, int sin,
@@ -48,18 +57,70 @@ public:
                    Scalar tin, int sin, Scalar& tout, int& sout) const;
 
     /** intersect the ray agains the sections of the node */
-    static void intersectNodeSides(const QuadNodeMainData& node, const Ray& ray,
+    static void intersectNodeSides(const Scope& scope, const Ray& ray,
                             Scalar& tin, int& sin, Scalar& tout, int& sout);
 
+    /** render the coverage map for the given node */
+    static void renderLineCoverageMap(GLContextData& contextData,
+                                      const MainData& nodeData);
+
     /** prepareDiplay has several functions:
-        1. evaluate the current active set (as it is view-dependent)
-        2. issue requests for loading in new nodes (from splits or merges)
-        3. provide the list of nodes that will be rendered for the frame */
-    void prepareDisplay(GLContextData& contextData, Nodes& nodes);
+        1. issue requests for loading in new nodes (from splits or merges)
+        2. provide the list of nodes that will be rendered for the frame */
+    void prepareDisplay(GLContextData& contextData,
+                        SurfaceApproximation& surface);
     /** issues the drawing commands for the render set */
-    static void display(GLContextData& contextData, CrustaGlData* glData,
-                        Nodes& nodes, const AgeStamp& currentFrame,
-                        const CrustaSettings& crustaSettings);
+    static void display(GLContextData& contextData, CrustaGlData* crustaGl,
+                        SurfaceApproximation& surface);
+
+/** initialize the static gl data.
+\todo required because only the VruiGlew can be statically allocated to make
+sure the glew context is initialized before any other GL initialization. Fix
+involves switching VRUI over to GLEW entirely and having it take care of all the
+context crap */
+static void initGlData();
+/** destroy the static gl data */
+static void deleteGlData();
+
+/** display bounding spheres for debugging purposes or not */
+static bool displayDebuggingBoundingSpheres;
+/** display debugging grid or not */
+static bool displayDebuggingGrid;
+
+///\todo debug Vis 2010
+void confirmLineCoverageRemoval(const MainData& nodeData, Shape* shape,
+                                Shape::ControlPointHandle cp);
+void validateLineCoverage(const MainData& nodeData);
+
+protected:
+    class GlData : public GLObject
+    {
+    public:
+        struct Item : public GLObject::DataItem
+        {
+            Item();
+            ~Item();
+
+            /** basic data being passed to the GL to represent a vertex. The
+                template provides simply texel-centered, normalized texture
+                coordinates that are used to address the corresponding data in
+                the geometry, elevation and color textures */
+            GLuint vertexAttributeTemplate;
+            /** defines a triangle-strip triangulation of the vertices */
+            GLuint indexTemplate;
+
+            /** uniform accessing the transformation matrix for the vertex
+                transform of the line coverage rendering shader */
+            GLint lineCoverageTransformUniform;
+            /** line coverage rendering shader */
+            GlProgram lineCoverageShader;
+        };
+
+    //- inherited from GLObject
+    public:
+        virtual void initContext(GLContextData& contextData) const;
+    };
+    friend class GlData;
 
     /** generate the vertex stream template characterizing a node and
         stream it to the graphics card as a vertex buffer. This buffer
@@ -72,64 +133,38 @@ public:
         the graphics card as a index buffer. */
     static void generateIndexTemplate(GLuint& indexTemplate);
 
-/** display bounding spheres for debugging purposes or not */
-static bool displayDebuggingBoundingSpheres;
-/** display debugging grid or not */
-static bool displayDebuggingGrid;
-
-///\todo debug Vis 2010
-void confirmLineCoverageRemoval(const QuadNodeMainData* node, Shape* shape,
-                                Shape::ControlPointHandle cp);
-void validateLineCoverage(const QuadNodeMainData* node);
-
-protected:
     /** ray patch traversal function for inner nodes of the quadtree */
-    HitResult intersectNode(MainCacheBuffer* nodeBuf, const Ray& ray,
+    HitResult intersectNode(const MainBuffer& nodeBuf, const Ray& ray,
                             Scalar tin, int sin, Scalar& tout, int& sout,
                             const Scalar gout) const;
     /** ray patch traversal function for leaf nodes of the quadtree */
-    HitResult intersectLeaf(const QuadNodeMainData& leaf, const Ray& ray,
+    HitResult intersectLeaf(const MainData& leaf, const Ray& ray,
                             Scalar param, int side, const Scalar gout) const;
 
     void intersectNode(Shape::IntersectionFunctor& callback,
-                       MainCacheBuffer* nodeBuf, Ray& ray, Scalar tin, int sin,
+                       const MainBuffer& nodeBuf, Ray& ray, Scalar tin, int sin,
                        Scalar& tout, int& sout) const;
-    void intersectLeaf(QuadNodeMainData& leaf, Ray& ray, Scalar tin, int sin,
+    void intersectLeaf(NodeData& leaf, Ray& ray, Scalar tin, int sin,
                        Scalar& tout, int& sout) const;
 
-    /** render the coverage map for the given node into the specified texture */
-    static void renderGpuLineCoverageMap(CrustaGlData* glData,
-        const QuadNodeMainData& node, GLuint tex,
-        const CrustaSettings& crustaSettings);
-
-    /** make sure the required GL data for line data is available. In case a
-        buffer cannot be associated with the specified node (cache is full),
-        then a temporary buffer is provided that has had the data streamed to
-        it */
-    static const QuadNodeGpuLineData& prepareGpuLineData(CrustaGlData* glData,
-        QuadNodeMainData& mainData, const AgeStamp& currentFrame,
-        const CrustaSettings& crustaSettings);
-    /** make sure the required GL data for drawing is available. In case a
-        buffer cannot be associated with the specified node (cache is full),
-        then a temporary buffer is provided that has had the data streamed to
-        it */
-    static const QuadNodeVideoData& prepareVideoData(CrustaGlData* glData,
-        QuadNodeMainData& mainData);
     /** issue the drawing commands for displaying a node. The video cache
         operations to stream data from the main cache are performed at this
         point. */
-    static void drawNode(GLContextData& contextData, CrustaGlData* glData,
-        QuadNodeMainData& mainData, const AgeStamp& currentFrame,
-        const CrustaSettings& crustaSettings);
+    static void drawNode(GLContextData& contextData, CrustaGlData* crustaGl,
+                         const MainData& mainData, const GpuData& gpuData);
 
-    /** draw the finest resolution node that are part of the currently terrain
-        approximation */
-    void prepareDraw(FrustumVisibility& visibility, FocusViewEvaluator& lod,
-                     MainCacheBuffer* node, Nodes& renders,
-                     MainCache::Requests& requests);
+    /** traverse the terrain tree, compute the appropriate surface approximation
+        and populate data requests for need uncached data */
+    void prepareDisplay(FrustumVisibility& visibility, FocusViewEvaluator& lod,
+                     MainBuffer& buffer, SurfaceApproximation& surface,
+                     DataManager::Requests& requests);
 
     /** index of the root patch for this terrain */
     TreeIndex rootIndex;
+
+    /** gl data for general terrain use.
+    \todo due to VruiGlew dependency must be dynamically allocated */
+    static GlData* glData;
 };
 
 END_CRUSTA

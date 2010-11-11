@@ -14,9 +14,10 @@ class Triacontahedron : public Polyhedron
 public:
     Triacontahedron(Scope::Scalar sphereRadius);
 
-    virtual uint  getNumPatches();
-    virtual Scope getScope(uint patchId);
-    virtual void  getConnectivity(uint patchId, Connectivity connectivity[4]);
+    virtual uint  getNumPatches() const;
+    virtual Scope getScope(uint patchId) const;
+    virtual void  getConnectivity(
+        uint patchId, Connectivity connectivity[4]) const;
 
 protected:
     Scope::Scalar radius;

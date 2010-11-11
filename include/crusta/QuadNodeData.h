@@ -3,6 +3,7 @@
 
 #include <map>
 
+#include <GL/VruiGlew.h> //must be included before gl.h
 #include <GL/GLVertex.h>
 
 #include <crusta/map/Shape.h>
@@ -14,48 +15,26 @@
 BEGIN_CRUSTA
 
 
-/** stores the main RAM view-independent data of the terrain that can be shared
-    between multiple view-dependent trees */
-struct QuadNodeMainData
+///\todo change name to more appropriate NodeDynamicData
+/** stores crusta internal transient data related to a node of the terrain tree
+    hierarchy */
+struct NodeData
 {
-    typedef GLVertex<void, 0, void, 0, void, float, 3> Vertex;
-
-    struct AgeStampedControlPointHandle
-    {
-        AgeStampedControlPointHandle();
-        AgeStampedControlPointHandle(const AgeStamp& iAge,
-                                     const Shape::ControlPointHandle& iHandle);
-
-        AgeStamp                  age;
-        Shape::ControlPointHandle handle;
-    };
-    typedef std::list<AgeStampedControlPointHandle>
-        AgeStampedControlPointHandleList;
-    typedef std::map<const Shape*, AgeStampedControlPointHandleList>
+    typedef std::map<const Shape*, Shape::ControlPointHandleList>
         ShapeCoverage;
 
-    QuadNodeMainData(uint size);
-    ~QuadNodeMainData();
+    NodeData();
 
     /** compute the bounding sphere. It is dependent on the vertical scale,
         so this method is a convinient API for such updates */
-    void computeBoundingSphere(Scalar radius, Scalar verticalScale,
-                               const AgeStamp& currentFrame);
+    void computeBoundingSphere(Scalar radius, Scalar verticalScale);
     /** compute the various "cached values" (e.g. bounding sphere, centroid,
         etc.) */
-    void init(Scalar radius, Scalar verticalScale,
-              const AgeStamp& currentFrame);
-
-    /** 3D vertex data for the node's flat-sphere geometry */
-    Vertex* geometry;
-    /** height map defining elevations within the node */
-    DemHeight* height;
-    /** color texture */
-    TextureColor* color;
+    void init(Scalar radius, Scalar verticalScale);
 
 ///\todo integrate me properly into the caching scheme (VIS 2010)
 bool          lineCoverageDirty;
-AgeStamp      lineCoverageAge;
+FrameStamp    lineCoverageAge;
 Vector2fs     lineCoverageOffsets;
 ShapeCoverage lineCoverage;
 int           lineNumSegments;
@@ -68,8 +47,7 @@ Colors        lineData;
     /** caches this node's scope for visibility and lod evaluation */
     Scope scope;
 
-///\todo integrate me properly into the caching scheme (VIS 2010)
-AgeStamp boundingAge;
+    FrameStamp boundingAge;
     /** center of the bounding sphere primitive */
     Scope::Vertex boundingCenter;
     /** radius of a sphere containing the node */
@@ -90,39 +68,29 @@ AgeStamp boundingAge;
     ColorFile::TileIndex childColorTiles[4];
 };
 
-/** stores the video RAM view-independent data of the terrain that can be shared
- between multiple view-dependent trees */
-struct QuadNodeVideoData
+
+/** defines a sub-region through and offset and size */
+struct SubRegion
 {
-    QuadNodeVideoData(uint size);
-    ~QuadNodeVideoData();
-
-    void createTexture(GLuint& texture, GLint internalFormat, uint size);
-
-    /** texture storing the node's flat-sphere geometry */
-    GLuint geometry;
-    /** texture storing the node's elevations */
-    GLuint height;
-    /** texture storing the node's color image */
-    GLuint color;
+    SubRegion();
+    SubRegion(const Point3f& iOffset, const Vector2f& iSize);
+    Point3f  offset;
+    Vector2f size;
 };
 
 ///\todo Vis2010 integrate this into the system better
 /** stores the coverage map textures */
-struct QuadNodeGpuLineData
+struct StampedSubRegion : SubRegion
 {
-    QuadNodeGpuLineData(uint size);
-    ~QuadNodeGpuLineData();
-
-    AgeStamp age;
-    GLuint   data;
-    GLuint   coverage;
+    StampedSubRegion();
+    StampedSubRegion(const Point3f& iOffset, const Vector2f& iSize);
+    FrameStamp age;
 };
 
 
 ///\todo debug, remove
-std::ostream& operator<<(std::ostream& os,
-                         const QuadNodeMainData::ShapeCoverage& cov);
+std::ostream& operator<<(std::ostream& os, const NodeData::ShapeCoverage& cov);
+
 
 END_CRUSTA
 

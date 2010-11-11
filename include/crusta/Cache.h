@@ -17,7 +17,6 @@
 #include <list>
 #include <vector>
 
-#include <crusta/CrustaComponent.h>
 #include <crusta/TreeIndex.h>
 
 #ifdef __GNUC__
@@ -34,89 +33,146 @@
 BEGIN_CRUSTA
 
 
-template <typename BufferType>
+template <typename BufferParam>
 class CacheUnit;
+template <typename BufferParam>
+struct IndexedBuffer;
 
-template <typename NodeDataType>
+template <typename DataParam>
 class CacheBuffer
 {
-    friend class CacheUnit< CacheBuffer<NodeDataType> >;
+    friend class  CacheUnit< CacheBuffer<DataParam> >;
+    friend struct IndexedBuffer< CacheBuffer<DataParam> >;
 
 public:
-    CacheBuffer(uint size);
+    typedef DataParam DataType;
 
-    /** retrieve the main memory node data from the buffer */
-    NodeDataType& getData();
-    const NodeDataType& getData() const;
+    CacheBuffer();
 
-    /** query the frame number of the buffer */
-    FrameNumber getFrameNumber() const;
+    /** retrieve the data from the buffer */
+    DataParam& getData();
+    const DataParam& getData() const;
 
 protected:
-    /** sequence number used to evaluate LRU prioritization */
-    FrameNumber frameNumber;
+    static const FrameStamp OLDEST_FRAMESTAMP;
+
+    struct State
+    {
+        uint8 grabbed : 1;
+        uint8 valid   : 1;
+        uint8 pinned  : 6;
+    };
+
+    /** state of the buffer */
+    State state;
+    /** frame stamp used to evaluate LRU prioritization */
+    FrameStamp frameStamp;
     /** the actual node data */
-    NodeDataType data;
+    DataParam data;
+};
+
+template <typename DataParam>
+class CacheArrayBuffer : public CacheBuffer<DataParam*>
+{
+    friend class  CacheUnit< CacheArrayBuffer<DataParam> >;
+    friend struct IndexedBuffer< CacheArrayBuffer<DataParam> >;
+
+public:
+    typedef DataParam* DataType;
+    typedef DataParam  DataArrayType;
+
+    ~CacheArrayBuffer();
+};
+
+
+/** combines a tree index with a cache buffer when the buffer is taken
+    outside the context of the buffer map */
+template <typename BufferParam>
+struct IndexedBuffer
+{
+    IndexedBuffer(TreeIndex iIndex, BufferParam* iBuffer);
+    bool operator >(const IndexedBuffer& other) const;
+
+    TreeIndex   index;
+    BufferParam* buffer;
 };
 
 
 /** underlying LRU cache functionality */
-template <typename BufferType>
-class CacheUnit : public CrustaComponent
+template <typename BufferParam>
+class CacheUnit
 {
 public:
-    CacheUnit(uint size, Crusta* iCrusta);
-    ~CacheUnit();
+    typedef BufferParam BufferType;
+
+    CacheUnit();
+    virtual ~CacheUnit();
+
+    /** initialize the cache */
+    void init(const std::string& iName, int size);
+    /** initialize the data of the buffers */
+    virtual void initData(typename BufferParam::DataType& data);
+
+    /** check to see if the buffer is valid */
+    bool isValid(const BufferParam* const buffer) const;
+    /** check to see if the buffer is pinned */
+    bool isPinned(const BufferParam* const buffer) const;
+    /** check to see if the buffer is grabbed (removed from the cache) */
+    bool isGrabbed(const BufferParam* const buffer) const;
+    /** check to see if the buffer has been touched in this frame */
+    bool isCurrent(const BufferParam* const buffer) const;
+
+    /** confirm use of the buffer for the current frame */
+    void touch(BufferParam* buffer);
+    /** invalidate a buffer and make it available for reuse */
+    void reset(BufferParam* buffer);
+    /** invalidate a set of buffers and make them available for reuse */
+    void reset(int numBuffers);
+    /** pin the element in the cache such that it cannot be swaped out */
+    void pin(BufferParam* buffer);
+    /** unpin the element in the cache */
+    void unpin(BufferParam* buffer);
 
     /** find a buffer within the cached set. Returns NULL if not found. */
-    BufferType* findCached(const TreeIndex& index) const;
-    /** request a buffer from the cache. A non-NULL buffer is returned as long
-        as all the cache slots are not not pinned (either explicitly or because
-        they are in use for the current frame). Optionally the location to a
-        boolean can be passed and getBuffer will set if the buffer was already
-        present or not at that location. */
-    BufferType* getBuffer(const TreeIndex& index, bool* existed=NULL);
+    BufferParam* find(const TreeIndex& index) const;
+    /** request a buffer from the cache. The least recently used that is not
+        pinned buffer is returned. An additional filter may limit available
+        buffer to ones that are not current. The buffer is removed from the
+        cache as a result.
+        WARNING: it is assumed that a call to findCached was issued prior.
+                 grabBuffer does not verify that an appropriate buffer is
+                 already cached. */
+    BufferParam* grabBuffer(bool grabCurrent);
+    /** return a buffer to the cache. The buffer will be reinserted into the
+        cache with the given index */
+    void releaseBuffer(const TreeIndex& index, BufferParam* buffer);
 
-    /** check to see if the buffer is active in the current frame */
-    bool isActive(const BufferType* const buffer) const;
-    /** check to see if the buffer is valid */
-    bool isValid(const BufferType* const buffer) const;
-    /** confirm use of the buffer for the current frame */
-    void touch(BufferType* buffer) const;
-    /** invalidate a buffer */
-    void invalidate(BufferType* buffer) const;
-    /** pin the element in the cache such that it cannot be swaped out */
-    void pin(BufferType* buffer, bool asUsable=true)const;
-    /** unpin the element in the cache (resets it to 0 frametime) */
-    void unpin(BufferType* buffer)const;
+///\todo move back to the protected group
+    /** prints the content of the cache in LRU order */
+    void printCache();
 
 protected:
-    typedef PortableTable<TreeIndex, BufferType*, TreeIndex::hash> BufferPtrMap;
+    typedef PortableTable<TreeIndex,BufferParam*,TreeIndex::hash> BufferPtrMap;
+    typedef std::vector< IndexedBuffer<BufferParam> > IndexedBuffers;
 
-    /** combines a tree index with a cache buffer when the buffer is taken
-        outside the context of the buffer map */
-    struct IndexedBuffer
-    {
-        IndexedBuffer(TreeIndex iIndex, BufferType* iBuffer);
-        bool operator >(const IndexedBuffer& other) const;
-
-        TreeIndex   index;
-        BufferType* buffer;
-    };
-    typedef std::vector<IndexedBuffer> IndexedBuffers;
-
+    /** prints the state of the LRU */
+    void printLru(const char* cause);
     /** make sure the LRU prioritized sequence of the cached buffers is up to
         date*/
     void refreshLru();
+
+    /** a string identifier for the cache (mainly used for debugging) */
+    std::string name;
 
     /** keep a record of all the buffers cached by the unit */
     BufferPtrMap cached;
     /** keep a LRU prioritized view of the cached buffers */
     IndexedBuffers lruCached;
 
-    /** frame number when the last prioritization of the chached set was
-        done */
-    FrameNumber sortFrameNumber;
+    /** dirty bit for LRU in case buffers have been pinned or unpinned */
+    bool pinUnpinLruDirty;
+    /** dirty bit for LRU in case buffers have been touched or reset */
+    bool touchResetLruDirty;
 };
 
 

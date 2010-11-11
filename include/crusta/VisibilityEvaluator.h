@@ -5,14 +5,14 @@
 
 BEGIN_CRUSTA
 
-class QuadNodeMainData;
+class NodeData;
 
 class VisibilityEvaluator
 {
 public:
     virtual ~VisibilityEvaluator() {}
-    
-    virtual bool evaluate(const QuadNodeMainData& mainData) = 0;
+
+    virtual bool evaluate(const NodeData& node) = 0;
 };
 
 END_CRUSTA

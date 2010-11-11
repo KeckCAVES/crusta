@@ -4,6 +4,7 @@
 
 #include <crusta/basics.h>
 #include <crusta/CrustaComponent.h>
+#include <crusta/SurfaceApproximation.h>
 
 
 class GLContextData;
@@ -12,15 +13,13 @@ class GLContextData;
 BEGIN_CRUSTA
 
 
-class QuadNodeMainData;
-
 class PolylineRenderer : public CrustaComponent
 {
 public:
     PolylineRenderer(Crusta* iCrusta);
 
-    void display(std::vector<QuadNodeMainData*>& renderNodes,
-                 GLContextData& contextData) const;
+    void display(GLContextData& contextData,
+                 const SurfaceApproximation& surface) const;
 };
 
 

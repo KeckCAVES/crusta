@@ -15,10 +15,11 @@ public:
     typedef uint Connectivity[2];
 
     virtual ~Polyhedron() {}
-    
-    virtual uint  getNumPatches() = 0;
-    virtual Scope getScope(uint patchId) = 0;
-    virtual void  getConnectivity(uint patchId, Connectivity connectivity[4])=0;
+
+    virtual uint  getNumPatches() const = 0;
+    virtual Scope getScope(uint patchId) const = 0;
+    virtual void  getConnectivity(
+        uint patchId, Connectivity connectivity[4]) const = 0;
 };
 
 END_CRUSTA

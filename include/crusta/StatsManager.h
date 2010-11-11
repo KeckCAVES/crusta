@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include <crusta/basics.h>
+#include <crusta/DataManager.h>
 #include <crusta/Timer.h>
 
 #define CRUSTA_RECORD_STATS 0
@@ -11,8 +12,6 @@
 
 BEGIN_CRUSTA
 
-
-class QuadNodeMainData;
 
 class StatsManager
 {
@@ -43,7 +42,7 @@ public:
     static void start(Stat stat);
     static void stop(Stat stat);
 
-    static void extractTileStats(std::vector<QuadNodeMainData*>& nodes);
+    static void extractTileStats(const SurfaceApproximation& surface);
     static void incrementDataUpdated();
 };
 

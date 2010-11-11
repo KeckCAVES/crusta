@@ -1,3 +1,5 @@
+#include <GL/VruiGlew.h> //must be included before gl.h
+
 #include <crusta/map/MapManager.h>
 
 #include <algorithm>
@@ -119,7 +121,7 @@ load(const char* filename)
 ///\todo check the feature set of the layer here to make sure it has the needed
 
     //create a sphere-geoid to convert the cartesian points to lat,lon,elevation
-    Geometry::Geoid<double> sphere(crusta->getSettings().globeRadius, 0.0);
+    Geometry::Geoid<double> sphere(SETTINGS->globeRadius, 0.0);
 
     //grab all the features and their control points (we assume polylines only)
     OGRFeature* feature = NULL;
@@ -212,13 +214,12 @@ save(const char* fileName, const char* format)
     //create a layer-field definition for outputting the symbol id
     OGRFieldDefn fieldDef("Symbol", OFTInteger);
 
-    const CrustaSettings& crustaSettings = crusta->getSettings();
 ///\todo create layers for all the different shape types to export
     //create a (georeferenced) layer for the polylines
     OGRSpatialReference crustaSys;
-    crustaSys.SetGeogCS((string("Crusta_")+crustaSettings.globeName).c_str(),
-                       "Crusta_Sphere_Datum", crustaSettings.globeName.c_str(),
-                       crustaSettings.globeRadius, 0.0,
+    crustaSys.SetGeogCS((string("Crusta_")+SETTINGS->globeName).c_str(),
+                       "Crusta_Sphere_Datum", SETTINGS->globeName.c_str(),
+                       SETTINGS->globeRadius, 0.0,
                        "Reference_Meridian", 0.0, SRS_UA_DEGREE,
                        atof(SRS_UA_DEGREE_CONV));
 
@@ -241,7 +242,7 @@ save(const char* fileName, const char* format)
     }
 
     //create a sphere-geoid to convert the cartesian points to lat,lon,elevation
-    Geometry::Geoid<double> sphere(crustaSettings.globeRadius, 0.0);
+    Geometry::Geoid<double> sphere(SETTINGS->globeRadius, 0.0);
 
     for (PolylinePtrs::iterator in=polylines.begin(); in!=polylines.end(); ++in)
     {
@@ -442,13 +443,13 @@ CRUSTA_DEBUG(41, std::cerr << "--REM\n\n");
 }
 
 void MapManager::
-inheritShapeCoverage(const QuadNodeMainData& parent, QuadNodeMainData& child)
+inheritShapeCoverage(const NodeData& parent, NodeData& child)
 {
 statsMan.start(StatsManager::INHERITSHAPECOVERAGE);
 
-    typedef QuadNodeMainData::ShapeCoverage                    Coverage;
-    typedef QuadNodeMainData::AgeStampedControlPointHandleList HandleList;
-    typedef Shape::ControlPointList::const_iterator            ConstHandle;
+    typedef NodeData::ShapeCoverage        Coverage;
+    typedef Shape::ControlPointHandleList  HandleList;
+    typedef Shape::ControlPointConstHandle Handle;
 
     child.lineCoverage.clear();
 
@@ -469,14 +470,15 @@ statsMan.start(StatsManager::INHERITSHAPECOVERAGE);
         for (HandleList::const_iterator hit=srcHandles.begin();
              hit!=srcHandles.end(); ++hit)
         {
-            ConstHandle start = hit->handle;
-            ConstHandle end   = start; ++end;
+            Handle start = *hit;
+            Handle end   = start; ++end;
             assert(start!=shape->getControlPoints().end() &&
                    end  !=shape->getControlPoints().end());
 
             //intersect ray and check for overlap
             Ray ray(start->pos, end->pos);
-            QuadTerrain::intersectNodeSides(child, ray, tin, sin, tout, sout);
+            QuadTerrain::intersectNodeSides(child.scope, ray,
+                                            tin, sin, tout, sout);
             if (tin>=1.0 || tout<=0.0)
                 continue;
 
@@ -502,78 +504,79 @@ statsMan.stop(StatsManager::INHERITSHAPECOVERAGE);
 
 
 void MapManager::
-updateLineData(Nodes& nodes)
+updateLineData(SurfaceApproximation& surface)
 {
 statsMan.start(StatsManager::UPDATELINEDATA);
 
-    typedef QuadNodeMainData::ShapeCoverage                    Coverage;
-    typedef QuadNodeMainData::AgeStampedControlPointHandleList HandleList;
-    typedef Shape::ControlPointHandle                          Handle;
+    typedef NodeData::ShapeCoverage       Coverage;
+    typedef Shape::ControlPointHandleList HandleList;
+    typedef Shape::ControlPointHandle     Handle;
 
-    const uint32 lineTexSize = static_cast<uint32>(Crusta::lineDataTexSize);
+    const uint32 lineTexSize = static_cast<uint32>(SETTINGS->lineDataTexSize);
 
     //go through all the nodes provided
-    for (Nodes::iterator nit=nodes.begin(); nit!=nodes.end(); ++nit)
+    size_t numNodes = surface.visibles.size();
+    for (size_t i=0; i<numNodes; ++i)
     {
-        QuadNodeMainData* node        = *nit;
-        Coverage&         coverage    = node->lineCoverage;
-        Vector2fs&        offsets     = node->lineCoverageOffsets;
-        int&              numSegments = node->lineNumSegments;
-        Colors&           data        = node->lineData;
+        NodeData&   node        = *surface.visible(i).node;
+        Coverage&   coverage    = node.lineCoverage;
+        FrameStamp& dataAge     = node.lineCoverageAge;
+        Vector2fs&  offsets     = node.lineCoverageOffsets;
+        int&        numSegments = node.lineNumSegments;
+        Colors&     data        = node.lineData;
 
-/**\todo integrate check for deprecated data only to where nodes are added to
-the representation. For now just check deprecation here...
-Actually there is a problem with not checking this before drawing: the current
-code assumes this is going to happen is this flags redraws by updating the age
-of the changed segments (e.g. new symbol, new coords) */
-if (!data.empty())
-{
-    /* keep track of the offset in the texture. We don't want segments that are
-       not going to be added to the line data texture to prompt its refresh */
-    uint32 offset = 0;
-    for (Coverage::iterator lit=coverage.begin();
-         lit!=coverage.end() && !data.empty() && offset<lineTexSize; ++lit)
-    {
-        HandleList& handles = lit->second;
-
-        for (HandleList::iterator hit=handles.begin();
-             hit!=handles.end() && offset<lineTexSize; ++hit, offset+=4)
+///\todo is this the right location to be doing this check?
+        //verify that edits to lines have not deprecated the cached data
+        if (!data.empty())
         {
-            if (hit->age != hit->handle->age)
+            /* keep track of the offset in the texture. We don't want segments
+               that are not going to be added to the line data texture to
+               prompt its refresh */
+            uint32 offset = 0;
+            for (Coverage::iterator lit=coverage.begin();
+                 lit!=coverage.end() && !data.empty() && offset<lineTexSize;
+                 ++lit)
             {
-CRUSTA_DEBUG(51, std::cerr << "~~~INV n(" << node->index << ") has old " <<
-"segment from line " << lit->first->getId() << " (ages " << hit->age <<
-" vs " << hit->handle->age << ")\n\n";)
-                data.clear();
-                break;
+                HandleList& handles = lit->second;
+
+                for (HandleList::iterator hit=handles.begin();
+                     hit!=handles.end() && offset<lineTexSize; ++hit, offset+=4)
+                {
+                    if (dataAge < (*hit)->age)
+                    {
+CRUSTA_DEBUG(51, std::cerr << "~~~INV n(" << node.index << ") has old " <<
+"segment from line " << lit->first->getId() << " (ages " << dataAge <<
+" vs " << (*hit)->age << ")\n\n";)
+                        data.clear();
+                        break;
+                    }
+                }
             }
         }
-    }
-}
 
         //does not require update if 1. has data or 2. is not overlapped
         if (!data.empty() || coverage.empty())
             continue;
 
 ///\todo debug: check for duplicates in the line coverage
-static bool checkForDuplicates = false;
+static bool checkForDuplicates = true;
 if (checkForDuplicates) {
-for (Coverage::iterator lit=coverage.begin(); lit!=coverage.end(); ++lit)
-{
-#if DEBUG
-    const Shape* const shape = lit->first;
-    assert(dynamic_cast<const Polyline*>(shape) != NULL);
-#endif //DEBUG
-    HandleList& handles = lit->second;
-    assert(handles.size() > 0);
-
-    for (HandleList::iterator hit=handles.begin(); hit!=handles.end(); ++hit)
+    for (Coverage::iterator lit=coverage.begin(); lit!=coverage.end(); ++lit)
     {
-        HandleList::iterator nhit = hit;
-        for (++nhit; nhit!=handles.end(); ++nhit)
-            assert(hit->handle != nhit->handle);
+    #if DEBUG
+        const Shape* const shape = lit->first;
+        assert(dynamic_cast<const Polyline*>(shape) != NULL);
+    #endif //DEBUG
+        HandleList& handles = lit->second;
+        assert(handles.size() > 0);
+
+        for (HandleList::iterator hit=handles.begin();hit!=handles.end();++hit)
+        {
+            HandleList::iterator nhit = hit;
+            for (++nhit; nhit!=handles.end(); ++nhit)
+                assert(*hit != *nhit);
+        }
     }
-}
 }
 
 //record the update to this node
@@ -584,7 +587,7 @@ statsMan.incrementDataUpdated();
         for (Coverage::iterator lit=coverage.begin();lit!=coverage.end();++lit)
             numSegments += static_cast<int>(lit->second.size());
 
-CRUSTA_DEBUG(50, std::cerr << "###REGEN n(" << node->index << ") :\n" <<
+CRUSTA_DEBUG(50, std::cerr << "###REGEN n(" << node.index << ") :\n" <<
 coverage << "\n\n";)
 
     //- reset the offsets
@@ -592,7 +595,7 @@ coverage << "\n\n";)
         uint32 curOff = 0.0;
 
     //- go through all the lines for that node and dump the data
-        const Point3& centroid = node->centroid;
+        const Point3& centroid = node.centroid;
 
         for (Coverage::iterator lit=coverage.begin();
              lit!=coverage.end() && curOff<lineTexSize; ++lit)
@@ -606,11 +609,8 @@ coverage << "\n\n";)
             for (HandleList::iterator hit=handles.begin();
                  hit!=handles.end() && curOff<lineTexSize; ++hit)
             {
-                //age stamp the current data to the shape's age
-                hit->age = hit->handle->age;
-
                 //dump the data
-                Handle cur  = hit->handle;
+                Handle cur  = *hit;
                 Handle next = cur; ++cur;
 
                 Point3 curP  = crusta->mapToScaledGlobe(cur->pos);
@@ -649,7 +649,7 @@ coverage << "\n\n";)
         }
 
         //update the age of the line data
-        node->lineCoverageAge = crusta->getCurrentFrame();
+        dataAge = CURRENT_FRAME;
     }
 
 statsMan.stop(StatsManager::UPDATELINEDATA);
@@ -674,11 +674,10 @@ frame()
 }
 
 void MapManager::
-display(std::vector<QuadNodeMainData*>& nodes, GLContextData& contextData) const
+display(GLContextData& contextData, const SurfaceApproximation& surface) const
 {
-    const CrustaSettings& crustaSettings = crusta->getSettings();
-    if (!crustaSettings.decoratedVectorArt)
-        polylineRenderer.display(nodes, contextData);
+    if (!SETTINGS->decorateVectorArt)
+        polylineRenderer.display(contextData, surface);
 }
 
 
@@ -738,41 +737,36 @@ setSegment(const Shape::ControlPointHandle& nSegment)
 
 
 void MapManager::ShapeCoverageAdder::
-operator()(QuadNodeMainData* node, bool isLeaf)
+operator()(NodeData& node, bool isLeaf)
 {
-    typedef QuadNodeMainData::ShapeCoverage                    Coverage;
-    typedef QuadNodeMainData::AgeStampedControlPointHandleList CHandleList;
-    typedef QuadNodeMainData::AgeStampedControlPointHandle     CHandle;
-    typedef Shape::ControlPointHandle                          SHandle;
+    typedef NodeData::ShapeCoverage       Coverage;
+    typedef Shape::ControlPointHandleList HandleList;
 
-    CHandleList& chandles = node->lineCoverage[shape];
+    HandleList& handles = node.lineCoverage[shape];
 
-CRUSTA_DEBUG(43, std::cerr << "+" << node->index;)
+CRUSTA_DEBUG(43, std::cerr << "+" << node.index;)
 
-///\todo Vis2010 this needs to be put into debug
-//CRUSTA_DEBUG_ONLY(
-    CHandleList::iterator fit;
-    for (fit=chandles.begin();
-         fit!=chandles.end() && fit->handle!=segment;
-         ++fit);
-    if (fit != chandles.end())
+CRUSTA_DEBUG_ONLY(
+    HandleList::const_iterator fit;
+    for (fit=handles.begin(); fit!=handles.end() && *fit!=segment; ++fit);
+    if (fit != handles.end())
     {
-        std::cerr << "DUPLICATE FOUND: node(" << node->index << ") " <<
-            "contains:\n" << node->lineCoverage << "Offending segment is "
-            "fit." << fit->handle << " segment." << segment << "\n";
+        std::cerr << "DUPLICATE FOUND: node(" << node.index << ") " <<
+            "contains:\n" << node.lineCoverage << "Offending segment is "
+            "fit." << *fit << " segment." << segment << "\n";
     }
-//)
+);
 
-    chandles.push_back(CHandle(segment->age, segment));
+    handles.push_back(segment);
 
     //invalidate current line data
-    node->lineNumSegments = 0;
-    node->lineData.clear();
+    node.lineNumSegments = 0;
+    node.lineData.clear();
     //record the change for the culled tree if this is a leaf node
     if (isLeaf)
     {
 CRUSTA_DEBUG(44, std::cerr << "~\n";)
-        node->lineCoverageDirty |= true;
+        node.lineCoverageDirty |= true;
     }
     else
     {
@@ -781,40 +775,36 @@ CRUSTA_DEBUG(44, std::cerr << "\n";)
 }
 
 void MapManager::ShapeCoverageRemover::
-operator()(QuadNodeMainData* node, bool isLeaf)
+operator()(NodeData& node, bool isLeaf)
 {
-    typedef QuadNodeMainData::ShapeCoverage                    Coverage;
-    typedef QuadNodeMainData::AgeStampedControlPointHandleList CHandleList;
-    typedef QuadNodeMainData::AgeStampedControlPointHandle     CHandle;
-    typedef Shape::ControlPointHandle                          SHandle;
+    typedef NodeData::ShapeCoverage       Coverage;
+    typedef Shape::ControlPointHandleList HandleList;
 
-    Coverage::iterator lit = node->lineCoverage.find(shape);
-    assert(lit != node->lineCoverage.end());
-    CHandleList& chandles = lit->second;
-    assert(chandles.size() > 0);
+    Coverage::iterator lit = node.lineCoverage.find(shape);
+    assert(lit != node.lineCoverage.end());
+    HandleList& handles = lit->second;
+    assert(handles.size() > 0);
 
-CRUSTA_DEBUG(43, std::cerr << "-" << node->index;)
+CRUSTA_DEBUG(43, std::cerr << "-" << node.index;)
 
-    CHandleList::iterator fit;
-    for (fit=chandles.begin();
-         fit!=chandles.end() && fit->handle!=segment;
-         ++fit);
-    assert(fit != chandles.end());
+    HandleList::iterator fit;
+    for (fit=handles.begin(); fit!=handles.end() && *fit!=segment; ++fit);
+    assert(fit != handles.end());
 
-    chandles.erase(fit);
+    handles.erase(fit);
 
     //clean up emptied coverages
-    if (chandles.empty())
-        node->lineCoverage.erase(lit);
+    if (handles.empty())
+        node.lineCoverage.erase(lit);
 
     //invalidate current line data
-    node->lineNumSegments = 0;
-    node->lineData.clear();
+    node.lineNumSegments = 0;
+    node.lineData.clear();
     //record the change for the culled tree if this is a leaf node
     if (isLeaf)
     {
 CRUSTA_DEBUG(44, std::cerr << "~\n";)
-        node->lineCoverageDirty |= true;
+        node.lineCoverageDirty |= true;
     }
     else
     {

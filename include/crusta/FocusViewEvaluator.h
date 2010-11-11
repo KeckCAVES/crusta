@@ -27,7 +27,7 @@ public:
 
 //- inherited from LodEvaluator
 public:
-    virtual float compute(const QuadNodeMainData& mainData);
+    virtual float compute(const NodeData& node);
 };
 
 END_CRUSTA

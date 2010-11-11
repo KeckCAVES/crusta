@@ -22,7 +22,7 @@ set(CRUSTA_LIBRARY_PATH "${CMAKE_INSTALL_PREFIX}/lib"
     CACHE PATH "Crusta install library path")
 set(CRUSTA_SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share/crusta"
     CACHE PATH "Crusta install share path")
-add_definitions(-DCRUSTA_SHARE_PATH=\"${CRUSTA_SHARE_PATH}\")
+add_definitions(-DCRUSTA_SHARE_PATH=\"${CRUSTA_SHARE_PATH}\" -DGLEW_MX)
 
 include_directories(${VRUI_INCLUDE_DIR})
 include_directories(../include)
@@ -66,7 +66,6 @@ add_library(CrustaCore SHARED
     ../include/crusta/Ellipsoid.h
     ../include/crusta/FocusViewEvaluator.h
     ../include/crusta/FrustumVisibility.h
-    ../include/crusta/GlProgram.h
     ../include/crusta/Homography.h
     ../include/crusta/IdGenerator.h
     ../include/crusta/LightingShader.h
@@ -80,7 +79,9 @@ add_library(CrustaCore SHARED
     ../include/crusta/PixelSpecs.h
     ../include/crusta/Polyhedron.h
     ../include/crusta/QuadCache.h
+    ../include/crusta/QuadCache.hpp
     ../include/crusta/QuadNodeData.h
+    ../include/crusta/QuadNodeDataBundles.h
     ../include/crusta/QuadTerrain.h
     ../include/crusta/QuadtreeFile.h
     ../include/crusta/QuadtreeFile.hpp
@@ -93,6 +94,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/Section.h
     ../include/crusta/Sphere.h
     ../include/crusta/StatsManager.h
+    ../include/crusta/SurfaceApproximation.h
     ../include/crusta/SurfaceTool.h
     ../include/crusta/Timer.h
     ../include/crusta/Tool.h
@@ -102,6 +104,10 @@ add_library(CrustaCore SHARED
     ../include/crusta/ViewLod.h
     ../include/crusta/VisibilityEvaluator.h
     ../include/crusta/Visualizer.h
+    ../include/GL/glew.h
+    ../include/GL/GlProgram.h
+    ../include/GL/glxew.h
+    ../include/GL/VruiGlew.h
     ../include/GLMotif/ColorHexagon.h
     ../include/GLMotif/ColorMap.h
     ../include/GLMotif/ColorPicker.h
@@ -118,7 +124,6 @@ add_library(CrustaCore SHARED
     ../source/crusta/ElevationRangeTool.cpp
     ../source/crusta/FocusViewEvaluator.cpp
     ../source/crusta/FrustumVisibility.cpp
-    ../source/crusta/GlProgram.cpp
     ../source/crusta/Homography.cpp
     ../source/crusta/LightingShader.cpp
     ../source/crusta/LodEvaluator.cpp
@@ -130,17 +135,22 @@ add_library(CrustaCore SHARED
     ../source/crusta/map/Shape.cpp
     ../source/crusta/QuadCache.cpp
     ../source/crusta/QuadNodeData.cpp
+    ../source/crusta/QuadNodeDataBundles.cpp
     ../source/crusta/QuadTerrain.cpp
     ../source/crusta/Scope.cpp
     ../source/crusta/Sphere.cpp
     ../source/crusta/Section.cpp
     ../source/crusta/StatsManager.cpp
+    ../source/crusta/SurfaceApproximation.cpp
     ../source/crusta/SurfaceTool.cpp
     ../source/crusta/Tool.cpp
     ../source/crusta/TreeIndex.cpp
     ../source/crusta/Triacontahedron.cpp
     ../source/crusta/ViewLod.cpp
     ../source/crusta/Visualizer.cpp
+    ../source/GL/glew.c
+    ../source/GL/GlProgram.cpp
+    ../source/GL/VruiGlew.cpp
     ../source/GLMotif/ColorHexagon.cpp
     ../source/GLMotif/ColorMap.cpp
     ../source/GLMotif/ColorPicker.cpp

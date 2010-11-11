@@ -1,3 +1,5 @@
+#include <GL/VruiGlew.h> //must be included before gl.h
+
 #include <crusta/ElevationRangeTool.h>
 
 #include <cassert>
@@ -416,18 +418,15 @@ applyToColorMap(const ManipulationSource& manip)
             case MANIP_MIN_MAX_MARKERS:
             {
                 assert(markersSet == 2);
-                newMin = Vector3(markers[0]).mag() -
-                         crusta->getSettings().globeRadius;
-                newMax = Vector3(markers[1]).mag() -
-                         crusta->getSettings().globeRadius;
+                newMin = Vector3(markers[0]).mag() - SETTINGS->globeRadius;
+                newMax = Vector3(markers[1]).mag() - SETTINGS->globeRadius;
                 break;
             }
             case MANIP_SHIFT_MARKER:
             {
                 assert(markersSet == 1);
                 //compute the min elevation from the marker
-                newMin = Vector3(markers[0]).mag() -
-                         crusta->getSettings().globeRadius;
+                newMin = Vector3(markers[0]).mag() - SETTINGS->globeRadius;
 
                 //get the current range from the color map
                 GLColorMap* colorMap = crusta->getColorMap();

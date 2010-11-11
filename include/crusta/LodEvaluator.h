@@ -5,16 +5,15 @@
 
 BEGIN_CRUSTA
 
-class Node;
-class QuadNodeMainData;
+class NodeData;
 
 /**
     Base class for Level-of-Detail (LOD) evaluation visitors.
- 
-    The visitors are applied to the base scopes of the global grid. They 
+
+    The visitors are applied to the base scopes of the global grid. They
     traverse the refinement and prioritize the active scopes based on their
     evaluated LOD-value.
- 
+
     The LOD-value returned adheres to the following convention:
     - a negative value characterises the degree to which the evaluated scope is
       finer than the ideal. A value smaller or equal to -1 recommends
@@ -23,9 +22,9 @@ class QuadNodeMainData;
     - a positive value characterises teh degree to which the evaluated scope is
       coarser than the ideal. A value greater or equal to 1 recommends
       refinement.
-    The LOD-value can be scaled and biased (linearly) to relax or tighten the 
+    The LOD-value can be scaled and biased (linearly) to relax or tighten the
     recommendations at -1 and 1.
- 
+
     \see Refinement
 */
 class LodEvaluator
@@ -33,9 +32,9 @@ class LodEvaluator
 public:
     LodEvaluator();
     virtual ~LodEvaluator();
-    
+
     /** computes the LOD-value of a given scope */
-    float evaluate(const QuadNodeMainData& mainData);
+    float evaluate(const NodeData& node);
 
     /** biasing factor applied to the computed LOD-value. (default biasing is
         0) */
@@ -43,10 +42,10 @@ public:
     /** scaling factor applied to the computed LOD-value. (default scaling is
         1) */
     float scale;
-    
+
 protected:
     /** specializations must provide the custom computed LOD-value */
-    virtual float compute(const QuadNodeMainData& mainData) = 0;
+    virtual float compute(const NodeData& node) = 0;
 };
 
 END_CRUSTA
