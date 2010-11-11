@@ -555,8 +555,8 @@ Item()
 
     std::string fp = "void main()\n{\ngl_FragColor = gl_Color;\n}\n";
 
-    lineCoverageShader.addString(GL_VERTEX_SHADER_ARB, vp);
-    lineCoverageShader.addString(GL_FRAGMENT_SHADER_ARB, fp);
+    lineCoverageShader.addString(GL_VERTEX_SHADER, vp);
+    lineCoverageShader.addString(GL_FRAGMENT_SHADER, fp);
     lineCoverageShader.link();
 
 #if COVERAGE_PROJECTION_IN_GL
@@ -1509,7 +1509,7 @@ if (displayDebuggingBoundingSpheres)
 crustaGl->terrainShader.disable();
     GLint activeTexture;
     glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT);
-    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
 
     glDisable(GL_LIGHTING);
     glActiveTexture(GL_TEXTURE0);
@@ -1533,7 +1533,7 @@ if (displayDebuggingGrid)
 crustaGl->terrainShader.disable();
     CHECK_GLA
     GLint activeTexture;
-    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
 
     glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT);
 

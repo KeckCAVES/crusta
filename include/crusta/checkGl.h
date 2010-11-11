@@ -55,13 +55,13 @@ class CheckGlFramebuffer : public CheckGlBase
 public:
     static bool print(int line, const char* file)
     {
-        GLenum r = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-        return CheckGlBase::print(r, GL_FRAMEBUFFER_COMPLETE_EXT, line, file);
+        GLenum r = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        return CheckGlBase::print(r, GL_FRAMEBUFFER_COMPLETE, line, file);
     }
     static void except(int line, const char* file)
     {
-        GLenum r = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-        CheckGlBase::except(r, GL_FRAMEBUFFER_COMPLETE_EXT, line, file);
+        GLenum r = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        CheckGlBase::except(r, GL_FRAMEBUFFER_COMPLETE, line, file);
     }
 };
 

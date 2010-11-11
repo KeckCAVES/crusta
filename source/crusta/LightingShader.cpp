@@ -687,73 +687,73 @@ catch (std::exception& e){
         std::cerr << linkLogBuffer << std::endl;
         compileShaderFromString(fragmentShader,
                                   "void main(){gl_FragColor=vec4(1.0);}");
-        glLinkProgramARB(programObject);
+        glLinkProgram(programObject);
     }
 
     glUseProgramObjectARB(programObject);
     //setup "constant uniforms"
     GLint uniform;
-    uniform = glGetUniformLocationARB(programObject, "geometryTex");
+    uniform = glGetUniformLocation(programObject, "geometryTex");
     glUniform1i(uniform, 0);
-    uniform = glGetUniformLocationARB(programObject, "heightTex");
+    uniform = glGetUniformLocation(programObject, "heightTex");
     glUniform1i(uniform, 1);
-    uniform = glGetUniformLocationARB(programObject, "colorTex");
+    uniform = glGetUniformLocation(programObject, "colorTex");
     glUniform1i(uniform, 2);
 
-    uniform = glGetUniformLocationARB(programObject, "colorMap");
+    uniform = glGetUniformLocation(programObject, "colorMap");
     glUniform1i(uniform, 6);
 
     colorMapElevationInvRangeUniform =
-        glGetUniformLocationARB(programObject, "colorMapElevationInvRange");
+        glGetUniformLocation(programObject, "colorMapElevationInvRange");
     minColorMapElevationUniform =
-        glGetUniformLocationARB(programObject, "minColorMapElevation");
-    textureStepUniform  =glGetUniformLocationARB(programObject,"texStep");
-    verticalScaleUniform=glGetUniformLocationARB(programObject,"verticalScale");
-    centroidUniform     =glGetUniformLocationARB(programObject,"center");
+        glGetUniformLocation(programObject, "minColorMapElevation");
+    textureStepUniform  =glGetUniformLocation(programObject,"texStep");
+    verticalScaleUniform=glGetUniformLocation(programObject,"verticalScale");
+    centroidUniform     =glGetUniformLocation(programObject,"center");
 
-    geometryTexOffsetUniform = glGetUniformLocationARB(programObject,
+    geometryTexOffsetUniform = glGetUniformLocation(programObject,
                                                        "geometryTexOffset");
-    geometryTexScaleUniform = glGetUniformLocationARB(programObject,
+    geometryTexScaleUniform = glGetUniformLocation(programObject,
                                                       "geometryTexScale");
 
-    heightTexOffsetUniform = glGetUniformLocationARB(programObject,
+    heightTexOffsetUniform = glGetUniformLocation(programObject,
                                                      "heightTexOffset");
-    heightTexScaleUniform = glGetUniformLocationARB(programObject,
+    heightTexScaleUniform = glGetUniformLocation(programObject,
                                                     "heightTexScale");
 
-    colorTexOffsetUniform = glGetUniformLocationARB(programObject,
+    colorTexOffsetUniform = glGetUniformLocation(programObject,
                                                     "colorTexOffset");
-    colorTexScaleUniform = glGetUniformLocationARB(programObject,
+    colorTexScaleUniform = glGetUniformLocation(programObject,
                                                    "colorTexScale");
 
 
     if (linesDecorated)
     {
-        uniform = glGetUniformLocationARB(programObject, "lineDataTex");
+        uniform = glGetUniformLocation(programObject, "lineDataTex");
         glUniform1i(uniform, 3);
-        uniform = glGetUniformLocationARB(programObject, "lineCoverageTex");
+        uniform = glGetUniformLocation(programObject, "lineCoverageTex");
         glUniform1i(uniform, 4);
-        uniform = glGetUniformLocationARB(programObject, "symbolTex");
+        uniform = glGetUniformLocation(programObject, "symbolTex");
         glUniform1i(uniform, 5);
 
-        uniform = glGetUniformLocationARB(programObject, "lineStartCoord");
+        uniform = glGetUniformLocation(programObject, "lineStartCoord");
         glUniform1f(uniform, crusta::SETTINGS->lineDataStartCoord);
-        uniform = glGetUniformLocationARB(programObject, "lineCoordStep");
+        uniform = glGetUniformLocation(programObject, "lineCoordStep");
         glUniform1f(uniform, crusta::SETTINGS->lineDataCoordStep);
 
         lineNumSegmentsUniform =
-            glGetUniformLocationARB(programObject, "lineNumSegments");
+            glGetUniformLocation(programObject, "lineNumSegments");
         lineCoordScaleUniform =
-            glGetUniformLocationARB(programObject, "lineCoordScale");
-        lineWidthUniform = glGetUniformLocationARB(programObject, "lineWidth");
+            glGetUniformLocation(programObject, "lineCoordScale");
+        lineWidthUniform = glGetUniformLocation(programObject, "lineWidth");
 
-        coverageTexOffsetUniform = glGetUniformLocationARB(
+        coverageTexOffsetUniform = glGetUniformLocation(
             programObject, "coverageTexOffset");
-        coverageTexScaleUniform = glGetUniformLocationARB(
+        coverageTexScaleUniform = glGetUniformLocation(
             programObject, "coverageTexScale");
-        lineDataTexOffsetUniform = glGetUniformLocationARB(
+        lineDataTexOffsetUniform = glGetUniformLocation(
             programObject, "lineDataTexOffset");
-        lineDataTexScaleUniform = glGetUniformLocationARB(
+        lineDataTexScaleUniform = glGetUniformLocation(
             programObject, "lineDataTexScale");
     }
 
@@ -762,28 +762,30 @@ catch (std::exception& e){
 
 void LightingShader::compileShaderFromString(GLhandleARB shaderObject,const char* shaderSource)
 {
-	/* Determine the length of the source string: */
-	GLint shaderSourceLength=GLint(strlen(shaderSource));
-	
-	/* Upload the shader source into the shader object: */
-	const GLcharARB* ss=reinterpret_cast<const GLcharARB*>(shaderSource);
-	glShaderSourceARB(shaderObject,1,&ss,&shaderSourceLength);
-	
-	/* Compile the shader source: */
-	glCompileShaderARB(shaderObject);
-	
-	/* Check if the shader compiled successfully: */
-	GLint compileStatus;
-	glGetObjectParameterivARB(shaderObject,GL_OBJECT_COMPILE_STATUS_ARB,&compileStatus);
-	if(!compileStatus)
+    /* Determine the length of the source string: */
+    GLint shaderSourceLength=GLint(strlen(shaderSource));
+
+    /* Upload the shader source into the shader object: */
+    const GLcharARB* ss=reinterpret_cast<const GLcharARB*>(shaderSource);
+    glShaderSource(shaderObject,1,&ss,&shaderSourceLength);
+
+    /* Compile the shader source: */
+    glCompileShader(shaderObject);
+
+    /* Check if the shader compiled successfully: */
+    GLint compileStatus;
+    glGetObjectParameterivARB(shaderObject,GL_OBJECT_COMPILE_STATUS_ARB,
+                              &compileStatus);
+    if(!compileStatus)
     {
-		/* Get some more detailed information: */
-		GLcharARB compileLogBuffer[2048];
-		GLsizei compileLogSize;
-		glGetInfoLogARB(shaderObject,sizeof(compileLogBuffer),&compileLogSize,compileLogBuffer);
-		
-		/* Signal an error: */
-		Misc::throwStdErr("glCompileShaderFromString: Error \"%s\" while compiling shader",compileLogBuffer);
+        /* Get some more detailed information: */
+        GLcharARB compileLogBuffer[2048];
+        GLsizei compileLogSize;
+        glGetInfoLogARB(shaderObject, sizeof(compileLogBuffer),
+                        &compileLogSize, compileLogBuffer);
+
+        /* Signal an error: */
+        Misc::throwStdErr("glCompileShaderFromString: Error \"%s\" while compiling shader",compileLogBuffer);
     }
 }
 

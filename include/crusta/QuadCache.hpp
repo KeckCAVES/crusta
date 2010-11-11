@@ -164,7 +164,7 @@ init(const std::string& iName, int size, int tileSize,
 
     CHECK_GL_CLEAR_ERROR;
     //create the framebuffer to be used to attach and render the coverage maps
-    glGenFramebuffersEXT(1, &renderFbo);
+    glGenFramebuffers(1, &renderFbo);
     CHECK_GL_THROW_ERROR;
 }
 
@@ -176,20 +176,21 @@ beginRender(const SubRegion& sub)
     //save the current viewport specification
     glGetIntegerv(GL_VIEWPORT, oldViewport);
     //set the viewport to match the atlas entry
-    glViewport(GLint(sub.offset[0]), GLint(sub.offset[1]),
+    glViewport(GLint(sub.offset[0]*this->texSize),
+               GLint(sub.offset[1]*this->texSize),
                GLsizei(sub.size[0]*this->texSize),
                GLsizei(sub.size[1]*this->texSize));
 
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING_EXT, &oldFbo);
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &oldFbo);
     glGetIntegerv(GL_DRAW_BUFFER, &oldDrawBuf);
     glGetIntegerv(GL_READ_BUFFER, &oldReadBuf);
 
     //bind the coverage rendering framebuffer
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, renderFbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, renderFbo);
     //attach the appropriate coverage map
-    glFramebufferTextureLayerEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
-                                 this->texture, 0, GLint(sub.offset[2]));
-    glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
+    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                              this->texture, 0, GLint(sub.offset[2]));
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glReadBuffer(GL_NONE);
     CHECK_GLFBA;
 }
@@ -199,7 +200,7 @@ void Gpu2dRenderAtlasCache<BufferParam>::
 endRender()
 {
     //bind back the old framebuffer and restore buffer read/draw
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, oldFbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, oldFbo);
     glDrawBuffer(oldDrawBuf);
     glReadBuffer(oldReadBuf);
 
@@ -312,17 +313,10 @@ stream(const SubRegion& sub, GLenum dataFormat, GLenum dataType, void* data)
     glPushAttrib(GL_TEXTURE_BIT);
 
     glBindTexture(GL_TEXTURE_2D, texture);
-#if 0
     glTexSubImage2D(
         GL_TEXTURE_2D, 0,
         GLint(sub.offset[0]*texWidth), GLint(sub.offset[1]*texHeight),
         GLsizei(sub.size[0]*texWidth), 1,
-        dataFormat, dataType, data);
-#endif
-    glTexSubImage2D(
-        GL_TEXTURE_2D, 0,
-        0, 0,
-        texWidth, 1,
         dataFormat, dataType, data);
 
     glPopAttrib();

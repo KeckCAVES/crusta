@@ -276,7 +276,7 @@ display(GLContextData& contextData) const
         return;
 
     GLint activeTexture;
-    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
     GLdouble depthRange[2];
     glGetDoublev(GL_DEPTH_RANGE, depthRange);
 

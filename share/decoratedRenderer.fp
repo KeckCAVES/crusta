@@ -10,10 +10,10 @@ uniform float lineWidth;
 
 uniform vec3 center;
 
-uniform vec2  lineDataTexOffset;
-uniform float lineDataTexScale;
-uniform vec3  coverageTexOffset;
-uniform vec2  coverageTexScale;
+uniform vec2 lineDataTexOffset;
+uniform vec2 lineDataTexScale;
+uniform vec3 coverageTexOffset;
+uniform vec2 coverageTexScale;
 
 uniform sampler2D      symbolTex;
 uniform sampler2D      lineDataTex;
@@ -28,7 +28,7 @@ const float EPSILON = 0.00001;
 #define NORMAL   1
 #define TWIST    1
 #define COVERAGE 0
-#define COLORIZE_COVERAGE 1
+#define COLORIZE_COVERAGE 0
 
 ///\todo move to uniform specification
 #define U_SCALE 0.15
@@ -44,9 +44,11 @@ struct Segment
 
 vec4 sampleLineData(in float tc)
 {
-return texture2D(lineDataTex, vec2(tc, 0.0));
-
-    vec2 tc2 = lineDataTexOffset + vec2((tc * lineDataTexScale), 0.0);
+    /* make sure the texture coordinate is texel centered. tc already is because
+       it depends on lineStartCoord. We have a 1D strip so shift half a texel
+       in s*/
+    vec2 tc2 = vec2(tc, 0.5);
+    tc2 = lineDataTexOffset + tc2*lineDataTexScale;
     return texture2D(lineDataTex, tc2);
 }
 
@@ -75,9 +77,6 @@ Segment readSegment(inout float coord)
 
 void computeSegment(in Segment segment, inout vec4 color)
 {
-color.rgb = segment.end - position;
-color.a = 1.0;
-return;
 //- compute lateral coordinate v
 
     //compute v without taking distortion into account:
@@ -159,13 +158,13 @@ void main()
 #endif
 
     //do lines overlap this fragment?
-    if (false)//coverage == vec2(0.0))
+    if (coverage == vec2(0.0))
         return;
 
     vec4 color = vec4(0.0);
 
     //optimize for single coverage
-    if (false)//coverage.g < 0.5)
+    if (coverage.g < 0.5)
     {
         vec2 coordShift = vec2(255.0, 255.0*256.0);
 

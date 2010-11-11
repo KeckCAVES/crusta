@@ -721,7 +721,7 @@ CRUSTA_DEBUG_OUT(50, "Number of nodes to render: %i\n",
                  static_cast<int>(surface.visibles.size()));
 
     GLint activeTexture;
-    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
     glPushAttrib(GL_TEXTURE_BIT);
 
     //update the map data

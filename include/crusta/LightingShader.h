@@ -192,7 +192,7 @@ class LightingShader
     void setLineDataSubRegion(const SubRegion& s)
     {
         glUniform2f(lineDataTexOffsetUniform, s.offset[0], s.offset[1]);
-        glUniform1f(lineDataTexScaleUniform, s.size[0]);
+        glUniform2f(lineDataTexScaleUniform, s.size[0], s.size[1]);
     }
 };
 
