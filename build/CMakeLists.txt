@@ -104,7 +104,6 @@ add_library(CrustaCore SHARED
     ../include/crusta/ViewLod.h
     ../include/crusta/VisibilityEvaluator.h
     ../include/crusta/Visualizer.h
-    ../include/crusta/TextureAtlas.h
     ../include/GL/glew.h
     ../include/GL/GlProgram.h
     ../include/GL/glxew.h
