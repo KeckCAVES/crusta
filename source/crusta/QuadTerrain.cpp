@@ -80,6 +80,7 @@ HitResult QuadTerrain::
 intersect(const Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout,
           const Scalar gout) const
 {
+CRUSTA_DEBUG_OUT(40, "\n\nIntersecting Ray with Globe:\n\n");
     return intersectNode(getRootBuffer(), ray, tin, sin, tout, sout, gout);
 }
 
@@ -693,6 +694,7 @@ intersectNode(const MainBuffer& nodeBuf, const Ray& ray,
 {
     MainData mainData = DATAMANAGER->getData(nodeBuf);
     const NodeData& node = *mainData.node;
+CRUSTA_DEBUG_OUT(40, "%s\n", node.index.med_str().c_str());
 
 //- determine the exit point and side
     tout = Math::Constants<Scalar>::max;
@@ -799,7 +801,7 @@ CrustaVisualizer::clear(5);
 
 //- perform leaf intersection?
     //is it even possible to retrieve higher res data?
-    if (DATAMANAGER->existsChildData(mainData))
+    if (!DATAMANAGER->existsChildData(mainData))
     {
         return intersectLeaf(mainData, ray, tin, sin, gout);
     }
@@ -951,6 +953,7 @@ intersectLeaf(const MainData& leafData, const Ray& ray,
               Scalar param, int side, const Scalar gout) const
 {
     NodeData& leaf = *leafData.node;
+CRUSTA_DEBUG_OUT(40, "* %s\n", leaf.index.med_str().c_str());
 
 #if DEBUG_INTERSECT_CRAP
 if (DEBUG_INTERSECT) {
