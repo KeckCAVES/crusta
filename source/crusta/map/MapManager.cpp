@@ -217,11 +217,11 @@ save(const char* fileName, const char* format)
 ///\todo create layers for all the different shape types to export
     //create a (georeferenced) layer for the polylines
     OGRSpatialReference crustaSys;
-    crustaSys.SetGeogCS((string("Crusta_")+SETTINGS->globeName).c_str(),
-                       "Crusta_Sphere_Datum", SETTINGS->globeName.c_str(),
-                       SETTINGS->globeRadius, 0.0,
-                       "Reference_Meridian", 0.0, SRS_UA_DEGREE,
-                       atof(SRS_UA_DEGREE_CONV));
+    crustaSys.SetGeogCS((std::string("Crusta_")+SETTINGS->globeName).c_str(),
+                        "Crusta_Sphere_Datum", SETTINGS->globeName.c_str(),
+                        SETTINGS->globeRadius, 0.0,
+                        "Reference_Meridian", 0.0, SRS_UA_DEGREE,
+                        atof(SRS_UA_DEGREE_CONV));
 
     OGRLayer* layer = source->CreateLayer("Crusta_Polylines", &crustaSys,
                                           wkbLineString25D);
