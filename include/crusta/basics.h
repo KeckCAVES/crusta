@@ -1,6 +1,8 @@
 #ifndef _basics_H_
 #define _basics_H_
 
+#include <GL/VruiGlew.h> //must be included before gl.h
+
 #include <cstdlib>
 #include <cstdio>
 #include <stdint.h>
@@ -10,6 +12,8 @@
 #include <Geometry/Ray.h>
 #include <Geometry/Point.h>
 #include <Geometry/Vector.h>
+#include <GL/GLColor.h>
+
 
 #define BEGIN_CRUSTA namespace crusta {
 #define END_CRUSTA   } //namespace crusta
@@ -25,7 +29,8 @@ BEGIN_CRUSTA
 extern int CRUSTA_DEBUG_LEVEL_MIN;
 extern int CRUSTA_DEBUG_LEVEL_MAX;
 
-#define CRUSTA_DEBUG_ONLY(x) {x}
+#define CRUSTA_DEBUG_ONLY(x) {x;}
+#define CRUSTA_DEBUG_ONLY_SINGLE(x) x
 #define CRUSTA_DEBUG(l,x) if (l>=CRUSTA_DEBUG_LEVEL_MIN &&\
                               l<=CRUSTA_DEBUG_LEVEL_MAX){x;}
 #ifndef CRUSTA_DEBUG_OUTPUT_DESTINATION
@@ -37,6 +42,7 @@ if (l>=CRUSTA_DEBUG_LEVEL_MIN && l<=CRUSTA_DEBUG_LEVEL_MAX) {\
 #else
 
 #define CRUSTA_DEBUG_ONLY(x)
+#define CRUSTA_DEBUG_ONLY_SINGLE(x)
 #define CRUSTA_DEBUG(l,x)
 #define CRUSTA_DEBUG_OUT(a, b, args...)
 
@@ -60,12 +66,10 @@ typedef int64_t     int64;
 
 typedef uint        error;
 
-typedef uint64                AgeStamp;
-typedef std::vector<AgeStamp> AgeStamps;
-///\todo need to deprecate FrameNumber in favor of AgeStamp
-typedef uint64      FrameNumber; ///<< DEPRECATED
+typedef double                  FrameStamp;
+typedef std::vector<FrameStamp> FrameStamps;
 
-typedef double      Scalar;
+typedef double Scalar;
 
 typedef Geometry::Point<Scalar, 3>  Point3;
 typedef Geometry::Point<float, 3>   Point3f;
@@ -74,10 +78,11 @@ typedef std::vector<Point3f>        Point3fs;
 typedef Geometry::Vector<float, 2>  Vector2f;
 typedef Geometry::Vector<Scalar, 3> Vector3;
 typedef Geometry::Vector<float, 3>  Vector3f;
+typedef std::vector<Vector2f>       Vector2fs;
 typedef std::vector<Vector3>        Vector3s;
 typedef std::vector<Vector3f>       Vector3fs;
 
-typedef Geometry::Vector<float, 4>  Color;
+typedef GLColor<float, 4>           Color;
 typedef std::vector<Color>          Colors;
 
 typedef Geometry::HitResult<Scalar> HitResult;
@@ -86,9 +91,16 @@ typedef Geometry::Ray<Scalar, 3>    Ray;
 
 static const int    TILE_RESOLUTION          = 65;
 static const float  TILE_TEXTURE_COORD_STEP  = 1.0 / TILE_RESOLUTION;
-static const double SPHEROID_RADIUS          = 6371000.0;
-static const double INV_SPHEROID_RADIUS      = 1.0 / SPHEROID_RADIUS;
+
+extern bool PROJECTION_FAILED;
+
+/**\todo this framestamp is currently used as a hack around doing synchronized
+post display processing, by handling it at the begining of a new frame and
+explicitely setting the current frame stamp afterward */
+extern FrameStamp CURRENT_FRAME;
+
 
 END_CRUSTA
+
 
 #endif //_basics_H_

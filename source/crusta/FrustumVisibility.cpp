@@ -5,10 +5,10 @@
 BEGIN_CRUSTA
 
 bool FrustumVisibility::
-evaluate(const QuadNodeMainData& mainData)
+evaluate(const NodeData& node)
 {
-    if (!frustum.doesSphereIntersect(mainData.boundingCenter,
-                                     mainData.boundingRadius))
+    if (!frustum.doesSphereIntersect(node.boundingCenter,
+                                     node.boundingRadius))
     {
         return false;
     }

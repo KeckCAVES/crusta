@@ -1,7 +1,10 @@
 #ifndef _CrustaApp_H_
 #define _CrustaApp_H_
 
+
 #include <GLMotif/Button.h>
+#include <GLMotif/ColorMap.h>
+#include <GLMotif/ColorPickerWindow.h>
 #include <GLMotif/FileAndFolderSelectionDialog.h>
 #include <GLMotif/Slider.h>
 #include <GLMotif/ToggleButton.h>
@@ -10,7 +13,8 @@
 #include <Vrui/Geometry.h>
 
 #include <crusta/basics.h>
-#include <GLMotif/ColorMap.h>
+#include <crusta/CrustaComponent.h>
+
 
 class GLContextData;
 class PaletteEditor;
@@ -41,6 +45,42 @@ public:
     ~CrustaApp();
 
 private:
+    class Dialog
+    {
+    public:
+        void createMenuEntry(GLMotif::Container* menu);
+
+    protected:
+        virtual void init();
+        void showCallback(
+            GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
+
+        std::string name;
+        std::string label;
+
+        GLMotif::PopupWindow* dialog;
+        GLMotif::Container*   parentMenu;
+    };
+
+    class SpecularSettingsDialog : public Dialog, public CrustaComponent
+    {
+    public:
+        SpecularSettingsDialog();
+    protected:
+        void init();
+    private:
+        void colorButtonCallback(
+            GLMotif::Button::SelectCallbackData* cbData);
+        void colorChangedCallback(
+            GLMotif::ColorPicker::ColorChangedCallbackData* cbData);
+        void shininessChangedCallback(
+            GLMotif::Slider::ValueChangedCallbackData* cbData);
+
+        GLMotif::ColorPickerWindow colorPicker;
+        GLMotif::Button*           colorButton;
+        GLMotif::TextField*        shininessField;
+    };
+
     void produceMainMenu();
 
     void produceDataDialog();
@@ -65,7 +105,7 @@ private:
     void alignSurfaceFrame(Vrui::NavTransform& surfaceFrame);
 
     void changeTexturingModeCallback(
-        GLMotif::Button::SelectCallbackData* cbData);
+        GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     void changeColorMapCallback(
         GLMotif::ColorMap::ColorMapChangedCallbackData* cbData);
 
@@ -121,6 +161,8 @@ private:
 
     PaletteEditor* paletteEditor;
 
+    SpecularSettingsDialog specularSettings;
+
     /** the crusta instance */
     Crusta* crusta;
 
@@ -130,6 +172,8 @@ public:
     virtual void display(GLContextData& contextData) const;
     virtual void toolCreationCallback(
         Vrui::ToolManager::ToolCreationCallbackData* cbData);
+    virtual void toolDestructionCallback(
+        Vrui::ToolManager::ToolDestructionCallbackData* cbData);
 };
 
 END_CRUSTA

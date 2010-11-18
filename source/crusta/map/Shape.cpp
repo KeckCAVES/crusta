@@ -11,13 +11,13 @@
 
 BEGIN_CRUSTA
 
-const Shape::Symbol    Shape::DEFAULT_SYMBOL;
+      Shape::Symbol    Shape::DEFAULT_SYMBOL;
 const Shape::ControlId Shape::BAD_ID(CONTROL_INVALID, ControlPointHandle());
 
 
 Shape::ControlPoint::
 ControlPoint() :
-    age(~0), pos(0), coord(0)
+    age(0), pos(0), coord(0)
 {}
 
 Shape::ControlPoint::
@@ -26,7 +26,7 @@ ControlPoint(const ControlPoint& other) :
 {}
 
 Shape::ControlPoint::
-ControlPoint(const AgeStamp& iAge, const Point3& iPos) :
+ControlPoint(const FrameStamp& iAge, const Point3& iPos) :
     age(iAge), pos(iPos), coord(0)
 {}
 
@@ -34,7 +34,7 @@ ControlPoint(const AgeStamp& iAge, const Point3& iPos) :
 std::ostream&
 operator<<(std::ostream& os, const Shape::ControlPointHandle& cph)
 {
-    os << "cph(" << &(*cph) << ")";
+    os << "cph(" << cph->age << "." << &(*cph) << ")";
     return os;
 }
 
@@ -120,7 +120,7 @@ operator<<(std::ostream& os, const Shape::ControlId& cid)
 
 Shape::
 Shape(Crusta* iCrusta) :
-    CrustaComponent(iCrusta), id(~0), symbol(DEFAULT_SYMBOL), newestAge(0)
+    CrustaComponent(iCrusta), id(~0), symbol(DEFAULT_SYMBOL)
 {
 }
 
@@ -203,7 +203,7 @@ selectSegment(const Point3& pos, double& dist)
         seg           /= Math::sqrt(segSqrLen);
         Vector3 normal = Geometry::cross(toStart, seg);
 
-        double newDist = abs(Vector3(pos) * normal);
+        double newDist = Math::abs(Vector3(pos) * normal);
         if (newDist < dist)
         {
             retId.type   = CONTROL_SEGMENT;
@@ -240,7 +240,8 @@ selectExtremity(const Point3& pos, double& dist, End& end)
 void Shape::
 setControlPoints(const Point3s& newControlPoints)
 {
-    MapManager* mapMan = crusta->getMapManager();
+    FrameStamp curStamp = CURRENT_FRAME;
+    MapManager* mapMan  = crusta->getMapManager();
 
     //delete the old control points to the coverage hierarchy
     mapMan->removeShapeCoverage(this,controlPoints.begin(),controlPoints.end());
@@ -250,9 +251,8 @@ setControlPoints(const Point3s& newControlPoints)
     for (Point3s::const_iterator it=newControlPoints.begin();
          it!=newControlPoints.end(); ++it)
     {
-        controlPoints.push_back(ControlPoint(newestAge, *it));
+        controlPoints.push_back(ControlPoint(curStamp, *it));
     }
-    ++newestAge;
 
     //add the new control points to the coverage hierarchy
     mapMan->addShapeCoverage(this, controlPoints.begin(), controlPoints.end());
@@ -261,12 +261,13 @@ setControlPoints(const Point3s& newControlPoints)
 Shape::ControlId Shape::
 addControlPoint(const Point3& pos, End end)
 {
-    MapManager* mapMan = crusta->getMapManager();
+    FrameStamp curStamp = CURRENT_FRAME;
+    MapManager* mapMan  = crusta->getMapManager();
 
     if (end == END_FRONT)
     {
 CRUSTA_DEBUG(40, std::cerr << "++++AddCP @ FRONT:\n";)
-        controlPoints.push_front(ControlPoint(newestAge++, pos));
+        controlPoints.push_front(ControlPoint(curStamp, pos));
         ControlPointHandle end = ++controlPoints.begin();
         if (end != controlPoints.end())
             ++end;
@@ -279,12 +280,12 @@ CRUSTA_DEBUG(40, std::cerr << "----added\n" <<
     else
     {
 CRUSTA_DEBUG(40, std::cerr << "++++AddCP @ END\n";)
-        controlPoints.push_back(ControlPoint(newestAge++, pos));
+        controlPoints.push_back(ControlPoint(curStamp, pos));
         ControlPointHandle start = --controlPoints.end();
         if (controlPoints.size()>1)
         {
             --start;
-            start->age = newestAge++;
+            start->age = curStamp;
         }
         mapMan->addShapeCoverage(this, start, controlPoints.end());
 
@@ -300,7 +301,8 @@ moveControlPoint(const ControlId& id, const Point3& pos)
 ///\todo only works for single map tool: ids can't be invalidated outside tool
     assert(isValid(id));
 
-    MapManager* mapMan = crusta->getMapManager();
+    FrameStamp curStamp = CURRENT_FRAME;
+    MapManager* mapMan  = crusta->getMapManager();
 
 CRUSTA_DEBUG(40, std::cerr << "++++MoveCP " << id << " \n";)
     //remove the old affected segments
@@ -314,9 +316,9 @@ CRUSTA_DEBUG(40, std::cerr << "++++MoveCP " << id << " \n";)
     mapMan->removeShapeCoverage(this, start, end);
 
     //move the control point and update its age
-    id.handle->age = newestAge;
+    id.handle->age = curStamp;
     id.handle->pos = pos;
-    start->age     = newestAge++;
+    start->age     = curStamp;
 
     //add the new affected segments
     mapMan->addShapeCoverage(this, start, end);
@@ -329,7 +331,8 @@ removeControlPoint(const ControlId& id)
 ///\todo only works for single map tool: ids can't be invalidated outside tool
     assert(isValid(id));
 
-    MapManager* mapMan = crusta->getMapManager();
+    FrameStamp curStamp = CURRENT_FRAME;
+    MapManager* mapMan  = crusta->getMapManager();
 
 CRUSTA_DEBUG(40, std::cerr << "++++DelCP " << id << " \n";)
     //remove affected segments
@@ -350,7 +353,7 @@ CRUSTA_DEBUG(40, std::cerr << "++++DelCP " << id << " \n";)
     if (start!=controlPoints.begin())
     {
         --start;
-        start->age = newestAge++;
+        start->age = curStamp;
     }
     if (end != controlPoints.end())
         ++end;
@@ -366,7 +369,8 @@ refine(const ControlId& id, const Point3& pos)
 ///\todo only works for single map tool: ids can't be invalidated outside tool
     assert(isValid(id));
 
-    MapManager* mapMan = crusta->getMapManager();
+    FrameStamp curStamp = CURRENT_FRAME;
+    MapManager* mapMan  = crusta->getMapManager();
 
 CRUSTA_DEBUG(40, std::cerr << "++++RefineSeg " << id << " \n";)
     //determine insertion point
@@ -382,9 +386,9 @@ CRUSTA_DEBUG(40, std::cerr << "++++RefineSeg " << id << " \n";)
 
     //insert new control point
     retControl.handle = controlPoints.insert(retControl.handle,
-                                             ControlPoint(newestAge, pos));
+                                             ControlPoint(curStamp, pos));
 
-    start->age = newestAge++;
+    start->age = curStamp;
 
     //add affected segments
     mapMan->addShapeCoverage(this, start, end);
@@ -460,12 +464,12 @@ setSymbol(const Symbol& nSymbol)
 {
     symbol = nSymbol;
     //dirty the whole shape to prompt an update of the display representation
+    FrameStamp curStamp = CURRENT_FRAME;
     for (ControlPointList::iterator it=controlPoints.begin();
          it!=controlPoints.end(); ++it)
     {
-        it->age = newestAge;
+        it->age = curStamp;
     }
-    ++newestAge;
 }
 
 const Shape::Symbol& Shape::

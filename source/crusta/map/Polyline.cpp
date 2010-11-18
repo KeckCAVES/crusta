@@ -2,6 +2,8 @@
 
 #include <cassert>
 
+#include <Vrui/Vrui.h>
+
 #include <crusta/Crusta.h>
 
 
@@ -18,6 +20,8 @@ Polyline(Crusta* iCrusta) :
 void Polyline::
 recomputeCoords(ControlPointHandle cur)
 {
+    FrameStamp curStamp = CURRENT_FRAME;
+
     assert(cur != controlPoints.end());
 
     Point3 prevP, curP;
@@ -34,9 +38,8 @@ recomputeCoords(ControlPointHandle cur)
     {
         curP = crusta->mapToScaledGlobe(cur->pos);
         cur->coord  = prev->coord + Geometry::dist(prevP, curP);
-        cur->age    = newestAge;
+        cur->age    = curStamp;
     }
-    ++newestAge;
 }
 
 void Polyline::

@@ -83,6 +83,7 @@ private:
     Misc::CallbackList colorChangedCallbacks;
 };
 
+
 } //end namespace GLMotif
 
 

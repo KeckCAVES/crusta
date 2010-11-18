@@ -26,11 +26,6 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <stdio.h>
 #include <iostream>
 #include <Misc/ThrowStdErr.h>
-#include <GL/gl.h>
-#include <GL/GLExtensionManager.h>
-#include <GL/Extensions/GLARBShaderObjects.h>
-#include <GL/Extensions/GLARBVertexShader.h>
-#include <GL/Extensions/GLARBFragmentShader.h>
 
 ///\todo integrate properly (VIS 2010)
 #include <crusta/Crusta.h>
@@ -38,6 +33,9 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 ///\todo remove debug
 #include <sys/stat.h>
 #include <fstream>
+
+
+BEGIN_CRUSTA
 
 
 /*************************************************
@@ -237,24 +235,24 @@ const char* LightingShader::applyAttenuatedSpotLightTemplate=
 
 const char* LightingShader::fetchTerrainColorAsConstant =
 "\
-    vec4 terrainColor = vec4(1.0); //white\n\
+    vec4 terrainColor = vec4(0.6); //60% grey\n\
 ";
 
 const char* LightingShader::fetchTerrainColorFromColorMap =
 "\
-    float e = texture2D(heightTex, coord).r;\n\
+    float e = sampleHeight(coord);\n\
           e = (e-minColorMapElevation) * colorMapElevationInvRange;\n\
     vec4 mapColor    = texture1D(colorMap, e);\n\
-    vec3 texColor    = texture2D(colorTex, coord).rgb;\n\
-    vec4 terrainColor= texColor==colorNodata ? defaultColor :\n\
+    vec3 texColor    = sampleColor2D(coord).rgb;\n\
+    vec4 terrainColor= texColor==colorNodata ? vec4(colorDefault, 1.0) :\n\
                                                vec4(texColor, 1.0);\n\
     terrainColor     = mix(terrainColor, mapColor, mapColor.w);\
 ";
 
 const char* LightingShader::fetchTerrainColorFromTexture =
 "\
-    vec3 texColor     = texture2D(colorTex, coord).rgb;\n\
-    vec4 terrainColor = texColor==colorNodata ? defaultColor :\n\
+    vec3 texColor     = sampleColor(coord).rgb;\n\
+    vec4 terrainColor = texColor==colorNodata ? vec4(colorDefault, 1.0) :\n\
                                                 vec4(texColor, 1.0);\
 ";
 
@@ -325,19 +323,6 @@ LightingShader::LightingShader() :
     /* Initialize the light state array: */
     lightStates=new LightState[maxNumLights];
     updateLightingState();
-
-    /* Check for the required OpenGL extensions: */
-    if(!GLARBShaderObjects::isSupported())
-        Misc::throwStdErr("GLShader::GLShader: GL_ARB_shader_objects not supported");
-    if(!GLARBVertexShader::isSupported())
-        Misc::throwStdErr("GLShader::GLShader: GL_ARB_vertex_shader not supported");
-    if(!GLARBFragmentShader::isSupported())
-        Misc::throwStdErr("GLShader::GLShader: GL_ARB_fragment_shader not supported");
-
-    /* Initialize the required extensions: */
-    GLARBShaderObjects::initExtension();
-    GLARBVertexShader::initExtension();
-    GLARBFragmentShader::initExtension();
 
     /* Create the vertex and fragment shaders: */
     vertexShader=glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
@@ -474,9 +459,13 @@ void LightingShader::compileShader()
 
     vertexShaderUniforms +=
     "\
-        uniform sampler2D geometryTex;\n\
-        uniform sampler2D heightTex;\n\
-        uniform sampler2D colorTex;\n\
+        #extension GL_EXT_gpu_shader4   : enable\n\
+        #extension GL_EXT_texture_array : enable\n\
+        \n\
+        uniform sampler2DArray geometryTex;\n\
+        uniform sampler2DArray heightTex;\n\
+        uniform sampler2DArray colorTex;\n\
+        \n\
         uniform sampler1D colorMap;\n\
         \n\
         uniform float colorMapElevationInvRange;\n\
@@ -487,28 +476,50 @@ void LightingShader::compileShader()
         \n\
         uniform float demNodata;\n\
         uniform vec3  colorNodata;\n\
+        uniform float demDefault;\n\
+        uniform vec3  colorDefault;\n\
+        \n\
+        uniform vec3 heightTexOffset;\n\
+        uniform vec2 heightTexScale;\n\
+        uniform vec3 geometryTexOffset;\n\
+        uniform vec2 geometryTexScale;\n\
+        uniform vec3 colorTexOffset;\n\
+        uniform vec2 colorTexScale;\n\
         \n\
         varying vec3 position;\n\
         varying vec3 normal;\n\
         varying vec2 texCoord;\n\
         \n\
-        const float defaultHeight = 0.0;\n\
-        const vec4  defaultColor  = vec4(0.0);\n\
     ";
 
     vertexShaderFunctions +=
     "\
+        vec3 sampleGeometry(in vec2 tc)\n\
+        {\n\
+            vec3 tc2 = geometryTexOffset + vec3((tc * geometryTexScale),0.0);\n\
+            return texture2DArray(geometryTex, tc2).xyz;\n\
+        }\n\
+        float sampleHeight(in vec2 tc)\n\
+        {\n\
+            vec3 tc2 = heightTexOffset + vec3((tc * heightTexScale),0.0);\n\
+            return texture2DArray(heightTex, tc2).x;\n\
+        }\n\
+        vec4 sampleColor(in vec2 tc)\n\
+        {\n\
+            vec3 tc2 = colorTexOffset + vec3((tc * colorTexScale),0.0);\n\
+            return texture2DArray(colorTex, tc2);\n\
+        }\n\
+        \n\
         vec3 surfacePoint(in vec2 coords)\n\
         {\n\
-            vec3 res      = texture2D(geometryTex, coords).rgb;\n\
+            vec3 res      = sampleGeometry(coords);\n\
             vec3 dir      = normalize(center + res);\n\
-            float height  = texture2D(heightTex, coords).r;\n\
-            height        = height==demNodata ? defaultHeight : height;\n\
+            float height  = sampleHeight(coords).r;\n\
+            height        = height==demNodata ? demDefault : height;\n\
             height       *= verticalScale;\n\
             res          += height * dir;\n\
             return res;\n\
         }\n\
-        \n\
     ";
 
     /* Create the main vertex shader starting boilerplate: */
@@ -523,10 +534,24 @@ void LightingShader::compileShader()
             vec2 coord = gl_Vertex.xy;\n\
             position   = surfacePoint(coord);\n\
             \n\
-            vec3 up    = surfacePoint(vec2(coord.x, coord.y + texStep));\n\
-            vec3 down  = surfacePoint(vec2(coord.x, coord.y - texStep));\n\
-            vec3 left  = surfacePoint(vec2(coord.x - texStep, coord.y));\n\
-            vec3 right = surfacePoint(vec2(coord.x + texStep, coord.y));\n\
+            float minTexCoord = texStep * 0.5;\n\
+            float maxTexCoord = 1.0 - (texStep * 0.5);\n\
+            \n\
+            vec2 ncoord = vec2(coord.x, coord.y + texStep);\n\
+            ncoord.y    = clamp(ncoord.y, minTexCoord, maxTexCoord);\n\
+            vec3 up     = surfacePoint(ncoord);\n\
+            \n\
+            ncoord      = vec2(coord.x, coord.y - texStep);\n\
+            ncoord.y    = clamp(ncoord.y, minTexCoord, maxTexCoord);\n\
+            vec3 down   = surfacePoint(ncoord);\n\
+            \n\
+            ncoord      = vec2(coord.x - texStep, coord.y);\n\
+            ncoord.x    = clamp(ncoord.x, minTexCoord, maxTexCoord);\n\
+            vec3 left   = surfacePoint(ncoord);\n\
+            \n\
+            ncoord      = vec2(coord.x + texStep, coord.y);\n\
+            ncoord.x    = clamp(ncoord.x, minTexCoord, maxTexCoord);\n\
+            vec3 right  = surfacePoint(ncoord);\n\
             \n\
             normal = cross((right - left), (up - down));\n\
             normal = normalize(normal);\n\
@@ -638,7 +663,7 @@ void LightingShader::compileShader()
     std::string vertexShaderSource = vertexShaderUniforms  +
                                      vertexShaderFunctions +
                                      vertexShaderMain;
-    glCompileShaderFromString(vertexShader,vertexShaderSource.c_str());
+    compileShaderFromString(vertexShader,vertexShaderSource.c_str());
 
     /* Compile the standard fragment shader: */
     std::string fragmentShaderSource;
@@ -650,11 +675,11 @@ void LightingShader::compileShader()
     readFileToString(progFile.c_str(), fragmentShaderSource);
 
 try{
-    glCompileShaderFromString(fragmentShader,fragmentShaderSource.c_str());
+    compileShaderFromString(fragmentShader,fragmentShaderSource.c_str());
 }
 catch (std::exception& e){
     std::cerr << e.what() << std::endl;
-    glCompileShaderFromString(fragmentShader, "void main(){gl_FragColor=vec4(1.0);}");
+    compileShaderFromString(fragmentShader, "void main(){gl_FragColor=vec4(1.0);}");
 }
 
     /* Link the program object: */
@@ -670,62 +695,114 @@ catch (std::exception& e){
         GLsizei linkLogSize;
         glGetInfoLogARB(programObject,sizeof(linkLogBuffer),&linkLogSize,linkLogBuffer);
 
-#if 1
         std::cerr << linkLogBuffer << std::endl;
-        glCompileShaderFromString(fragmentShader,
+        compileShaderFromString(fragmentShader,
                                   "void main(){gl_FragColor=vec4(1.0);}");
-        glLinkProgramARB(programObject);
-#else
-        /* Signal an error: */
-        Misc::throwStdErr("Error \"%s\" while linking shader program",linkLogBuffer);
-#endif
+        glLinkProgram(programObject);
     }
 
     glUseProgramObjectARB(programObject);
     //setup "constant uniforms"
     GLint uniform;
-    uniform = glGetUniformLocationARB(programObject, "geometryTex");
+    uniform = glGetUniformLocation(programObject, "geometryTex");
     glUniform1i(uniform, 0);
-    uniform = glGetUniformLocationARB(programObject, "heightTex");
+    uniform = glGetUniformLocation(programObject, "heightTex");
     glUniform1i(uniform, 1);
-    uniform = glGetUniformLocationARB(programObject, "colorTex");
+    uniform = glGetUniformLocation(programObject, "colorTex");
     glUniform1i(uniform, 2);
 
-    uniform = glGetUniformLocationARB(programObject, "colorMap");
+    uniform = glGetUniformLocation(programObject, "colorMap");
     glUniform1i(uniform, 6);
 
     colorMapElevationInvRangeUniform =
-        glGetUniformLocationARB(programObject, "colorMapElevationInvRange");
+        glGetUniformLocation(programObject, "colorMapElevationInvRange");
     minColorMapElevationUniform =
-        glGetUniformLocationARB(programObject, "minColorMapElevation");
-    textureStepUniform  =glGetUniformLocationARB(programObject,"texStep");
-    verticalScaleUniform=glGetUniformLocationARB(programObject,"verticalScale");
-    centroidUniform     =glGetUniformLocationARB(programObject,"center");
-        
-    demNodataUniform   = glGetUniformLocationARB(programObject, "demNodata");
-    colorNodataUniform = glGetUniformLocationARB(programObject, "colorNodata");
+        glGetUniformLocation(programObject, "minColorMapElevation");
+    textureStepUniform  =glGetUniformLocation(programObject,"texStep");
+    verticalScaleUniform=glGetUniformLocation(programObject,"verticalScale");
+    centroidUniform     =glGetUniformLocation(programObject,"center");
+
+    geometryTexOffsetUniform = glGetUniformLocation(programObject,
+                                                       "geometryTexOffset");
+    geometryTexScaleUniform = glGetUniformLocation(programObject,
+                                                      "geometryTexScale");
+
+    heightTexOffsetUniform = glGetUniformLocation(programObject,
+                                                     "heightTexOffset");
+    heightTexScaleUniform = glGetUniformLocation(programObject,
+                                                    "heightTexScale");
+
+    colorTexOffsetUniform = glGetUniformLocation(programObject,
+                                                    "colorTexOffset");
+    colorTexScaleUniform = glGetUniformLocation(programObject,
+                                                   "colorTexScale");
+
+    demNodataUniform    = glGetUniformLocationARB(programObject,"demNodata");
+    colorNodataUniform  = glGetUniformLocationARB(programObject,"colorNodata");
+    demDefaultUniform   = glGetUniformLocationARB(programObject,"demDefault");
+    colorDefaultUniform = glGetUniformLocationARB(programObject,"colorDefault");
 
 
     if (linesDecorated)
     {
-        uniform = glGetUniformLocationARB(programObject, "lineDataTex");
+        uniform = glGetUniformLocation(programObject, "lineDataTex");
         glUniform1i(uniform, 3);
-        uniform = glGetUniformLocationARB(programObject, "lineCoverageTex");
+        uniform = glGetUniformLocation(programObject, "lineCoverageTex");
         glUniform1i(uniform, 4);
-        uniform = glGetUniformLocationARB(programObject, "symbolTex");
+        uniform = glGetUniformLocation(programObject, "symbolTex");
         glUniform1i(uniform, 5);
 
-        uniform = glGetUniformLocationARB(programObject, "lineCoordStep");
-        glUniform1f(uniform, crusta::Crusta::lineDataCoordStep);
+        uniform = glGetUniformLocation(programObject, "lineStartCoord");
+        glUniform1f(uniform, crusta::SETTINGS->lineDataStartCoord);
+        uniform = glGetUniformLocation(programObject, "lineCoordStep");
+        glUniform1f(uniform, crusta::SETTINGS->lineDataCoordStep);
 
-        lineStartCoordUniform =
-            glGetUniformLocationARB(programObject, "lineStartCoord");
+        lineNumSegmentsUniform =
+            glGetUniformLocation(programObject, "lineNumSegments");
         lineCoordScaleUniform =
-            glGetUniformLocationARB(programObject, "lineCoordScale");
-        lineWidthUniform = glGetUniformLocationARB(programObject, "lineWidth");
+            glGetUniformLocation(programObject, "lineCoordScale");
+        lineWidthUniform = glGetUniformLocation(programObject, "lineWidth");
+
+        coverageTexOffsetUniform = glGetUniformLocation(
+            programObject, "coverageTexOffset");
+        coverageTexScaleUniform = glGetUniformLocation(
+            programObject, "coverageTexScale");
+        lineDataTexOffsetUniform = glGetUniformLocation(
+            programObject, "lineDataTexOffset");
+        lineDataTexScaleUniform = glGetUniformLocation(
+            programObject, "lineDataTexScale");
     }
 
     glUseProgramObjectARB(0);
+}
+
+void LightingShader::compileShaderFromString(GLhandleARB shaderObject,const char* shaderSource)
+{
+    /* Determine the length of the source string: */
+    GLint shaderSourceLength=GLint(strlen(shaderSource));
+
+    /* Upload the shader source into the shader object: */
+    const GLcharARB* ss=reinterpret_cast<const GLcharARB*>(shaderSource);
+    glShaderSource(shaderObject,1,&ss,&shaderSourceLength);
+
+    /* Compile the shader source: */
+    glCompileShader(shaderObject);
+
+    /* Check if the shader compiled successfully: */
+    GLint compileStatus;
+    glGetObjectParameterivARB(shaderObject,GL_OBJECT_COMPILE_STATUS_ARB,
+                              &compileStatus);
+    if(!compileStatus)
+    {
+        /* Get some more detailed information: */
+        GLcharARB compileLogBuffer[2048];
+        GLsizei compileLogSize;
+        glGetInfoLogARB(shaderObject, sizeof(compileLogBuffer),
+                        &compileLogSize, compileLogBuffer);
+
+        /* Signal an error: */
+        Misc::throwStdErr("glCompileShaderFromString: Error \"%s\" while compiling shader",compileLogBuffer);
+    }
 }
 
 void LightingShader::enable()
@@ -739,3 +816,6 @@ void LightingShader::disable()
     /* Disable the shader: */
     glUseProgramObjectARB(0);
     }
+
+
+END_CRUSTA

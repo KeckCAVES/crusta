@@ -2,6 +2,7 @@
 #include <sstream>
 #include <sys/stat.h>
 
+#include <construo/construoGlobals.h>
 #include <construo/Converters.h>
 
 ///\todo remove
@@ -335,8 +336,8 @@ Spheroid(const std::string& baseName, const uint tileResolution[2])
     }
 
     //initialize the geometry of the base nodes and link them
-    Polyhedron* polyhedron =
-        PolyhedronLoader::load(globeFile.getPolyhedronType(), SPHEROID_RADIUS);
+    Polyhedron* polyhedron = PolyhedronLoader::load(
+        globeFile.getPolyhedronType(), CONSTRUO_SETTINGS.globeRadius);
     uint orientations[4];
     BaseNode* neighbors[4];
     typename Polyhedron::Connectivity connectivity[4];

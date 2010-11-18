@@ -17,10 +17,10 @@ class ViewLod : public LodEvaluator
 public:
     /** the specification of the viewing parameters */
     GLFrustum<float> frustum;
-    
+
 //- inherited from LodEvaluator
 public:
-    virtual float compute(const QuadNodeMainData& mainData);
+    virtual float compute(const NodeData& node);
 };
 
 END_CRUSTA

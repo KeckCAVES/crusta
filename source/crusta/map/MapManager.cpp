@@ -1,3 +1,5 @@
+#include <GL/VruiGlew.h> //must be included before gl.h
+
 #include <crusta/map/MapManager.h>
 
 #include <algorithm>
@@ -43,6 +45,8 @@
 #include <crusta/Visualizer.h>
 #endif //CRUSTA_ENABLE_DEBUG
 #include <iostream>
+
+#include <crusta/StatsManager.h>
 
 #define CHECK_CONVERAGE_VALIDITY 0
 
@@ -116,7 +120,7 @@ load(const char* filename)
 ///\todo check the feature set of the layer here to make sure it has the needed
 
     //create a sphere-geoid to convert the cartesian points to lat,lon,elevation
-    Geometry::Geoid<double> sphere(SPHEROID_RADIUS, 0.0);
+    Geometry::Geoid<double> sphere(SETTINGS->globeRadius, 0.0);
 
     //grab all the features and their control points (we assume polylines only)
     OGRFeature* feature = NULL;
@@ -160,7 +164,11 @@ int numFeature = 0;
 
                 //read in the symbol field and assign it
                 int symbolId = feature->GetFieldAsInteger(symbolFieldIndex);
-                out->setSymbol(symbolMap[symbolId]);
+                SymbolMap::iterator symbol = symbolMap.find(symbolId);
+                if (symbol != symbolMap.end())
+                    out->setSymbol(symbol->second);
+                else
+                    out->setSymbol(Shape::DEFAULT_SYMBOL);
 
             }
         }
@@ -208,7 +216,11 @@ save(const char* fileName, const char* format)
 ///\todo create layers for all the different shape types to export
     //create a (georeferenced) layer for the polylines
     OGRSpatialReference crustaSys;
-    crustaSys.SetWellKnownGeogCS("WGS84");
+    crustaSys.SetGeogCS((string("Crusta_")+SETTINGS->globeName).c_str(),
+                       "Crusta_Sphere_Datum", SETTINGS->globeName.c_str(),
+                       SETTINGS->globeRadius, 0.0,
+                       "Reference_Meridian", 0.0, SRS_UA_DEGREE,
+                       atof(SRS_UA_DEGREE_CONV));
 
     OGRLayer* layer = source->CreateLayer("Crusta_Polylines", &crustaSys,
                                           wkbLineString25D);
@@ -229,7 +241,7 @@ save(const char* fileName, const char* format)
     }
 
     //create a sphere-geoid to convert the cartesian points to lat,lon,elevation
-    Geometry::Geoid<double> sphere(SPHEROID_RADIUS, 0.0);
+    Geometry::Geoid<double> sphere(SETTINGS->globeRadius, 0.0);
 
     for (PolylinePtrs::iterator in=polylines.begin(); in!=polylines.end(); ++in)
     {
@@ -430,11 +442,13 @@ CRUSTA_DEBUG(41, std::cerr << "--REM\n\n");
 }
 
 void MapManager::
-inheritShapeCoverage(const QuadNodeMainData& parent, QuadNodeMainData& child)
+inheritShapeCoverage(const NodeData& parent, NodeData& child)
 {
-    typedef QuadNodeMainData::ShapeCoverage                    Coverage;
-    typedef QuadNodeMainData::AgeStampedControlPointHandleList HandleList;
-    typedef Shape::ControlPointList::const_iterator            ConstHandle;
+statsMan.start(StatsManager::INHERITSHAPECOVERAGE);
+
+    typedef NodeData::ShapeCoverage        Coverage;
+    typedef Shape::ControlPointHandleList  HandleList;
+    typedef Shape::ControlPointConstHandle Handle;
 
     child.lineCoverage.clear();
 
@@ -455,14 +469,15 @@ inheritShapeCoverage(const QuadNodeMainData& parent, QuadNodeMainData& child)
         for (HandleList::const_iterator hit=srcHandles.begin();
              hit!=srcHandles.end(); ++hit)
         {
-            ConstHandle start = hit->handle;
-            ConstHandle end   = start; ++end;
+            Handle start = *hit;
+            Handle end   = start; ++end;
             assert(start!=shape->getControlPoints().end() &&
                    end  !=shape->getControlPoints().end());
 
             //intersect ray and check for overlap
             Ray ray(start->pos, end->pos);
-            QuadTerrain::intersectNodeSides(child, ray, tin, sin, tout, sout);
+            QuadTerrain::intersectNodeSides(child.scope, ray,
+                                            tin, sin, tout, sout);
             if (tin>=1.0 || tout<=0.0)
                 continue;
 
@@ -476,143 +491,125 @@ inheritShapeCoverage(const QuadNodeMainData& parent, QuadNodeMainData& child)
     }
 
     //invalidate the child's line data
+    child.lineNumSegments = 0;
     child.lineData.clear();
 
 #if CHECK_CONVERAGE_VALIDITY
 CRUSTA_DEBUG_ONLY(crusta->validateLineCoverage();)
 #endif //CHECK_CONVERAGE_VALIDITY
+
+statsMan.stop(StatsManager::INHERITSHAPECOVERAGE);
 }
 
 
 void MapManager::
-updateLineData(Nodes& nodes)
+updateLineData(SurfaceApproximation& surface)
 {
-    typedef QuadNodeMainData::ShapeCoverage                    Coverage;
-    typedef QuadNodeMainData::AgeStampedControlPointHandleList HandleList;
-    typedef Shape::ControlPointHandle                          Handle;
+statsMan.start(StatsManager::UPDATELINEDATA);
 
-    static const int& lineTexSize = Crusta::lineDataTexSize;
+    typedef NodeData::ShapeCoverage       Coverage;
+    typedef Shape::ControlPointHandleList HandleList;
+    typedef Shape::ControlPointHandle     Handle;
+
+    const uint32 lineTexSize = static_cast<uint32>(SETTINGS->lineDataTexSize);
 
     //go through all the nodes provided
-    for (Nodes::iterator nit=nodes.begin(); nit!=nodes.end(); ++nit)
+    size_t numNodes = surface.visibles.size();
+    for (size_t i=0; i<numNodes; ++i)
     {
-        QuadNodeMainData*                node     = *nit;
-        QuadNodeMainData::ShapeCoverage& coverage = node->lineCoverage;
-        Colors&                          offsets  = node->lineCoverageOffsets;
-        Colors&                          data     = node->lineData;
+        NodeData&   node        = *surface.visible(i).node;
+        Coverage&   coverage    = node.lineCoverage;
+        FrameStamp& dataAge     = node.lineCoverageAge;
+        Vector2fs&  offsets     = node.lineCoverageOffsets;
+        int&        numSegments = node.lineNumSegments;
+        Colors&     data        = node.lineData;
 
-/**\todo integrate check for deprecated data only to where nodes are added to
-the representation. For now just check deprecation here...
-Actually there is a problem with not checking this before drawing: the current
-code assumes this is going to happen is this flags redraws by updating the age
-of the changed segments (e.g. new symbol, new coords) */
-if (!data.empty())
-{
-    for (Coverage::iterator lit=coverage.begin();
-         lit!=coverage.end() && !data.empty(); ++lit)
-    {
-        HandleList& handles = lit->second;
-
-        for (HandleList::iterator hit=handles.begin();hit!=handles.end();++hit)
+///\todo is this the right location to be doing this check?
+        //verify that edits to lines have not deprecated the cached data
+        if (!data.empty())
         {
-            if (hit->age != hit->handle->age)
+            /* keep track of the offset in the texture. We don't want segments
+               that are not going to be added to the line data texture to
+               prompt its refresh */
+            uint32 offset = 0;
+            for (Coverage::iterator lit=coverage.begin();
+                 lit!=coverage.end() && !data.empty() && offset<lineTexSize;
+                 ++lit)
             {
-CRUSTA_DEBUG(51, std::cerr << "~~~INV n(" << node->index << ") has old " <<
-"segment from line " << lit->first->getId() << " (ages " << hit->age <<
-" vs " << hit->handle->age << ")\n\n";)
-                data.clear();
-                break;
+                HandleList& handles = lit->second;
+
+                for (HandleList::iterator hit=handles.begin();
+                     hit!=handles.end() && offset<lineTexSize; ++hit, offset+=4)
+                {
+                    if (dataAge < (*hit)->age)
+                    {
+CRUSTA_DEBUG(51, std::cerr << "~~~INV n(" << node.index << ") has old " <<
+"segment from line " << lit->first->getId() << " (ages " << dataAge <<
+" vs " << (*hit)->age << ")\n\n";)
+                        data.clear();
+                        break;
+                    }
+                }
             }
         }
-    }
-}
 
         //does not require update if 1. has data or 2. is not overlapped
         if (!data.empty() || coverage.empty())
             continue;
 
 ///\todo debug: check for duplicates in the line coverage
-static bool checkForDuplicates = false;
+static bool checkForDuplicates = true;
 if (checkForDuplicates) {
-for (Coverage::iterator lit=coverage.begin(); lit!=coverage.end(); ++lit)
-{
-#if DEBUG
-    const Shape* const shape = lit->first;
-    assert(dynamic_cast<const Polyline*>(shape) != NULL);
-#endif //DEBUG
-    HandleList& handles = lit->second;
-    assert(handles.size() > 0);
-
-    for (HandleList::iterator hit=handles.begin(); hit!=handles.end(); ++hit)
+    for (Coverage::iterator lit=coverage.begin(); lit!=coverage.end(); ++lit)
     {
-        HandleList::iterator nhit = hit;
-        for (++nhit; nhit!=handles.end(); ++nhit)
-            assert(hit->handle != nhit->handle);
+    #if DEBUG
+        const Shape* const shape = lit->first;
+        assert(dynamic_cast<const Polyline*>(shape) != NULL);
+    #endif //DEBUG
+        HandleList& handles = lit->second;
+        assert(handles.size() > 0);
+
+        for (HandleList::iterator hit=handles.begin();hit!=handles.end();++hit)
+        {
+            HandleList::iterator nhit = hit;
+            for (++nhit; nhit!=handles.end(); ++nhit)
+                assert(*hit != *nhit);
+        }
     }
 }
-}
 
-        //determine texture space requirements
-        int numLines = static_cast<int>(coverage.size());
-        int numSegs  = 0;
+//record the update to this node
+statsMan.incrementDataUpdated();
+
+        //determine the number of segments covered by the tile
+        numSegments = 0;
         for (Coverage::iterator lit=coverage.begin();lit!=coverage.end();++lit)
-        {
-            numSegs += static_cast<int>(lit->second.size());
-        }
+            numSegments += static_cast<int>(lit->second.size());
 
-///\todo hardcoded 2 samples for now (just end points)
-//uint32 baseOffsetX = curOffset[0];
-        int texelsNeeded = 5 + numLines*2 + numSegs*3;
-        //node data must fit into the line data texture
-        if (texelsNeeded >= lineTexSize)
-            continue;
-
-CRUSTA_DEBUG(50, std::cerr << "###REGEN n(" << node->index << ") :\n" <<
+CRUSTA_DEBUG(50, std::cerr << "###REGEN n(" << node.index << ") :\n" <<
 coverage << "\n\n";)
 
     //- reset the offsets
         offsets.clear();
-        Colors off;
-        uint32 symbolOff;
         uint32 curOff = 0.0;
 
-    //- dump the node dependent data, i.e.: relative to tile transform
-        //dump the number of sections in this node
-        data.push_back(Color(numLines, 0, 0, 0));
-        ++curOff;
-
-/**\todo insert another level here: collections of lines that use the same
-symbol from the atlas. Then dump the atlas info and the number of lines
-following that use it. For now just duplicate the atlas info */
-
     //- go through all the lines for that node and dump the data
-        const Point3& centroid = node->centroid;
+        const Point3& centroid = node.centroid;
 
-        for (Coverage::iterator lit=coverage.begin();lit!=coverage.end();++lit)
+        for (Coverage::iterator lit=coverage.begin();
+             lit!=coverage.end() && curOff<lineTexSize; ++lit)
         {
             const Polyline* line = dynamic_cast<const Polyline*>(lit->first);
             assert(line != NULL);
             HandleList& handles = lit->second;
-
-        //- save the offset to the symbols definition
-            symbolOff = curOff;
-
-        //- dump the line dependent data, i.e.: atlas info, number of segments
             const Shape::Symbol& symbol = line->getSymbol();
-            data.push_back(symbol.originSize);
-            ++curOff;
-            data.push_back(Color(handles.size(), 0, 0, 0));
-            ++curOff;
 
         //- age stamp and dump all the segments for the current line
-            for (HandleList::iterator hit=handles.begin(); hit!=handles.end();
-                 ++hit)
+            for (HandleList::iterator hit=handles.begin();
+                 hit!=handles.end() && curOff<lineTexSize; ++hit)
             {
-                //age stamp the current data to the shape's age
-                hit->age = hit->handle->age;
-
                 //dump the data
-                Handle cur  = hit->handle;
+                Handle cur  = *hit;
                 Handle next = cur; ++cur;
 
                 Point3 curP  = crusta->mapToScaledGlobe(cur->pos);
@@ -628,11 +625,13 @@ following that use it. For now just duplicate the atlas info */
                 const Scalar& nextC = next->coord;
 
                 //save the offset to the data
-                Color coff((symbolOff&0xFF)             / 255.0f,
-                           (((symbolOff>>8)&0xFF) + 64) / 255.0f,
-                           (curOff&0xFF)                / 255.0f,
-                           ((curOff>>8)&0xFF)           / 255.0f);
+                Vector2f coff((curOff&0xFF)           / 255.0f,
+                              (((curOff>>8) & 0xFF) + 64) / 255.0f);
                 offsets.push_back(coff);
+
+                //the atlas information for this segment
+                data.push_back(symbol.originSize);
+                ++curOff;
 
                 //segment control points
                 data.push_back(Color( curPf[0],  curPf[1],  curPf[2],  curC));
@@ -641,7 +640,7 @@ following that use it. For now just duplicate the atlas info */
                 ++curOff;
 
                 //section normal
-                Vector3 normal = Geometry::cross(Vector3(nextP), Vector3(curP));
+                Vector3 normal = Geometry::cross(Vector3(curP), Vector3(nextP));
                 normal.normalize();
                 data.push_back(Color(normal[0], normal[1], normal[2], 0.0));
                 ++curOff;
@@ -649,17 +648,23 @@ following that use it. For now just duplicate the atlas info */
         }
 
         //update the age of the line data
-        node->lineCoverageAge = crusta->getCurrentFrame();
+        dataAge = CURRENT_FRAME;
     }
+
+statsMan.stop(StatsManager::UPDATELINEDATA);
 }
 
 
 void MapManager::
 processVerticalScaleChange()
 {
+statsMan.start(StatsManager::PROCESSVERTICALSCALE);
+
     //need to recompute all the polylines' coordinates
     for (PolylinePtrs::iterator it=polylines.begin(); it!=polylines.end(); ++it)
         (*it)->recomputeCoords((*it)->getControlPoints().begin());
+
+statsMan.stop(StatsManager::PROCESSVERTICALSCALE);
 }
 
 void MapManager::
@@ -668,10 +673,10 @@ frame()
 }
 
 void MapManager::
-display(std::vector<QuadNodeMainData*>& nodes, GLContextData& contextData) const
+display(GLContextData& contextData, const SurfaceApproximation& surface) const
 {
-    if (!crusta->getLinesDecorated())
-        polylineRenderer.display(nodes, contextData);
+    if (!SETTINGS->decorateVectorArt)
+        polylineRenderer.display(contextData, surface);
 }
 
 
@@ -696,15 +701,17 @@ openSymbolsGroupCallback(GLMotif::Button::SelectCallbackData* cbData)
 void MapManager::
 symbolChangedCallback(GLMotif::ListBox::ItemSelectedCallbackData* cbData)
 {
-    const char* symbolName = cbData->listBox->getItem(cbData->selectedItem);
-    int symbolId           = symbolNameMap[symbolName];
-    activeSymbol           = symbolMap[symbolId];
+    std::string symbolName(cbData->listBox->getParent()->getName());
+    symbolName  += std::string("-");
+    symbolName  += std::string(cbData->listBox->getItem(cbData->selectedItem));
+    int symbolId = symbolNameMap[symbolName];
+    activeSymbol = symbolMap[symbolId];
 
 ///\todo process the change for multiple activeShapes
     if (activeShape != NULL)
     {
         activeShape->setSymbol(activeSymbol);
-        mapSymbolLabel->setLabel(symbolName);
+        mapSymbolLabel->setLabel(symbolName.c_str());
     }
 }
 
@@ -729,40 +736,36 @@ setSegment(const Shape::ControlPointHandle& nSegment)
 
 
 void MapManager::ShapeCoverageAdder::
-operator()(QuadNodeMainData* node, bool isLeaf)
+operator()(NodeData& node, bool isLeaf)
 {
-    typedef QuadNodeMainData::ShapeCoverage                    Coverage;
-    typedef QuadNodeMainData::AgeStampedControlPointHandleList CHandleList;
-    typedef QuadNodeMainData::AgeStampedControlPointHandle     CHandle;
-    typedef Shape::ControlPointHandle                          SHandle;
+    typedef NodeData::ShapeCoverage       Coverage;
+    typedef Shape::ControlPointHandleList HandleList;
 
-    CHandleList& chandles = node->lineCoverage[shape];
+    HandleList& handles = node.lineCoverage[shape];
 
-CRUSTA_DEBUG(43, std::cerr << "+" << node->index;)
+CRUSTA_DEBUG(43, std::cerr << "+" << node.index;)
 
-///\todo Vis2010 this needs to be put into debug
-//CRUSTA_DEBUG_ONLY(
-    CHandleList::iterator fit;
-    for (fit=chandles.begin();
-         fit!=chandles.end() && fit->handle!=segment;
-         ++fit);
-    if (fit != chandles.end())
+CRUSTA_DEBUG_ONLY(
+    HandleList::const_iterator fit;
+    for (fit=handles.begin(); fit!=handles.end() && *fit!=segment; ++fit);
+    if (fit != handles.end())
     {
-        std::cerr << "DUPLICATE FOUND: node(" << node->index << ") " <<
-            "contains:\n" << node->lineCoverage << "Offending segment is "
-            "fit." << fit->handle << " segment." << segment << "\n";
+        std::cerr << "DUPLICATE FOUND: node(" << node.index << ") " <<
+            "contains:\n" << node.lineCoverage << "Offending segment is "
+            "fit." << *fit << " segment." << segment << "\n";
     }
-//)
+);
 
-    chandles.push_back(CHandle(segment->age, segment));
+    handles.push_back(segment);
 
     //invalidate current line data
-    node->lineData.clear();
+    node.lineNumSegments = 0;
+    node.lineData.clear();
     //record the change for the culled tree if this is a leaf node
     if (isLeaf)
     {
 CRUSTA_DEBUG(44, std::cerr << "~\n";)
-        node->lineCoverageDirty |= true;
+        node.lineCoverageDirty |= true;
     }
     else
     {
@@ -771,39 +774,36 @@ CRUSTA_DEBUG(44, std::cerr << "\n";)
 }
 
 void MapManager::ShapeCoverageRemover::
-operator()(QuadNodeMainData* node, bool isLeaf)
+operator()(NodeData& node, bool isLeaf)
 {
-    typedef QuadNodeMainData::ShapeCoverage                    Coverage;
-    typedef QuadNodeMainData::AgeStampedControlPointHandleList CHandleList;
-    typedef QuadNodeMainData::AgeStampedControlPointHandle     CHandle;
-    typedef Shape::ControlPointHandle                          SHandle;
+    typedef NodeData::ShapeCoverage       Coverage;
+    typedef Shape::ControlPointHandleList HandleList;
 
-    Coverage::iterator lit = node->lineCoverage.find(shape);
-    assert(lit != node->lineCoverage.end());
-    CHandleList& chandles = lit->second;
-    assert(chandles.size() > 0);
+    Coverage::iterator lit = node.lineCoverage.find(shape);
+    assert(lit != node.lineCoverage.end());
+    HandleList& handles = lit->second;
+    assert(handles.size() > 0);
 
-CRUSTA_DEBUG(43, std::cerr << "-" << node->index;)
+CRUSTA_DEBUG(43, std::cerr << "-" << node.index;)
 
-    CHandleList::iterator fit;
-    for (fit=chandles.begin();
-         fit!=chandles.end() && fit->handle!=segment;
-         ++fit);
-    assert(fit != chandles.end());
+    HandleList::iterator fit;
+    for (fit=handles.begin(); fit!=handles.end() && *fit!=segment; ++fit);
+    assert(fit != handles.end());
 
-    chandles.erase(fit);
+    handles.erase(fit);
 
     //clean up emptied coverages
-    if (chandles.empty())
-        node->lineCoverage.erase(lit);
+    if (handles.empty())
+        node.lineCoverage.erase(lit);
 
     //invalidate current line data
-    node->lineData.clear();
+    node.lineNumSegments = 0;
+    node.lineData.clear();
     //record the change for the culled tree if this is a leaf node
     if (isLeaf)
     {
 CRUSTA_DEBUG(44, std::cerr << "~\n";)
-        node->lineCoverageDirty |= true;
+        node.lineCoverageDirty |= true;
     }
     else
     {
@@ -884,6 +884,7 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
     bool isDefault = false;
 
     GLMotif::ScrolledListBox* symbolsGroup = NULL;
+    std::string groupName;
     std::string cfgLine;
     for (std::getline(symbolsConfig, cfgLine); !symbolsConfig.eof();
          std::getline(symbolsConfig, cfgLine))
@@ -904,30 +905,30 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
             isDefault = false;
 
             //read in the group name
-            iss >> token;
+            iss >> groupName;
 
             //create menu entry button to pop-up the group's list
             GLMotif::Button* groupButton = new GLMotif::Button(
-                token.c_str(), symbolsMenu, token.c_str());
+                groupName.c_str(), symbolsMenu, groupName.c_str());
             groupButton->getSelectCallbacks().add(
                 this, &MapManager::openSymbolsGroupCallback);
 
             //create the group's popup dialog
-            GLMotif::PopupWindow*& groupDialog = symbolGroupMap[token];
+            GLMotif::PopupWindow*& groupDialog = symbolGroupMap[groupName];
             groupDialog = new GLMotif::PopupWindow(
-                (token + "Dialog").c_str(), Vrui::getWidgetManager(),
-                (token + " Symbols").c_str());
+                (groupName + "Dialog").c_str(), Vrui::getWidgetManager(),
+                (groupName + " Symbols").c_str());
             GLMotif::RowColumn* groupRoot = new GLMotif::RowColumn(
-                (token + "Root").c_str(), groupDialog, false);
+                (groupName + "Root").c_str(), groupDialog, false);
             symbolsGroup = new GLMotif::ScrolledListBox(
-                (token + "List").c_str(), groupRoot,
+                groupName.c_str(), groupRoot,
                 GLMotif::ListBox::ALWAYS_ONE, 50, 15);
             symbolsGroup->showHorizontalScrollBar(true);
             symbolsGroup->getListBox()->getItemSelectedCallbacks().add(
                 this, &MapManager::symbolChangedCallback);
 
             GLMotif::Button* close = new GLMotif::Button(
-                token.c_str(), groupRoot, "Close");
+                groupName.c_str(), groupRoot, "Close");
             close->getSelectCallbacks().add(this,
                 &MapManager::closeSymbolsGroupCallback);
 
@@ -942,8 +943,8 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
             iss.seekg(0, std::ios::beg);
 
             //create a corresponding symbol
-            std::string symbolName;
-            iss >> symbolName;
+            iss >> token;
+            std::string symbolName(groupName+"-"+token);
 
             Shape::Symbol symbol;
             iss >> symbol.id >>
@@ -952,9 +953,8 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
                    symbol.originSize[0] >> symbol.originSize[1] >>
                    symbol.originSize[2] >> symbol.originSize[3];
 
-            /* flip the y scale to mirror the symbols (so that fragment program
-               doesn't have to) */
-            symbol.originSize[3] = -symbol.originSize[3];
+            //flip the Y to map to OpenGL texture reference
+            symbol.originSize[1] = 1.0 - symbol.originSize[1];
 
             symbolNameMap[symbolName]       = symbol.id;
             symbolReverseNameMap[symbol.id] = symbolName;
@@ -963,13 +963,14 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
             if (isDefault)
             {
 ///\todo create a menu entry for the default symbol and update that entry here
+                Shape::DEFAULT_SYMBOL = symbol;
                 //set the active shape to the default one
                 activeSymbol = symbol;
             }
             else
             {
                 //populate the current group
-                symbolsGroup->getListBox()->addItem(symbolName.c_str());
+                symbolsGroup->getListBox()->addItem(token.c_str());
             }
         }
     }

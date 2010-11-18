@@ -45,6 +45,11 @@ using namespace crusta;
 
 int main(int argc, char* argv[])
 {
+    typedef std::vector<const char*> Names;
+    typedef std::vector<std::string> NodataStrings;
+    typedef std::vector<double>      Scales;
+    typedef std::vector<bool>        GridSamplingFlags;
+
     enum BuildType
     {
         UNDEFINED_BUILD,
@@ -52,7 +57,7 @@ int main(int argc, char* argv[])
         COLORTEXTURE_BUILD
     };
 
-/* Parse the command line: */
+//- Parse the command line
 
     //flag whether to create color or DEM mosaics
     BuildType buildType = UNDEFINED_BUILD;
@@ -68,7 +73,8 @@ int main(int argc, char* argv[])
     //the tile size should only be an internal parameter
     static const crusta::uint tileSize[2] = {TILE_RESOLUTION, TILE_RESOLUTION};
 
-    std::string                    spheroidName;
+    std::string                    globeFileName;
+    std::string                    settingsFileName;
     BuilderBase::ImagePatchSources imageSources;
     for (int i=1; i<argc; ++i)
     {
@@ -81,11 +87,11 @@ int main(int argc, char* argv[])
             ++i;
             if (i<argc)
             {
-                spheroidName = std::string(argv[i]);
+                globeFileName = std::string(argv[i]);
             }
             else
             {
-                std::cerr << "Dangling pyramid file name argument" <<
+                std::cerr << "Dangling globe file name argument" <<
                              std::endl;
                 return 1;
             }
@@ -99,11 +105,11 @@ int main(int argc, char* argv[])
             ++i;
             if (i<argc)
             {
-                spheroidName = std::string(argv[i]);
+                globeFileName = std::string(argv[i]);
             }
             else
             {
-                std::cerr << "Dangling pyramid file name argument" <<
+                std::cerr << "Dangling globe file name argument" <<
                              std::endl;
                 return 1;
             }
@@ -144,6 +150,21 @@ int main(int argc, char* argv[])
         {
             pointSampled = false;
         }
+        else if (strcasecmp(argv[i], "-settings") == 0)
+        {
+            //read the settings filename
+            ++i;
+            if (i<argc)
+            {
+                settingsFileName = std::string(argv[i]);
+            }
+            else
+            {
+                std::cerr << "Dangling configuration file name argument" <<
+                             std::endl;
+                return 1;
+            }
+        }
         else
         {
             //gather the image patch name and scale factor for the values
@@ -156,18 +177,18 @@ int main(int argc, char* argv[])
     {
         std::cerr << "Usage:" << std::endl << "construo -dem | -color "
                      "<globe file name> [-scale <scalar>] [-nodata " <<
-                     "<value>] [-pointsampling] [-areasampling] <input " <<
-                     "files>" << std::endl;
+                     "<value>] [-pointsampling] [-areasampling] " <<
+                     "[-settings <settings file>] <input files>" << std::endl;
         return 1;
     }
 
-    if (spheroidName.empty())
+    if (globeFileName.empty())
     {
         std::cerr << "No globe file name provided" << std::endl;
         return 1;
     }
-    else if (spheroidName[spheroidName.size()-1] == '/')
-        spheroidName.resize(spheroidName.size()-1);
+    else if (globeFileName[globeFileName.size()-1] == '/')
+        globeFileName.resize(globeFileName.size()-1);
 
     if (imageSources.empty())
     {
@@ -175,15 +196,17 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    CONSTRUO_SETTINGS.loadFromFile(settingsFileName);
+
     //reate the builder object
     BuilderBase* builder = NULL;
     switch (buildType)
     {
         case DEM_BUILD:
-            builder = new Builder<DemHeight>(spheroidName, tileSize);
+            builder = new Builder<DemHeight>(globeFileName, tileSize);
             break;
         case COLORTEXTURE_BUILD:
-            builder = new Builder<TextureColor>(spheroidName, tileSize);
+            builder = new Builder<TextureColor>(globeFileName, tileSize);
             break;
         default:
             std::cerr << "Unsupported build type" << std::endl;

@@ -1,7 +1,9 @@
 #include <Misc/File.h>
 
 #include <cassert>
+#include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
 
 #include <crusta/DemHeight.h>
@@ -77,7 +79,10 @@ GdalImageFileBase(const std::string& imageFileName)
             projectionFile.puts("Geotransform:\n");
             std::ostringstream oss;
             for (int i=0; i<6; ++i)
-                oss << geoXform[i] << " ";
+            {
+                oss << std::setprecision(std::numeric_limits<double>::digits10)
+                    << geoXform[i] << " ";
+            }
             oss << std::endl;
             projectionFile.puts(oss.str().c_str());
         }

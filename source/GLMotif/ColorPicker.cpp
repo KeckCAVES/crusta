@@ -161,11 +161,12 @@ void ColorPicker::
 valueCallback(Slider::ValueChangedCallbackData* cbData)
 {
     //update the internal representation
-    Color oldColor = color;
-    Scalar rescale = cbData->value / value;
+    Color  oldColor = color;
+    Scalar newValue = std::max(0.00001f, cbData->value);
+    Scalar rescale  = newValue / value;
     for (int i=0; i<3; ++i)
         color[i] = rescale * color[i];
-    value = cbData->value;
+    value = newValue;
 
     updateWidgets();
 

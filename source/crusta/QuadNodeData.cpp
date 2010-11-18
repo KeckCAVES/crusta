@@ -4,29 +4,16 @@
 
 #include <crusta/checkGl.h>
 #include <crusta/Crusta.h>
+#include <crusta/DataManager.h>
 
 BEGIN_CRUSTA
 
-QuadNodeMainData::AgeStampedControlPointHandle::
-AgeStampedControlPointHandle() :
-    age(~0), handle()
-{}
-
-QuadNodeMainData::AgeStampedControlPointHandle::
-AgeStampedControlPointHandle(const AgeStamp& iAge,
-                             const Shape::ControlPointHandle& iHandle) :
-    age(iAge), handle(iHandle)
-{}
-
-QuadNodeMainData::
-QuadNodeMainData(uint size) :
-    lineCoverageDirty(false), lineCoverageAge(0), index(TreeIndex::invalid),
-    boundingCenter(0,0,0), boundingRadius(0)
+NodeData::
+NodeData() :
+    lineCoverageDirty(false), lineCoverageAge(0), lineNumSegments(0),
+    index(TreeIndex::invalid),
+    boundingAge(0), boundingCenter(0,0,0), boundingRadius(0)
 {
-    geometry = new Vertex[size*size];
-    height   = new DemHeight[size*size];
-    color    = new TextureColor[size*size];
-
     demTile   = INVALID_TILEINDEX;
     colorTile = INVALID_TILEINDEX;
     for (int i=0; i<4; ++i)
@@ -36,31 +23,20 @@ QuadNodeMainData(uint size) :
     }
 
     centroid[0] = centroid[1] = centroid[2] = DemHeight(0.0);
-    elevationRange[0]  =  elevationRange[1] = DemHeight(0.0);
-}
-QuadNodeMainData::
-~QuadNodeMainData()
-{
-    delete[] geometry;
-    delete[] height;
-    delete[] color;
+    elevationRange[0] =  Math::Constants<DemHeight>::max;
+    elevationRange[1] = -Math::Constants<DemHeight>::max;
 }
 
-void QuadNodeMainData::
-computeBoundingSphere(Scalar verticalScale)
+void NodeData::
+computeBoundingSphere(Scalar radius, Scalar verticalScale)
 {
     DemHeight range[2];
-    if (elevationRange[0]== Math::Constants<DemHeight>::max ||
-        elevationRange[1]==-Math::Constants<DemHeight>::max)
-    {
-///\todo allow for a customizable default elevation
-        range[0] = range[1] = 0.0f;
-    }
+    getElevationRange(range);
 
     DemHeight avgElevation = (range[0] + range[1]);
     avgElevation          *= DemHeight(0.5)* verticalScale;
 
-    boundingCenter = scope.getCentroid(SPHEROID_RADIUS + avgElevation);
+    boundingCenter = scope.getCentroid(radius + avgElevation);
 
     boundingRadius = Scope::Scalar(0);
     for (int i=0; i<4; ++i)
@@ -68,7 +44,7 @@ computeBoundingSphere(Scalar verticalScale)
         for (int j=0; j<2; ++j)
         {
             Scope::Vertex corner = scope.corners[i];
-            Scope::Scalar norm   = Scope::Scalar(SPHEROID_RADIUS);
+            Scope::Scalar norm   = Scope::Scalar(radius);
             norm += range[j]*verticalScale;
             norm /= sqrt(corner[0]*corner[0] + corner[1]*corner[1] +
                          corner[2]*corner[2]);
@@ -81,105 +57,95 @@ computeBoundingSphere(Scalar verticalScale)
             boundingRadius = std::max(boundingRadius, norm);
         }
     }
+
+    //stamp the current bounding specification
+    boundingAge = CURRENT_FRAME;
 }
 
-void QuadNodeMainData::
-init(Scalar verticalScale)
+void NodeData::
+init(Scalar radius, Scalar verticalScale)
 {
-    //compute the centroid on the average elevation (see split)
-    Scope::Vertex scopeCentroid = scope.getCentroid(SPHEROID_RADIUS);
+    //compute the centroid
+    Scope::Vertex scopeCentroid = scope.getCentroid(radius);
     centroid[0] = scopeCentroid[0];
     centroid[1] = scopeCentroid[1];
     centroid[2] = scopeCentroid[2];
 
-    computeBoundingSphere(verticalScale);
+    //update the bounding sphere
+    computeBoundingSphere(radius, verticalScale);
+}
+
+void NodeData::
+getElevationRange(DemHeight range[2]) const
+{
+    if (elevationRange[0]== Math::Constants<DemHeight>::max ||
+        elevationRange[1]==-Math::Constants<DemHeight>::max)
+    {
+        range[0] = SETTINGS->terrainDefaultHeight;
+        range[1] = SETTINGS->terrainDefaultHeight;
+    }
+    else
+    {
+        range[0] = elevationRange[0];
+        range[1] = elevationRange[1];
+    }
+}
+
+DemHeight NodeData::
+getHeight(const DemHeight& test) const
+{
+    if (test == DATAMANAGER->getDemNodata())
+        return SETTINGS->terrainDefaultHeight;
+    else
+        return test;
 }
 
 
-QuadNodeVideoData::
-QuadNodeVideoData(uint size)
+SubRegion::
+SubRegion()
 {
-    createTexture(geometry, GL_RGB32F_ARB, size);
-    createTexture(height, GL_INTENSITY32F_ARB, size);
-    createTexture(color, GL_RGB, size);
-}
-QuadNodeVideoData::
-~QuadNodeVideoData()
-{
-    glDeleteTextures(1, &geometry);
-    glDeleteTextures(1, &height);
-    glDeleteTextures(1, &color);
 }
 
-void QuadNodeVideoData::
-createTexture(GLuint& texture, GLint internalFormat, uint size)
+SubRegion::
+SubRegion(const Point3f& iOffset, const Vector2f& iSize) :
+    offset(iOffset), size(iSize)
 {
-    glGenTextures(1, &texture); glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, size, size, 0,
-                 GL_RGB, GL_UNSIGNED_INT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    CHECK_GLA
 }
 
 
-QuadNodeGpuLineData::
-QuadNodeGpuLineData(uint size) :
-    age(0)
+StampedSubRegion::
+StampedSubRegion()
 {
-    glGenTextures(1, &data);
-    glBindTexture(GL_TEXTURE_1D, data);
-    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F_ARB, Crusta::lineDataTexSize, 0,
-                 GL_RGBA, GL_FLOAT, NULL);
-    CHECK_GLA
-
-    uint mapSize = size>>1;
-    glGenTextures(1, &coverage);
-    glBindTexture(GL_TEXTURE_2D, coverage);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mapSize, mapSize, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    CHECK_GLA
 }
 
-QuadNodeGpuLineData::
-~QuadNodeGpuLineData()
+StampedSubRegion::
+StampedSubRegion(const Point3f& iOffset, const Vector2f& iSize) :
+    SubRegion(iOffset, iSize), age(0)
 {
-    glDeleteTextures(1, &data);
-    glDeleteTextures(1, &coverage);
 }
 
 
 std::ostream& operator<<(std::ostream& os,
-                         const QuadNodeMainData::ShapeCoverage& cov)
+                         const NodeData::ShapeCoverage& cov)
 {
-    for (QuadNodeMainData::ShapeCoverage::const_iterator lit=cov.begin();
+    for (NodeData::ShapeCoverage::const_iterator lit=cov.begin();
          lit!=cov.end(); ++lit)
     {
         os << "-line " << lit->first->getId() << " XX ";
-        const QuadNodeMainData::AgeStampedControlPointHandleList& handles =
-            lit->second;
-        for (QuadNodeMainData::AgeStampedControlPointHandleList::const_iterator
+        const Shape::ControlPointHandleList& handles = lit->second;
+        for (Shape::ControlPointHandleList::const_iterator
              hit=handles.begin(); hit!=handles.end(); ++hit)
         {
             if (hit==handles.begin())
-                os << hit->age << "." << hit->handle;
+                os << *hit;
             else
-                os << " | " << hit->age << "." << hit->handle;
+                os << " | " << *hit;
         }
         os << "\n";
     }
 
     return os;
 }
+
 
 END_CRUSTA

@@ -1,3 +1,5 @@
+#include <GL/VruiGlew.h> //must be included before gl.h
+
 #include <crusta/ElevationRangeTool.h>
 
 #include <cassert>
@@ -186,7 +188,10 @@ getFactory() const
 void ElevationRangeTool::
 frame()
 {
-    //grab the current tool position and map it to the unscaled globe
+ if (PROJECTION_FAILED)
+    return;
+
+   //grab the current tool position and map it to the unscaled globe
     Point3 pos;
     if (Vrui::isMaster())
     {
@@ -413,15 +418,15 @@ applyToColorMap(const ManipulationSource& manip)
             case MANIP_MIN_MAX_MARKERS:
             {
                 assert(markersSet == 2);
-                newMin = Vector3(markers[0]).mag() - SPHEROID_RADIUS;
-                newMax = Vector3(markers[1]).mag() - SPHEROID_RADIUS;
+                newMin = Vector3(markers[0]).mag() - SETTINGS->globeRadius;
+                newMax = Vector3(markers[1]).mag() - SETTINGS->globeRadius;
                 break;
             }
             case MANIP_SHIFT_MARKER:
             {
                 assert(markersSet == 1);
                 //compute the min elevation from the marker
-                newMin = Vector3(markers[0]).mag() - SPHEROID_RADIUS;
+                newMin = Vector3(markers[0]).mag() - SETTINGS->globeRadius;
 
                 //get the current range from the color map
                 GLColorMap* colorMap = crusta->getColorMap();

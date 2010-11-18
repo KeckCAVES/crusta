@@ -1,3 +1,5 @@
+#include <GL/VruiGlew.h> //must be included before gl.h
+
 #include <crusta/CrustaApp.h>
 
 #include <sstream>
@@ -44,6 +46,13 @@
 #include <Vrui/ToolManager.h>
 #include <Vrui/Tools/SurfaceNavigationTool.h>
 
+#if CRUSTA_ENABLE_DEBUG
+#include <crusta/DebugTool.h>
+#endif //CRUSTA_ENABLE_DEBUG
+
+///\todo debug remove
+#include <crusta/SurfaceTool.h>
+
 BEGIN_CRUSTA
 
 CrustaApp::
@@ -57,6 +66,7 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
 {
     std::string demName;
     std::string colorName;
+    std::string settingsName;
     for (int i=0; i<argc; ++i)
     {
         std::string name = std::string(argv[i]);
@@ -64,9 +74,13 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
             demName = name;
         if (GlobeFile<TextureColor>::isCompatible(name))
             colorName = name;
+
+        if (strcmp(argv[i], "-settings")==0)
+            settingsName = std::string(argv[++i]);
     }
+
     crusta = new Crusta;
-    crusta->init();
+    crusta->init(settingsName);
 
     /* Create the sun lightsource: */
     sun=Vrui::getLightsourceManager()->createLightsource(false);
@@ -78,6 +92,8 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
         viewerHeadlightStates[i] =
             Vrui::getViewer(i)->getHeadlight().isEnabled();
     }
+
+    specularSettings.setupComponent(crusta);
 
     produceMainMenu();
     produceVerticalScaleDialog();
@@ -92,17 +108,14 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     resetNavigationCallback(NULL);
 
     //load data passed through command line?
-    if (!demName.empty() || !colorName.empty())
-    {
-        crusta->load(demName, colorName);
-        dataDemFile->setLabel(demName.c_str());
-        dataColorFile->setLabel(colorName.c_str());
-    }
-    else
-    {
-        dataDemFile->setLabel("");
-        dataColorFile->setLabel("");
-    }
+    crusta->load(demName, colorName);
+
+    dataDemFile->setLabel(demName.c_str());
+    dataColorFile->setLabel(colorName.c_str());
+
+#if CRUSTA_ENABLE_DEBUG
+    DebugTool::init();
+#endif //CRUSTA_ENABLE_DEBUG
 }
 
 CrustaApp::
@@ -115,6 +128,147 @@ CrustaApp::
     crusta->shutdown();
     delete crusta;
 }
+
+
+void CrustaApp::Dialog::
+createMenuEntry(GLMotif::Container* menu)
+{
+    init();
+
+    parentMenu = menu;
+
+    GLMotif::ToggleButton* toggle = new GLMotif::ToggleButton(
+        (name+"Toggle").c_str(), parentMenu, label.c_str());
+    toggle->setToggle(false);
+    toggle->getValueChangedCallbacks().add(
+        this, &CrustaApp::Dialog::showCallback);
+}
+
+void CrustaApp::Dialog::
+init()
+{
+    dialog = new GLMotif::PopupWindow(
+        (name+"Dialog").c_str(), Vrui::getWidgetManager(), label.c_str());
+}
+
+void CrustaApp::Dialog::
+showCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+{
+    if(cbData->set)
+    {
+        //open the dialog at the same position as the menu:
+        Vrui::getWidgetManager()->popupPrimaryWidget(dialog,
+            Vrui::getWidgetManager()->calcWidgetTransformation(parentMenu));
+    }
+    else
+    {
+        //close the dialog:
+        Vrui::popdownPrimaryWidget(dialog);
+    }
+}
+
+
+CrustaApp::SpecularSettingsDialog::
+SpecularSettingsDialog() :
+    CrustaComponent(NULL), colorPicker("SpecularSettingsColorPicker",
+                                       Vrui::getWidgetManager(),
+                                       "Pick Specular Color")
+{
+    name  = "SpecularSettings";
+    label = "Specular Reflectance Settings";
+}
+
+void CrustaApp::SpecularSettingsDialog::
+init()
+{
+    Dialog::init();
+
+    const GLMotif::StyleSheet* style =
+        Vrui::getWidgetManager()->getStyleSheet();
+
+    colorPicker.getColorPicker()->getColorChangedCallbacks().add(
+            this, &CrustaApp::SpecularSettingsDialog::colorChangedCallback);
+
+
+    GLMotif::RowColumn* root = new GLMotif::RowColumn(
+        "Root", dialog, false);
+
+    GLMotif::RowColumn* colorRoot = new GLMotif::RowColumn(
+        "ColorRoot", root, false);
+
+    Color sc = SETTINGS->terrainSpecularColor;
+    new GLMotif::Label("SSColor", colorRoot, "Color: ");
+    colorButton = new GLMotif::Button("SSColorButton", colorRoot, "");
+    colorButton->setBackgroundColor(GLMotif::Color(sc[0], sc[1], sc[2], sc[3]));
+    colorButton->getSelectCallbacks().add(
+        this, &CrustaApp::SpecularSettingsDialog::colorButtonCallback);
+
+    colorRoot->setNumMinorWidgets(2);
+    colorRoot->manageChild();
+
+    GLMotif::RowColumn* shininessRoot = new GLMotif::RowColumn(
+        "ShininessRoot", root, false);
+
+    float shininess = SETTINGS->terrainShininess;
+    new GLMotif::Label("SSShininess", shininessRoot, "Shininess: ");
+    GLMotif::Slider* slider = new GLMotif::Slider(
+        "SSShininessSlider", shininessRoot, GLMotif::Slider::HORIZONTAL,
+        10.0 * style->fontHeight);
+    slider->setValue(log(shininess)/log(2));
+    slider->setValueRange(0.00f, 7.0f, 0.00001f);
+    slider->getValueChangedCallbacks().add(
+        this, &CrustaApp::SpecularSettingsDialog::shininessChangedCallback);
+    shininessField = new GLMotif::TextField(
+        "SSShininessField", shininessRoot, 7);
+    shininessField->setPrecision(4);
+    shininessField->setValue(shininess);
+
+    shininessRoot->setNumMinorWidgets(3);
+    shininessRoot->manageChild();
+
+
+    root->setNumMinorWidgets(2);
+    root->manageChild();
+}
+
+void CrustaApp::SpecularSettingsDialog::
+colorButtonCallback(
+    GLMotif::Button::SelectCallbackData* cbData)
+{
+    GLMotif::WidgetManager* manager = Vrui::getWidgetManager();
+    if (!manager->isVisible(&colorPicker))
+    {
+        //bring up the color picker
+        colorPicker.getColorPicker()->setCurrentColor(
+            SETTINGS->terrainSpecularColor);
+        manager->popupPrimaryWidget(
+            &colorPicker, manager->calcWidgetTransformation(cbData->button));
+    }
+    else
+    {
+        //close the color picker
+        Vrui::popdownPrimaryWidget(&colorPicker);
+    }
+}
+
+void CrustaApp::SpecularSettingsDialog::
+colorChangedCallback(
+        GLMotif::ColorPicker::ColorChangedCallbackData* cbData)
+{
+    const GLMotif::Color& c = cbData->newColor;
+    colorButton->setBackgroundColor(c);
+    crusta->setTerrainSpecularColor(Color(c[0], c[1], c[2], c[3]));
+}
+
+void CrustaApp::SpecularSettingsDialog::
+shininessChangedCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
+{
+    float shininess = pow(2, cbData->value) - 1.0f;
+    crusta->setTerrainShininess(shininess);
+    shininessField->setValue(shininess);
+}
+
+
 
 void CrustaApp::
 produceMainMenu()
@@ -161,19 +315,27 @@ produceMainMenu()
     showPaletteEditorToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::showPaletteEditorCallback);
 
-    /* Create the advanced submenu */
-    GLMotif::Popup* advancedMenuPopup =
-        new GLMotif::Popup("AdvancedMenuPopup", Vrui::getWidgetManager());
-
-    GLMotif::SubMenu* advancedMenu =
-        new GLMotif::SubMenu("Advanced", advancedMenuPopup, false);
+    /* Create settings submenu */
+    GLMotif::Popup* settingsMenuPopup =
+        new GLMotif::Popup("SettingsMenuPopup", Vrui::getWidgetManager());
+    GLMotif::SubMenu* settingsMenu =
+        new GLMotif::SubMenu("Settings", settingsMenuPopup, false);
 
     //line decoration toggle
     GLMotif::ToggleButton* decorateLinesToggle = new GLMotif::ToggleButton(
-        "DecorateLinesToggle", advancedMenu, "Decorate Lines");
-    decorateLinesToggle->setToggle(false);
+        "DecorateLinesToggle", settingsMenu, "Decorate Lines");
+    decorateLinesToggle->setToggle(SETTINGS->decorateVectorArt);
     decorateLinesToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::decorateLinesCallback);
+
+    //specular settings dialog toggle
+    specularSettings.createMenuEntry(settingsMenu);
+
+    /* Create the advanced submenu */
+    GLMotif::Popup* advancedMenuPopup =
+        new GLMotif::Popup("AdvancedMenuPopup", Vrui::getWidgetManager());
+    GLMotif::SubMenu* advancedMenu =
+        new GLMotif::SubMenu("Advanced", advancedMenuPopup, false);
 
     //toogle display of the debugging grid
     GLMotif::ToggleButton* debugGridToggle = new GLMotif::ToggleButton(
@@ -190,10 +352,15 @@ produceMainMenu()
         this, &CrustaApp::debugSpheresCallback);
 
     advancedMenu->manageChild();
-
     GLMotif::CascadeButton* advancedMenuCascade = new GLMotif::CascadeButton(
-        "AdvancedMenuCascade", mainMenu, "Advanced");
+        "AdvancedMenuCascade", settingsMenu, "Advanced");
     advancedMenuCascade->setPopup(advancedMenuPopup);
+
+    settingsMenu->manageChild();
+    GLMotif::CascadeButton* settingsMenuCascade = new GLMotif::CascadeButton(
+        "SettingsMenuCascade", mainMenu, "Settings");
+    settingsMenuCascade->setPopup(settingsMenuPopup);
+
 
     /* Navigation reset: */
     GLMotif::Button* resetNavigationButton = new GLMotif::Button(
@@ -355,18 +522,25 @@ produceTexturingSubmenu(GLMotif::Menu* mainMenu)
     GLMotif::SubMenu* texturingMenu =
         new GLMotif::SubMenu("Texturing", texturingMenuPopup, false);
 
-    GLMotif::Button* modeButton = new GLMotif::Button(
-        "Untextured", texturingMenu, "Untextured");
+    GLMotif::RadioBox* texturingBox =
+        new GLMotif::RadioBox("TexturingBox", texturingMenu, false);
+
+    GLMotif::ToggleButton* modeButton;
+    modeButton = new GLMotif::ToggleButton(
+        "Untextured", texturingBox, "Untextured");
     modeButton->getSelectCallbacks().add(
         this, &CrustaApp::changeTexturingModeCallback);
-    modeButton = new GLMotif::Button(
-        "ColorMap", texturingMenu, "Color Map");
+    modeButton = new GLMotif::ToggleButton(
+        "ColorMap", texturingBox, "Color Map");
     modeButton->getSelectCallbacks().add(
         this, &CrustaApp::changeTexturingModeCallback);
-    modeButton = new GLMotif::Button(
-        "Image", texturingMenu, "Image");
+    modeButton = new GLMotif::ToggleButton(
+        "Image", texturingBox, "Image");
     modeButton->getSelectCallbacks().add(
         this, &CrustaApp::changeTexturingModeCallback);
+
+    texturingBox->setSelectedToggle(modeButton);
+    texturingBox->manageChild();
 
     texturingMenu->manageChild();
 
@@ -459,10 +633,9 @@ alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
         origin = Point3(0.0, 1.0, 0.0);
 
     origin = crusta->snapToSurface(origin);
-    origin = crusta->mapToScaledGlobe(origin);
 
     //misuse the Geoid just to build a surface tangent frame
-    Geometry::Geoid<double> geoid(SPHEROID_RADIUS, 0.0);
+    Geometry::Geoid<double> geoid(SETTINGS->globeRadius, 0.0);
     Point3 lonLatEle = geoid.cartesianToGeodetic(origin);
     Geometry::Geoid<double>::Frame frame =
         geoid.geodeticToCartesianFrame(lonLatEle);
@@ -473,15 +646,18 @@ alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
 
 void CrustaApp::
 changeTexturingModeCallback(
-    GLMotif::Button::SelectCallbackData* cbData)
+    GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 {
-    const char* button = cbData->button->getName();
-    if (strcmp(button, "Untextured") == 0)
-        crusta->setTexturingMode(0);
-    else if (strcmp(button, "ColorMap") == 0)
-        crusta->setTexturingMode(1);
-    else
-        crusta->setTexturingMode(2);
+    if (cbData->set)
+    {
+        const char* button = cbData->toggle->getName();
+        if (strcmp(button, "Untextured") == 0)
+            crusta->setTexturingMode(0);
+        else if (strcmp(button, "ColorMap") == 0)
+            crusta->setTexturingMode(1);
+        else
+            crusta->setTexturingMode(2);
+    }
 }
 
 void CrustaApp::
@@ -633,7 +809,7 @@ showPaletteEditorCallback(
 void CrustaApp::
 decorateLinesCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 {
-    crusta->setLinesDecorated(cbData->set);
+    crusta->setDecoratedVectorArt(cbData->set);
 }
 
 void CrustaApp::
@@ -652,7 +828,7 @@ void CrustaApp::
 resetNavigationCallback(Misc::CallbackData* cbData)
 {
     /* Reset the Vrui navigation transformation: */
-    Vrui::setNavigationTransformation(Vrui::Point(0,0,0), 1.5*SPHEROID_RADIUS);
+    Vrui::setNavigationTransformation(Vrui::Point(0),1.5*SETTINGS->globeRadius);
     Vrui::concatenateNavigationTransformation(Vrui::NavTransform::translate(
         Vrui::Vector(0,1,0)));
 }
@@ -668,6 +844,9 @@ frame()
 void CrustaApp::
 display(GLContextData& contextData) const
 {
+    //make sure the glew context has been made current before any other display
+    VruiGlew::enable(contextData);
+    //let crusta do its thing
     crusta->display(contextData);
 }
 
@@ -691,8 +870,29 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
     if (component != NULL)
         component->setupComponent(crusta);
 
+#if CRUSTA_ENABLE_DEBUG
+    //check for the creation of the debug tool
+    DebugTool* dbgTool = dynamic_cast<DebugTool*>(cbData->tool);
+    if (dbgTool!=NULL && crusta->debugTool==NULL)
+        crusta->debugTool = dbgTool;
+#endif //CRUSTA_ENABLE_DEBUG
+
+
     Vrui::Application::toolCreationCallback(cbData);
 }
+
+void CrustaApp::
+toolDestructionCallback(Vrui::ToolManager::ToolDestructionCallbackData* cbData)
+{
+    SurfaceTool* surface = dynamic_cast<SurfaceTool*>(cbData->tool);
+    if (surface != NULL)
+        PROJECTION_FAILED = false;
+#if CRUSTA_ENABLE_DEBUG
+    if (cbData->tool == crusta->debugTool)
+        crusta->debugTool = NULL;
+#endif //CRUSTA_ENABLE_DEBUG
+}
+
 
 
 END_CRUSTA

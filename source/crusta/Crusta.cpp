@@ -1,10 +1,12 @@
 #include <crusta/Crusta.h>
 
+#include <Images/Image.h>
+#include <Images/TargaImageFileReader.h>
 #include <Geometry/OrthogonalTransformation.h>
-#include <GL/Extensions/GLEXTFramebufferObject.h>
 #include <GL/GLColorMap.h>
 #include <GL/GLContextData.h>
 #include <GL/GLTransformationWrappers.h>
+#include <Misc/File.h>
 #include <Misc/ThrowStdErr.h>
 #include <Vrui/Vrui.h>
 
@@ -21,12 +23,17 @@
 #include <crusta/Triangle.h>
 
 
+#include <crusta/StatsManager.h>
+
 ///todo debug
 #include <crusta/CrustaVisualizer.h>
 #define CV(x) CrustaVisualizer::x
 
 
 BEGIN_CRUSTA
+
+///\todo debug remove
+bool PROJECTION_FAILED = false;
 
 
 #if CRUSTA_ENABLE_DEBUG
@@ -40,160 +47,49 @@ bool DEBUG_INTERSECT = false;
 #define DEBUG_INTERSECT_PEEK 0
 #endif //DEBUG_INTERSECT_CRAP
 
-///\todo OMG this needs to be integrated into the code properly (VIS 2010)
-const int   Crusta::lineDataTexSize     = 8192;
-const float Crusta::lineDataCoordStep   = 1.0f / lineDataTexSize;
-const float Crusta::lineDataStartCoord  = 0.5f * lineDataCoordStep;
 
-///\todo OMG this needs to be integrated into the code properly (VIS 2010)
-class RGBAImage
+FrameStamp CURRENT_FRAME(0);
+
+
+#define CRUSTA_ENABLE_RECORD_FRAMERATE 0
+#if CRUSTA_ENABLE_RECORD_FRAMERATE
+class FrameRateRecorder
 {
 public:
-    RGBAImage(int width, int height) : byteCount(4), pixels(NULL)
+    FrameRateRecorder(double iSampleStep) :
+        sampleStep(iSampleStep), file("frames.txt")
     {
-        size[0] = width;
-    size[1] = height;
+        schedule();
     }
-    ~RGBAImage()
+    ~FrameRateRecorder()
     {
-        destroy();
-    }
-
-    bool load(const char* filename)
-    {
-        FILE* file;
-        file = fopen(filename, "rb");
-        if (file == NULL)
-            return false;
-
-        size_t imageSize = size[0]*size[1] * byteCount;
-
-        //allocate memory for image data
-        pixels = new uint8[imageSize];
-
-        //read in image data
-        size_t res = fread(pixels, sizeof(uint8), imageSize, file);
-
-        //close file
-        fclose(file);
-
-        return res==imageSize;
+        file.close();
     }
 
-    void destroy()
+protected:
+    void schedule()
     {
-        size[0] = size[1] = 0;
-        byteCount = 0;
-        delete[] pixels;
-        pixels = NULL;
+        Misc::TimerEventScheduler* tes = Vrui::getTimerEventScheduler();
+        double nextTickTime = tes->getCurrentTime() + sampleStep;
+        tes->scheduleEvent(nextTickTime,this,&FrameRateRecorder::tickCallback);
     }
 
-    int    size[2];
-    int    byteCount;
-    uint8* pixels;
+    void tickCallback(Misc::TimerEventScheduler::CallbackData*)
+    {
+        file << 1.0 / Vrui::getCurrentFrameTime() << ",";
+        schedule();
+    }
+
+    double sampleStep;
+    std::ofstream file;
 };
-
-///\todo OMG this needs to be integrated into the code properly (VIS 2010)
-class TargaImage
-{
-public:
-    TargaImage() : byteCount(0), pixels(NULL)
-    {
-        size[0] = size[1] = 0;
-    }
-    ~TargaImage()
-    {
-        destroy();
-    }
-
-    bool load(const char* filename)
-    {
-        FILE* file;
-        uint8 type[4];
-        uint8 info[6];
-
-        file = fopen(filename, "rb");
-        if (file == NULL)
-            return false;
-
-        size_t res = fread(&type, sizeof(char), 3, file);
-        if (res != 3)
-        {
-            fclose(file);
-            return false;
-        }
-
-        fseek(file, 12, SEEK_SET);
-
-        res = fread(&info, sizeof(char), 6, file);
-        if (res != 6)
-        {
-            fclose(file);
-            return false;
-        }
-
-        //image type either 2 (color) or 3 (greyscale)
-        if (type[1]!=0 || (type[2]!=2 && type[2]!=3))
-        {
-            fclose(file);
-            return false;
-        }
-
-        size[0]   = info[0] + info[1]*256;
-        size[1]   = info[2] + info[3]*256;
-        byteCount = info[4] / 8;
-
-        if (byteCount!=3 && byteCount!=4)
-        {
-            fclose(file);
-            return false;
-        }
-
-        size_t imageSize = size[0]*size[1] * byteCount;
-
-        //allocate memory for image data
-        pixels = new uint8[imageSize];
-
-        //read in image data
-        res = fread(pixels, sizeof(uint8), imageSize, file);
-
-        //close file
-        fclose(file);
-
-        return res==imageSize;
-    }
-
-    void destroy()
-    {
-        size[0] = size[1] = 0;
-        byteCount = 0;
-        delete[] pixels;
-        pixels = NULL;
-    }
-
-    int    size[2];
-    int    byteCount;
-    uint8* pixels;
-};
+FrameRateRecorder* CRUSTA_FRAMERATE_RECORDER;
+#endif //CRUSTA_ENABLE_RECORD_FRAMERATE
 
 CrustaGlData::
 CrustaGlData() :
-    resetVideoCacheAge(0), resetLineCacheAge(0)
+    gpuCache(NULL)
 {
-    /* Initialize the required extensions: */
-    if(!GLEXTFramebufferObject::isSupported())
-    {
-        Misc::throwStdErr("LightingShader: GL_EXT_framebuffer_object not"
-                          " supported");
-    }
-    GLEXTFramebufferObject::initExtension();
-
-    QuadTerrain::generateVertexAttributeTemplate(vertexAttributeTemplate);
-    QuadTerrain::generateIndexTemplate(indexTemplate);
-
-    //create the framebuffer to be used to attach and render the coverage maps
-    glGenFramebuffersEXT(1, &coverageFbo);
-
     glPushAttrib(GL_TEXTURE_BIT);
 
     glGenTextures(1, &symbolTex);
@@ -208,24 +104,20 @@ CrustaGlData() :
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-#if 0
-    TargaImage atlas;
-    std::string imgFile(CRUSTA_SHARE_PATH);
-    imgFile += "/mapSymbolAtlas.tga";
-    if (atlas.load(imgFile.c_str()))
-#else
-    RGBAImage atlas(1024, 1024);
-    std::string imgFile(CRUSTA_SHARE_PATH);
-    imgFile += "/mapSymbolAtlas.rgba";
-    if (atlas.load(imgFile.c_str()))
-#endif
+    std::string imgFileName(CRUSTA_SHARE_PATH);
+    imgFileName += "/mapSymbolAtlas.tga";
+    try
     {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas.size[0], atlas.size[1], 0,
-                     GL_RGBA, GL_UNSIGNED_BYTE, atlas.pixels);
+        Misc::File imgFile(imgFileName.c_str(), "r");
+        Images::TargaImageFileReader<Misc::File> imgFileReader(imgFile);
+        Images::Image<uint8,4> img =
+            imgFileReader.readImage<Images::Image<uint8,4> >();
 
-        atlas.destroy();
+        glBindTexture(GL_TEXTURE_2D, symbolTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.getWidth(), img.getHeight(),
+                     0, GL_RGBA, GL_UNSIGNED_BYTE, img.getPixels());
     }
-    else
+    catch (...)
     {
         float defaultTexel[4] = {1.0f, 1.0f, 1.0f, 1.0f};
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0,
@@ -234,53 +126,27 @@ CrustaGlData() :
     CHECK_GLA
 
     glPopAttrib();
-
-    //create the shader to process the line coverages into the corresponding map
-    static const char* vp = "\
-//        uniform mat4 transform;\n\
-        void main()\n\
-        {\n\
-#if 1\n\
-            gl_Position = gl_Vertex;\n\
-#else\n\
-            gl_Position = transform * gl_Vertex;\n\
-#endif\n\
-            gl_FrontColor = gl_Color;\n\
-        }\n\
-        \n";
-
-    static const char* fp = "\
-        void main()\n\
-        {\n\
-            gl_FragColor = gl_Color;\n\
-        }\n\
-        \n";
-    lineCoverageShader.compileVertexShaderFromString(vp);
-    lineCoverageShader.compileFragmentShaderFromString(fp);
-    lineCoverageShader.linkShader();
-
-#if 0
-    lineCoverageShader.useProgram();
-    lineCoverageTransformUniform = lineCoverageShader.getUniformLocation(
-        "transform");
-    lineCoverageShader.disablePrograms();
-#endif
 }
 
 CrustaGlData::
 ~CrustaGlData()
 {
-    glDeleteBuffers(1, &vertexAttributeTemplate);
-    glDeleteBuffers(1, &indexTemplate);
     glDeleteTextures(1, &symbolTex);
     glDeleteTextures(1, &colorMap);
 }
 
 
 
+///\todo split crusta and planet
 void Crusta::
-init()
+init(const std::string& settingsFile)
 {
+///\todo split crusta and planet
+///\todo extend the interface to pass an optional configuration file
+    //initialize the crusta user settings
+    SETTINGS = new CrustaSettings;
+    SETTINGS->loadFromFile(settingsFile);
+
     //initialize the surface transformation tool
     SurfaceTool::init();
     //initialize the abstract crusta tool (adds an entry to the VRUI menu)
@@ -290,24 +156,24 @@ init()
     that are initialized with 0. Thus if crustaFrameNumber starts at 0, the
     init code wouldn't be able to retrieve any cache buffers since all the
     buffers of the current and previous frame are locked */
-    currentFrame     = 2;
-    lastScaleFrame   = 2;
-    texturingMode    = 2;
-    verticalScale    = 0.0;
-    newVerticalScale = 1.0;
-    linesDecorated   = false;
+    lastScaleStamp       = Math::Constants<double>::max;
+    texturingMode        = 2;
+    verticalScale        = 0.99999999999999;
+    newVerticalScale     = 1.0;
+    changedVerticalScale = 0.99999999999999;
 
-    resetVideoCacheAge = 0;
-    resetLineCacheAge  = 0;
+///\todo separate crusta the application from a planet instance (current)
+    CACHE       = new Cache;
+    DATAMANAGER = new DataManager;
+///\todo VruiGlew dependent dynamic allocation
+    QuadTerrain::initGlData();
 
-    cache   = new Cache(4096, 1024, 1024, this);
-    dataMan = new DataManager(this);
-    mapMan  = new MapManager(crustaTool, this);
+    mapMan = new MapManager(crustaTool, this);
 
     ElevationRangeTool::init(crustaTool);
 
-    globalElevationRange[0] = -1;
-    globalElevationRange[1] =  1;
+    globalElevationRange[0] = 0;
+    globalElevationRange[1] = 0;
 
     colorMapDirty = false;
     static const int numColorMapEntries = 1024;
@@ -323,27 +189,45 @@ load(const std::string& demFileBase, const std::string& colorFileBase)
     //clear the currently loaded data
     unload();
 
-    dataMan->load(demFileBase, colorFileBase);
+    DATAMANAGER->load(demFileBase, colorFileBase);
 
     globalElevationRange[0] =  Math::Constants<Scalar>::max;
     globalElevationRange[1] = -Math::Constants<Scalar>::max;
 
-    const Polyhedron* const polyhedron = dataMan->getPolyhedron();
+    const Polyhedron* const polyhedron = DATAMANAGER->getPolyhedron();
 
     uint numPatches = polyhedron->getNumPatches();
     renderPatches.resize(numPatches);
     for (uint i=0; i<numPatches; ++i)
     {
         renderPatches[i] = new QuadTerrain(i, polyhedron->getScope(i), this);
-        const QuadNodeMainData& root = renderPatches[i]->getRootNode();
+        const NodeData& root = *renderPatches[i]->getRootNode().node;
         globalElevationRange[0] = std::min(globalElevationRange[0],
                                            Scalar(root.elevationRange[0]));
         globalElevationRange[1] = std::max(globalElevationRange[1],
                                            Scalar(root.elevationRange[1]));
     }
 
-    colorMap->setScalarRange(GLdouble(globalElevationRange[0]),
-                             GLdouble(globalElevationRange[1]));
+    if (globalElevationRange[0]== Math::Constants<Scalar>::max ||
+        globalElevationRange[1]==-Math::Constants<Scalar>::max)
+    {
+        globalElevationRange[0] = SETTINGS->terrainDefaultHeight;
+        globalElevationRange[1] = SETTINGS->terrainDefaultHeight;
+    }
+
+    colorMapDirty = true;
+    static const int numColorMapEntries = 1024;
+    GLColorMap::Color dummyColorMap[numColorMapEntries];
+    colorMap = new GLColorMap(numColorMapEntries, dummyColorMap,
+                              GLdouble(globalElevationRange[0]),
+                              GLdouble(globalElevationRange[1]));
+
+#if CRUSTA_ENABLE_DEBUG
+debugTool = NULL;
+#endif //CRUSTA_ENABLE_DEBUG
+#if CRUSTA_ENABLE_RECORD_FRAMERATE
+CRUSTA_FRAMERATE_RECORDER = new FrameRateRecorder(1.0/20.0);
+#endif //CRUSTA_ENABLE_RECORD_FRAMERATE
 }
 
 void Crusta::
@@ -360,10 +244,8 @@ unload()
     //destroy all the current maps
     mapMan->deleteAllShapes();
 
-    //reset all the caches
-    resetVideoCacheAge = getCurrentFrame();
-    resetLineCacheAge  = getCurrentFrame();
-    cache->getMainCache().reset();
+    //unload the data
+    DATAMANAGER->unload();
 }
 
 
@@ -376,8 +258,16 @@ shutdown()
     {
         delete *it;
     }
-    delete dataMan;
-    delete cache;
+
+///\todo separate crusta the application from a planet instance (current)
+    delete DATAMANAGER;
+    delete CACHE;
+///\todo VruiGlew dependent dynamic allocation
+    QuadTerrain::deleteGlData();
+
+#if CRUSTA_ENABLE_RECORD_FRAMERATE
+delete CRUSTA_FRAMERATE_RECORDER;
+#endif //CRUSTA_ENABLE_RECORD_FRAMERATE
 }
 
 Point3 Crusta::
@@ -386,24 +276,26 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     if (renderPatches.empty())
         return pos;
 
+    typedef NodeMainBuffer MainBuffer;
+    typedef NodeMainData   MainData;
+
 //- find the base patch
-    MainCacheBuffer*  nodeBuf = NULL;
-    QuadNodeMainData* node    = NULL;
-    for (int patch=0; patch<static_cast<int>(renderPatches.size()); ++patch)
+    MainData nodeData;
+    for (RenderPatches::iterator it=renderPatches.begin();
+         it!=renderPatches.end(); ++it)
     {
         //grab specification of the patch
-        nodeBuf = cache->getMainCache().findCached(TreeIndex(patch));
-        assert(nodeBuf != NULL);
-        node = &nodeBuf->getData();
-
+        nodeData = (*it)->getRootNode();
         //check containment
-        if (node->scope.contains(pos))
+        if (nodeData.node->scope.contains(pos))
             break;
         else
-            node = NULL;
+            nodeData.node = NULL;
     }
 
-    assert(node != NULL);
+    assert(nodeData.node != NULL);
+
+    NodeData* node = nodeData.node;
     assert(node->index.patch < static_cast<uint>(renderPatches.size()));
 
 //- grab the finest level data possible
@@ -426,17 +318,14 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
         childId    |= vpos*horizontal < 0 ? 0x2 : 0x0;
 
         //is it even possible to retrieve higher res data?
-        if (node->childDemTiles[childId]   == INVALID_TILEINDEX &&
-            node->childColorTiles[childId] == INVALID_TILEINDEX)
-        {
+        if (!DATAMANAGER->existsChildData(nodeData))
             break;
-        }
 
         //try to grab the child for evaluation
-        MainCache& mainCache      = cache->getMainCache();
-        TreeIndex childIndex      = node->index.down(childId);
-        MainCacheBuffer* childBuf = mainCache.findCached(childIndex);
-        if (childBuf == NULL)
+        TreeIndex childIndex = node->index.down(childId);
+        MainBuffer childBuf;
+        bool childExists = DATAMANAGER->find(childIndex, childBuf);
+        if (!childExists)
         {
 ///\todo Vis2010 simplify. Don't allow loads of nodes from here
 //            mainCache.request(MainCache::Request(0.0, nodeBuf, childId));
@@ -445,8 +334,8 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
         else
         {
             //switch to the child for traversal continuation
-            nodeBuf = childBuf;
-            node    = &childBuf->getData();
+            nodeData = DATAMANAGER->getData(childBuf);
+            node     = nodeData.node;
         }
     }
 
@@ -487,13 +376,16 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
 //- sample the cell
     static const int tileRes = TILE_RESOLUTION;
     int linearOffset = offset[1]*tileRes + offset[0];
-    QuadNodeMainData::Vertex* cellV = node->geometry + linearOffset;
-    DemHeight*                cellH = node->height   + linearOffset;
-    const QuadNodeMainData::Vertex::Position* positions[4] = {
+    Vertex*    cellV = nodeData.geometry + linearOffset;
+    DemHeight* cellH = nodeData.height   + linearOffset;
+
+    const Vertex::Position* positions[4] = {
         &(cellV->position), &((cellV+1)->position),
         &((cellV+tileRes)->position), &((cellV+tileRes+1)->position) };
-    const DemHeight* heights[4] = {
-        cellH, cellH+1, cellH+tileRes, cellH+tileRes+1
+
+    DemHeight heights[4] = {
+        node->getHeight(*cellH),           node->getHeight(*(cellH+1)),
+        node->getHeight(*(cellH+tileRes)), node->getHeight(*(cellH+tileRes+1))
     };
     //construct the corners of the current cell
     Vector3 cellCorners[4];
@@ -503,7 +395,7 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
             cellCorners[i][j] = (*(positions[i]))[j] + node->centroid[j];
         Vector3 extrude(cellCorners[i]);
         extrude.normalize();
-        extrude *= *(heights[i]);
+        extrude *= (heights[i] + elevationOffset) * getVerticalScale();
         cellCorners[i] += extrude;
     }
 
@@ -511,15 +403,20 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     Triangle t0(cellCorners[0], cellCorners[3], cellCorners[2]);
     Triangle t1(cellCorners[0], cellCorners[1], cellCorners[3]);
 
-    Ray ray(pos, -Vector3(pos));
+    Ray ray(pos, (-Vector3(pos)).normalize());
     HitResult hit = t0.intersectRay(ray);
     if (!hit.isValid())
     {
         hit = t1.intersectRay(ray);
         if (!hit.isValid())
         {
-            Scalar height = node->height[offset[1]*TILE_RESOLUTION + offset[0]];
-            height       += SPHEROID_RADIUS + elevationOffset;
+///\todo this should not be possible!!!
+CRUSTA_DEBUG_OUT(70, "SnapToSurface failed triangle intersection test!\n");
+            Scalar height = nodeData.height[offset[1]*TILE_RESOLUTION +
+                                            offset[0]];
+            height        = node->getHeight(height) + elevationOffset;
+            height       *= getVerticalScale();
+            height       += SETTINGS->globeRadius ;
 
             Vector3 toPos = Vector3(pos);
             toPos.normalize();
@@ -551,7 +448,7 @@ CrustaVisualizer::peek();
     const Scalar& verticalScale = getVerticalScale();
 
     //intersect the ray with the global outer shells to determine starting point
-    Sphere shell(Point3(0), SPHEROID_RADIUS +
+    Sphere shell(Point3(0), SETTINGS->globeRadius +
                  verticalScale*globalElevationRange[1]);
     Scalar gin, gout;
     bool intersects = shell.intersectRay(ray, gin, gout);
@@ -560,7 +457,8 @@ CrustaVisualizer::peek();
     if (!intersects)
         return HitResult();
 
-    shell.setRadius(SPHEROID_RADIUS + verticalScale*globalElevationRange[0]);
+    shell.setRadius(SETTINGS->globeRadius +
+                    verticalScale*globalElevationRange[0]);
     HitResult hit = shell.intersectRay(ray);
     if (hit.isValid())
         gout = hit.getParameter();
@@ -576,12 +474,14 @@ CrustaVisualizer::peek();
 
     //find the patch containing the entry point
     Point3 entry = ray(gin);
-    const QuadTerrain*      patch = NULL;
-    const QuadNodeMainData* node  = NULL;
+    const QuadTerrain* patch = NULL;
+    NodeData*          node  = NULL;
+    NodeMainData nodeData;
     for (RenderPatches::const_iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
     {
-        node = &((*it)->getRootNode());
+        nodeData = (*it)->getRootNode();
+        node     = nodeData.node;
         if (node->scope.contains(entry))
         {
             patch = *it;
@@ -630,9 +530,10 @@ int patchesVisited = 0;
 const QuadTerrain* oldPatch = patch;
 #endif //DEBUG_INTERSECT_CRAP
 
-        const Polyhedron* const polyhedron = dataMan->getPolyhedron();
+        const Polyhedron* const polyhedron = DATAMANAGER->getPolyhedron();
         Polyhedron::Connectivity neighbors[4];
-        polyhedron->getConnectivity(patch->getRootNode().index.patch,neighbors);
+        polyhedron->getConnectivity(patch->getRootNode().node->index.patch,
+                                    neighbors);
         patch  = renderPatches[neighbors[sideOut][0]];
         sideIn = mapSide[neighbors[sideOut][1]][sideOut];
 
@@ -656,13 +557,16 @@ intersect(Shape::ControlPointHandle start,
           Shape::IntersectionFunctor& callback) const
 {
     //find the patch containing the entry point
-    const Point3&           entry = start->pos;
-    const QuadTerrain*      patch = NULL;
-    const QuadNodeMainData* node  = NULL;
+    const Point3&      entry = start->pos;
+    const QuadTerrain* patch = NULL;
+    const NodeData*    node  = NULL;
+    NodeMainData nodeData;
+
     for (RenderPatches::const_iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
     {
-        node = &((*it)->getRootNode());
+        nodeData = (*it)->getRootNode();
+        node     = nodeData.node;
         if (node->scope.contains(entry))
         {
             patch = *it;
@@ -689,25 +593,20 @@ intersect(Shape::ControlPointHandle start,
         //move to the patch on the exit side
         tin = tout;
 
-        const Polyhedron* const polyhedron = dataMan->getPolyhedron();
+        const Polyhedron* const polyhedron = DATAMANAGER->getPolyhedron();
         Polyhedron::Connectivity neighbors[4];
-        polyhedron->getConnectivity(patch->getRootNode().index.patch,neighbors);
+        polyhedron->getConnectivity(patch->getRootNode().node->index.patch,
+                                    neighbors);
         patch  = renderPatches[neighbors[sideOut][0]];
         sideIn = mapSide[neighbors[sideOut][1]][sideOut];
     }
 }
 
 
-const FrameNumber& Crusta::
-getCurrentFrame() const
+const FrameStamp& Crusta::
+getLastScaleStamp() const
 {
-    return currentFrame;
-}
-
-const FrameNumber& Crusta::
-getLastScaleFrame() const
-{
-    return lastScaleFrame;
+    return lastScaleStamp;
 }
 
 void Crusta::
@@ -728,18 +627,6 @@ getVerticalScale() const
     return verticalScale;
 }
 
-
-void Crusta::
-setLinesDecorated(bool flag)
-{
-    linesDecorated = flag;
-}
-
-bool Crusta::
-getLinesDecorated() const
-{
-    return linesDecorated;
-}
 
 GLColorMap* Crusta::
 getColorMap()
@@ -767,7 +654,7 @@ mapToScaledGlobe(const Point3& pos)
     Vector3 toPoint(pos[0], pos[1], pos[2]);
     Vector3 onSurface(toPoint);
     onSurface.normalize();
-    onSurface *= SPHEROID_RADIUS;
+    onSurface *= SETTINGS->globeRadius;
     toPoint   -= onSurface;
     toPoint   *= verticalScale;
     toPoint   += onSurface;
@@ -781,24 +668,12 @@ mapToUnscaledGlobe(const Point3& pos)
     Vector3 toPoint(pos[0], pos[1], pos[2]);
     Vector3 onSurface(toPoint);
     onSurface.normalize();
-    onSurface *= SPHEROID_RADIUS;
+    onSurface *= SETTINGS->globeRadius;
     toPoint   -= onSurface;
     toPoint   /= verticalScale;
     toPoint   += onSurface;
 
     return Point3(toPoint[0], toPoint[1], toPoint[2]);
-}
-
-Cache* Crusta::
-getCache() const
-{
-    return cache;
-}
-
-DataManager* Crusta::
-getDataManager() const
-{
-    return dataMan;
 }
 
 MapManager* Crusta::
@@ -809,33 +684,72 @@ getMapManager() const
 
 
 void Crusta::
-submitActives(const Actives& touched)
-{
-    Threads::Mutex::Lock lock(activesMutex);
-    actives.insert(actives.end(), touched.begin(), touched.end());
-}
-
-
-void Crusta::
 frame()
 {
-    ++currentFrame;
-CRUSTA_DEBUG_OUT(8, "\n\n\n--------------------------------------\n%u\n\n\n",
-static_cast<unsigned int>(currentFrame));
+///\todo split crusta and planet
+///\todo hack. allow for the cache processing to happen as a display post-proc
+    //process the requests from the last frame
+    DATAMANAGER->frame();
 
-    //check for scale changes since the last frame
-    if (verticalScale  != newVerticalScale)
+    CURRENT_FRAME = Vrui::getApplicationTime();
+
+///\todo hack. start the actual new frame
+statsMan.newFrame();
+
+#if CRUSTA_ENABLE_DEBUG
+if (debugTool!=NULL)
+{
+    bool  b0  = debugTool->getButton(0);
+    bool& bl0 = debugTool->getButtonLast(0);
+    if (b0 && b0!=bl0)
     {
-        verticalScale  = newVerticalScale;
-        lastScaleFrame = currentFrame;
+        bl0 = b0;
+        mapMan->load("/data/crusta/maps/azerbaijan/Crusta_Polylines.shp");
+    }
+
+    bool  b1  = debugTool->getButton(1);
+    bool& bl1 = debugTool->getButtonLast(1);
+    if (b1 && b1!=bl1)
+    {
+        bl1 = b1;
+        SETTINGS->decorateVectorArt = true;
+    }
+}
+#endif //CRUSTA_ENABLE_DEBUG
+
+CRUSTA_DEBUG_OUT(8, "\n\n\n--------------------------------------\n%f\n\n\n",
+CURRENT_FRAME);
+
+    //apply the vertical scale changes
+    if (verticalScale != changedVerticalScale)
+    {
+        verticalScale  = changedVerticalScale;
+        lastScaleStamp = CURRENT_FRAME;
         mapMan->processVerticalScaleChange();
     }
 
-    //make sure all the active nodes are current
-    confirmActives();
+    //check for scale changes since the last frame
+    if (changedVerticalScale  != newVerticalScale)
+    {
+        //compute the translation the scale change implies on the navigation
+        Point3 physicalCenter = Vrui::getDisplayCenter();
+        const Vrui::NavTransform& navXform =
+            Vrui::getNavigationTransformation();
+        Point3 navCenter = navXform.inverseTransform(physicalCenter);
 
-    //process the requests from the last frame
-    cache->getMainCache().frame();
+        Vector3 toCenter(navCenter[0], navCenter[1], navCenter[2]);
+        Scalar height       = toCenter.mag();
+        Scalar altitude     = (height - SETTINGS->globeRadius) / verticalScale;
+        Scalar newHeight    = altitude*newVerticalScale + SETTINGS->globeRadius;
+        Vector3 newToCenter = toCenter * (newHeight / height);
+        Vector3 translation = toCenter - newToCenter;
+        Vrui::setNavigationTransformation(navXform*
+            Vrui::NavTransform::translate(translation));
+
+        /* changes to the navigation only get applied in the next frame. Delay
+           the processing to the frame that will have the proper navigation */
+        changedVerticalScale = newVerticalScale;
+    }
 
     //let the map manager update all the mapping stuff
     mapMan->frame();
@@ -847,50 +761,44 @@ display(GLContextData& contextData)
     CHECK_GLA
 
     CrustaGlData* glData = contextData.retrieveDataItem<CrustaGlData>(this);
-    glData->videoCache = &getCache()->getVideoCache(contextData);
-    glData->lineCache  = &getCache()->getGpuLineCache(contextData);
+    glData->gpuCache = &CACHE->getGpuCache(contextData);
 
-//- reset OpenGL context dependent caches if required
-    if (glData->resetVideoCacheAge != resetVideoCacheAge)
-    {
-        glData->videoCache->reset();
-        glData->resetVideoCacheAge = resetVideoCacheAge;
-    }
-    if (glData->resetLineCacheAge != resetLineCacheAge)
-    {
-        glData->videoCache->reset();
-        glData->resetLineCacheAge = resetLineCacheAge;
-    }
-
-//- prepare the renderable representation
-    std::vector<QuadNodeMainData*> renderNodes;
+//- prepare the surface approximation and renderable representation
+    SurfaceApproximation surface;
 
     //generate the terrain representation
     for (RenderPatches::const_iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
     {
-        (*it)->prepareDisplay(contextData, renderNodes);
+        (*it)->prepareDisplay(contextData, surface);
         CHECK_GLA
     }
 
-///\todo remove
-//std::cerr << "Num render nodes: " << renderNodes.size() << std::endl;
+statsMan.extractTileStats(surface);
+
+CRUSTA_DEBUG_OUT(50, "Number of nodes to render: %i\n",
+                 static_cast<int>(surface.visibles.size()));
 
     GLint activeTexture;
-    glGetIntegerv(GL_ACTIVE_TEXTURE_ARB, &activeTexture);
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
     glPushAttrib(GL_TEXTURE_BIT);
 
     //update the map data
 ///\todo integrate properly (VIS 2010)
-    mapMan->updateLineData(renderNodes);
+    if (SETTINGS->decorateVectorArt)
+    {
+        mapMan->updateLineData(surface);
+        CHECK_GLA
+    }
 
 //- draw the current terrain and map data
 ///\todo integrate properly (VIS 2010)
 //bind the texture that contains the symbol images
-if (linesDecorated)
+if (SETTINGS->decorateVectorArt)
 {
     glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, glData->symbolTex);
+    CHECK_GLA
 }
 
     //bind the colormap texture
@@ -905,13 +813,14 @@ if (linesDecorated)
 
         glActiveTexture(GL_TEXTURE6);
         glBindTexture(GL_TEXTURE_1D, glData->colorMap);
+        CHECK_GLA
     }
 
     //have the QuadTerrain draw the surface approximation
     CHECK_GLA
 
     //draw the terrain
-    glData->terrainShader.setLinesDecorated(linesDecorated);
+    glData->terrainShader.setLinesDecorated(SETTINGS->decorateVectorArt);
     glData->terrainShader.setTexturingMode(texturingMode);
     glData->terrainShader.update();
     glData->terrainShader.enable();
@@ -924,26 +833,30 @@ if (linesDecorated)
     }
     glData->terrainShader.setVerticalScale(getVerticalScale());
     glData->terrainShader.setTextureStep(TILE_TEXTURE_COORD_STEP);
-    glData->terrainShader.setDemNodata(dataMan->getDemNodata());
-    const TextureColor& cnd = dataMan->getColorNodata();
+    glData->terrainShader.setDemNodata(DATAMANAGER->getDemNodata());
+    const TextureColor& cnd = DATAMANAGER->getColorNodata();
     glData->terrainShader.setColorNodata(cnd[0], cnd[1], cnd[2]);
+    glData->terrainShader.setDemDefault(SETTINGS->terrainDefaultHeight);
+    glData->terrainShader.setColorDefault(SETTINGS->terrainDefaultColor);
 
 ///\todo this needs to be tweakable
-    if (linesDecorated)
+    if (SETTINGS->decorateVectorArt)
     {
         float scaleFac = Vrui::getNavigationTransformation().getScaling();
         glData->terrainShader.setLineCoordScale(scaleFac);
         float lineWidth = 0.1f / scaleFac;
         glData->terrainShader.setLineWidth(lineWidth);
     }
+    CHECK_GLA
 
-    QuadTerrain::display(contextData, glData, renderNodes, getCurrentFrame(),
-                         linesDecorated);
+    QuadTerrain::display(contextData, glData, surface);
+    CHECK_GLA
 
     glData->terrainShader.disable();
+    CHECK_GLA
 
     //let the map manager draw all the mapping stuff
-    mapMan->display(renderNodes, contextData);
+    mapMan->display(contextData, surface);
     CHECK_GLA
 
     glPopAttrib();
@@ -952,18 +865,21 @@ if (linesDecorated)
 
 
 void Crusta::
-confirmActives()
+setDecoratedVectorArt(bool flag)
 {
-    for (Actives::iterator it=actives.begin(); it!=actives.end(); ++it)
-    {
-        QuadNodeMainData& node = (*it)->getData();
-        if (node.verticalScaleAge < getLastScaleFrame())
-        {
-            node.computeBoundingSphere(getVerticalScale());
-            node.verticalScaleAge = getCurrentFrame();
-        }
-    }
-    actives.clear();
+    SETTINGS->decorateVectorArt = flag;
+}
+
+void Crusta::
+setTerrainSpecularColor(const Color& color)
+{
+    SETTINGS->terrainSpecularColor = color;
+}
+
+void Crusta::
+setTerrainShininess(const float& shininess)
+{
+    SETTINGS->terrainShininess = shininess;
 }
 
 
@@ -982,8 +898,8 @@ confirmLineCoverageRemoval(Shape* shape, Shape::ControlPointHandle cp)
     for (RenderPatches::const_iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
     {
-        const QuadNodeMainData* node = &((*it)->getRootNode());
-        (*it)->confirmLineCoverageRemoval(node, shape, cp);
+        const NodeMainData& root = (*it)->getRootNode();
+        (*it)->confirmLineCoverageRemoval(root, shape, cp);
     }
 }
 
@@ -993,8 +909,8 @@ validateLineCoverage()
     for (RenderPatches::const_iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
     {
-        const QuadNodeMainData* node = &((*it)->getRootNode());
-        (*it)->validateLineCoverage(node);
+        const NodeMainData& root = (*it)->getRootNode();
+        (*it)->validateLineCoverage(root);
     }
 }
 
