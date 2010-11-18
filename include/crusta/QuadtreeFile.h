@@ -28,9 +28,12 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 #include <Misc/LargeFile.h>
 
+#include <crusta/TileIndex.h>
 #include <crusta/TreeIndex.h>
 
+
 BEGIN_CRUSTA
+
 
 template <typename PixelParam,
           typename FileHeaderParam,
@@ -64,7 +67,7 @@ public:
     };
 
     ///opens an existing quadtree file for update or creates a new one
-    QuadtreeFile(const char* quadtreeFileName, const uint iTileSize[2]);
+    QuadtreeFile(const char* quadtreeFileName, const uint32 iTileSize[2]);
     ~QuadtreeFile();
 
     ///returns the file's meta data
@@ -80,8 +83,6 @@ public:
     const uint32* getTileSize() const;
     ///return the number of tiles stored in the hierarchy
     TileIndex getNumTiles() const;
-    ///retrieve the default value filled data buffer
-    const Pixel* getBlank() const;
 
     ///reads the quadtree file header from the file
     void readHeader();
@@ -95,7 +96,7 @@ public:
     TileIndex checkTile(const TreePath& path, TileIndex start) const;
 #if CONSTRUO_BUILD
     ///appends a new tile to the file (only reserves the space for it)
-    TileIndex appendTile(bool writeBlank=false);
+    TileIndex appendTile(const Pixel* const blank=NULL);
 #endif //CONSTRUO_BUILD
 
     ///reads the tile of given index into the given buffer
@@ -144,10 +145,6 @@ const TileHeader& getLastTileHeader() const;
     TileIndex lastTileChildPointers[4];
     ///last ignored tile header
     TileHeader lastTileHeader;
-
-    /** a memory buffer containing the default value for the size of a node's
-        data */
-    Pixel* blank;
 };
 
 END_CRUSTA

@@ -53,7 +53,7 @@ protected:
 };
 
 template <typename PixelParam>
-class GdalImageFile : public GdalImageFileBase
+class GdalImageFile : public GdalImageFileBase<PixelParam>
 {
 public:
     typedef GdalImageFileBase<PixelParam> Base;

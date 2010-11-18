@@ -27,16 +27,16 @@ QuadNodeMainData(uint size) :
     height   = new DemHeight[size*size];
     color    = new TextureColor[size*size];
 
-    demTile   = DemFile::INVALID_TILEINDEX;
-    colorTile = ColorFile::INVALID_TILEINDEX;
+    demTile   = INVALID_TILEINDEX;
+    colorTile = INVALID_TILEINDEX;
     for (int i=0; i<4; ++i)
     {
-        childDemTiles[i]       = DemFile::INVALID_TILEINDEX;
-        childColorTiles[i]     = ColorFile::INVALID_TILEINDEX;
+        childDemTiles[i]   = INVALID_TILEINDEX;
+        childColorTiles[i] = INVALID_TILEINDEX;
     }
 
     centroid[0] = centroid[1] = centroid[2] = DemHeight(0.0);
-    elevationRange[0] = elevationRange[1]   = DemHeight(0.0);
+    elevationRange[0]  =  elevationRange[1] = DemHeight(0.0);
 }
 QuadNodeMainData::
 ~QuadNodeMainData()
@@ -49,7 +49,15 @@ QuadNodeMainData::
 void QuadNodeMainData::
 computeBoundingSphere(Scalar verticalScale)
 {
-    DemHeight avgElevation = (elevationRange[0] + elevationRange[1]);
+    DemHeight range[2];
+    if (elevationRange[0]== Math::Constants<DemHeight>::max ||
+        elevationRange[1]==-Math::Constants<DemHeight>::max)
+    {
+///\todo allow for a customizable default elevation
+        range[0] = range[1] = 0.0f;
+    }
+
+    DemHeight avgElevation = (range[0] + range[1]);
     avgElevation          *= DemHeight(0.5)* verticalScale;
 
     boundingCenter = scope.getCentroid(SPHEROID_RADIUS + avgElevation);
@@ -61,7 +69,7 @@ computeBoundingSphere(Scalar verticalScale)
         {
             Scope::Vertex corner = scope.corners[i];
             Scope::Scalar norm   = Scope::Scalar(SPHEROID_RADIUS);
-            norm += elevationRange[j]*verticalScale;
+            norm += range[j]*verticalScale;
             norm /= sqrt(corner[0]*corner[0] + corner[1]*corner[1] +
                          corner[2]*corner[2]);
             Scope::Vertex toCorner;

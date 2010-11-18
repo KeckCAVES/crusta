@@ -27,9 +27,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #define _ImageFile_H_
 
 
-#include <string>
-
-#include <crusta/GlobeDataTraits.h>
+#include <crusta/basics.h>
 
 
 BEGIN_CRUSTA
@@ -39,19 +37,17 @@ template <typename PixelParam>
 class ImageFile
 {
 public:
-    typedef GlobeDataTraits<PixelParam> Traits;
-
-    ImageFileBase();
-    virtual ~ImageFileBase();
+    ImageFile();
+    virtual ~ImageFile();
 
     ///set the uniform scale of the pixel values
     void setPixelScale(double scale);
     ///retrieve the uniform scale fo the pixel values
     double getPixelScale() const;
     ///retrieve the nodata value
-    const Traits::Nodata& getNodata() const;
+    const PixelParam& getNodata() const;
     ///set the nodata value
-    void setNodata(const Traits::Nodata& nodataValue);
+    void setNodata(const PixelParam& nodataValue);
     ///returns image size
     const int* getSize() const;
     ///reads a rectangle of pixel data into the given buffer
@@ -63,7 +59,7 @@ protected:
         that would be the elevation resolution in meters) */
     double pixelScale;
     ///the value corresponding to "no data"
-    Traits::Nodata nodata;
+    PixelParam nodata;
     ///size of the image in pixels (width x height)
     int size[2];
 };

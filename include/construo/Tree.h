@@ -5,6 +5,7 @@
 
 #include <crusta/GlobeFile.h>
 #include <crusta/Scope.h>
+#include <crusta/TileIndex.h>
 #include <crusta/TreeIndex.h>
 
 BEGIN_CRUSTA
@@ -15,9 +16,8 @@ template <typename PixelParam>
 class TreeNode
 {
 public:
-    typedef GlobeDataTraits<PixelParam> Traits;
-    typedef Traits::File                File;
-    typedef Traits::File::TileIndex     TileIndex;
+    typedef GlobeData<PixelParam> gd;
+    typedef typename gd::File     File;
 
     TreeNode();
     virtual ~TreeNode();
@@ -84,7 +84,7 @@ public:
     uint orientations[4];
 };
 
-template <typename PixelParam, typename PolyhedronParam>
+template <typename PixelParam>
 class Spheroid
 {
 public:
@@ -92,9 +92,6 @@ public:
     typedef std::vector<BaseNode>            BaseNodes;
 
     Spheroid(const std::string& baseName, const uint tileResolution[2]);
-    ~Spheroid();
-
-    void createBaseFolder(const std::string& path, bool parent=false);
 
     BaseNodes             baseNodes;
     GlobeFile<PixelParam> globeFile;

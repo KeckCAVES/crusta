@@ -31,8 +31,6 @@
 
 #include <construo/Builder.h>
 
-#include <crusta/ColorTextureSpecs.h>
-#include <crusta/DemSpecs.h>
 #include <crusta/Triacontahedron.h>
 
 ///\todo remove
@@ -47,17 +45,14 @@ using namespace crusta;
 
 int main(int argc, char* argv[])
 {
-    /* Parse the command line: */
-    typedef std::vector<const char*> Names;
-    typedef std::vector<std::string> NodataStrings;
-    typedef std::vector<double>      Scales;
-    typedef std::vector<bool>        GridSamplingFlags;
     enum BuildType
     {
         UNDEFINED_BUILD,
         DEM_BUILD,
         COLORTEXTURE_BUILD
     };
+
+/* Parse the command line: */
 
     //flag whether to create color or DEM mosaics
     BuildType buildType = UNDEFINED_BUILD;
@@ -73,11 +68,8 @@ int main(int argc, char* argv[])
     //the tile size should only be an internal parameter
     static const crusta::uint tileSize[2] = {TILE_RESOLUTION, TILE_RESOLUTION};
 
-    std::string       spheroidName;
-    Names             imagePatchNames;
-    Scales            imagePatchScales;
-    NodataStrings     imageNodataStrings;
-    GridSamplingFlags imageSamplingFlags;
+    std::string                    spheroidName;
+    BuilderBase::ImagePatchSources imageSources;
     for (int i=1; i<argc; ++i)
     {
         if (strcasecmp(argv[i], "-dem") == 0)
@@ -155,17 +147,15 @@ int main(int argc, char* argv[])
         else
         {
             //gather the image patch name and scale factor for the values
-            imagePatchNames.push_back(argv[i]);
-            imagePatchScales.push_back(scale);
-            imageNodataStrings.push_back(nodata);
-            imageSamplingFlags.push_back(pointSampled);
+            imageSources.push_back(BuilderBase::ImagePatchSource(
+                argv[i], scale, nodata, pointSampled));
         }
     }
 
     if (buildType == UNDEFINED_BUILD)
     {
         std::cerr << "Usage:" << std::endl << "construo -dem | -color "
-                     "<pyramid name> [-scale <scalar>] [-nodata " <<
+                     "<globe file name> [-scale <scalar>] [-nodata " <<
                      "<value>] [-pointsampling] [-areasampling] <input " <<
                      "files>" << std::endl;
         return 1;
@@ -173,13 +163,13 @@ int main(int argc, char* argv[])
 
     if (spheroidName.empty())
     {
-        std::cerr << "No pyramid file name provided" << std::endl;
+        std::cerr << "No globe file name provided" << std::endl;
         return 1;
     }
     else if (spheroidName[spheroidName.size()-1] == '/')
         spheroidName.resize(spheroidName.size()-1);
 
-    if (imagePatchNames.empty())
+    if (imageSources.empty())
     {
         std::cerr << "No data sources provided" << std::endl;
         return 1;
@@ -190,12 +180,10 @@ int main(int argc, char* argv[])
     switch (buildType)
     {
         case DEM_BUILD:
-            builder = new Builder<DemHeight, Triacontahedron>(spheroidName,
-                                                              tileSize);
+            builder = new Builder<DemHeight>(spheroidName, tileSize);
             break;
         case COLORTEXTURE_BUILD:
-            builder = new Builder<TextureColor, Triacontahedron>(spheroidName,
-                                                                 tileSize);
+            builder = new Builder<TextureColor>(spheroidName, tileSize);
             break;
         default:
             std::cerr << "Unsupported build type" << std::endl;
@@ -203,23 +191,7 @@ int main(int argc, char* argv[])
             break;
     }
 
-    //load all image patches
-    int numPatches = static_cast<int>(imagePatchNames.size());
-    assert(numPatches == static_cast<int>(imagePatchScales.size()));
-    for (int i=0; i<numPatches; ++i)
-    {
-        try
-        {
-            builder->addImagePatch(
-                imagePatchNames[i], imagePatchScales[i], imageNodataStrings[i],
-                imageSamplingFlags[i]);
-        }
-        catch(std::runtime_error err)
-        {
-            std::cerr << "Ignoring image patch " << imagePatchNames[i] <<
-                         " due to exception " << err.what() << std::endl;
-        }
-    }
+    builder->addImagePatches(imageSources);
 
     //update the spheroid
     builder->update();

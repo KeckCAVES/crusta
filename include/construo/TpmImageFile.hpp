@@ -23,81 +23,173 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <cstring>
 #include <Misc/ThrowStdErr.h>
 
+#include <crusta/GlobeData.h>
+
 
 BEGIN_CRUSTA
 
 
 template <typename PixelParam>
-TpmImageFile<PixelParam>::
-TpmImageFile(const char* imageFileName) :
+TpmImageFileBase<PixelParam>::
+TpmImageFileBase(const char* imageFileName) :
     tpmFile(imageFileName)
 {
-    if (tpmFile.getNumChannels()!=Traits::numChannels())
+    typedef GlobeData<PixelParam> gd;
+
+    if (static_cast<int>(tpmFile.getNumChannels())!=gd::numChannels())
     {
         Misc::throwStdErr("TpmImageFile: mismatching pixel type. Expecting "
-                          "%d channels, got %d channels", Traits::numChannels(),
+                          "%d channels, got %d channels", gd::numChannels(),
                           tpmFile.getNumChannels());
     }
     /* Read the image size: */
-    size[0] = tpmFile.getSize(0);
-    size[1] = tpmFile.getSize(1);
+    this->size[0] = tpmFile.getSize(0);
+    this->size[1] = tpmFile.getSize(1);
 }
 
-template <typename PixelParam>
-void TpmImageFile<PixelParam>::
-readRectangle(const int rectOrigin[2], const int rectSize[2],
-              PixelParam* rectBuffer) const
+template <>
+class TpmImageFile<DemHeight> : public TpmImageFileBase<DemHeight>
 {
-    /* Lock the image file (no sense in multithreading at this point): */
-    Threads::Mutex::Lock lock(tpmFileMutex);
-
-    assert(rectOrigin[0]>=0 && rectOrigin[0]+rectSize[0]<=size[0]);
-    assert(rectOrigin[1]>=0 && rectOrigin[1]+rectSize[1]<=size[1]);
-
-    TpmFile::Card ro[2];
-    TpmFile::Card rs[2];
-    for (int i=0; i<2; ++i)
+public:
+    TpmImageFile(const char* imageFileName) :
+        TpmImageFileBase<DemHeight>(imageFileName)
     {
-        ro[i] = rectOrigin[i];
-        rs[i] = rectSize[i];
     }
 
-    switch (tpmFile.getChannelSize())
+public:
+    virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
+                               DemHeight* rectBuffer) const
     {
-        case 8:
+        /* Lock the image file (no sense in multithreading at this point): */
+        Threads::Mutex::Lock lock(tpmFileMutex);
+
+        assert(rectOrigin[0]>=0 && rectOrigin[0]+rectSize[0]<=this->size[0]);
+        assert(rectOrigin[1]>=0 && rectOrigin[1]+rectSize[1]<=this->size[1]);
+
+        TpmFile::Card ro[2];
+        TpmFile::Card rs[2];
+        for (int i=0; i<2; ++i)
         {
-            int8* imgData = new int8[rectSize[0]*rectSize[1]];
-            tpmFile.readRectangle(ro, rs, imgData);
+            ro[i] = rectOrigin[i];
+            rs[i] = rectSize[i];
+        }
 
-            for (int i=0; i<rectSize[0]*rectSize[1]; ++i)
-                rectBuffer[i] = imgData[i];
-
-            delete[] imgData;
-        }break;
-
-        case 16:
+        switch (tpmFile.getChannelSize())
         {
-            int16* imgData = new int16[rectSize[0]*rectSize[1]];
-            tpmFile.readRectangle(ro, rs, imgData);
+            case 8:
+            {
+                int8* imgData = new int8[rectSize[0]*rectSize[1]];
+                tpmFile.readRectangle(ro, rs, imgData);
 
-            for (int i=0; i<rectSize[0]*rectSize[1]; ++i)
-                rectBuffer[i] = imgData[i];
+                for (int i=0; i<rectSize[0]*rectSize[1]; ++i)
+                    rectBuffer[i] = DemHeight(imgData[i]);
 
-            delete[] imgData;
-        }break;
+                delete[] imgData;
+            }break;
 
-        case 32:
-        {
-            int32* imgData = new int32[rectSize[0]*rectSize[1]];
-            tpmFile.readRectangle(ro, rs, imgData);
+            case 16:
+            {
+                int16* imgData = new int16[rectSize[0]*rectSize[1]];
+                tpmFile.readRectangle(ro, rs, imgData);
 
-            for (int i=0; i<rectSize[0]*rectSize[1]; ++i)
-                rectBuffer[i] = imgData[i];
+                for (int i=0; i<rectSize[0]*rectSize[1]; ++i)
+                    rectBuffer[i] = DemHeight(imgData[i]);
 
-            delete[] imgData;
-        }break;
+                delete[] imgData;
+            }break;
+
+            case 32:
+            {
+                int32* imgData = new int32[rectSize[0]*rectSize[1]];
+                tpmFile.readRectangle(ro, rs, imgData);
+
+                for (int i=0; i<rectSize[0]*rectSize[1]; ++i)
+                    rectBuffer[i] = DemHeight(imgData[i]);
+
+                delete[] imgData;
+            }break;
+        }
     }
-}
+};
+
+
+template <>
+class TpmImageFile<TextureColor> : public TpmImageFileBase<TextureColor>
+{
+public:
+    TpmImageFile(const char* imageFileName) :
+        TpmImageFileBase<TextureColor>(imageFileName)
+    {
+    }
+
+public:
+    virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
+                               TextureColor* rectBuffer) const
+    {
+        typedef GlobeData<TextureColor> gd;
+
+        /* Lock the image file (no sense in multithreading at this point): */
+        Threads::Mutex::Lock lock(tpmFileMutex);
+
+        assert(rectOrigin[0]>=0 && rectOrigin[0]+rectSize[0]<=this->size[0]);
+        assert(rectOrigin[1]>=0 && rectOrigin[1]+rectSize[1]<=this->size[1]);
+
+        TpmFile::Card ro[2];
+        TpmFile::Card rs[2];
+        for (int i=0; i<2; ++i)
+        {
+            ro[i] = rectOrigin[i];
+            rs[i] = rectSize[i];
+        }
+
+        int numPixels   = rectSize[0] * rectSize[1];
+        int numElements = numPixels * tpmFile.getNumChannels();
+        switch (tpmFile.getChannelSize())
+        {
+            case 8:
+            {
+                int8* imgData = new int8[numElements];
+                tpmFile.readRectangle(ro, rs, imgData);
+
+                for (int p=0, e=0; p<numPixels; ++p)
+                {
+                    for (int c=0; c<gd::numChannels(); ++c, ++e)
+                        rectBuffer[p][c] = imgData[e];
+                }
+
+                delete[] imgData;
+            }break;
+
+            case 16:
+            {
+                int16* imgData = new int16[numElements];
+                tpmFile.readRectangle(ro, rs, imgData);
+
+                for (int p=0, e=0; p<numPixels; ++p)
+                {
+                    for (int c=0; c<gd::numChannels(); ++c, ++e)
+                        rectBuffer[p][c] = imgData[e];
+                }
+
+                delete[] imgData;
+            }break;
+
+            case 32:
+            {
+                int32* imgData = new int32[numElements];
+                tpmFile.readRectangle(ro, rs, imgData);
+
+                for (int p=0, e=0; p<numPixels; ++p)
+                {
+                    for (int c=0; c<gd::numChannels(); ++c, ++e)
+                        rectBuffer[p][c] = imgData[e];
+                }
+
+                delete[] imgData;
+            }break;
+        }
+    }
+};
 
 
 END_CRUSTA

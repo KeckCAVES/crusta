@@ -244,14 +244,18 @@ const char* LightingShader::fetchTerrainColorFromColorMap =
 "\
     float e = texture2D(heightTex, coord).r;\n\
           e = (e-minColorMapElevation) * colorMapElevationInvRange;\n\
-    vec4 mapColor     = texture1D(colorMap, e);\n\
-    vec4 terrainColor = texture2D(colorTex, coord);\n\
-    terrainColor      = mix(terrainColor, mapColor, mapColor.w);\
+    vec4 mapColor    = texture1D(colorMap, e);\n\
+    vec3 texColor    = texture2D(colorTex, coord).rgb;\n\
+    vec4 terrainColor= texColor==colorNodata ? defaultColor :\n\
+                                               vec4(texColor, 1.0);\n\
+    terrainColor     = mix(terrainColor, mapColor, mapColor.w);\
 ";
 
 const char* LightingShader::fetchTerrainColorFromTexture =
 "\
-    vec4 terrainColor = texture2D(colorTex, coord);\
+    vec3 texColor     = texture2D(colorTex, coord).rgb;\n\
+    vec4 terrainColor = texColor==colorNodata ? defaultColor :\n\
+                                                vec4(texColor, 1.0);\
 ";
 
 /*****************************************
@@ -481,9 +485,15 @@ void LightingShader::compileShader()
         uniform float verticalScale;\n\
         uniform vec3  center;\n\
         \n\
+        uniform float demNodata;\n\
+        uniform vec3  colorNodata;\n\
+        \n\
         varying vec3 position;\n\
         varying vec3 normal;\n\
         varying vec2 texCoord;\n\
+        \n\
+        const float defaultHeight = 0.0;\n\
+        const vec4  defaultColor  = vec4(0.0);\n\
     ";
 
     vertexShaderFunctions +=
@@ -493,6 +503,7 @@ void LightingShader::compileShader()
             vec3 res      = texture2D(geometryTex, coords).rgb;\n\
             vec3 dir      = normalize(center + res);\n\
             float height  = texture2D(heightTex, coords).r;\n\
+            height        = height==demNodata ? defaultHeight : height;\n\
             height       *= verticalScale;\n\
             res          += height * dir;\n\
             return res;\n\
@@ -690,6 +701,9 @@ catch (std::exception& e){
     textureStepUniform  =glGetUniformLocationARB(programObject,"texStep");
     verticalScaleUniform=glGetUniformLocationARB(programObject,"verticalScale");
     centroidUniform     =glGetUniformLocationARB(programObject,"center");
+        
+    demNodataUniform   = glGetUniformLocationARB(programObject, "demNodata");
+    colorNodataUniform = glGetUniformLocationARB(programObject, "colorNodata");
 
 
     if (linesDecorated)

@@ -34,27 +34,31 @@ BEGIN_CRUSTA
 
 
 template <typename PixelParam>
-class TpmImageFile : public ImageFile<PixelParam>
+class TpmImageFileBase : public ImageFile<PixelParam>
 {
 public:
-    ///type of base class
-    typedef ImageFile<PixelParam> Base;
-
     ///opens an image file by name
-    TpmImageFile(const char* imageFileName);
+    TpmImageFileBase(const char* imageFileName);
 
 protected:
     ///mutex protecting the tpm file during reading
     mutable Threads::Mutex tpmFileMutex;
     ///the underlying TPM file driver
     mutable TpmFile tpmFile;
+};
+
+
+template <typename PixelParam>
+class TpmImageFile : public TpmImageFileBase<PixelParam>
+{
+public:
+    TpmImageFile(const char* imageFileName);
 
 //- inherited from ImageFileBase
 public:
     virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
                                PixelParam* rectBuffer) const;
 };
-
 
 END_CRUSTA
 

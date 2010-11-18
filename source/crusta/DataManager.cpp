@@ -6,14 +6,19 @@
 
 #include <crusta/Crusta.h>
 #include <crusta/map/MapManager.h>
-#include <crusta/Polyhedron.h>
+#include <crusta/PixelOps.h>
+#include <crusta/PolyhedronLoader.h>
 #include <crusta/QuadCache.h>
+#include <crusta/Triacontahedron.h>
+
 
 BEGIN_CRUSTA
 
+
 DataManager::
 DataManager(Crusta* iCrusta) :
-    CrustaComponent(iCrusta), demNodata(0), colorNodata(128, 128, 128)
+    CrustaComponent(iCrusta), demFile(NULL), colorFile(NULL), polyhedron(NULL),
+    demNodata(0), colorNodata(128, 128, 128)
 {
     geometryBuf = new double[TILE_RESOLUTION*TILE_RESOLUTION*3];
 }
@@ -28,62 +33,128 @@ DataManager::
 
 
 void DataManager::
-load(uint numPatches, const std::string& demBase, const std::string& colorBase)
+load(const std::string& demPath, const std::string& colorPath)
 {
     //detach from existing databases
     unload();
 
-    uint resolution[2] = { TILE_RESOLUTION, TILE_RESOLUTION };
-
-    if (!demBase.empty())
+    if (!demPath.empty())
     {
-        demFiles.resize(numPatches);
-        for (uint i=0; i<numPatches; ++i)
+        demFile = new DemFile;
+        try
         {
-            std::ostringstream demName;
-            demName << demBase << "/patch_" << i << ".qtf";
-            demFiles[i] = new DemFile(demName.str().c_str(), resolution);
+            demFile->open(demPath);
+            polyhedron = PolyhedronLoader::load(demFile->getPolyhedronType(),
+                                                SPHEROID_RADIUS);
+            demNodata  = demFile->getNodata();
         }
-        demNodata = demFiles[0]->getDefaultPixelValue();
+        catch (std::runtime_error e)
+        {
+            delete demFile;
+            demFile = NULL;
+            demNodata = GlobeData<DemHeight>::defaultNodata();
+
+            std::cerr << e.what();
+        }
     }
     else
-        demNodata = DemHeight(0);
+        demNodata = GlobeData<DemHeight>::defaultNodata();
 
-    if (!colorBase.empty())
+    if (!colorPath.empty())
     {
-        colorFiles.resize(numPatches);
-        for (uint i=0; i<numPatches; ++i)
+        colorFile = new ColorFile;
+        try
         {
-            std::ostringstream colorName;
-            colorName << colorBase << "/patch_" << i << ".qtf";
-            colorFiles[i] = new ColorFile(colorName.str().c_str(), resolution);
+            colorFile->open(colorPath);
+            colorNodata = colorFile->getNodata();
+
+            if (polyhedron != NULL)
+            {
+                if (polyhedron->getType() != colorFile->getPolyhedronType())
+                {
+                    std::cerr << "Mismatching polyhedron for " <<
+                                 demPath.c_str() << " and " <<
+                                 colorPath.c_str() << ".\n";
+
+                    delete colorFile;
+                    colorFile = NULL;
+                    colorNodata = GlobeData<TextureColor>::defaultNodata();
+                }
+            }
+            else
+            {
+                polyhedron =
+                    PolyhedronLoader::load(colorFile->getPolyhedronType(),
+                                           SPHEROID_RADIUS);
+            }
+
         }
-        colorNodata = colorFiles[0]->getDefaultPixelValue();
+        catch (std::runtime_error e)
+        {
+            delete colorFile;
+            colorFile = NULL;
+            colorNodata = GlobeData<TextureColor>::defaultNodata();
+
+            std::cerr << e.what();
+        }
     }
     else
-        colorNodata = TextureColor(128, 128, 128);
+        colorNodata = GlobeData<TextureColor>::defaultNodata();
+
+    if (polyhedron == NULL)
+        polyhedron = new Triacontahedron(SPHEROID_RADIUS);
 }
 
 void DataManager::
 unload()
 {
-    for (DemFiles::iterator it=demFiles.begin(); it!=demFiles.end(); ++it)
-        delete *it;
-    for (ColorFiles::iterator it=colorFiles.begin(); it!=colorFiles.end(); ++it)
-        delete *it;
+    if (demFile)
+    {
+        delete demFile;
+        demFile = NULL;
+    }
+    if (colorFile)
+    {
+        delete colorFile;
+        colorFile = NULL;
+    }
+    if (polyhedron)
+    {
+        delete polyhedron;
+        polyhedron = NULL;
+    }
 }
 
 
 bool DataManager::
 hasDemData() const
 {
-    return !demFiles.empty();
+    return demFile != NULL;
 }
 
 bool DataManager::
 hasColorData() const
 {
-    return !colorFiles.empty();
+    return colorFile != NULL;
+}
+
+
+const Polyhedron* const DataManager::
+getPolyhedron() const
+{
+    return polyhedron;
+}
+
+const DemHeight& DataManager::
+getDemNodata()
+{
+    return demNodata;
+}
+
+const TextureColor& DataManager::
+getColorNodata()
+{
+    return colorNodata;
 }
 
 
@@ -101,9 +172,21 @@ loadRoot(TreeIndex rootIndex, const Scope& scope)
     QuadNodeMainData& root = rootBuf->getData();
     root.index     = rootIndex;
     root.scope     = scope;
-    root.demTile   = hasDemData()   ? 0 :   DemFile::INVALID_TILEINDEX;
-    root.colorTile = hasColorData() ? 0 : ColorFile::INVALID_TILEINDEX;
+    root.demTile   = hasDemData()   ? 0 : INVALID_TILEINDEX;
+    root.colorTile = hasColorData() ? 0 : INVALID_TILEINDEX;
 
+    //clear the old quadtreefile tile indices
+    for (int i=0; i<4; ++i)
+    {
+        root.childDemTiles[i]   = INVALID_TILEINDEX;
+        root.childColorTiles[i] = INVALID_TILEINDEX;
+    }
+
+    //clear the old line data
+    root.lineCoverage.clear();
+    root.lineData.clear();
+
+    //grab the proper data for the root
     sourceDem(NULL,  root);
     sourceColor(NULL,root);
     generateGeometry(root);
@@ -129,8 +212,8 @@ loadChild(MainCacheBuffer* parent, uint8 which, MainCacheBuffer* child)
     //clear the old quadtreefile tile indices
     for (int i=0; i<4; ++i)
     {
-        childData.childDemTiles[i]   = DemFile::INVALID_TILEINDEX;
-        childData.childColorTiles[i] = ColorFile::INVALID_TILEINDEX;
+        childData.childDemTiles[i]   = INVALID_TILEINDEX;
+        childData.childColorTiles[i] = INVALID_TILEINDEX;
     }
 
     //clear the old line data
@@ -177,8 +260,10 @@ generateGeometry(QuadNodeMainData& child)
 template <typename PixelParam>
 inline void
 sampleParentBase(int child, PixelParam range[2], PixelParam* dst,
-                 PixelParam* src)
+                 PixelParam* src, const PixelParam& nodata)
 {
+    typedef PixelOps<PixelParam> po;
+
     static const int offsets[4] = {
         0, (TILE_RESOLUTION-1)>>1, ((TILE_RESOLUTION-1)>>1)*TILE_RESOLUTION,
         ((TILE_RESOLUTION-1)>>1)*TILE_RESOLUTION + ((TILE_RESOLUTION-1)>>1) };
@@ -191,56 +276,59 @@ sampleParentBase(int child, PixelParam range[2], PixelParam* dst,
 
         for (int x=0; x<halfSize[0]; ++x, wbase+=2, ++rbase)
         {
-            range[0] = pixelMin(range[0], rbase[0]);
-            range[1] = pixelMax(range[1], rbase[0]);
+            range[0] = po::minimum(range[0], rbase[0], nodata);
+            range[1] = po::maximum(range[1], rbase[0], nodata);
 
             wbase[0] = rbase[0];
             if (x<halfSize[0]-1)
-                wbase[1] = pixelAvg(rbase[0], rbase[1]);
+                wbase[1] = po::average(rbase[0], rbase[1], nodata);
             if (y<halfSize[1]-1)
             {
-                wbase[TILE_RESOLUTION] = pixelAvg(rbase[0],
-                                                  rbase[TILE_RESOLUTION]);
+                wbase[TILE_RESOLUTION] =
+                    po::average(rbase[0], rbase[TILE_RESOLUTION], nodata);
             }
             if (x<halfSize[0]-1 && y<halfSize[1]-1)
             {
-                wbase[TILE_RESOLUTION+1] = pixelAvg(rbase[0], rbase[1],
-                                                    rbase[TILE_RESOLUTION],
-                                                    rbase[TILE_RESOLUTION+1]);
+                wbase[TILE_RESOLUTION+1] = po::average(rbase[0], rbase[1],
+                    rbase[TILE_RESOLUTION], rbase[TILE_RESOLUTION+1], nodata);
             }
         }
     }
 }
 
 inline void
-sampleParent(int child, DemHeight range[2], DemHeight* dst, DemHeight* src)
+sampleParent(int child, DemHeight range[2], DemHeight* dst, DemHeight* src,
+             const DemHeight& nodata)
 {
     range[0] = Math::Constants<DemHeight>::max;
     range[1] = Math::Constants<DemHeight>::min;
 
-    sampleParentBase(child, range, dst, src);
+    sampleParentBase(child, range, dst, src, nodata);
 }
 
 inline void
 sampleParent(int child, TextureColor range[2], TextureColor* dst,
-             TextureColor* src)
+             TextureColor* src, const TextureColor& nodata)
 {
     range[0] = TextureColor(255,255,255);
     range[1] = TextureColor(0,0,0);
 
-    sampleParentBase(child, range, dst, src);
+    sampleParentBase(child, range, dst, src, nodata);
 }
 
 void DataManager::
 sourceDem(QuadNodeMainData* parent, QuadNodeMainData& child)
 {
+    typedef DemFile::File    File;
+    typedef File::TileHeader TileHeader;
+
     DemHeight* heights =  child.height;
     DemHeight* range   = &child.elevationRange[0];
 
-    if (child.demTile != DemFile::INVALID_TILEINDEX)
+    if (child.demTile != INVALID_TILEINDEX)
     {
-        DemTileHeader header;
-        DemFile* file = demFiles[child.index.patch];
+        TileHeader header;
+        File* file = demFile->getPatch(child.index.patch);
         if (!file->readTile(child.demTile,child.childDemTiles,header,heights))
         {
             Misc::throwStdErr("DataManager::sourceDem: Invalid DEM file: "
@@ -253,10 +341,14 @@ sourceDem(QuadNodeMainData* parent, QuadNodeMainData& child)
     else
     {
         if (parent != NULL)
-            sampleParent(child.index.child, range, heights, parent->height);
+        {
+            sampleParent(child.index.child, range, heights, parent->height,
+                         demNodata);
+        }
         else
         {
-            range[0] = range[1] = demNodata;
+            range[0] =  Math::Constants<DemHeight>::max;
+            range[1] = -Math::Constants<DemHeight>::max;
             for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
                 heights[i] = demNodata;
         }
@@ -267,11 +359,13 @@ sourceDem(QuadNodeMainData* parent, QuadNodeMainData& child)
 void DataManager::
 sourceColor(QuadNodeMainData* parent, QuadNodeMainData& child)
 {
+    typedef ColorFile::File File;
+
     TextureColor* colors = child.color;
 
-    if (child.colorTile != ColorFile::INVALID_TILEINDEX)
+    if (child.colorTile != INVALID_TILEINDEX)
     {
-        ColorFile* file = colorFiles[child.index.patch];
+        File* file = colorFile->getPatch(child.index.patch);
         if (!file->readTile(child.colorTile, child.childColorTiles, colors))
         {
             Misc::throwStdErr("DataManager::sourceColor: Invalid Color "
@@ -283,7 +377,10 @@ sourceColor(QuadNodeMainData* parent, QuadNodeMainData& child)
     {
         TextureColor range[2];
         if (parent != NULL)
-            sampleParent(child.index.child, range, colors, parent->color);
+        {
+            sampleParent(child.index.child, range, colors, parent->color,
+                         colorNodata);
+        }
         else
         {
             for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)

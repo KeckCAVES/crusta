@@ -2,7 +2,7 @@
 #define _DataManager_H_
 
 #include <crusta/CrustaComponent.h>
-#include <crusta/QuadtreeFileSpecs.h>
+#include <crusta/GlobeFile.h>
 #include <crusta/QuadCache.h>
 
 
@@ -14,15 +14,14 @@ class Polyhedron;
 class DataManager : public CrustaComponent
 {
 public:
-    typedef std::vector<DemFile*>   DemFiles;
-    typedef std::vector<ColorFile*> ColorFiles;
-
+    typedef GlobeFile<DemHeight>    DemFile;
+    typedef GlobeFile<TextureColor> ColorFile;
+    
     DataManager(Crusta* iCrusta);
     ~DataManager();
 
     /** assign the given databases to the data manager */
-    void load(uint numPatches, const std::string& demBase,
-              const std::string& colorBase);
+    void load(const std::string& demPath, const std::string& colorPath);
     /** detach the data manager from the current databases */
     void unload();
 
@@ -31,6 +30,13 @@ public:
     /** check if color data is available from the manager */
     bool hasColorData() const;
 
+    /** get the polyhedron that serves as the basis for the managed data */
+    const Polyhedron* const getPolyhedron() const;
+    /** get the value used to indicate the abscence of height data */
+    const DemHeight& getDemNodata();
+    /** get the value used to indicate the abscence of color data */
+    const TextureColor& getColorNodata();
+    
     /** load the root data of a patch */
     void loadRoot(TreeIndex rootIndex, const Scope& scope);
     /** load the data required for the child of the specified node */
@@ -44,10 +50,12 @@ protected:
     /** source the color data for a node */
     void sourceColor(QuadNodeMainData* parent, QuadNodeMainData& child);
 
-    /** quadtree file from which to source data for the elevation */
-    DemFiles demFiles;
-    /** quadtree file from which to source data for the color */
-    ColorFiles colorFiles;
+    /** globe file from which to source data for the elevation */
+    DemFile* demFile;
+    /** globe file from which to source data for the color */
+    ColorFile* colorFile;
+    /** polyhedron serving as the basis for the managed data */
+    Polyhedron* polyhedron;
 
     /** value for "no-data" elevations */
     DemHeight demNodata;

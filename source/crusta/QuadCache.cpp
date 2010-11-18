@@ -182,6 +182,25 @@ it->parent->getData().index.med_str().c_str(), it->which);
 }
 
 
+void MainCache::
+reset()
+{
+    //stop the fetching thread
+    fetchThread.cancel();
+    fetchThread.join();
+
+    //clear all the requests
+    childRequests.clear();
+    fetchRequests.clear();
+    fetchResults.clear();
+
+    //clear the cache
+    CacheUnit<MainCacheBuffer>::reset();
+
+    //restart the fetching thread
+    fetchThread.start(this, &MainCache::fetchThreadFunc);
+}
+
 MainCache::FetchRequest::
 FetchRequest() :
     parent(NULL), child(NULL), which(~0)

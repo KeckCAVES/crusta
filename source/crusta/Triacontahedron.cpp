@@ -96,14 +96,21 @@ Triacontahedron(Scope::Scalar sphereRadius) :
     radius(sphereRadius)
 {}
 
+
+std::string Triacontahedron::
+getType() const
+{
+    return "Triacontahedron";
+}
+
 uint Triacontahedron::
-getNumPatches()
+getNumPatches() const
 {
     return 30;
 }
 
 Scope Triacontahedron::
-getScope(uint patchId)
+getScope(uint patchId) const
 {
     assert(patchId<30);
     const uint* index = &baseIndices[patchId*4];
@@ -125,7 +132,7 @@ getScope(uint patchId)
 }
 
 void  Triacontahedron::
-getConnectivity(uint patchId, Connectivity connectivity[4])
+getConnectivity(uint patchId, Connectivity connectivity[4]) const
 {
     assert(patchId<30);
     const Connectivity* base = &baseConnectivity[patchId][0];

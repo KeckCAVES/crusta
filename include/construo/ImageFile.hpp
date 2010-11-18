@@ -59,7 +59,7 @@ getPixelScale() const
 
 template <class PixelParam>
 inline
-const ImageFile<PixelParam>::Traits::Nodata& ImageFile<PixelParam>::
+const PixelParam& ImageFile<PixelParam>::
 getNodata() const
 {
     return nodata;
@@ -68,7 +68,7 @@ getNodata() const
 template <class PixelParam>
 inline
 void ImageFile<PixelParam>::
-setNodata(const Traits::Nodata& nodataValue)
+setNodata(const PixelParam& nodataValue)
 {
     nodata = nodataValue;
 }

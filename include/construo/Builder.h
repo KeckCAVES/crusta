@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 
-#include <construo/Filter.h>
 #include <construo/ImagePatch.h>
 #include <construo/Tree.h>
 
@@ -15,17 +14,37 @@ BEGIN_CRUSTA
 class BuilderBase
 {
 public:
+    struct ImagePatchSource
+    {
+        ImagePatchSource(const std::string& name, double scale,
+                         const std::string& data, bool sample) :
+            path(name), pixelScale(scale), nodata(data), pointSampled(sample)
+        {
+        }
+
+        std::string path;
+        double      pixelScale;
+        std::string nodata;
+        bool        pointSampled;
+    };
+    typedef std::vector<ImagePatchSource> ImagePatchSources;
+
     virtual ~BuilderBase(){}
 
     ///add a source image patch to be integrated into the spheroid
-    virtual void addImagePatch(const std::string& patchName,
-                               double pixelScale, const std::string& nodata,
-                               bool pointSampled) =0;
+    void addImagePatches(const ImagePatchSources& sources)
+    {
+        imagePatchSources = sources;
+    }
+
     ///update the spheroid with the new patches
     virtual void update() = 0;
+
+protected:
+    ImagePatchSources imagePatchSources;
 };
 
-template <typename PixelParam, typename PolyhedronParam>
+template <typename PixelParam>
 class Builder : public BuilderBase
 {
 public:
@@ -35,10 +54,9 @@ public:
     ~Builder();
 
 protected:
-    typedef Spheroid<PixelParam, PolyhedronParam>   Globe;
-    typedef TreeNode<PixelParam>                    Node;
-    typedef ImagePatch<PixelParam>                  Patch;
-    typedef std::vector<Patch*>                     PatchPtrs;
+    typedef Spheroid<PixelParam>   Globe;
+    typedef TreeNode<PixelParam>   Node;
+    typedef ImagePatch<PixelParam> Patch;
 
     ///subsamples data from the given node into that node's children
     void subsampleChildren(Node* node);
@@ -54,7 +72,7 @@ protected:
     /** sources new patches to create new finer levels or update existing ones.
         Returns the depth of the update-tree for use during updating of the
         coarse levels. */
-    int updateFinestLevels();
+    int updateFinestLevels(const ImagePatchSource& patchSource);
 
     ///read all the finer data required for subsampling into a continuous region
     void prepareSubsamplingDomain(Node* node);
@@ -64,16 +82,8 @@ protected:
     ///regenerate interior hierarchy nodes that have had finer levels updated
     void updateCoarserLevels(int depth);
 
-    ///generate the configuration of the globe file
-    void finalize();
-
     ///new or existing database containing the hierarchy to be updated
     Globe* globe;
-    ///vector of patches to be added to the hierarchy
-    PatchPtrs patches;
-
-    ///filter used for subsampling the coarser levels from finer ones
-    Filter subsamplingFilter;
 
     ///temporary buffer to hold scope refinements
     Scope::Scalar* scopeBuf;
@@ -92,8 +102,6 @@ protected:
 
 //- Inherited from BuilderBase
 public:
-    virtual void addImagePatch(const std::string& patchName, double pixelScale,
-                               const std::string& nodata, bool pointSampled);
     virtual void update();
 
 ///\todo remove

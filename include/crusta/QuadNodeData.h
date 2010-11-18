@@ -5,8 +5,10 @@
 
 #include <GL/GLVertex.h>
 
+#include <crusta/DemHeight.h>
 #include <crusta/map/Shape.h>
-#include <crusta/QuadtreeFileSpecs.h>
+#include <crusta/TextureColor.h>
+#include <crusta/TileIndex.h>
 #include <crusta/TreeIndex.h>
 #include <crusta/Scope.h>
 
@@ -78,13 +80,13 @@ AgeStamp verticalScaleAge;
     DemHeight elevationRange[2];
 
     /** index of the DEM tile in the database */
-    DemFile::TileIndex demTile;
+    TileIndex demTile;
     /** indices of the children in the DEM file */
-    DemFile::TileIndex childDemTiles[4];
+    TileIndex childDemTiles[4];
     /** index of the color texture tile in the database */
-    ColorFile::TileIndex colorTile;
+    TileIndex colorTile;
     /** indices of the children in the texture file */
-    ColorFile::TileIndex childColorTiles[4];
+    TileIndex childColorTiles[4];
 };
 
 /** stores the video RAM view-independent data of the terrain that can be shared

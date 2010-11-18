@@ -34,6 +34,7 @@
 #include <Vrui/Vrui.h>
 
 #include <crusta/Crusta.h>
+#include <crusta/GlobeFile.h>
 #include <crusta/map/MapManager.h>
 #include <crusta/QuadTerrain.h>
 
@@ -58,10 +59,11 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     std::string colorName;
     for (int i=0; i<argc; ++i)
     {
-        if (strcmp(argv[i], "-dem")==0)
-            demName   = std::string(argv[++i]);
-        if (strcmp(argv[i], "-color")==0)
-            colorName = std::string(argv[++i]);
+        std::string name = std::string(argv[i]);
+        if (GlobeFile<DemHeight>::isCompatible(name))
+            demName = name;
+        if (GlobeFile<TextureColor>::isCompatible(name))
+            colorName = name;
     }
     crusta = new Crusta;
     crusta->init();

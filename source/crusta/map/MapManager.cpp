@@ -30,7 +30,6 @@
 
 #include <crusta/checkGl.h>
 #include <crusta/Crusta.h>
-#include <crusta/DemSpecs.h>
 #include <crusta/map/MapTool.h>
 #include <crusta/map/Polyline.h>
 #include <crusta/map/PolylineRenderer.h>

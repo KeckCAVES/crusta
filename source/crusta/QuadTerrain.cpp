@@ -534,8 +534,8 @@ CrustaVisualizer::clear(5);
 
 //- perform leaf intersection?
     //is it even possible to retrieve higher res data?
-    if (node.childDemTiles[0]   ==   DemFile::INVALID_TILEINDEX &&
-        node.childColorTiles[0] == ColorFile::INVALID_TILEINDEX)
+    if (node.childDemTiles[0]   == INVALID_TILEINDEX &&
+        node.childColorTiles[0] == INVALID_TILEINDEX)
     {
         return intersectLeaf(node, ray, tin, sin, gout);
     }
@@ -1603,8 +1603,8 @@ prepareDraw(FrustumVisibility& visibility, FocusViewEvaluator& lod,
             //check if any of the children actually have data
             for (int i=0; i<4; ++i)
             {
-                if (mainData.childDemTiles[i]  !=  DemFile::INVALID_TILEINDEX ||
-                    mainData.childColorTiles[i]!=ColorFile::INVALID_TILEINDEX)
+                if (mainData.childDemTiles[i]   != INVALID_TILEINDEX ||
+                    mainData.childColorTiles[i] != INVALID_TILEINDEX)
                 {
                     allgood = true;
                 }
@@ -1710,8 +1710,8 @@ confirmLineCoverageRemoval(const QuadNodeMainData* node, Shape* shape,
     //children existance
     for (int i=0; i<4; ++i)
     {
-        if (node->childDemTiles[i]  !=  DemFile::INVALID_TILEINDEX ||
-            node->childColorTiles[i]!=ColorFile::INVALID_TILEINDEX)
+        if (node->childDemTiles[i]   != INVALID_TILEINDEX ||
+            node->childColorTiles[i] != INVALID_TILEINDEX)
         {
             allgood = false;
         }
@@ -1793,8 +1793,8 @@ validateLineCoverage(const QuadNodeMainData* node)
     //children existance
     for (int i=0; i<4; ++i)
     {
-        if (node->childDemTiles[i]  !=  DemFile::INVALID_TILEINDEX ||
-            node->childColorTiles[i]!=ColorFile::INVALID_TILEINDEX)
+        if (node->childDemTiles[i]   != INVALID_TILEINDEX ||
+            node->childColorTiles[i] != INVALID_TILEINDEX)
         {
             allgood = false;
         }

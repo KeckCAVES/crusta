@@ -2,7 +2,15 @@
 #define _GlobeFile_H_
 
 
-#include <crusta/basics.h>
+#include <string>
+
+#if CONSTRUO_BUILD
+#include <Misc/ConfigurationFile.h>
+#endif //CONSTRUO_BUILD
+
+#include <crusta/GlobeData.h>
+#include <crusta/Polyhedron.h>
+#include <crusta/TileIndex.h>
 
 
 BEGIN_CRUSTA
@@ -12,54 +20,56 @@ template <typename PixelParam>
 class GlobeFile
 {
 public:
+    typedef GlobeData<PixelParam> gd;
+    typedef typename gd::File     File;
+
     ~GlobeFile();
 
-    template <typename PolyhedronParam>
-    virtual bool isCompatible(const std::string& path) =0;
+    /** check that the file is a valid wrt PixelParam */
+    static bool isCompatible(const std::string& path);
 
-    template <typename PolyhedronParam>
-    virtual void open(const std::string& path) =0;
-    virtual void close() =0;
+    void open(const std::string& path);
+    void close();
 
-//- data IO
-    ///retrieve the default value filled data buffer
+    /** get access to a specific patch of the globe file */
+    File* getPatch(uint8 patch);
+
+    /** retrieve the nodata value filled data buffer */
     const PixelParam* getBlank() const;
 
-    ///check the existence of a tile (does not create a new one)
-    virtual TileIndex checkTile(const TreeIndex& node) const =0;
-    virtual TileIndex checkTile(const TreePath& path, TileIndex start) const =0;
-
-    ///reads the tile of given index into the given buffer
-    virtual bool readTile(TileIndex index, TileIndex childPointers[4],
-                          TileHeader& header, PixelParam* buffer=NULL) =0;
-    virtual bool readTile(TileIndex index, PixelParam* buffer) =0;
-    virtual bool readTile(TileIndex index, TileIndex childPointers[4],
-                          PixelParam* buffer=NULL) =0;
-    virtual bool readTile(TileIndex index, TileHeader& header,
-                          PixelParam* buffer=NULL) =0;
-
-
-//- configuration IO
-    ///returns the string identifier for the data type
+    /** returns the string identifier for the data type */
     const std::string& getDataType();
-    ///returns the number of channels in the data
+    /** returns the number of channels in the data */
     const int& getNumChannels();
+    /** returns the pixel value for out-of-bounds tiles */
+    const PixelParam& getNodata() const;
 
-    ///returns the pixel value for out-of-bounds tiles
-    const PixelParam& getDefaultPixelValue() const;
-    ///returns size of an individual image tile
+    /** returns the descriptor of the polyhedron used for the globe file */
+    const std::string& getPolyhedronType() const;
+    /** returns the number of patches contained in the globe file */
+    const int& getNumPatches() const;
+    /** returns size of an individual image tile */
     const int* getTileSize() const;
-    ///return the number of tiles stored in the hierarchy
-    const TileIndex& getNumTiles() const;
 
 protected:
-    std::string dataType;
-    int         numChannels;
-    PixelParam  defaultPixelValue;
-    int         tileSize[2];
-    TileIndex   numTiles;
+    typedef std::vector<File*> PatchFiles;
+
+    void loadConfiguration(const std::string& cfgName);
+    void createBaseFolder(const std::string& path, bool parent=false);
 
     std::vector<PixelParam> blank;
+    PatchFiles patches;
+
+    std::string dataType;
+    int         numChannels;
+    PixelParam  nodata;
+    std::string polyhedronType;
+    int         numPatches;
+    int         tileSize[2];
+
+#if CONSTRUO_BUILD
+    Misc::ConfigurationFile cfg;
+#endif //CONSTRUO_BUILD
 };
 
 

@@ -50,17 +50,15 @@ add_library(CrustaCore SHARED
     ../include/crusta/CrustaComponent.h
     ../include/crusta/CrustaVisualizer.h
     ../include/crusta/DataManager.h
+    ../include/crusta/DemHeight.h
+    ../include/crusta/DemHeightGlobeData.h
+    ../include/crusta/DemHeightPixelOps.h
     ../include/crusta/ElevationRangeTool.h
-    ../include/crusta/Ellipsoid.h
     ../include/crusta/FocusViewEvaluator.h
     ../include/crusta/FrustumVisibility.h
-    ../include/crusta/GlobeColorTextureTraits.h
-    ../include/crusta/GlobeDataTraits.h
-    ../include/crusta/GlobeDiskFile.h
-    ../include/crusta/GlobeDiskFile.hpp
+    ../include/crusta/GlobeData.h
     ../include/crusta/GlobeFile.h
     ../include/crusta/GlobeFile.hpp
-    ../include/crusta/GlobeTopographyTraits.h
     ../include/crusta/GlProgram.h
     ../include/crusta/Homography.h
     ../include/crusta/IdGenerator.h
@@ -72,15 +70,14 @@ add_library(CrustaCore SHARED
     ../include/crusta/map/PolylineRenderer.h
     ../include/crusta/map/PolylineTool.h
     ../include/crusta/map/Shape.h
-    ../include/crusta/PixelSpecs.h
+    ../include/crusta/PixelOps.h
     ../include/crusta/Polyhedron.h
+    ../include/crusta/PolyhedronLoader.h
     ../include/crusta/QuadCache.h
     ../include/crusta/QuadNodeData.h
     ../include/crusta/QuadTerrain.h
     ../include/crusta/QuadtreeFile.h
     ../include/crusta/QuadtreeFile.hpp
-    ../include/crusta/QuadtreeFileHeaders.h
-    ../include/crusta/QuadtreeFileSpecs.h
     ../include/crusta/Refinement.h
     ../include/crusta/Refinement.hpp
     ../include/crusta/Scope.h
@@ -88,6 +85,10 @@ add_library(CrustaCore SHARED
     ../include/crusta/Section.h
     ../include/crusta/Sphere.h
     ../include/crusta/SurfaceTool.h
+    ../include/crusta/TextureColor.h
+    ../include/crusta/TextureColorGlobeData.h
+    ../include/crusta/TextureColorPixelOps.h
+    ../include/crusta/TileIndex.h
     ../include/crusta/Tool.h
     ../include/crusta/TreeIndex.h
     ../include/crusta/Triacontahedron.h
@@ -117,12 +118,13 @@ add_library(CrustaCore SHARED
     ../source/crusta/map/PolylineRenderer.cpp
     ../source/crusta/map/PolylineTool.cpp
     ../source/crusta/map/Shape.cpp
+    ../source/crusta/PolyhedronLoader.cpp
     ../source/crusta/QuadCache.cpp
     ../source/crusta/QuadNodeData.cpp
     ../source/crusta/QuadTerrain.cpp
     ../source/crusta/Scope.cpp
-    ../source/crusta/Sphere.cpp
     ../source/crusta/Section.cpp
+    ../source/crusta/Sphere.cpp
     ../source/crusta/SurfaceTool.cpp
     ../source/crusta/Tool.cpp
     ../source/crusta/TreeIndex.cpp
@@ -181,8 +183,7 @@ add_executable(construo
     ../include/construo/Builder.hpp
     ../include/construo/ConstruoVisualizer.h
     ../include/construo/Converters.h
-    ../include/construo/DynamicFilter.h
-    ../include/construo/Filter.h
+    ../include/construo/DemHeightSubsampleFilter.h
     ../include/construo/GdalImageFile.h
     ../include/construo/GdalImageFile.hpp
     ../include/construo/GdalTransform.h
@@ -196,28 +197,25 @@ add_executable(construo
     ../include/construo/ImagePatch.h
     ../include/construo/ImagePatch.hpp
     ../include/construo/ImageTransform.h
-    ../include/construo/ImageTransformReader.h
-    ../include/construo/PixelHelpers.h
-    ../include/construo/Sampler.h
     ../include/construo/SphereCoverage.h
+    ../include/construo/SubsampleFilter.h
+    ../include/construo/TextureColorSubsampleFilter.h
     ../include/construo/TpmFile.h
     ../include/construo/TpmImageFile.h
     ../include/construo/TpmImageFile.hpp
     ../include/construo/Tree.h
     ../include/construo/Tree.hpp
-    ../include/construo/UtmTransform.h
 
     ../source/construo/Construo.cpp
     ../source/construo/ConstruoVisualizer.cpp
-    ../source/construo/Filter.cpp
+    ../source/construo/GdalImageFile.cpp
     ../source/construo/GdalTransform.cpp
     ../source/construo/GeoTransform.cpp
     ../source/construo/ImageCoverage.cpp
     ../source/construo/ImageTransform.cpp
-    ../source/construo/ImageTransformReader.cpp
     ../source/construo/SphereCoverage.cpp
     ../source/construo/TpmFile.cpp
-    ../source/construo/UtmTransform.cpp
+    ../source/construo/Tree.cpp
 )
 
 #cmake fraking sucks if you don't follow their directory structure!!!!

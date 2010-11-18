@@ -54,6 +54,9 @@ public:
     /** request data fetch/generation for a set of tree indices */
     void request(const Requests& reqs);
 
+    /** reset the unit, unpinning and invalidating all the current entries */
+    void reset();
+
 protected:
     struct FetchRequest
     {

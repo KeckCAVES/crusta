@@ -65,12 +65,6 @@ typedef std::vector<AgeStamp> AgeStamps;
 ///\todo need to deprecate FrameNumber in favor of AgeStamp
 typedef uint64      FrameNumber; ///<< DEPRECATED
 
-/** type of an index to a tile within the data pyramid.
-    \note the unsigned int type here restricts the trees to ~4 billion
-          tiles. Since the indices to children are stored for each tile
-          this has been done for storage space preservation purposes */
-typedef unsigned int TileIndex;
-
 typedef double      Scalar;
 
 typedef Geometry::Point<Scalar, 3>  Point3;
@@ -90,12 +84,10 @@ typedef Geometry::HitResult<Scalar> HitResult;
 typedef Geometry::Ray<Scalar, 3>    Ray;
 
 
-static const uint   TILE_RESOLUTION          = 65;
+static const int    TILE_RESOLUTION          = 65;
 static const float  TILE_TEXTURE_COORD_STEP  = 1.0 / TILE_RESOLUTION;
 static const double SPHEROID_RADIUS          = 6371000.0;
 static const double INV_SPHEROID_RADIUS      = 1.0 / SPHEROID_RADIUS;
-
-static const TileIndex INVALID_TILEINDEX = ~0x0U;
 
 END_CRUSTA
 

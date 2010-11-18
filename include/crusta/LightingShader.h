@@ -72,6 +72,8 @@ class LightingShader
     GLint lineStartCoordUniform;
     GLint lineCoordScaleUniform;
     GLint lineWidthUniform;
+    GLint demNodataUniform;
+    GLint colorNodataUniform;
 
     /* Private methods: */
     std::string createApplyLightFunction(const char* functionTemplate,int lightIndex) const;
@@ -138,6 +140,14 @@ class LightingShader
     void setLineWidth(float lw)
     {
         glUniform1f(lineWidthUniform, lw);
+    }
+    void setDemNodata(float dn)
+    {
+        glUniform1f(demNodataUniform, dn);
+    }
+    void setColorNodata(unsigned char r, unsigned char g, unsigned char b)
+    {
+        glUniform3f(colorNodataUniform, r/255.0f, g/255.0f, b/255.0f);
     }
 };
 

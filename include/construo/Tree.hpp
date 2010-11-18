@@ -2,7 +2,6 @@
 #include <sstream>
 #include <sys/stat.h>
 
-#include <crusta/QuadtreeFileHeaders.h>
 #include <construo/Converters.h>
 
 ///\todo remove
@@ -15,7 +14,7 @@ template <typename PixelParam>
 TreeNode<PixelParam>::
 TreeNode() :
     parent(NULL), children(NULL),
-    tileIndex(State::File::INVALID_TILEINDEX),
+    tileIndex(INVALID_TILEINDEX),
     data(NULL), mustBeUpdated(false), isExplicitNeighborNode(false)
 {}
 
@@ -245,11 +244,11 @@ loadMissingChildren()
     /* read the children's tile indices from the file. Only allocate the
        children if valid counterparts exist in the file */
     assert(globeFile!=NULL && "uninitialized globe file");
-    File& file = globeFile->getPatch(treeIndex.patch);
+    File* file = globeFile->getPatch(treeIndex.patch);
     TileIndex childIndices[4];
-    if (!file.readTile(tileIndex, childIndices))
+    if (!file->readTile(tileIndex, childIndices))
         return;
-    if (childIndices[0] == File::INVALID_TILEINDEX)
+    if (childIndices[0] == INVALID_TILEINDEX)
         return;
 
     //create the new in-memory representations
@@ -284,7 +283,7 @@ computeResolution()
     Scope::Scalar radius = scope.getRadius();
     Scope::Vertex one = scope.corners[0];
     Scope::Vertex two = mid(one, scope.corners[1], radius);
-    for (uint i=2; i+1<TILE_RESOLUTION; i<<=1)
+    for (int i=2; i+1<TILE_RESOLUTION; i<<=1)
         one = mid(one, two, radius);
 
     //convert points to spherical coords
@@ -316,166 +315,48 @@ setNeighbors(ExplicitNeighborNode* nodes[4], const uint orients[4])
     }
 }
 
-template <typename PixelParam, typename PolyhedronParam>
-Spheroid<PixelParam, PolyhedronParam>::
+template <typename PixelParam>
+Spheroid<PixelParam>::
 Spheroid(const std::string& baseName, const uint tileResolution[2])
 {
-    PolyhedronParam polyhedron(SPHEROID_RADIUS);
-    uint numPatches = polyhedron.getNumPatches();
-
     //open the globe file
-    globeFile.open<PolyhedonParam>(baseName);
+    globeFile.open(baseName);
 
     //create the base nodes
+    int numPatches = globeFile.getNumPatches();
+    BaseNode::globeFile = &globeFile;
     baseNodes.resize(numPatches);
-    for (uint i=0; i<numPatches; ++i)
+    for (int i=0; i<numPatches; ++i)
     {
-    }
-
-    //create the base nodes and open the corresponding quadtree file
-    for (uint i=0; i<numPatches; ++i)
-    {
-        //create the base node
-        BaseNode* node  = &baseNodes[i];
-        node->treeState = &baseStates[i];
-        //the root must have index 0
-        node->treeIndex = TreeIndex(i);
-        node->tileIndex = 0;
-
-        //open/create the quadtreefile
-        std::ostringstream oss;
-        oss << baseName << "/patch_" << i << ".qtf";
-        TreeFile*& file = baseStates[i].file;
-        file = new TreeFile(oss.str().c_str(), tileResolution);
-
-        //make sure the quadtree file has at least a root
-        if (file->getNumTiles() == 0)
-        {
-            //the new root must have index 0
-            node->tileIndex = file->appendTile(true);
-            assert(node->tileIndex==0 && file->getNumTiles()==1);
-        }
+        //setup the root indices
+        BaseNode& node = baseNodes[i];
+        node.treeIndex = TreeIndex(i);
+        node.tileIndex = 0;
     }
 
     //initialize the geometry of the base nodes and link them
+    Polyhedron* polyhedron =
+        PolyhedronLoader::load(globeFile.getPolyhedronType(), SPHEROID_RADIUS);
     uint orientations[4];
     BaseNode* neighbors[4];
-    typename PolyhedronParam::Connectivity connectivity[4];
-    for (uint i=0; i<numPatches; ++i)
+    typename Polyhedron::Connectivity connectivity[4];
+    for (int i=0; i<numPatches; ++i)
     {
-        BaseNode* node = &baseNodes[i];
-        node->scope    = polyhedron.getScope(i);
+        BaseNode& node = baseNodes[i];
+        node.scope     = polyhedron->getScope(i);
 ///\todo parametrize the Spheroid by the sphere coverage. use Static for now.
-        node->coverage = StaticSphereCoverage(2, node->scope);
-        node->computeResolution();
+        node.coverage = StaticSphereCoverage(2, node.scope);
+        node.computeResolution();
 
-        polyhedron.getConnectivity(i, connectivity);
+        polyhedron->getConnectivity(i, connectivity);
         for (uint n=0; n<4; ++n)
         {
             neighbors[n]    = &baseNodes[connectivity[n][0]];
             orientations[n] = connectivity[n][1];
         }
-        node->setNeighbors(neighbors, orientations);
+        node.setNeighbors(neighbors, orientations);
     }
-
-///\todo remove
-#if 0
-int numVerts = numPatches*16*2*3;
-float* verts = new float[numVerts];
-float* curVert = verts;
-#if 1
-    for (uint i=0; i<numPatches; ++i)
-    {
-        const SphereCoverage::Points& scv = baseNodes[i].coverage.getVertices();
-        uint num = (uint)scv.size();
-        for (uint j=0; j<num; ++j)
-        {
-            for (uint k=0; k<2; ++k)
-            {
-                *curVert = scv[(j+k)%num][0]; ++curVert;
-                *curVert =               0.0; ++curVert;
-                *curVert = scv[(j+k)%num][1]; ++curVert;
-            }
-        }
-        ConstruoVisualizer::show(GL_POINTS, (i+1)*16*2*3, verts);
-    }
-#else
-for (uint i=0; i<numPatches; ++i)
-{
-    for (uint k=0; k<3; ++k, ++curVert)
-        *curVert = baseNodes[i].scope.corners[0][k];
-    for (uint k=0; k<3; ++k, ++curVert)
-        *curVert = baseNodes[i].scope.corners[1][k];
-    for (uint k=0; k<3; ++k, ++curVert)
-        *curVert = baseNodes[i].scope.corners[1][k];
-    for (uint k=0; k<3; ++k, ++curVert)
-        *curVert = baseNodes[i].scope.corners[3][k];
-    for (uint k=0; k<3; ++k, ++curVert)
-        *curVert = baseNodes[i].scope.corners[3][k];
-    for (uint k=0; k<3; ++k, ++curVert)
-        *curVert = baseNodes[i].scope.corners[2][k];
-    for (uint k=0; k<3; ++k, ++curVert)
-        *curVert = baseNodes[i].scope.corners[2][k];
-    for (uint k=0; k<3; ++k, ++curVert)
-        *curVert = baseNodes[i].scope.corners[0][k];
-}
-#endif
-ConstruoVisualizer::show(GL_LINES, numVerts, verts);
-#endif
-}
-
-template <typename PixelParam, typename PolyhedronParam>
-Spheroid<PixelParam, PolyhedronParam>::
-~Spheroid()
-{
-    for (typename BaseStates::iterator it=baseStates.begin();
-         it!=baseStates.end(); ++it)
-    {
-        delete it->file;
-    }
-}
-
-template <typename PixelParam, typename PolyhedronParam>
-void Spheroid<PixelParam, PolyhedronParam>::
-createBaseFolder(const std::string& path, bool parent)
-{
-    //check if a file or directory of the given name already exists
-    struct stat statBuffer;
-    if (stat(path.c_str(), &statBuffer) == 0)
-    {
-        //check if it's a folder
-        if (S_ISDIR(statBuffer.st_mode))
-        {
-            if (!parent)
-            {
-                struct stat statCfg;
-                std::string cfg = path + std::string("/crustaPyramid.cfg");
-                if (stat(cfg.c_str(), &statCfg) != 0)
-                {
-                    Misc::throwStdErr("File %s already exists and is "
-                                      "not a crusta pyramid", path.c_str());
-                }
-            }
-        }
-        else
-        {
-            Misc::throwStdErr("File %s already exists and is not a folder "
-                              "in the output pyramid path", path.c_str());
-        }
-    }
-    else
-    {
-        //create the parent path
-        size_t delim = path.find_last_of("/\\");
-        createBaseFolder(path.substr(0, delim), true);
-
-        //create the base folder
-        if(mkdir(path.c_str(), 0777) < 0)
-        {
-            Misc::throwStdErr("Could not create output pyramid path %s",
-                              path.c_str());
-        }
-    }
+    delete polyhedron;
 }
 
 

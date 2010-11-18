@@ -18,7 +18,6 @@
 #include <crusta/Sphere.h>
 #include <crusta/SurfaceTool.h>
 #include <crusta/Tool.h>
-#include <crusta/Triacontahedron.h>
 #include <crusta/Triangle.h>
 
 
@@ -307,8 +306,8 @@ init()
 
     ElevationRangeTool::init(crustaTool);
 
-    globalElevationRange[0] =  Math::Constants<Scalar>::max;
-    globalElevationRange[1] = -Math::Constants<Scalar>::max;
+    globalElevationRange[0] = -1;
+    globalElevationRange[1] =  1;
 
     colorMapDirty = false;
     static const int numColorMapEntries = 1024;
@@ -324,18 +323,18 @@ load(const std::string& demFileBase, const std::string& colorFileBase)
     //clear the currently loaded data
     unload();
 
-    Triacontahedron polyhedron(SPHEROID_RADIUS);
-    uint numPatches = polyhedron.getNumPatches();
-
-    dataMan->load(numPatches, demFileBase, colorFileBase);
+    dataMan->load(demFileBase, colorFileBase);
 
     globalElevationRange[0] =  Math::Constants<Scalar>::max;
     globalElevationRange[1] = -Math::Constants<Scalar>::max;
 
+    const Polyhedron* const polyhedron = dataMan->getPolyhedron();
+
+    uint numPatches = polyhedron->getNumPatches();
     renderPatches.resize(numPatches);
     for (uint i=0; i<numPatches; ++i)
     {
-        renderPatches[i] = new QuadTerrain(i, polyhedron.getScope(i), this);
+        renderPatches[i] = new QuadTerrain(i, polyhedron->getScope(i), this);
         const QuadNodeMainData& root = renderPatches[i]->getRootNode();
         globalElevationRange[0] = std::min(globalElevationRange[0],
                                            Scalar(root.elevationRange[0]));
@@ -384,6 +383,9 @@ shutdown()
 Point3 Crusta::
 snapToSurface(const Point3& pos, Scalar elevationOffset)
 {
+    if (renderPatches.empty())
+        return pos;
+
 //- find the base patch
     MainCacheBuffer*  nodeBuf = NULL;
     QuadNodeMainData* node    = NULL;
@@ -424,8 +426,8 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
         childId    |= vpos*horizontal < 0 ? 0x2 : 0x0;
 
         //is it even possible to retrieve higher res data?
-        if (node->childDemTiles[childId]   ==   DemFile::INVALID_TILEINDEX &&
-            node->childColorTiles[childId] == ColorFile::INVALID_TILEINDEX)
+        if (node->childDemTiles[childId]   == INVALID_TILEINDEX &&
+            node->childColorTiles[childId] == INVALID_TILEINDEX)
         {
             break;
         }
@@ -543,6 +545,9 @@ CrustaVisualizer::peek();
 } //DEBUG_INTERSECT
 #endif //DEBUG_INTERSECT_CRAP
 
+    if (renderPatches.empty())
+        return HitResult();
+
     const Scalar& verticalScale = getVerticalScale();
 
     //intersect the ray with the global outer shells to determine starting point
@@ -607,7 +612,6 @@ CrustaVisualizer::peek();
     int    sideIn        = -1;
     int    sideOut       = -1;
     int    mapSide[4][4] = {{2,3,0,1}, {1,2,3,0}, {0,1,2,3}, {3,0,1,2}};
-    Triacontahedron polyhedron(SPHEROID_RADIUS);
 #if DEBUG_INTERSECT_CRAP
 int patchesVisited = 0;
 #endif //DEBUG_INTERSECT_CRAP
@@ -626,8 +630,9 @@ int patchesVisited = 0;
 const QuadTerrain* oldPatch = patch;
 #endif //DEBUG_INTERSECT_CRAP
 
+        const Polyhedron* const polyhedron = dataMan->getPolyhedron();
         Polyhedron::Connectivity neighbors[4];
-        polyhedron.getConnectivity(patch->getRootNode().index.patch, neighbors);
+        polyhedron->getConnectivity(patch->getRootNode().index.patch,neighbors);
         patch  = renderPatches[neighbors[sideOut][0]];
         sideIn = mapSide[neighbors[sideOut][1]][sideOut];
 
@@ -675,7 +680,6 @@ intersect(Shape::ControlPointHandle start,
     int    sideIn        = -1;
     int    sideOut       = -1;
     int    mapSide[4][4] = {{2,3,0,1}, {1,2,3,0}, {0,1,2,3}, {3,0,1,2}};
-    Triacontahedron polyhedron(SPHEROID_RADIUS);
     while (true)
     {
         patch->intersect(callback, ray, tin, sideIn, tout, sideOut);
@@ -685,8 +689,9 @@ intersect(Shape::ControlPointHandle start,
         //move to the patch on the exit side
         tin = tout;
 
+        const Polyhedron* const polyhedron = dataMan->getPolyhedron();
         Polyhedron::Connectivity neighbors[4];
-        polyhedron.getConnectivity(patch->getRootNode().index.patch, neighbors);
+        polyhedron->getConnectivity(patch->getRootNode().index.patch,neighbors);
         patch  = renderPatches[neighbors[sideOut][0]];
         sideIn = mapSide[neighbors[sideOut][1]][sideOut];
     }
@@ -919,6 +924,9 @@ if (linesDecorated)
     }
     glData->terrainShader.setVerticalScale(getVerticalScale());
     glData->terrainShader.setTextureStep(TILE_TEXTURE_COORD_STEP);
+    glData->terrainShader.setDemNodata(dataMan->getDemNodata());
+    const TextureColor& cnd = dataMan->getColorNodata();
+    glData->terrainShader.setColorNodata(cnd[0], cnd[1], cnd[2]);
 
 ///\todo this needs to be tweakable
     if (linesDecorated)
