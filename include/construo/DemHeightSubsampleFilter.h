@@ -78,7 +78,7 @@ struct SubsampleFilter<DemHeight, SUBSAMPLEFILTER_PYRAMID>
 
         double weights[4] = { (1-d[1])*(1-d[0]), (1-d[1])*d[0],
                               d[1]*(1-d[0]), d[1]*d[0] };
-        
+
         double sum        = 0.0;
         double sumWeights = 0.0;
         for (int i=0; i<4; ++i)
@@ -89,10 +89,10 @@ struct SubsampleFilter<DemHeight, SUBSAMPLEFILTER_PYRAMID>
                 sumWeights += weights[i];
             }
         }
-        
+
         if (sumWeights == 0.0)
             return globeNodata;
-        
+
         return DemHeight(sum / sumWeights);
     }
 
@@ -119,6 +119,9 @@ struct SubsampleFilter<DemHeight, SUBSAMPLEFILTER_PYRAMID>
                 }
             }
         }
+
+        if (sumWeights == 0.0)
+            return globeNodata;
 
         return DemHeight(sum / sumWeights);
     }
@@ -165,6 +168,9 @@ struct SubsampleFilter<DemHeight, SUBSAMPLEFILTER_LANCZOS5>
                 }
             }
         }
+
+        if (sumWeights == 0.0)
+            return globeNodata;
 
         return DemHeight(sum / sumWeights);
     }

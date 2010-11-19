@@ -28,17 +28,25 @@ TextureColor operator*(double d, const TextureColor& tc)
 inline
 std::ostream& operator<<(std::ostream& oss, TextureColor& tc)
 {
+    /* uint8 is seen as a char not an integer; must, therefore, cast to int
+       otherwise '\0' will be generated */
     for (int i=0; i<TextureColor::dimension-1; ++i)
-        oss << tc[i] << " ";
-    oss << tc[TextureColor::dimension-1];
+        oss << (int)tc[i] << " ";
+    oss << (int)tc[TextureColor::dimension-1];
     return oss;
 }
 
 inline
 std::istream& operator>>(std::istream& iss, TextureColor& tc)
 {
+    /* uint8 is seen as a char not an integer; must, therefore, buffer to int
+       otherwise 48 (ascii number for '0') will be generated */
+    int temp;
     for (int i=0; i<TextureColor::dimension; ++i)
-        iss >> tc[i];
+    {
+        iss >> temp;
+        tc[i] = temp;
+    }
     return iss;
 }
 

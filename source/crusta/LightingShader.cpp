@@ -243,7 +243,7 @@ const char* LightingShader::fetchTerrainColorFromColorMap =
     float e = sampleHeight(coord);\n\
           e = (e-minColorMapElevation) * colorMapElevationInvRange;\n\
     vec4 mapColor    = texture1D(colorMap, e);\n\
-    vec3 texColor    = sampleColor2D(coord).rgb;\n\
+    vec3 texColor    = sampleColor(coord).rgb;\n\
     vec4 terrainColor= texColor==colorNodata ? vec4(colorDefault, 1.0) :\n\
                                                vec4(texColor, 1.0);\n\
     terrainColor     = mix(terrainColor, mapColor, mapColor.w);\

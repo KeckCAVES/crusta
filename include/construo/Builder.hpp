@@ -490,7 +490,6 @@ ConstruoVisualizer::show();
         {-1,-1}, { 0,-1}, { 1,-1}, { 2,-1}, {-1, 2}, { 0, 2}, { 1, 2}, { 2, 2},
         {-1, 1}, {-1, 0}, { 2, 1}, { 2, 0}, { 0, 0}, { 1, 0}, { 0, 1}, { 1, 1}
     };
-    bool dataIsAvailable[16];
     for (int i=0; i<16; ++i)
     {
     //- retrieve the kin
@@ -522,8 +521,6 @@ Note: getKin across patches seem to be broken: e.g. offset==3 returned. */
         {
             /* sampling from the same patch will always have data (even if that
                is "nodata" */
-            dataIsAvailable[i] = true;
-
             assert(kin->tileIndex!=INVALID_TILEINDEX);
             typename gd::File* file =
                 kin->globeFile->getPatch(kin->treeIndex.patch);
@@ -568,20 +565,11 @@ Note: getKin across patches seem to be broken: e.g. offset==3 returned. */
                 data = nodeDataBuf;
             }
         }
-        else
-        {
-            /* flag that we didn't retrieve any data for this patch because of
-               broken sampling across patches */
-            dataIsAvailable[i] = false;
-        }
 
 /**\todo disabled reading from neighbors that don't have the same orientation
 reading of neighbor data with differring orientation is currently absolutely
 broken, overwrites random memory regions and breaks fraking everything */
 kinO = 0;
-//no need to copy blank anymore... will instead generate a clamp_to_edge
-if (dataIsAvailable[i])
-{
     //- insert the data at the appropriate location
         PixelParam* base = domain +
                            domainOff[1] * (tileSize[1]-1) * domainSize[0] +
@@ -599,145 +587,7 @@ if (dataIsAvailable[i])
             for (uint x=0; x<tileSize[0]; ++x, ++to, from+=stepX[kinO])
                 *to = *from;
         }
-}
     }
-
-/**\todo this is a temporary fix for the really bad seams at patch boundaries.
-I'm artificially extending the border data into the neighboring tiles that are
-missing data because it's on another patch (clamp_to_edge like) */
-PixelParam* domain = domainBuf;
-static const int horizontalIndices[4] = {1,2,5,6};
-PixelParam* horizontalSources[4] = {
-    domain +   (tileSize[1]-1)*domainSize[0] +   (tileSize[0]-1),
-    domain +   (tileSize[1]-1)*domainSize[0] + 2*(tileSize[0]-1),
-    domain + 3*(tileSize[1]-1)*domainSize[0] +   (tileSize[0]-1),
-    domain + 3*(tileSize[1]-1)*domainSize[0] + 2*(tileSize[0]-1),
-};
-PixelParam* horizontalDestinations[4] = {
-    domain +   (tileSize[0]-1),
-    domain + 2*(tileSize[0]-1),
-    domain + (3*(tileSize[1]-1) + 1)*domainSize[0] +   (tileSize[0]-1),
-    domain + (3*(tileSize[1]-1) + 1)*domainSize[0] + 2*(tileSize[0]-1),
-};
-for (int i=0; i<4; ++i)
-{
-    if (!dataIsAvailable[horizontalIndices[i]])
-    {
-        PixelParam* src = horizontalSources[i];
-//        #pragma omp parallel for
-        for (uint y=0; y<tileSize[1]-1; ++y)
-        {
-            memcpy(horizontalDestinations[i]+y*domainSize[0], src,
-                   tileSize[0]*sizeof(PixelParam));
-        }
-    }
-}
-
-static const int verticalIndices[4] = {8,9,10,11};
-PixelParam* verticalSources[4] = {
-    domain + 2*(tileSize[1]-1)*domainSize[0] +   (tileSize[0]-1),
-    domain +   (tileSize[1]-1)*domainSize[0] +   (tileSize[0]-1),
-    domain + 2*(tileSize[1]-1)*domainSize[0] + 3*(tileSize[0]-1),
-    domain +   (tileSize[1]-1)*domainSize[0] + 3*(tileSize[0]-1),
-};
-PixelParam* verticalDestinations[4] = {
-    domain + 2*(tileSize[1]-1)*domainSize[0],
-    domain +   (tileSize[1]-1)*domainSize[0],
-    domain + 2*(tileSize[1]-1)*domainSize[0] + 3*(tileSize[0]-1) + 1,
-    domain +   (tileSize[1]-1)*domainSize[0] + 3*(tileSize[0]-1) + 1,
-};
-for (int i=0; i<4; ++i)
-{
-    if (!dataIsAvailable[verticalIndices[i]])
-    {
-//        #pragma omp parallel for
-        for (uint y=0; y<tileSize[1]; ++y)
-        {
-            PixelParam* src = verticalSources[i] + y*domainSize[0];
-            PixelParam* dst = verticalDestinations[i] + y*domainSize[0];
-            for (uint x=0; x<tileSize[0]-1; ++x, ++dst)
-                *dst = *src;
-        }
-    }
-}
-
-//bottom-left corner
-if (!dataIsAvailable[0])
-{
-    PixelParam* hsrc = domain + (tileSize[1]-1)*domainSize[0];
-    PixelParam* dst  = domain;
-    for (uint y=0; y<tileSize[1]-1; ++y, dst+=domainSize[0])
-        memcpy(dst, hsrc, (y+1)*sizeof(PixelParam));
-
-    PixelParam* vsrc = domain + tileSize[0]-1;
-    for (uint y=0; y<tileSize[1]-1; ++y, vsrc+=domainSize[0])
-    {
-        dst = domain + y*domainSize[0];
-        for (uint x=y+1; x<tileSize[0]; ++x)
-            dst[x] = *vsrc;
-    }
-}
-
-//bottom-right corner
-if (!dataIsAvailable[3])
-{
-    PixelParam* hsrc = domain+ (tileSize[1]-1)*domainSize[0]+ 3*(tileSize[0]-1);
-    for (uint y=0; y<tileSize[1]-1; ++y)
-    {
-        PixelParam* dst  = domain + y*domainSize[0] + 3*(tileSize[0]-1) +
-                           tileSize[0]-1-y;
-        memcpy(dst, &hsrc[tileSize[0]-1-y], (y+1)*sizeof(PixelParam));
-    }
-
-    PixelParam* vsrc = domain + 3*(tileSize[0]-1);
-    for (uint y=0; y<tileSize[1]-1; ++y, vsrc+=domainSize[0])
-    {
-        PixelParam* dst = domain + y*domainSize[0] + 3*(tileSize[0]-1);
-        for (uint x=1; x<tileSize[0]-1-y; ++x)
-            dst[x] = *vsrc;
-    }
-}
-
-//top-left corner
-if (!dataIsAvailable[4])
-{
-    PixelParam* hsrc = domain + 3*(tileSize[1]-1)*domainSize[0];
-    for (uint y=1; y<tileSize[1]-1; ++y)
-    {
-        PixelParam* dst  = domain + (3*(tileSize[1]-1) + y)*domainSize[0];
-        memcpy(dst, hsrc, (tileSize[0]-1-y)*sizeof(PixelParam));
-    }
-
-    PixelParam* vsrc = domain + 3*(tileSize[1]-1) + (tileSize[0]-1);
-    for (uint y=1; y<tileSize[1]; ++y, vsrc+=domainSize[0])
-    {
-        PixelParam* dst = domain + (3*(tileSize[1]-1)+y)*domainSize[0];
-        for (uint x=tileSize[0]-1-y; x<tileSize[0]-1; ++x)
-            dst[x] = *vsrc;
-    }
-}
-
-//top-right corner
-if (!dataIsAvailable[7])
-{
-    PixelParam* hsrc = domain+3*(tileSize[1]-1)*domainSize[0]+3*(tileSize[0]-1);
-    for (uint y=1; y<tileSize[1]-1; ++y)
-    {
-        PixelParam* dst = domain + (3*(tileSize[1]-1) + y)*domainSize[0] +
-                          3*(tileSize[0]-1) + y + 1;
-        memcpy(dst, &hsrc[y+1], (tileSize[0]-1-y)*sizeof(PixelParam));
-    }
-
-    PixelParam* vsrc = domain+3*(tileSize[1]-1)*domainSize[0]+3*(tileSize[0]-1);
-    for (uint y=1; y<tileSize[1]; ++y, vsrc+=domainSize[0])
-    {
-        PixelParam* dst = domain + (3*(tileSize[1]-1) + y)*domainSize[0] +
-                          3*(tileSize[0]-1);;
-        for (uint x=0; x<y+1; ++x)
-            dst[x] = *vsrc;
-    }
-}
-
 }
 
 template <typename PixelParam>
@@ -770,7 +620,7 @@ ConstruoVisualizer::peek();
     typedef SubsampleFilter<PixelParam, SUBSAMPLEFILTER_PYRAMID> Filter;
 
     const PixelParam& globeNodata = node->globeFile->getNodata();
-    
+
     PixelParam* data = nodeDataBuf;
     PixelParam* domain;
     for (domain = domainBuf +   (tileSize[1]-1)*domainSize[0]+  (tileSize[0]-1);

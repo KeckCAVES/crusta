@@ -79,7 +79,7 @@ struct SubsampleFilter<TextureColor, SUBSAMPLEFILTER_PYRAMID>
 
         double weights[4] = { (1-d[1])*(1-d[0]), (1-d[1])*d[0],
                               d[1]*(1-d[0]), d[1]*d[0] };
-        
+
         Geometry::Vector<double, TextureColor::dimension> sum(0);
         double sumWeights(0.0);
         for (int i=0; i<4; ++i)
@@ -91,7 +91,7 @@ struct SubsampleFilter<TextureColor, SUBSAMPLEFILTER_PYRAMID>
                 sumWeights += weights[i];
             }
         }
-        
+
         if (sumWeights == 0.0)
             return globeNodata;
 
@@ -134,6 +134,9 @@ struct SubsampleFilter<TextureColor, SUBSAMPLEFILTER_PYRAMID>
             }
         }
 
+        if (sumWeights == 0.0)
+            return globeNodata;
+
         //snap to nearest integer and clamp
         TextureColor returnValue;
         for (int i=0; i<TextureColor::dimension; ++i)
@@ -141,7 +144,7 @@ struct SubsampleFilter<TextureColor, SUBSAMPLEFILTER_PYRAMID>
             sum[i] /= sumWeights;
             sum[i]  = std::max(sum[i], 0.0);
             sum[i]  = std::min(sum[i], 255.0);
-            
+
             returnValue[i] = TextureColor::Scalar(sum[i]+0.5);
         }
 
@@ -191,6 +194,9 @@ struct SubsampleFilter<TextureColor, SUBSAMPLEFILTER_LANCZOS5>
             }
         }
 
+        if (sumWeights == 0.0)
+            return globeNodata;
+
         //snap to nearest integer and clamp
         TextureColor returnValue;
         for (int i=0; i<TextureColor::dimension; ++i)
@@ -198,7 +204,7 @@ struct SubsampleFilter<TextureColor, SUBSAMPLEFILTER_LANCZOS5>
             sum[i] /= sumWeights;
             sum[i]  = std::max(sum[i], 0.0);
             sum[i]  = std::min(sum[i], 255.0);
-            
+
             returnValue[i] = TextureColor::Scalar(sum[i]+0.5);
         }
 
