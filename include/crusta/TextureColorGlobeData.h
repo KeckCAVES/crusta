@@ -41,9 +41,6 @@ struct GlobeData<TextureColor>
         static size_t getSize()           {return 0;}
 
 #if CONSTRUO_BUILD
-        TileHeader(TreeNode<TextureColor>* node=NULL)  {}
-        void reset(TreeNode<TextureColor>* node=NULL)  {}
-
         void write(Misc::LargeFile*) const{}
 #endif //CONSTRUO_BUILD
     };

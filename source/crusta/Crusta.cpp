@@ -22,7 +22,6 @@
 #include <crusta/Tool.h>
 #include <crusta/Triangle.h>
 
-
 #include <crusta/StatsManager.h>
 
 ///todo debug

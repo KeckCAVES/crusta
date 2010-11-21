@@ -9,10 +9,6 @@
 
 #include <Math/Constants.h>
 
-#if CONSTRUO_BUILD
-#include <construo/Tree.h>
-#endif //CONSTRUO_BUILD
-
 
 BEGIN_CRUSTA
 
@@ -53,59 +49,10 @@ struct GlobeData<DemHeight>
         }
 
 #if CONSTRUO_BUILD
-        TileHeader(TreeNode<DemHeight>* node=NULL)
-        {
-            reset(node);
-        }
-
-        void reset(TreeNode<DemHeight>* node=NULL)
+        TileHeader()
         {
             range[0] =  Math::Constants<DemHeight>::max;
             range[1] = -Math::Constants<DemHeight>::max;
-
-            if (node==NULL || node->data==NULL)
-                return;
-
-            //calculate the tile's pixel value range
-            DemHeight* tile = node->data;
-
-///\todo OpenMP this
-            typedef GlobeData<DemHeight> gd;
-
-            assert(node->globeFile != NULL);
-            const DemHeight& nodata = node->globeFile->getNodata();
-            gd::File* file = node->globeFile->getPatch(node->treeIndex.patch);
-            const uint32* tileSize = file->getTileSize();
-            for(uint32 i=0; i<tileSize[0]*tileSize[1]; ++i)
-            {
-                if (tile[i] != nodata)
-                {
-                    range[0] = std::min(range[0], tile[i]);
-                    range[1] = std::max(range[1], tile[i]);
-                }
-            }
-
-            /* update to the tree propagate up, but we need to consider the
-               descendance explicitly */
-            if (node->children != NULL)
-            {
-                for (int i=0; i<4; ++i)
-                {
-                    TreeNode<DemHeight>& child = node->children[i];
-                    assert(child.tileIndex != INVALID_TILEINDEX);
-                    //get the child header
-                    TileHeader header;
-#if DEBUG
-                    bool res = file->readTile(child.tileIndex, header);
-                    assert(res==true);
-#else
-                    file->readTile(child.tileIndex, header);
-#endif //DEBUG
-
-                    range[0] = std::min(range[0], header.range[0]);
-                    range[1] = std::max(range[1], header.range[1]);
-                }
-            }
         }
 
         void write(Misc::LargeFile* file) const

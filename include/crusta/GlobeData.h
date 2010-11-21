@@ -38,11 +38,6 @@ struct GlobeData
         static size_t getSize();
 
 #if CONSTRUO_BUILD
-        template <typename NodeParam>
-        TileHeader(NodeParam* node=NULL);
-        template <typename NodeParam>
-        void reset(NodeParam* node=NULL);
-
         void write(Misc::LargeFile* file) const;
 #endif //CONSTRUO_BUILD
     };
@@ -53,7 +48,7 @@ struct GlobeData
     static const std::string typeName();
     ///number of channels of the stored data
     static const int numChannels();
-    
+
 ///\todo these should go into a construo configuration file
     static std::string defaultPolyhedronType();
     static PixelParam  defaultNodata();

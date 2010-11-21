@@ -22,9 +22,6 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 02111-1307 USA
 ***********************************************************************/
 
-///\todo fix FRAK'ing cmake !@#!@
-#define CONSTRUO_BUILD 1
-
 #include <algorithm>
 
 #include <construo/construoGlobals.h>

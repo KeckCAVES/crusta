@@ -21,9 +21,6 @@
  02111-1307 USA
  ***********************************************************************/
 
-///\todo fix FRAK'ing cmake !@#!@
-#define CONSTRUO_BUILD 1
-
 #include <cstdlib>
 #include <cstring>
 #include <stdexcept>

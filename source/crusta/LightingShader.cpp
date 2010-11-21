@@ -361,7 +361,8 @@ checkFileForChanges(const char* fileName)
     }
     else
     {
-        Misc::throwStdErr("LightingShader: can't find FP to check");
+        Misc::throwStdErr("LightingShader: can't find FP to check (%s)",
+                          fileName);
         return false;
     }
 }
@@ -514,7 +515,7 @@ void LightingShader::compileShader()
         {\n\
             vec3 res      = sampleGeometry(coords);\n\
             vec3 dir      = normalize(center + res);\n\
-            float height  = sampleHeight(coords).r;\n\
+            float height  = sampleHeight(coords);\n\
             height        = height==demNodata ? demDefault : height;\n\
             height       *= verticalScale;\n\
             res          += height * dir;\n\

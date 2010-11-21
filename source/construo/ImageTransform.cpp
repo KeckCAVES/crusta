@@ -1,6 +1,3 @@
-///\todo fix FRAK'ing cmake !@#!@
-#define CONSTRUO_BUILD 1
-
 #include <cassert>
 
 #include <construo/ImageTransform.h>

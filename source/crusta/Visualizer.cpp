@@ -1,6 +1,3 @@
-///\todo fix FRAK'ing cmake !@#!@
-#define CONSTRUO_BUILD 1
-
 #include <crusta/Visualizer.h>
 
 #include <iostream>
@@ -13,8 +10,6 @@
 #include <Vrui/DisplayState.h>
 #include <Vrui/Vrui.h>
 
-#include <construo/Converters.h>
-#include <construo/SphereCoverage.h>
 #include <crusta/checkGl.h>
 
 

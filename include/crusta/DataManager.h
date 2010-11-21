@@ -178,6 +178,11 @@ protected:
                      const TextureColor* const parentImagery, NodeData* child,
                      TextureColor* childImagery);
 
+    /** start the fetching thread */
+    void startFetchThread();
+    /** terminate the fetching thread */
+    void terminateFetchThread();
+    
     /** fetch thread function: process the generation/reading of the data */
     void* fetchThreadFunc();
 
@@ -214,6 +219,9 @@ protected:
     /** allow the fetching thread to blocking wait for requests */
     Threads::Cond fetchCond;
 
+    /** flags the fetch thread to terminate */
+    bool terminateFetch;
+    
     /** thread handling fetch request processing */
     Threads::Thread fetchThread;
     

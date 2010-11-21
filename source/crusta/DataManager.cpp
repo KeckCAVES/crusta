@@ -52,8 +52,9 @@ operator >(const Request& other) const
 
 DataManager::
 DataManager() :
-demFile(NULL), colorFile(NULL), polyhedron(NULL),
-demNodata(0), colorNodata(128, 128, 128), clearGpuCachesStamp(0)
+    demFile(NULL), colorFile(NULL), polyhedron(NULL),
+    demNodata(0), colorNodata(128, 128, 128), terminateFetch(false),
+    clearGpuCachesStamp(0)
 {
     tempGeometryBuf = new double[TILE_RESOLUTION*TILE_RESOLUTION*3];
     glData = new GlData;
@@ -140,19 +141,14 @@ load(const std::string& demPath, const std::string& colorPath)
     if (polyhedron == NULL)
         polyhedron = new Triacontahedron(SETTINGS->globeRadius);
 
-    //start the fetching thread
-    fetchThread.start(this, &DataManager::fetchThreadFunc);
+    startFetchThread();
 }
 
 void DataManager::
 unload()
 {
     //stop the fetching thread
-    if (!fetchThread.isJoined())
-    {
-        fetchThread.cancel();
-        fetchThread.join();
-    }
+    terminateFetchThread();
 
     //clear all the requests
     childRequests.clear();
@@ -927,6 +923,27 @@ sourceColor(
     }
 }
 
+void DataManager::
+startFetchThread()
+{
+    terminateFetch = false;
+    fetchThread.start(this, &DataManager::fetchThreadFunc);
+}
+
+void DataManager::
+terminateFetchThread()
+{
+    if (!fetchThread.isJoined())
+    {
+        //let the fetch thread know that it should terminate
+        terminateFetch = true;
+        //make sure the thread is not stuck waiting for requests
+        fetchCond.signal();
+        //wait for the termination
+        fetchThread.join();
+    }
+}
+
 void* DataManager::
 fetchThreadFunc()
 {
@@ -943,10 +960,19 @@ fetchThreadFunc()
                 //need to reactivate cache to process fetch completion
                 Vrui::requestUpdate();
             }
-            //attempt to grab new request
+            //terminate before trying to fetch more?
+            if (terminateFetch)
+                return NULL;
+
+            //wait for new requests if there are none pending
             if (fetchRequests.empty())
                 fetchCond.wait(requestMutex);
-            fetch = &fetchRequests.front();
+            
+            //was the signal actually to terminate? If not grab the request
+            if (terminateFetch)
+                return NULL;
+            else
+                fetch = &fetchRequests.front();
         }
 
         //fetch it

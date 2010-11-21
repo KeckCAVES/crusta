@@ -9,7 +9,73 @@
 #include <construo/ConstruoVisualizer.h>
 #include <iostream>
 
+
 BEGIN_CRUSTA
+
+
+template <typename PixelParam> inline
+typename GlobeData<PixelParam>::TileHeader
+TreeNodeCreateTileHeader(const TreeNode<PixelParam>& node)
+{
+    return typename GlobeData<PixelParam>::TileHeader();
+}
+
+template <> inline
+GlobeData<DemHeight>::TileHeader
+TreeNodeCreateTileHeader(const TreeNode<DemHeight>& node)
+{
+    typedef GlobeData<DemHeight>   gd;
+    typedef gd::TileHeader TileHeader;
+
+    TileHeader header;
+
+    header.range[0] =  Math::Constants<DemHeight>::max;
+    header.range[1] = -Math::Constants<DemHeight>::max;
+
+    DemHeight* tile = node.data;
+    assert(tile != NULL);
+
+    //calculate the tile's pixel value range
+///\todo OpenMP this
+    assert(node.globeFile != NULL);
+    const DemHeight& nodata = node.globeFile->getNodata();
+    gd::File* file = node.globeFile->getPatch(node.treeIndex.patch);
+    const int* tileSize = node.globeFile->getTileSize();
+    for(int i=0; i<tileSize[0]*tileSize[1]; ++i)
+    {
+        if (tile[i] != nodata)
+        {
+            header.range[0] = std::min(header.range[0], tile[i]);
+            header.range[1] = std::max(header.range[1], tile[i]);
+        }
+    }
+
+    /* update to the tree propagate up, but we need to consider the
+       descendance explicitly */
+    if (node.children != NULL)
+    {
+        for (int i=0; i<4; ++i)
+        {
+            TreeNode<DemHeight>& child = node.children[i];
+            assert(child.tileIndex != INVALID_TILEINDEX);
+            //get the child header
+            TileHeader childHeader;
+#if DEBUG
+            bool res = file->readTile(child.tileIndex, childHeader);
+            assert(res==true);
+#else
+            file->readTile(child.tileIndex, childHeader);
+#endif //DEBUG
+
+            header.range[0] = std::min(header.range[0],
+                                       childHeader.range[0]);
+            header.range[1] = std::max(header.range[1],
+                                       childHeader.range[1]);
+        }
+    }
+
+    return header;
+}
 
 template <typename PixelParam>
 TreeNode<PixelParam>::
@@ -26,6 +92,14 @@ TreeNode<PixelParam>::
     delete[] children;
     delete[] data;
 }
+
+template <typename PixelParam>
+typename TreeNode<PixelParam>::TileHeader TreeNode<PixelParam>::
+getTileHeader()
+{
+    return TreeNodeCreateTileHeader(*this);
+}
+
 
 inline void
 mult(int p[2], int m)
@@ -57,7 +131,8 @@ rotate(int p[2], uint o, const int rotations[4][2][2])
 
 template <typename PixelParam>
 bool TreeNode<PixelParam>::
-getKin(TreeNode*& kin, int offsets[2], bool loadMissing, int down, uint* kinO)
+getKin(TreeNode<PixelParam>*& kin, int offsets[2], bool loadMissing,
+       int down, uint* kinO)
 {
     kin              = this;
     int nodeSize     = pow(2, down);
@@ -224,10 +299,10 @@ createChildren()
     scope.split(childScopes);
 
     //allocate and initialize the children
-    children = new TreeNode[4];
+    children = new TreeNode<PixelParam>[4];
     for (uint i=0; i<4; ++i)
     {
-        TreeNode& child = children[i];
+        TreeNode<PixelParam>& child = children[i];
         child.parent    = this;
         child.treeIndex = treeIndex.down(i);
         child.scope     = childScopes[i];
@@ -292,6 +367,7 @@ computeResolution()
     Point b    = Converter::cartesianToSpherical(two);
     resolution = Converter::haversineDist(a, b, radius);
 }
+
 
 template <typename PixelParam>
 ExplicitNeighborNode<PixelParam>::

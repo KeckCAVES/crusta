@@ -108,8 +108,7 @@ subsampleChildren(Node* node)
         //write the subsampled data to the child
         Node& child = node->children[i];
         child.data = nodeDataBuf;
-        typename gd::TileHeader header;
-        header.reset(&child);
+        typename gd::TileHeader header = child.getTileHeader();
         typename gd::File* childFile =
             child.globeFile->getPatch(child.treeIndex.patch);
         childFile->writeTile(child.tileIndex, header, child.data);
@@ -303,8 +302,7 @@ ConstruoVisualizer::show();
     }
 
     //prepare the header
-    typename gd::TileHeader header;
-    header.reset(node);
+    typename gd::TileHeader header = node->getTileHeader();
 
     //commit the data to file
     file->writeTile(node->tileIndex, header, node->data);
@@ -635,8 +633,7 @@ ConstruoVisualizer::peek();
     node->data = nodeDataBuf;
 
     typedef GlobeData<PixelParam> gd;
-    typename gd::TileHeader header;
-    header.reset(node);
+    typename gd::TileHeader header = node->getTileHeader();
     typename gd::File* file = node->globeFile->getPatch(node->treeIndex.patch);
     file->writeTile(node->tileIndex, header, node->data);
 
