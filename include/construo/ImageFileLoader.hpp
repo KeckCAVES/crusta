@@ -26,52 +26,27 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <cstring>
 #include <iostream>
 #include <Misc/FileNameExtensions.h>
-#include <Misc/ThrowStdErr.h>
 
-#include <construo/ArcInfoBinaryGridImageFile.h>
 #include <construo/GdalImageFile.h>
-#include <construo/GeometryTypes.h>
 #include <construo/TpmImageFile.h>
 
-#include <crusta/ColorTextureSpecs.h>
-#include <crusta/DemSpecs.h>
-
-/***********************************************
-Specialized image loading method for DEM images:
-***********************************************/
 
 BEGIN_CRUSTA
 
-template <>
-ImageFile<DemHeight>* ImageFileLoader<DemHeight>::
+
+template <typename PixelParam>
+ImageFile<PixelParam>* ImageFileLoader<PixelParam>::
 loadImageFile(const char* fileName)
 {
     if (Misc::hasCaseExtension(fileName, ".tpm"))
     {
-        return new TpmDemImageFile(fileName);
+        return new TpmImageFile<PixelParam>(fileName);
     }
     else
     {
-        return new GdalDemImageFile(fileName);
+        return new GdalImageFile<PixelParam>(fileName);
     }
 }
 
-/*************************************************
-Specialized image loading method for color images:
-*************************************************/
-
-template <>
-ImageFile<TextureColor>* ImageFileLoader<TextureColor>::
-loadImageFile(const char* fileName)
-{
-    if (Misc::hasCaseExtension(fileName, ".tpm"))
-    {
-        return new TpmColorImageFile(fileName);
-    }
-    else
-    {
-        return new GdalColorImageFile(fileName);
-    }
-}
 
 END_CRUSTA

@@ -6,8 +6,10 @@
 #include <GL/VruiGlew.h> //must be included before gl.h
 #include <GL/GLVertex.h>
 
+#include <crusta/DemHeight.h>
 #include <crusta/map/Shape.h>
-#include <crusta/QuadtreeFileSpecs.h>
+#include <crusta/TextureColor.h>
+#include <crusta/TileIndex.h>
 #include <crusta/TreeIndex.h>
 #include <crusta/Scope.h>
 
@@ -31,6 +33,11 @@ struct NodeData
     /** compute the various "cached values" (e.g. bounding sphere, centroid,
         etc.) */
     void init(Scalar radius, Scalar verticalScale);
+
+    /** get the elevation range of the node or the default range */
+    void getElevationRange(DemHeight range[2]) const;
+    /** get the height value if it is valid or the default */
+    DemHeight getHeight(const DemHeight& test) const;
 
 ///\todo integrate me properly into the caching scheme (VIS 2010)
 bool          lineCoverageDirty;
@@ -59,13 +66,13 @@ Colors        lineData;
     DemHeight elevationRange[2];
 
     /** index of the DEM tile in the database */
-    DemFile::TileIndex demTile;
+    TileIndex demTile;
     /** indices of the children in the DEM file */
-    DemFile::TileIndex childDemTiles[4];
+    TileIndex childDemTiles[4];
     /** index of the color texture tile in the database */
-    ColorFile::TileIndex colorTile;
+    TileIndex colorTile;
     /** indices of the children in the texture file */
-    ColorFile::TileIndex childColorTiles[4];
+    TileIndex childColorTiles[4];
 };
 
 

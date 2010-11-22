@@ -1,7 +1,9 @@
 #include <construo/ImageFileLoader.h>
-#include <construo/ImageTransformReader.h>
+#include <construo/GdalTransform.h>
+
 
 BEGIN_CRUSTA
+
 
 template <typename PixelParam>
 ImagePatch<PixelParam>::
@@ -12,13 +14,20 @@ ImagePatch() :
 template <typename PixelParam>
 ImagePatch<PixelParam>::
 ImagePatch(const std::string patchName, double pixelScale,
-           const std::string& nodata, bool pointSampled) :
+           const std::string& nodataString, bool pointSampled) :
     image(NULL), transform(NULL), imageCoverage(NULL), sphereCoverage(NULL)
 {
     //load the image file
     image = ImageFileLoader<PixelParam>::loadImageFile(patchName.c_str());
     image->setPixelScale(pixelScale);
-    image->setNodata(nodata);
+    if (!nodataString.empty())
+    {
+        std::istringstream iss(nodataString);
+        PixelParam nodata;
+        iss >> nodata;
+        image->setNodata(nodata);
+        std::cout << "Forced nodata value:\n" << nodataString << "\n\n";
+    }
     const int* imgSize = image->getSize();
 
     //remove the extension from the image file name
@@ -28,7 +37,7 @@ ImagePatch(const std::string patchName, double pixelScale,
     //read the image's projection file
     std::string projName(baseName);
     projName.append(".proj");
-    transform = ImageTransformReader::open(projName.c_str());
+    transform = new GdalTransform(projName.c_str());
     transform->setPointSampled(pointSampled, imgSize);
 
     try

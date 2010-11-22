@@ -3,34 +3,52 @@
 
 #include <construo/SphereCoverage.h>
 
-#include <crusta/QuadtreeFile.h>
+#include <crusta/GlobeFile.h>
 #include <crusta/Scope.h>
+#include <crusta/TileIndex.h>
 #include <crusta/TreeIndex.h>
+
 
 BEGIN_CRUSTA
 
+
 template <typename PixelParam>
-class TreeState
-{};
+class TreeNode;
+
+/**\todo having to specialize this helper breaks the whole separation into
+traits that deal with the specifics of the PixelParam. Fix this eventually.
+This had to be done to avoid a cyclic include where Tree includes GlobeData that
+defines Tileheader::reset(TreeNode) */
+template <typename PixelParam>
+typename GlobeData<PixelParam>::TileHeader
+TreeNodeCreateTileHeader(const TreeNode<PixelParam>& node);
 
 /** Data elements providing the basis for a quadtree structure where elements
     are dynamically allocated and interconnected through pointers */
 template <typename PixelParam>
 class TreeNode
 {
+friend typename GlobeData<PixelParam>::TileHeader
+TreeNodeCreateTileHeader<>(const TreeNode<PixelParam>& node);
+
 public:
-    typedef TreeState<PixelParam> State;
+    typedef GlobeData<PixelParam>   gd;
+    typedef typename gd::File       File;
+    typedef typename gd::TileHeader TileHeader;
 
     TreeNode();
     virtual ~TreeNode();
+
+    /** get the tile header appropriate for this node */
+    TileHeader getTileHeader();
 
 ///\todo generalize this so that requests can be made for arbitrary levels
     /** query a kin of the node. Since the trees are created on demand,
         valid parts of the tree may not be represented in memory during neighbor
         traversal. By default such parts will be loaded from file if possible,
         but the behaviour can be altered through 'loadMissing'. */
-    bool getKin(TreeNode*& kin, int offsets[2], bool loadMissing=true,
-                int down=0, uint* orientation=NULL);
+    bool getKin(TreeNode<PixelParam>*& kin, int offsets[2],
+                bool loadMissing=true, int down=0, uint* orientation=NULL);
 
     /** create in-memory storage for the children nodes with the most basic
         properties (i.e. parent link-up, treeState, treeIndex, scope and
@@ -45,16 +63,16 @@ public:
     void computeResolution();
 
     ///pointer up to the parent node in the tree
-    TreeNode* parent;
+    TreeNode<PixelParam>* parent;
     /** pointer to the first child in the set of four children. Children must be
         allocated as a continuous range in memory */
-    TreeNode* children;
+    TreeNode<PixelParam>* children;
 
 //- Construo node data
-    State* treeState;
+    static GlobeFile<PixelParam>* globeFile;
 
     TreeIndex treeIndex;
-    typename State::File::TileIndex tileIndex;
+    TileIndex tileIndex;
 
     Scope scope;
     SphereCoverage coverage;
@@ -72,6 +90,8 @@ public:
 static bool debugGetKin;
 };
 
+
+
 template <typename PixelParam>
 class ExplicitNeighborNode : public TreeNode<PixelParam>
 {
@@ -79,28 +99,24 @@ public:
     ExplicitNeighborNode();
     void setNeighbors(ExplicitNeighborNode* nodes[4],
                       const uint orientations[4]);
-    
+
     ///pointers to the neighboring nodes
     ExplicitNeighborNode* neighbors[4];
     ///orientations of the neighboring nodes
     uint orientations[4];
 };
 
-template <typename PixelParam, typename PolyhedronParam>
+template <typename PixelParam>
 class Spheroid
 {
 public:
     typedef ExplicitNeighborNode<PixelParam> BaseNode;
     typedef std::vector<BaseNode>            BaseNodes;
-    typedef TreeState<PixelParam>            BaseState;
-    typedef std::vector<BaseState>           BaseStates;
-    typedef typename BaseState::File         TreeFile;
 
     Spheroid(const std::string& baseName, const uint tileResolution[2]);
-    ~Spheroid();
 
-    BaseNodes  baseNodes;
-    BaseStates baseStates;
+    BaseNodes             baseNodes;
+    GlobeFile<PixelParam> globeFile;
 };
 
 END_CRUSTA

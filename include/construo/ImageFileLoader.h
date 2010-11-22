@@ -28,7 +28,9 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 #include <crusta/basics.h>
 
+
 BEGIN_CRUSTA
+
 
 /* Forward declarations: */
 template <typename PixelParam>
@@ -38,14 +40,15 @@ template <typename PixelParam>
 class ImageFileLoader
 {
 public:
-	typedef PixelParam Pixel;
-	
-    //loads an image file of the given type and name
-	static ImageFile<Pixel>* loadImageFile(const char* fileName);
+    ///loads an image file of the given type and name
+    static ImageFile<PixelParam>* loadImageFile(const char* fileName);
 };
+
 
 END_CRUSTA
 
+
 #include <construo/ImageFileLoader.hpp>
+
 
 #endif //_ImageFileLoader_H_

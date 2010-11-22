@@ -36,6 +36,7 @@
 #include <Vrui/Vrui.h>
 
 #include <crusta/Crusta.h>
+#include <crusta/GlobeFile.h>
 #include <crusta/map/MapManager.h>
 #include <crusta/QuadTerrain.h>
 
@@ -57,26 +58,29 @@ BEGIN_CRUSTA
 CrustaApp::
 CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     Vrui::Application(argc, argv, appDefaults),
-    newVerticalScale(1.0), enableSun(false),
+    newVerticalScale(1.0), dataDialog(NULL), dataDemFile(NULL),
+    dataColorFile(NULL), enableSun(false),
     viewerHeadlightStates(new bool[Vrui::getNumViewers()]),
     sun(0), sunAzimuth(180.0), sunElevation(45.0),
     paletteEditor(new PaletteEditor)
 {
     std::string demName;
     std::string colorName;
-    std::string settingsFile;
+    std::string settingsName;
     for (int i=0; i<argc; ++i)
     {
-        if (strcmp(argv[i], "-dem")==0)
-            demName   = std::string(argv[++i]);
-        if (strcmp(argv[i], "-color")==0)
-            colorName = std::string(argv[++i]);
+        std::string name = std::string(argv[i]);
+        if (GlobeFile<DemHeight>::isCompatible(name))
+            demName = name;
+        if (GlobeFile<TextureColor>::isCompatible(name))
+            colorName = name;
+
         if (strcmp(argv[i], "-settings")==0)
-            settingsFile = std::string(argv[++i]);
+            settingsName = std::string(argv[++i]);
     }
 
     crusta = new Crusta;
-    crusta->init(demName, colorName, settingsFile);
+    crusta->init(settingsName);
 
     /* Create the sun lightsource: */
     sun=Vrui::getLightsourceManager()->createLightsource(false);
@@ -102,6 +106,12 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
         paletteEditor->getColorMap());
     changeColorMapCallback(&initMap);
     resetNavigationCallback(NULL);
+
+    //load data passed through command line?
+    crusta->load(demName, colorName);
+
+    dataDemFile->setLabel(demName.c_str());
+    dataColorFile->setLabel(colorName.c_str());
 
 #if CRUSTA_ENABLE_DEBUG
     DebugTool::init();
@@ -271,6 +281,13 @@ produceMainMenu()
     GLMotif::Menu* mainMenu =
     new GLMotif::Menu("MainMenu",popMenu,false);
 
+    /* Data Loading menu entry */
+    produceDataDialog();
+    GLMotif::Button* dataLoadButton = new GLMotif::Button(
+        "DataLoadButton", mainMenu, "Load Data");
+    dataLoadButton->getSelectCallbacks().add(
+        this, &CrustaApp::showDataDialogCallback);
+
     /* Create a submenu to toggle texturing the terrain: */
     produceTexturingSubmenu(mainMenu);
 
@@ -357,6 +374,144 @@ produceMainMenu()
 
     Vrui::setMainMenu(popMenu);
 }
+
+void CrustaApp::
+produceDataDialog()
+{
+    dataDialog = new GLMotif::PopupWindow(
+        "DataDialog", Vrui::getWidgetManager(), "Load Crusta Data");
+    GLMotif::RowColumn* root = new GLMotif::RowColumn(
+        "DataRoot", dataDialog, false);
+
+    GLMotif::RowColumn* demRoot = new GLMotif::RowColumn(
+        "DataDemRoot", root, false);
+    demRoot->setNumMinorWidgets(2);
+    dataDemFile = new GLMotif::Label("DataDemLabel", demRoot, "");
+    GLMotif::Button* demFileButton = new GLMotif::Button(
+        "DataDemFileButton", demRoot, "Elevation");
+    demFileButton->getSelectCallbacks().add(
+        this, &CrustaApp::loadDemCallback);
+    demRoot->manageChild();
+
+    GLMotif::RowColumn* colorRoot = new GLMotif::RowColumn(
+        "DataColorRoot", root, false);
+    colorRoot->setNumMinorWidgets(2);
+    dataColorFile = new GLMotif::Label("DataColorLabel", colorRoot, "");
+    GLMotif::Button* colorFileButton = new GLMotif::Button(
+        "DataColorFileButton", colorRoot, "Color");
+    colorFileButton->getSelectCallbacks().add(
+        this, &CrustaApp::loadColorCallback);
+    colorRoot->manageChild();
+
+    GLMotif::RowColumn* actionRoot = new GLMotif::RowColumn(
+        "DataActionRoot", root, false);
+    actionRoot->setNumMinorWidgets(2);
+    GLMotif::Button* cancelButton = new GLMotif::Button(
+        "DataCancelButton", actionRoot, "Cancel");
+    cancelButton->getSelectCallbacks().add(
+        this, &CrustaApp::loadDataCancelCallback);
+    GLMotif::Button* okButton = new GLMotif::Button(
+        "DataOkButton", actionRoot, "Load");
+    okButton->getSelectCallbacks().add(
+        this, &CrustaApp::loadDataOkCallback);
+    actionRoot->manageChild();
+
+    root->setNumMinorWidgets(1);
+    root->manageChild();
+}
+
+void CrustaApp::
+showDataDialogCallback(GLMotif::Button::SelectCallbackData*)
+{
+    //open the dialog at the same position as the main menu:
+    Vrui::getWidgetManager()->popupPrimaryWidget(dataDialog,
+        Vrui::getWidgetManager()->calcWidgetTransformation(popMenu));
+}
+
+void CrustaApp::
+loadDemCallback(GLMotif::Button::SelectCallbackData* cbData)
+{
+    GLMotif::FileAndFolderSelectionDialog* fileDialog =
+        new GLMotif::FileAndFolderSelectionDialog(Vrui::getWidgetManager(),
+            "Load Crusta Elevation", 0, NULL);
+    fileDialog->getOKCallbacks().add(this,
+        &CrustaApp::loadDemFileOkCallback);
+    fileDialog->getCancelCallbacks().add(this,
+        &CrustaApp::loadDemFileCancelCallback);
+    Vrui::getWidgetManager()->popupPrimaryWidget(fileDialog,
+        Vrui::getWidgetManager()->calcWidgetTransformation(dataDialog));
+}
+
+void CrustaApp::
+loadDemFileOkCallback(
+    GLMotif::FileAndFolderSelectionDialog::OKCallbackData* cbData)
+{
+    //save the selected file in the corresponding label
+    dataDemFile->setLabel(cbData->selectedFileName.c_str());
+    //destroy the file selection dialog
+    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
+}
+
+void CrustaApp::
+loadDemFileCancelCallback(
+    GLMotif::FileAndFolderSelectionDialog::CancelCallbackData* cbData)
+{
+    //destroy the file selection dialog
+    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
+}
+
+void CrustaApp::
+loadColorCallback(GLMotif::Button::SelectCallbackData*)
+{
+    GLMotif::FileAndFolderSelectionDialog* fileDialog =
+        new GLMotif::FileAndFolderSelectionDialog(Vrui::getWidgetManager(),
+            "Load Crusta Color", 0, NULL);
+    fileDialog->getOKCallbacks().add(this,
+        &CrustaApp::loadColorFileOkCallback);
+    fileDialog->getCancelCallbacks().add(this,
+        &CrustaApp::loadColorFileCancelCallback);
+    Vrui::getWidgetManager()->popupPrimaryWidget(fileDialog,
+        Vrui::getWidgetManager()->calcWidgetTransformation(dataDialog));
+}
+
+void CrustaApp::
+loadColorFileOkCallback(
+    GLMotif::FileAndFolderSelectionDialog::OKCallbackData* cbData)
+{
+    //save the selected file in the corresponding label
+    dataColorFile->setLabel(cbData->selectedFileName.c_str());
+    //destroy the file selection dialog
+    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
+}
+
+void CrustaApp::
+loadColorFileCancelCallback(
+    GLMotif::FileAndFolderSelectionDialog::CancelCallbackData* cbData)
+{
+    //destroy the file selection dialog
+    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
+}
+
+void CrustaApp::
+loadDataOkCallback(GLMotif::Button::SelectCallbackData*)
+{
+    //load the current data selection
+    std::string demFile(dataDemFile->getLabel());
+    std::string colorFile(dataColorFile->getLabel());
+
+    crusta->load(demFile, colorFile);
+
+    //close the dialog
+    Vrui::popdownPrimaryWidget(dataDialog);
+}
+
+void CrustaApp::
+loadDataCancelCallback(GLMotif::Button::SelectCallbackData* cbData)
+{
+    //close the dialog
+    Vrui::popdownPrimaryWidget(dataDialog);
+}
+
 
 void CrustaApp::
 produceTexturingSubmenu(GLMotif::Menu* mainMenu)
@@ -478,7 +633,6 @@ alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
         origin = Point3(0.0, 1.0, 0.0);
 
     origin = crusta->snapToSurface(origin);
-    origin = crusta->mapToScaledGlobe(origin);
 
     //misuse the Geoid just to build a surface tangent frame
     Geometry::Geoid<double> geoid(SETTINGS->globeRadius, 0.0);

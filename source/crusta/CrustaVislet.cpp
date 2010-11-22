@@ -78,7 +78,10 @@ CrustaVislet(int numArguments, const char* const arguments[])
     }
 
     crusta = new Crusta();
-    crusta->init(demName, colorName, settingsFile);
+    crusta->init(settingsFile);
+    //load data passed through command line?
+    if (!demName.empty() || !colorName.empty())
+        crusta->load(demName, colorName);
 }
 
 CrustaVislet::

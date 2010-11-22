@@ -20,9 +20,7 @@
 #include <crusta/Sphere.h>
 #include <crusta/SurfaceTool.h>
 #include <crusta/Tool.h>
-#include <crusta/Triacontahedron.h>
 #include <crusta/Triangle.h>
-
 
 #include <crusta/StatsManager.h>
 
@@ -140,8 +138,7 @@ CrustaGlData::
 
 ///\todo split crusta and planet
 void Crusta::
-init(const std::string& demFileBase, const std::string& colorFileBase,
-     const std::string& settingsFile)
+init(const std::string& settingsFile)
 {
 ///\todo split crusta and planet
 ///\todo extend the interface to pass an optional configuration file
@@ -164,11 +161,9 @@ init(const std::string& demFileBase, const std::string& colorFileBase,
     newVerticalScale     = 1.0;
     changedVerticalScale = 0.99999999999999;
 
-    Triacontahedron polyhedron(SETTINGS->globeRadius);
-
 ///\todo separate crusta the application from a planet instance (current)
     CACHE       = new Cache;
-    DATAMANAGER = new DataManager(polyhedron, demFileBase, colorFileBase);
+    DATAMANAGER = new DataManager;
 ///\todo VruiGlew dependent dynamic allocation
     QuadTerrain::initGlData();
 
@@ -176,19 +171,47 @@ init(const std::string& demFileBase, const std::string& colorFileBase,
 
     ElevationRangeTool::init(crustaTool);
 
+    globalElevationRange[0] = 0;
+    globalElevationRange[1] = 0;
+
+    colorMapDirty = false;
+    static const int numColorMapEntries = 1024;
+    GLColorMap::Color dummyColorMap[numColorMapEntries];
+    colorMap = new GLColorMap(numColorMapEntries, dummyColorMap,
+                              GLdouble(globalElevationRange[0]),
+                              GLdouble(globalElevationRange[1]));
+}
+
+void Crusta::
+load(const std::string& demFileBase, const std::string& colorFileBase)
+{
+    //clear the currently loaded data
+    unload();
+
+    DATAMANAGER->load(demFileBase, colorFileBase);
+
     globalElevationRange[0] =  Math::Constants<Scalar>::max;
     globalElevationRange[1] = -Math::Constants<Scalar>::max;
 
-    uint numPatches = polyhedron.getNumPatches();
+    const Polyhedron* const polyhedron = DATAMANAGER->getPolyhedron();
+
+    uint numPatches = polyhedron->getNumPatches();
     renderPatches.resize(numPatches);
     for (uint i=0; i<numPatches; ++i)
     {
-        renderPatches[i] = new QuadTerrain(i, polyhedron.getScope(i), this);
-        const NodeMainData& root = renderPatches[i]->getRootNode();
-        globalElevationRange[0] = std::min(
-            globalElevationRange[0], Scalar(root.node->elevationRange[0]));
-        globalElevationRange[1] = std::max(
-            globalElevationRange[1], Scalar(root.node->elevationRange[1]));
+        renderPatches[i] = new QuadTerrain(i, polyhedron->getScope(i), this);
+        const NodeData& root = *renderPatches[i]->getRootNode().node;
+        globalElevationRange[0] = std::min(globalElevationRange[0],
+                                           Scalar(root.elevationRange[0]));
+        globalElevationRange[1] = std::max(globalElevationRange[1],
+                                           Scalar(root.elevationRange[1]));
+    }
+
+    if (globalElevationRange[0]== Math::Constants<Scalar>::max ||
+        globalElevationRange[1]==-Math::Constants<Scalar>::max)
+    {
+        globalElevationRange[0] = SETTINGS->terrainDefaultHeight;
+        globalElevationRange[1] = SETTINGS->terrainDefaultHeight;
     }
 
     colorMapDirty = true;
@@ -205,6 +228,25 @@ debugTool = NULL;
 CRUSTA_FRAMERATE_RECORDER = new FrameRateRecorder(1.0/20.0);
 #endif //CRUSTA_ENABLE_RECORD_FRAMERATE
 }
+
+void Crusta::
+unload()
+{
+    //destroy all the current render patches
+    for (RenderPatches::iterator it=renderPatches.begin();
+         it!=renderPatches.end(); ++it)
+    {
+        delete *it;
+    }
+    renderPatches.clear();
+
+    //destroy all the current maps
+    mapMan->deleteAllShapes();
+
+    //unload the data
+    DATAMANAGER->unload();
+}
+
 
 void Crusta::
 shutdown()
@@ -230,6 +272,9 @@ delete CRUSTA_FRAMERATE_RECORDER;
 Point3 Crusta::
 snapToSurface(const Point3& pos, Scalar elevationOffset)
 {
+    if (renderPatches.empty())
+        return pos;
+
     typedef NodeMainBuffer MainBuffer;
     typedef NodeMainData   MainData;
 
@@ -332,11 +377,14 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     int linearOffset = offset[1]*tileRes + offset[0];
     Vertex*    cellV = nodeData.geometry + linearOffset;
     DemHeight* cellH = nodeData.height   + linearOffset;
+
     const Vertex::Position* positions[4] = {
         &(cellV->position), &((cellV+1)->position),
         &((cellV+tileRes)->position), &((cellV+tileRes+1)->position) };
-    const DemHeight* heights[4] = {
-        cellH, cellH+1, cellH+tileRes, cellH+tileRes+1
+
+    DemHeight heights[4] = {
+        node->getHeight(*cellH),           node->getHeight(*(cellH+1)),
+        node->getHeight(*(cellH+tileRes)), node->getHeight(*(cellH+tileRes+1))
     };
     //construct the corners of the current cell
     Vector3 cellCorners[4];
@@ -346,7 +394,7 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
             cellCorners[i][j] = (*(positions[i]))[j] + node->centroid[j];
         Vector3 extrude(cellCorners[i]);
         extrude.normalize();
-        extrude *= *(heights[i]);
+        extrude *= (heights[i] + elevationOffset) * getVerticalScale();
         cellCorners[i] += extrude;
     }
 
@@ -354,16 +402,21 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     Triangle t0(cellCorners[0], cellCorners[3], cellCorners[2]);
     Triangle t1(cellCorners[0], cellCorners[1], cellCorners[3]);
 
-    Ray ray(pos, -Vector3(pos));
+    Ray ray(pos, (-Vector3(pos)).normalize());
     HitResult hit = t0.intersectRay(ray);
     if (!hit.isValid())
     {
         hit = t1.intersectRay(ray);
         if (!hit.isValid())
         {
+///\todo this should not be possible!!!
+CRUSTA_DEBUG(70, CRUSTA_DEBUG_OUT <<
+"SnapToSurface failed triangle intersection test!\n";)
             Scalar height = nodeData.height[offset[1]*TILE_RESOLUTION +
                                             offset[0]];
-            height       += SETTINGS->globeRadius + elevationOffset;
+            height        = node->getHeight(height) + elevationOffset;
+            height       *= getVerticalScale();
+            height       += SETTINGS->globeRadius ;
 
             Vector3 toPos = Vector3(pos);
             toPos.normalize();
@@ -388,6 +441,9 @@ CrustaVisualizer::peek();
 //CrustaVisualizer::show("Ray");
 } //DEBUG_INTERSECT
 #endif //DEBUG_INTERSECT_CRAP
+
+    if (renderPatches.empty())
+        return HitResult();
 
     const Scalar& verticalScale = getVerticalScale();
 
@@ -456,7 +512,6 @@ CrustaVisualizer::peek();
     int    sideIn        = -1;
     int    sideOut       = -1;
     int    mapSide[4][4] = {{2,3,0,1}, {1,2,3,0}, {0,1,2,3}, {3,0,1,2}};
-    Triacontahedron polyhedron(SETTINGS->globeRadius);
 #if DEBUG_INTERSECT_CRAP
 int patchesVisited = 0;
 #endif //DEBUG_INTERSECT_CRAP
@@ -475,9 +530,10 @@ int patchesVisited = 0;
 const QuadTerrain* oldPatch = patch;
 #endif //DEBUG_INTERSECT_CRAP
 
+        const Polyhedron* const polyhedron = DATAMANAGER->getPolyhedron();
         Polyhedron::Connectivity neighbors[4];
-        polyhedron.getConnectivity(patch->getRootNode().node->index.patch,
-                                   neighbors);
+        polyhedron->getConnectivity(patch->getRootNode().node->index.patch,
+                                    neighbors);
         patch  = renderPatches[neighbors[sideOut][0]];
         sideIn = mapSide[neighbors[sideOut][1]][sideOut];
 
@@ -528,7 +584,6 @@ intersect(Shape::ControlPointHandle start,
     int    sideIn        = -1;
     int    sideOut       = -1;
     int    mapSide[4][4] = {{2,3,0,1}, {1,2,3,0}, {0,1,2,3}, {3,0,1,2}};
-    Triacontahedron polyhedron(SETTINGS->globeRadius);
     while (true)
     {
         patch->intersect(callback, ray, tin, sideIn, tout, sideOut);
@@ -538,9 +593,10 @@ intersect(Shape::ControlPointHandle start,
         //move to the patch on the exit side
         tin = tout;
 
+        const Polyhedron* const polyhedron = DATAMANAGER->getPolyhedron();
         Polyhedron::Connectivity neighbors[4];
-        polyhedron.getConnectivity(patch->getRootNode().node->index.patch,
-                                   neighbors);
+        polyhedron->getConnectivity(patch->getRootNode().node->index.patch,
+                                    neighbors);
         patch  = renderPatches[neighbors[sideOut][0]];
         sideIn = mapSide[neighbors[sideOut][1]][sideOut];
     }
@@ -661,8 +717,9 @@ if (debugTool!=NULL)
 }
 #endif //CRUSTA_ENABLE_DEBUG
 
-CRUSTA_DEBUG_OUT(8, "\n\n\n--------------------------------------\n%f\n\n\n",
-CURRENT_FRAME);
+CRUSTA_DEBUG(8, CRUSTA_DEBUG_OUT <<
+"\n\n\n--------------------------------------\n" << CURRENT_FRAME <<
+"\n\n\n";)
 
     //apply the vertical scale changes
     if (verticalScale != changedVerticalScale)
@@ -720,8 +777,8 @@ display(GLContextData& contextData)
 
 statsMan.extractTileStats(surface);
 
-CRUSTA_DEBUG_OUT(50, "Number of nodes to render: %i\n",
-                 static_cast<int>(surface.visibles.size()));
+CRUSTA_DEBUG(50, CRUSTA_DEBUG_OUT <<
+"Number of nodes to render: " << surface.visibles.size() << "\n";)
 
     GLint activeTexture;
     glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
@@ -777,6 +834,11 @@ if (SETTINGS->decorateVectorArt)
     }
     glData->terrainShader.setVerticalScale(getVerticalScale());
     glData->terrainShader.setTextureStep(TILE_TEXTURE_COORD_STEP);
+    glData->terrainShader.setDemNodata(DATAMANAGER->getDemNodata());
+    const TextureColor& cnd = DATAMANAGER->getColorNodata();
+    glData->terrainShader.setColorNodata(cnd[0], cnd[1], cnd[2]);
+    glData->terrainShader.setDemDefault(SETTINGS->terrainDefaultHeight);
+    glData->terrainShader.setColorDefault(SETTINGS->terrainDefaultColor);
 
 ///\todo this needs to be tweakable
     if (SETTINGS->decorateVectorArt)

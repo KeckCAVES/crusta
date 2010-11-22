@@ -1,7 +1,7 @@
 #include <cassert>
 #include <sstream>
+#include <sys/stat.h>
 
-#include <crusta/QuadtreeFileHeaders.h>
 #include <construo/construoGlobals.h>
 #include <construo/Converters.h>
 
@@ -9,13 +9,79 @@
 #include <construo/ConstruoVisualizer.h>
 #include <iostream>
 
+
 BEGIN_CRUSTA
+
+
+template <typename PixelParam> inline
+typename GlobeData<PixelParam>::TileHeader
+TreeNodeCreateTileHeader(const TreeNode<PixelParam>& node)
+{
+    return typename GlobeData<PixelParam>::TileHeader();
+}
+
+template <> inline
+GlobeData<DemHeight>::TileHeader
+TreeNodeCreateTileHeader(const TreeNode<DemHeight>& node)
+{
+    typedef GlobeData<DemHeight>   gd;
+    typedef gd::TileHeader TileHeader;
+
+    TileHeader header;
+
+    header.range[0] =  Math::Constants<DemHeight>::max;
+    header.range[1] = -Math::Constants<DemHeight>::max;
+
+    DemHeight* tile = node.data;
+    assert(tile != NULL);
+
+    //calculate the tile's pixel value range
+///\todo OpenMP this
+    assert(node.globeFile != NULL);
+    const DemHeight& nodata = node.globeFile->getNodata();
+    gd::File* file = node.globeFile->getPatch(node.treeIndex.patch);
+    const int* tileSize = node.globeFile->getTileSize();
+    for(int i=0; i<tileSize[0]*tileSize[1]; ++i)
+    {
+        if (tile[i] != nodata)
+        {
+            header.range[0] = std::min(header.range[0], tile[i]);
+            header.range[1] = std::max(header.range[1], tile[i]);
+        }
+    }
+
+    /* update to the tree propagate up, but we need to consider the
+       descendance explicitly */
+    if (node.children != NULL)
+    {
+        for (int i=0; i<4; ++i)
+        {
+            TreeNode<DemHeight>& child = node.children[i];
+            assert(child.tileIndex != INVALID_TILEINDEX);
+            //get the child header
+            TileHeader childHeader;
+#if DEBUG
+            bool res = file->readTile(child.tileIndex, childHeader);
+            assert(res==true);
+#else
+            file->readTile(child.tileIndex, childHeader);
+#endif //DEBUG
+
+            header.range[0] = std::min(header.range[0],
+                                       childHeader.range[0]);
+            header.range[1] = std::max(header.range[1],
+                                       childHeader.range[1]);
+        }
+    }
+
+    return header;
+}
 
 template <typename PixelParam>
 TreeNode<PixelParam>::
 TreeNode() :
-    parent(NULL), children(NULL), treeState(NULL),
-    tileIndex(State::File::INVALID_TILEINDEX),
+    parent(NULL), children(NULL),
+    tileIndex(INVALID_TILEINDEX),
     data(NULL), mustBeUpdated(false), isExplicitNeighborNode(false)
 {}
 
@@ -26,6 +92,14 @@ TreeNode<PixelParam>::
     delete[] children;
     delete[] data;
 }
+
+template <typename PixelParam>
+typename TreeNode<PixelParam>::TileHeader TreeNode<PixelParam>::
+getTileHeader()
+{
+    return TreeNodeCreateTileHeader(*this);
+}
+
 
 inline void
 mult(int p[2], int m)
@@ -57,7 +131,8 @@ rotate(int p[2], uint o, const int rotations[4][2][2])
 
 template <typename PixelParam>
 bool TreeNode<PixelParam>::
-getKin(TreeNode*& kin, int offsets[2], bool loadMissing, int down, uint* kinO)
+getKin(TreeNode<PixelParam>*& kin, int offsets[2], bool loadMissing,
+       int down, uint* kinO)
 {
     kin              = this;
     int nodeSize     = pow(2, down);
@@ -224,12 +299,11 @@ createChildren()
     scope.split(childScopes);
 
     //allocate and initialize the children
-    children = new TreeNode[4];
+    children = new TreeNode<PixelParam>[4];
     for (uint i=0; i<4; ++i)
     {
-        TreeNode& child = children[i];
+        TreeNode<PixelParam>& child = children[i];
         child.parent    = this;
-        child.treeState = treeState;
         child.treeIndex = treeIndex.down(i);
         child.scope     = childScopes[i];
 ///\todo parametrize the TreeNode by the coverage type?
@@ -245,11 +319,12 @@ loadMissingChildren()
 {
     /* read the children's tile indices from the file. Only allocate the
        children if valid counterparts exist in the file */
-    assert(treeState!=NULL && treeState->file!=NULL && "uninitialized state");
-    typename State::File::TileIndex childIndices[4];
-    if (!treeState->file->readTile(tileIndex, childIndices))
+    assert(globeFile!=NULL && "uninitialized globe file");
+    File* file = globeFile->getPatch(treeIndex.patch);
+    TileIndex childIndices[4];
+    if (!file->readTile(tileIndex, childIndices))
         return;
-    if (childIndices[0] == State::File::INVALID_TILEINDEX)
+    if (childIndices[0] == INVALID_TILEINDEX)
         return;
 
     //create the new in-memory representations
@@ -284,7 +359,7 @@ computeResolution()
     Scope::Scalar radius = scope.getRadius();
     Scope::Vertex one = scope.corners[0];
     Scope::Vertex two = mid(one, scope.corners[1], radius);
-    for (uint i=2; i+1<TILE_RESOLUTION; i<<=1)
+    for (int i=2; i+1<TILE_RESOLUTION; i<<=1)
         one = mid(one, two, radius);
 
     //convert points to spherical coords
@@ -292,6 +367,7 @@ computeResolution()
     Point b    = Converter::cartesianToSpherical(two);
     resolution = Converter::haversineDist(a, b, radius);
 }
+
 
 template <typename PixelParam>
 ExplicitNeighborNode<PixelParam>::
@@ -316,117 +392,49 @@ setNeighbors(ExplicitNeighborNode* nodes[4], const uint orients[4])
     }
 }
 
-template <typename PixelParam, typename PolyhedronParam>
-Spheroid<PixelParam, PolyhedronParam>::
+template <typename PixelParam>
+Spheroid<PixelParam>::
 Spheroid(const std::string& baseName, const uint tileResolution[2])
 {
-    PolyhedronParam polyhedron(CONSTRUO_SETTINGS.globeRadius);
-    uint numPatches = polyhedron.getNumPatches();
+    //open the globe file
+    globeFile.open(baseName);
 
+    //create the base nodes
+    int numPatches = globeFile.getNumPatches();
+    BaseNode::globeFile = &globeFile;
     baseNodes.resize(numPatches);
-    baseStates.resize(numPatches);
-
-    //create the base nodes and open the corresponding quadtree file
-    for (uint i=0; i<numPatches; ++i)
+    for (int i=0; i<numPatches; ++i)
     {
-        //create the base node
-        BaseNode* node  = &baseNodes[i];
-        node->treeState = &baseStates[i];
-        //the root must have index 0
-        node->treeIndex = TreeIndex(i);
-        node->tileIndex = 0;
-
-        //open/create the quadtreefile
-        std::ostringstream oss;
-        oss << baseName << "_" << i << ".qtf";
-        TreeFile*& file = baseStates[i].file;
-        file = new TreeFile(oss.str().c_str(), tileResolution);
-
-        //make sure the quadtree file has at least a root
-        if (file->getNumTiles() == 0)
-        {
-            //the new root must have index 0
-            node->tileIndex = file->appendTile(true);
-            assert(node->tileIndex==0 && file->getNumTiles()==1);
-        }
+        //setup the root indices
+        BaseNode& node = baseNodes[i];
+        node.treeIndex = TreeIndex(i);
+        node.tileIndex = 0;
     }
 
     //initialize the geometry of the base nodes and link them
+    Polyhedron* polyhedron = PolyhedronLoader::load(
+        globeFile.getPolyhedronType(), CONSTRUO_SETTINGS.globeRadius);
     uint orientations[4];
     BaseNode* neighbors[4];
-    typename PolyhedronParam::Connectivity connectivity[4];
-    for (uint i=0; i<numPatches; ++i)
+    typename Polyhedron::Connectivity connectivity[4];
+    for (int i=0; i<numPatches; ++i)
     {
-        BaseNode* node = &baseNodes[i];
-        node->scope    = polyhedron.getScope(i);
+        BaseNode& node = baseNodes[i];
+        node.scope     = polyhedron->getScope(i);
 ///\todo parametrize the Spheroid by the sphere coverage. use Static for now.
-        node->coverage = StaticSphereCoverage(2, node->scope);
-        node->computeResolution();
+        node.coverage = StaticSphereCoverage(2, node.scope);
+        node.computeResolution();
 
-        polyhedron.getConnectivity(i, connectivity);
+        polyhedron->getConnectivity(i, connectivity);
         for (uint n=0; n<4; ++n)
         {
             neighbors[n]    = &baseNodes[connectivity[n][0]];
             orientations[n] = connectivity[n][1];
         }
-        node->setNeighbors(neighbors, orientations);
+        node.setNeighbors(neighbors, orientations);
     }
-
-///\todo remove
-#if 0
-int numVerts = numPatches*16*2*3;
-float* verts = new float[numVerts];
-float* curVert = verts;
-#if 1
-    for (uint i=0; i<numPatches; ++i)
-    {
-        const SphereCoverage::Points& scv = baseNodes[i].coverage.getVertices();
-        uint num = (uint)scv.size();
-        for (uint j=0; j<num; ++j)
-        {
-            for (uint k=0; k<2; ++k)
-            {
-                *curVert = scv[(j+k)%num][0]; ++curVert;
-                *curVert =               0.0; ++curVert;
-                *curVert = scv[(j+k)%num][1]; ++curVert;
-            }
-        }
-        ConstruoVisualizer::show(GL_POINTS, (i+1)*16*2*3, verts);
-    }
-#else
-for (uint i=0; i<numPatches; ++i)
-{
-    for (uint k=0; k<3; ++k, ++curVert)
-        *curVert = baseNodes[i].scope.corners[0][k];
-    for (uint k=0; k<3; ++k, ++curVert)
-        *curVert = baseNodes[i].scope.corners[1][k];
-    for (uint k=0; k<3; ++k, ++curVert)
-        *curVert = baseNodes[i].scope.corners[1][k];
-    for (uint k=0; k<3; ++k, ++curVert)
-        *curVert = baseNodes[i].scope.corners[3][k];
-    for (uint k=0; k<3; ++k, ++curVert)
-        *curVert = baseNodes[i].scope.corners[3][k];
-    for (uint k=0; k<3; ++k, ++curVert)
-        *curVert = baseNodes[i].scope.corners[2][k];
-    for (uint k=0; k<3; ++k, ++curVert)
-        *curVert = baseNodes[i].scope.corners[2][k];
-    for (uint k=0; k<3; ++k, ++curVert)
-        *curVert = baseNodes[i].scope.corners[0][k];
-}
-#endif
-ConstruoVisualizer::show(GL_LINES, numVerts, verts);
-#endif
+    delete polyhedron;
 }
 
-template <typename PixelParam, typename PolyhedronParam>
-Spheroid<PixelParam, PolyhedronParam>::
-~Spheroid()
-{
-    for (typename BaseStates::iterator it=baseStates.begin();
-         it!=baseStates.end(); ++it)
-    {
-        delete it->file;
-    }
-}
 
 END_CRUSTA

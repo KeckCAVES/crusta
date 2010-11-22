@@ -2,11 +2,16 @@
 
 //#include "omp.h"
 
-#include <construo/DynamicFilter.h>
 #include <construo/ImageFileLoader.h>
 #include <construo/ImagePatch.h>
+#include <construo/SubsampleFilter.h>
+#include <crusta/GlobeData.h>
+#include <crusta/PixelOps.h>
 
-#include <construo/PixelHelpers.h>
+
+#define DYNAMIC_FILTER_TYPE SUBSAMPLEFILTER_PYRAMID
+#define STATIC_FILTER_TYPE  SUBSAMPLEFILTER_PYRAMID
+
 
 ///\todo remove
 #define USE_NEAREST_FILTERING 0
@@ -21,8 +26,8 @@ static float flagAncestorsForUpdateColor[3];
 
 BEGIN_CRUSTA
 
-template <typename PixelParam, typename PolyhedronParam>
-Builder<PixelParam, PolyhedronParam>::
+template <typename PixelParam>
+Builder<PixelParam>::
 Builder(const std::string& spheroidName, const uint size[2])
 {
 ///\todo Frak this is retarded. Reason so far is the getRefinement from scope
@@ -32,11 +37,6 @@ assert(size[0]==size[1]);
     tileSize[1] = size[1];
 
     globe = new Globe(spheroidName, tileSize);
-
-///\todo for now hardcode the subsampling filter
-//    Filter::makePointFilter(subsamplingFilter);
-    Filter::makeTriangleFilter(subsamplingFilter);
-//    Filter::makeFiveLobeLanczosFilter(subsamplingFilter);
 
     scopeBuf          = new Scope::Scalar[tileSize[0]*tileSize[1]*3];
     sampleBuf         = new Point[tileSize[0]*tileSize[1]];
@@ -48,16 +48,11 @@ assert(size[0]==size[1]);
     domainBuf     = new PixelParam[domainSize[0]*domainSize[1]];
 }
 
-template <typename PixelParam, typename PolyhedronParam>
-Builder<PixelParam, PolyhedronParam>::
+template <typename PixelParam>
+Builder<PixelParam>::
 ~Builder()
 {
     delete globe;
-    for (typename PatchPtrs::iterator it=patches.begin(); it!=patches.end();
-         ++it)
-    {
-        delete *it;
-    }
     delete[] scopeBuf;
     delete[] sampleBuf;
     delete[] nodeDataBuf;
@@ -65,13 +60,20 @@ Builder<PixelParam, PolyhedronParam>::
     delete[] domainBuf;
 }
 
-template <typename PixelParam, typename PolyhedronParam>
-void Builder<PixelParam, PolyhedronParam>::
+
+template <typename PixelParam>
+void Builder<PixelParam>::
 subsampleChildren(Node* node)
 {
+    typedef GlobeData<PixelParam> gd;
+    typedef PixelOps<PixelParam>  po;
+
     assert(node->children != NULL);
     //read in the node's existing data from file
-    node->treeState->file->readTile(node->tileIndex, nodeDataSampleBuf);
+    typename gd::File* file = node->globeFile->getPatch(node->treeIndex.patch);
+    file->readTile(node->tileIndex, nodeDataSampleBuf);
+
+    const PixelParam& nodata = node->globeFile->getNodata();
 
     const int offsets[4] = {
         0, (tileSize[0]-1)>>1, ((tileSize[1]-1)>>1)*tileSize[0],
@@ -88,30 +90,39 @@ subsampleChildren(Node* node)
             {
                 wbase[0] = rbase[0];
                 if (x<halfSize[0]-1)
-                    wbase[1] = pixelAvg(rbase[0], rbase[1]);
+                {
+                    wbase[1] = po::average(rbase[0], rbase[1], nodata);
+                }
                 if (y<halfSize[1]-1)
-                    wbase[tileSize[0]] = pixelAvg(rbase[0], rbase[tileSize[0]]);
+                {
+                    wbase[tileSize[0]] = po::average(
+                        rbase[0], rbase[tileSize[0]], nodata);
+                }
                 if (x<halfSize[0]-1 && y<halfSize[1]-1)
                 {
-                    wbase[tileSize[0]+1] = pixelAvg(rbase[0], rbase[1],
-                        rbase[tileSize[0]], rbase[tileSize[0]+1]);
+                    wbase[tileSize[0]+1] = po::average(rbase[0], rbase[1],
+                        rbase[tileSize[0]], rbase[tileSize[0]+1], nodata);
                 }
             }
         }
         //write the subsampled data to the child
         Node& child = node->children[i];
         child.data = nodeDataBuf;
-        QuadtreeTileHeader<PixelParam> header;
-        header.reset(&child);
-        child.treeState->file->writeTile(child.tileIndex, header, child.data);
+        typename gd::TileHeader header = child.getTileHeader();
+        typename gd::File* childFile =
+            child.globeFile->getPatch(child.treeIndex.patch);
+        childFile->writeTile(child.tileIndex, header, child.data);
         child.data = NULL;
     }
 }
 
-template <typename PixelParam, typename PolyhedronParam>
-void Builder<PixelParam, PolyhedronParam>::
+template <typename PixelParam>
+void Builder<PixelParam>::
 refine(Node* node)
 {
+    typedef GlobeData<PixelParam> gd;
+    typename gd::File* file = node->globeFile->getPatch(node->treeIndex.patch);
+
     //try to load the missing children from the quadtree file
     if (node->children == NULL)
         node->loadMissingChildren();
@@ -120,25 +131,25 @@ refine(Node* node)
     if (node->children == NULL)
     {
         node->createChildren();
-        typename Node::State::File::TileIndex childIndices[4];
+        TileIndex childIndices[4];
         for (uint i=0; i<4; ++i)
         {
             Node* child      = &node->children[i];
-            child->tileIndex = child->treeState->file->appendTile();
-            assert(child->tileIndex!=Node::State::File::INVALID_TILEINDEX);
+            child->tileIndex = file->appendTile(node->globeFile->getBlank());
+            assert(child->tileIndex!=INVALID_TILEINDEX);
 ///\todo should I dump default-value-initialized to file here?
             childIndices[i]  = child->tileIndex;
         }
         subsampleChildren(node);
         //link the parent with the new children in the file
-        node->treeState->file->writeTile(node->tileIndex, childIndices);
+        file->writeTile(node->tileIndex, childIndices);
 ///\todo this is debugging code to check tree consistency
 //verifyQuadtreeFile(node);
     }
 }
 
-template <typename PixelParam, typename PolyhedronParam>
-void Builder<PixelParam, PolyhedronParam>::
+template <typename PixelParam>
+void Builder<PixelParam>::
 flagAncestorsForUpdate(Node* node)
 {
     while (node!=NULL && !node->mustBeUpdated)
@@ -190,13 +201,15 @@ struct ImgBox
 };
 typedef std::vector<ImgBox> ImgBoxes;
 
-template <typename PixelParam, typename PolyhedronParam>
-void Builder<PixelParam, PolyhedronParam>::
+template <typename PixelParam>
+void Builder<PixelParam>::
 sourceFinest(Node* node, Patch* imgPatch, uint overlap)
 {
+    typedef GlobeData<PixelParam> gd;
+
     ImgBoxes imgBoxes;
-    const int* imgSize                     = imgPatch->image->getSize();
-    const Nodata<PixelParam>& nodata       = imgPatch->image->getNodata();
+    const int*        imgSize   = imgPatch->image->getSize();
+    const PixelParam& imgNodata = imgPatch->image->getNodata();
     const Point::Scalar allowedBoxSize[2]  = { imgSize[0]>>1, imgSize[1]>>1 };
 
     //transform all the sample points into the image space
@@ -237,9 +250,11 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
 
     //prepare the node's data buffer
     node->data = nodeDataBuf;
-    node->treeState->file->readTile(node->tileIndex, node->data);
+    typename gd::File* file = node->globeFile->getPatch(node->treeIndex.patch);
+    file->readTile(node->tileIndex, node->data);
 
     //go through all the image boxes and sample them
+    const PixelParam& globeNodata = node->globeFile->getNodata();
 //    #pragma omp parallel for
     for (int box=0; box<static_cast<int>(imgBoxes.size()); ++box)
     {
@@ -259,18 +274,15 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
 
         //sample the points
 //        #pragma omp parallel for
+        typedef SubsampleFilter<PixelParam, DYNAMIC_FILTER_TYPE> Filter;
         for (int i=0; i<static_cast<int>(ib.indices.size()); ++i)
         {
             const int& idx = ib.indices[i];
-            filter::Scalar at[2] = { sampleBuf[idx][0], sampleBuf[idx][1] };
+            double at[2] = { sampleBuf[idx][0], sampleBuf[idx][1] };
             PixelParam& defaultValue = node->data[idx];
-#if USE_NEAREST_FILTERING
-            node->data[idx] = filter::nearestLookup(
-                rectBuffer, rectOrigin, at, rectSize, nodata, defaultValue);
-#else
-            node->data[idx] = filter::linearLookup(
-                rectBuffer, rectOrigin, at, rectSize, nodata, defaultValue);
-#endif
+            node->data[idx] = Filter::sample(rectBuffer, rectOrigin, at,
+                rectSize, imgNodata, defaultValue, globeNodata);
+
 #if DEBUG_SOURCEFINEST
 ConstruoVisualizer::Floats scopeSample;
 scopeSample.resize(3);
@@ -290,14 +302,10 @@ ConstruoVisualizer::show();
     }
 
     //prepare the header
-    QuadtreeTileHeader<PixelParam> header;
-    header.reset(node);
-
-    //we store elevations as deviations from the average
-//    pixel::relativeToAverageElevation(node, header);
+    typename gd::TileHeader header = node->getTileHeader();
 
     //commit the data to file
-    node->treeState->file->writeTile(node->tileIndex, header, node->data);
+    file->writeTile(node->tileIndex, header, node->data);
 
 #if 0
 {
@@ -344,8 +352,8 @@ to adjust getKin and its API to allow this */
 //verifyQuadtreeFile(node);
 }
 
-template <typename PixelParam, typename PolyhedronParam>
-int Builder<PixelParam, PolyhedronParam>::
+template <typename PixelParam>
+int Builder<PixelParam>::
 updateFiner(Node* node, Patch* imgPatch, Point::Scalar imgResolution)
 {
 ///\todo remove
@@ -379,31 +387,25 @@ ConstruoVisualizer::peek();
     return node->treeIndex.level;
 }
 
-template <typename PixelParam, typename PolyhedronParam>
-int Builder<PixelParam, PolyhedronParam>::
-updateFinestLevels()
+template <typename PixelParam>
+int Builder<PixelParam>::
+updateFinestLevels(const ImagePatchSource& patchSource)
 {
-#if 0
-ConstruoVisualizer::clear();
-for (int i=0; i<(int)patches.size(); ++i)
-    ConstruoVisualizer::addSphereCoverage(*(patches[i]->sphereCoverage));
-ConstruoVisualizer::show();
-#endif
-
     int depth = 0;
-    //iterate over all the image patches to source
-    int numPatches = static_cast<int>(patches.size());
-    for (int i=0; i<numPatches; ++i)
-    {
+
+    //create a new image patch
+    Patch patch(patchSource.path,   patchSource.pixelScale,
+                patchSource.nodata, patchSource.pointSampled);
+
 ///\todo remove
 #if DEBUG_SOURCE_FINEST
 ConstruoVisualizer::clear();
-ConstruoVisualizer::addPrimitive(GL_LINES, *(patches[i]->sphereCoverage));
+ConstruoVisualizer::addPrimitive(GL_LINES, patch.sphereCoverage));
 ConstruoVisualizer::peek();
 #endif
 
 #if DEBUG_SOURCEFINEST_SHOW_TEXELS
-const int* size = patches[i]->image->getSize();
+const int* size = patch.image->getSize();
 ConstruoVisualizer::Floats edges;
 edges.resize(size[0]*size[1]*4*2*3);
 float* e = &edges[0];
@@ -416,11 +418,11 @@ for (int y=0; y<size[1]; ++y)
 {
     for (int x=0; x<size[0]; ++x, c+=3)
     {
-        corners[0] = patches[i]->transform->imageToWorld(Point(x-0.5, y-0.5));
-        corners[1] = patches[i]->transform->imageToWorld(Point(x+0.5, y-0.5));
-        corners[2] = patches[i]->transform->imageToWorld(Point(x+0.5, y+0.5));
-        corners[3] = patches[i]->transform->imageToWorld(Point(x-0.5, y+0.5));
-        Point origin = patches[i]->transform->imageToWorld(Point(x, y));
+        corners[0] = patch.transform->imageToWorld(Point(x-0.5, y-0.5));
+        corners[1] = patch.transform->imageToWorld(Point(x+0.5, y-0.5));
+        corners[2] = patch.transform->imageToWorld(Point(x+0.5, y+0.5));
+        corners[3] = patch.transform->imageToWorld(Point(x-0.5, y+0.5));
+        Point origin = patch.transform->imageToWorld(Point(x, y));
 
         for (uint i=0; i<4; ++i, e+=6)
         {
@@ -442,40 +444,37 @@ ConstruoVisualizer::addPrimitive(GL_POINTS, centers, centerColor);
 ConstruoVisualizer::show();
 #endif //show image pixels
 
-        std::cout << "Adding source image " << i << " out of " << numPatches;
+    //grab the smallest resolution from the image
+    Point::Scalar imgResolution=patch.transform->getFinestResolution(
+        patch.image->getSize());
+    /* exaggerate the image's resolution because our sampling is not aligned
+       with the image axis */
+    imgResolution *= Point::Scalar(Math::sqrt(2.0));
+
+    //iterate over all the spheroid's base patches to determine overlap
+    for (typename Globe::BaseNodes::iterator bIt=globe->baseNodes.begin();
+         bIt!=globe->baseNodes.end(); ++bIt)
+    {
+        depth = std::max(updateFiner(&(*bIt), &patch, imgResolution), depth);
+
+        std::cout << ".";
         std::cout.flush();
-
-        //grab the smallest resolution from the image
-        Point::Scalar imgResolution=patches[i]->transform->getFinestResolution(
-            patches[i]->image->getSize());
-        /* exaggerate the image's resolution because our sampling is not aligned
-           with the image axis */
-        imgResolution *= Point::Scalar(Math::sqrt(2.0));
-
-        //iterate over all the spheroid's base patches to determine overlap
-        for (typename Globe::BaseNodes::iterator bIt=globe->baseNodes.begin();
-             bIt!=globe->baseNodes.end(); ++bIt)
-        {
-            depth = std::max(updateFiner(&(*bIt), patches[i], imgResolution),
-                             depth);
-
-            std::cout << ".";
-            std::cout.flush();
 ///\todo this is debugging code to check tree consistency
 //verifyQuadtreeFile(&(*bIt));
 //ConstruoVisualizer::show();
-        }
-        std::cout << " done" << std::endl;
     }
-    std::cout << std::endl;
+    std::cout << " done\n\n";
+    std::cout.flush();
 
     return depth;
 }
 
-template <typename PixelParam, typename PolyhedronParam>
-void Builder<PixelParam, PolyhedronParam>::
+template <typename PixelParam>
+void Builder<PixelParam>::
 prepareSubsamplingDomain(Node* node)
 {
+    typedef GlobeData<PixelParam> gd;
+
 #if DEBUG_PREPARESUBSAMPLINGDOMAIN
 ConstruoVisualizer::addPrimitive(GL_LINES, node->coverage);
 ConstruoVisualizer::show();
@@ -489,7 +488,6 @@ ConstruoVisualizer::show();
         {-1,-1}, { 0,-1}, { 1,-1}, { 2,-1}, {-1, 2}, { 0, 2}, { 1, 2}, { 2, 2},
         {-1, 1}, {-1, 0}, { 2, 1}, { 2, 0}, { 0, 0}, { 1, 0}, { 0, 1}, { 1, 1}
     };
-    bool dataIsAvailable[16];
     for (int i=0; i<16; ++i)
     {
     //- retrieve the kin
@@ -510,7 +508,7 @@ ConstruoVisualizer::show();
 
     //- retrieve data as appropriate
         //default to blank data
-        const PixelParam* data = node->treeState->file->getBlank();
+        const PixelParam* data = node->globeFile->getBlank();
 
         //read the data from file
 /**\todo disabled reading from neighbors that aren't from the same base patch.
@@ -521,20 +519,19 @@ Note: getKin across patches seem to be broken: e.g. offset==3 returned. */
         {
             /* sampling from the same patch will always have data (even if that
                is "nodata" */
-            dataIsAvailable[i] = true;
-
-            assert(kin->tileIndex!=Node::State::File::INVALID_TILEINDEX);
+            assert(kin->tileIndex!=INVALID_TILEINDEX);
+            typename gd::File* file =
+                kin->globeFile->getPatch(kin->treeIndex.patch);
             if (nodeOff[0]==0 && nodeOff[1]==0)
             {
                 //we're grabbing data from a same leveled kin
-                kin->treeState->file->readTile(kin->tileIndex, nodeDataBuf);
+                file->readTile(kin->tileIndex, nodeDataBuf);
                 data = nodeDataBuf;
             }
             else
             {
                 //need to sample coarser level node as the kin replacement
-                kin->treeState->file->readTile(kin->tileIndex,
-                                               nodeDataSampleBuf);
+                file->readTile(kin->tileIndex, nodeDataSampleBuf);
                 //determine the resample step size
                 double scale = 1;
                 for (uint i=kin->treeIndex.level;
@@ -544,48 +541,33 @@ Note: getKin across patches seem to be broken: e.g. offset==3 returned. */
                 }
                 double step[2] = {scale/(tileSize[0]-1), scale/(tileSize[1]-1)};
 
-                filter::Scalar at[2];
+                double at[2];
                 int rectOrigin[2] = {0,0};
                 int rectSize[2]   = {tileSize[0], tileSize[1]};
-                Nodata<PixelParam> dummyNodata;
-                PixelParam dummyDefaultValue(0);
+                const PixelParam& nodata = kin->globeFile->getNodata();
                 PixelParam* wbase = nodeDataBuf;
 
 //                #pragma omp parallel for
+                typedef SubsampleFilter<PixelParam, DYNAMIC_FILTER_TYPE> Filter;
                 for (uint ny=0; ny<tileSize[1]; ++ny)
                 {
                     at[1] = nodeOff[1]*scale + ny*step[1];
                     at[0] = nodeOff[0]*scale;
                     for (uint nx=0; nx<tileSize[0]; ++nx,at[0]+=step[0],++wbase)
                     {
-#if USE_NEAREST_FILTERING
-                        *wbase = filter::nearestLookup(nodeDataSampleBuf,
-                            rectOrigin, at, rectSize, dummyNodata,
-                            dummyDefaultValue);
-#else
-                        *wbase = filter::linearLookup(nodeDataSampleBuf,
-                            rectOrigin, at, rectSize, dummyNodata,
-                            dummyDefaultValue);
-#endif
+                        *wbase = Filter::sample(nodeDataSampleBuf, rectOrigin,
+                                                at, rectSize, nodata, nodata,
+                                                nodata);
                     }
                 }
                 data = nodeDataBuf;
             }
-        }
-        else
-        {
-            /* flag that we didn't retrieve any data for this patch because of
-               broken sampling across patches */
-            dataIsAvailable[i] = kin==NULL;
         }
 
 /**\todo disabled reading from neighbors that don't have the same orientation
 reading of neighbor data with differring orientation is currently absolutely
 broken, overwrites random memory regions and breaks fraking everything */
 kinO = 0;
-//no need to copy blank anymore... will instead generate a clamp_to_edge
-if (dataIsAvailable[i])
-{
     //- insert the data at the appropriate location
         PixelParam* base = domain +
                            domainOff[1] * (tileSize[1]-1) * domainSize[0] +
@@ -603,149 +585,11 @@ if (dataIsAvailable[i])
             for (uint x=0; x<tileSize[0]; ++x, ++to, from+=stepX[kinO])
                 *to = *from;
         }
-}
-    }
-
-/**\todo this is a temporary fix for the really bad seams at patch boundaries.
-I'm artificially extending the border data into the neighboring tiles that are
-missing data because it's on another patch (clamp_to_edge like) */
-PixelParam* domain = domainBuf;
-static const int horizontalIndices[4] = {1,2,5,6};
-PixelParam* horizontalSources[4] = {
-    domain +   (tileSize[1]-1)*domainSize[0] +   (tileSize[0]-1),
-    domain +   (tileSize[1]-1)*domainSize[0] + 2*(tileSize[0]-1),
-    domain + 3*(tileSize[1]-1)*domainSize[0] +   (tileSize[0]-1),
-    domain + 3*(tileSize[1]-1)*domainSize[0] + 2*(tileSize[0]-1),
-};
-PixelParam* horizontalDestinations[4] = {
-    domain +   (tileSize[0]-1),
-    domain + 2*(tileSize[0]-1),
-    domain + (3*(tileSize[1]-1) + 1)*domainSize[0] +   (tileSize[0]-1),
-    domain + (3*(tileSize[1]-1) + 1)*domainSize[0] + 2*(tileSize[0]-1),
-};
-for (int i=0; i<4; ++i)
-{
-    if (!dataIsAvailable[horizontalIndices[i]])
-    {
-        PixelParam* src = horizontalSources[i];
-//        #pragma omp parallel for
-        for (uint y=0; y<tileSize[1]-1; ++y)
-        {
-            memcpy(horizontalDestinations[i]+y*domainSize[0], src,
-                   tileSize[0]*sizeof(PixelParam));
-        }
     }
 }
 
-static const int verticalIndices[4] = {8,9,10,11};
-PixelParam* verticalSources[4] = {
-    domain + 2*(tileSize[1]-1)*domainSize[0] +   (tileSize[0]-1),
-    domain +   (tileSize[1]-1)*domainSize[0] +   (tileSize[0]-1),
-    domain + 2*(tileSize[1]-1)*domainSize[0] + 3*(tileSize[0]-1),
-    domain +   (tileSize[1]-1)*domainSize[0] + 3*(tileSize[0]-1),
-};
-PixelParam* verticalDestinations[4] = {
-    domain + 2*(tileSize[1]-1)*domainSize[0],
-    domain +   (tileSize[1]-1)*domainSize[0],
-    domain + 2*(tileSize[1]-1)*domainSize[0] + 3*(tileSize[0]-1) + 1,
-    domain +   (tileSize[1]-1)*domainSize[0] + 3*(tileSize[0]-1) + 1,
-};
-for (int i=0; i<4; ++i)
-{
-    if (!dataIsAvailable[verticalIndices[i]])
-    {
-//        #pragma omp parallel for
-        for (uint y=0; y<tileSize[1]; ++y)
-        {
-            PixelParam* src = verticalSources[i] + y*domainSize[0];
-            PixelParam* dst = verticalDestinations[i] + y*domainSize[0];
-            for (uint x=0; x<tileSize[0]-1; ++x, ++dst)
-                *dst = *src;
-        }
-    }
-}
-
-//bottom-left corner
-if (!dataIsAvailable[0])
-{
-    PixelParam* hsrc = domain + (tileSize[1]-1)*domainSize[0];
-    PixelParam* dst  = domain;
-    for (uint y=0; y<tileSize[1]-1; ++y, dst+=domainSize[0])
-        memcpy(dst, hsrc, (y+1)*sizeof(PixelParam));
-
-    PixelParam* vsrc = domain + tileSize[0]-1;
-    for (uint y=0; y<tileSize[1]-1; ++y, vsrc+=domainSize[0])
-    {
-        dst = domain + y*domainSize[0];
-        for (uint x=y+1; x<tileSize[0]; ++x)
-            dst[x] = *vsrc;
-    }
-}
-
-//bottom-right corner
-if (!dataIsAvailable[3])
-{
-    PixelParam* hsrc = domain+ (tileSize[1]-1)*domainSize[0]+ 3*(tileSize[0]-1);
-    for (uint y=0; y<tileSize[1]-1; ++y)
-    {
-        PixelParam* dst  = domain + y*domainSize[0] + 3*(tileSize[0]-1) +
-                           tileSize[0]-1-y;
-        memcpy(dst, &hsrc[tileSize[0]-1-y], (y+1)*sizeof(PixelParam));
-    }
-
-    PixelParam* vsrc = domain + 3*(tileSize[0]-1);
-    for (uint y=0; y<tileSize[1]-1; ++y, vsrc+=domainSize[0])
-    {
-        PixelParam* dst = domain + y*domainSize[0] + 3*(tileSize[0]-1);
-        for (uint x=1; x<tileSize[0]-1-y; ++x)
-            dst[x] = *vsrc;
-    }
-}
-
-//top-left corner
-if (!dataIsAvailable[4])
-{
-    PixelParam* hsrc = domain + 3*(tileSize[1]-1)*domainSize[0];
-    for (uint y=1; y<tileSize[1]-1; ++y)
-    {
-        PixelParam* dst  = domain + (3*(tileSize[1]-1) + y)*domainSize[0];
-        memcpy(dst, hsrc, (tileSize[0]-1-y)*sizeof(PixelParam));
-    }
-
-    PixelParam* vsrc = domain + 3*(tileSize[1]-1) + (tileSize[0]-1);
-    for (uint y=1; y<tileSize[1]; ++y, vsrc+=domainSize[0])
-    {
-        PixelParam* dst = domain + (3*(tileSize[1]-1)+y)*domainSize[0];
-        for (uint x=tileSize[0]-1-y; x<tileSize[0]-1; ++x)
-            dst[x] = *vsrc;
-    }
-}
-
-//top-right corner
-if (!dataIsAvailable[7])
-{
-    PixelParam* hsrc = domain+3*(tileSize[1]-1)*domainSize[0]+3*(tileSize[0]-1);
-    for (uint y=1; y<tileSize[1]-1; ++y)
-    {
-        PixelParam* dst = domain + (3*(tileSize[1]-1) + y)*domainSize[0] +
-                          3*(tileSize[0]-1) + y + 1;
-        memcpy(dst, &hsrc[y+1], (tileSize[0]-1-y)*sizeof(PixelParam));
-    }
-
-    PixelParam* vsrc = domain+3*(tileSize[1]-1)*domainSize[0]+3*(tileSize[0]-1);
-    for (uint y=1; y<tileSize[1]; ++y, vsrc+=domainSize[0])
-    {
-        PixelParam* dst = domain + (3*(tileSize[1]-1) + y)*domainSize[0] +
-                          3*(tileSize[0]-1);;
-        for (uint x=0; x<y+1; ++x)
-            dst[x] = *vsrc;
-    }
-}
-
-}
-
-template <typename PixelParam, typename PolyhedronParam>
-void Builder<PixelParam, PolyhedronParam>::
+template <typename PixelParam>
+void Builder<PixelParam>::
 updateCoarser(Node* node, int level)
 {
 #if DEBUG_PREPARESUBSAMPLINGDOMAIN
@@ -771,6 +615,10 @@ ConstruoVisualizer::peek();
 
     /* walk the pixels of the node's data and performed filtered look-ups into
        the domain */
+    typedef SubsampleFilter<PixelParam, SUBSAMPLEFILTER_PYRAMID> Filter;
+
+    const PixelParam& globeNodata = node->globeFile->getNodata();
+
     PixelParam* data = nodeDataBuf;
     PixelParam* domain;
     for (domain = domainBuf +   (tileSize[1]-1)*domainSize[0]+  (tileSize[0]-1);
@@ -778,23 +626,24 @@ ConstruoVisualizer::peek();
          domain+= 2*domainSize[0] - 2*tileSize[0])
     {
         for (uint i=0; i<tileSize[0]; ++i, domain+=2, ++data)
-            *data  = subsamplingFilter.lookup(domain, domainSize[0]);
+            *data  = Filter::sample(domain, domainSize[0], globeNodata);
     }
 
     //commit the data to file
     node->data = nodeDataBuf;
 
-    QuadtreeTileHeader<PixelParam> header;
-    header.reset(node);
-    node->treeState->file->writeTile(node->tileIndex, header, node->data);
+    typedef GlobeData<PixelParam> gd;
+    typename gd::TileHeader header = node->getTileHeader();
+    typename gd::File* file = node->globeFile->getPatch(node->treeIndex.patch);
+    file->writeTile(node->tileIndex, header, node->data);
 
     node->data = NULL;
 ///\todo this is debugging code to check tree consistency
 //verifyQuadtreeFile(node);
 }
 
-template <typename PixelParam, typename PolyhedronParam>
-void Builder<PixelParam, PolyhedronParam>::
+template <typename PixelParam>
+void Builder<PixelParam>::
 updateCoarserLevels(int depth)
 {
     if (depth==0)
@@ -821,39 +670,47 @@ updateCoarserLevels(int depth)
     std::cout << std::endl;
 }
 
-template <typename PixelParam, typename PolyhedronParam>
-void Builder<PixelParam, PolyhedronParam>::
-addImagePatch(const std::string& patchName, double pixelScale,
-              const std::string& nodata, bool pointSampled)
-{
-    //create a new image patch
-    ImagePatch<PixelParam>* newIp = new ImagePatch<PixelParam>(
-        patchName, pixelScale, nodata, pointSampled);
-    //store the new image patch:
-    patches.push_back(newIp);
-}
 
-template <typename PixelParam, typename PolyhedronParam>
-void Builder<PixelParam, PolyhedronParam>::
+template <typename PixelParam>
+void Builder<PixelParam>::
 update()
 {
-    int depth = updateFinestLevels();
+    int depth = 0;
+    int numPatches = static_cast<int>(imagePatchSources.size());
+    for (int i=0; i<numPatches; ++i)
+    {
+        try
+        {
+            std::cout << "*** Adding source image " << i+1 << " out of " <<
+                         numPatches << "\n\n";
+            std::cout.flush();
+
+            int newDepth = updateFinestLevels(imagePatchSources[i]);
+            depth = std::max(newDepth, depth);
+        }
+        catch(std::runtime_error err)
+        {
+            std::cerr << "Ignoring image patch " << imagePatchSources[i].path <<
+                         " due to exception " << err.what() << std::endl;
+        }
+    }
+
     updateCoarserLevels(depth);
 }
 
 ///\todo remove
 #define VERIFYQUADTREEFILE 1
-template <typename PixelParam, typename PolyhedronParam>
-void Builder<PixelParam, PolyhedronParam>::
+template <typename PixelParam>
+void Builder<PixelParam>::
 verifyQuadtreeNode(Node* node)
 {
-    typename Node::State::File::TileIndex childIndices[4];
+    TileIndex childIndices[4];
     assert(node->treeState->file->readTile(node->tileIndex, childIndices));
 
     if (node->children == NULL)
     {
         for (uint i=0; i<4; ++i)
-            assert(childIndices[i] == Node::State::File::INVALID_TILEINDEX);
+            assert(childIndices[i] == INVALID_TILEINDEX);
         return;
     }
     for (uint i=0; i<4; ++i)
@@ -861,8 +718,8 @@ verifyQuadtreeNode(Node* node)
     for (uint i=0; i<4; ++i)
         verifyQuadtreeNode(&node->children[i]);
 }
-template <typename PixelParam, typename PolyhedronParam>
-void Builder<PixelParam, PolyhedronParam>::
+template <typename PixelParam>
+void Builder<PixelParam>::
 verifyQuadtreeFile(Node* node)
 {
 #if VERIFYQUADTREEFILE

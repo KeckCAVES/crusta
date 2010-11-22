@@ -26,6 +26,9 @@ public:
     bool decorateVectorArt;
 
     ///\{ material properties of the terrain surface
+    float terrainDefaultHeight;
+    Color terrainDefaultColor;
+
     Color terrainAmbientColor;
     Color terrainDiffuseColor;
     Color terrainEmissiveColor;

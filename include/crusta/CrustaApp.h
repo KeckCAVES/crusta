@@ -5,6 +5,7 @@
 #include <GLMotif/Button.h>
 #include <GLMotif/ColorMap.h>
 #include <GLMotif/ColorPickerWindow.h>
+#include <GLMotif/FileAndFolderSelectionDialog.h>
 #include <GLMotif/Slider.h>
 #include <GLMotif/ToggleButton.h>
 
@@ -81,6 +82,22 @@ private:
     };
 
     void produceMainMenu();
+
+    void produceDataDialog();
+    void showDataDialogCallback(GLMotif::Button::SelectCallbackData* cbData);
+    void loadDemCallback(GLMotif::Button::SelectCallbackData* cbData);
+    void loadDemFileOkCallback(
+        GLMotif::FileAndFolderSelectionDialog::OKCallbackData* cbData);
+    void loadDemFileCancelCallback(
+        GLMotif::FileAndFolderSelectionDialog::CancelCallbackData* cbData);
+    void loadColorCallback(GLMotif::Button::SelectCallbackData* cbData);
+    void loadColorFileOkCallback(
+        GLMotif::FileAndFolderSelectionDialog::OKCallbackData* cbData);
+    void loadColorFileCancelCallback(
+        GLMotif::FileAndFolderSelectionDialog::CancelCallbackData* cbData);
+    void loadDataOkCallback(GLMotif::Button::SelectCallbackData* cbData);
+    void loadDataCancelCallback(GLMotif::Button::SelectCallbackData* cbData);
+
     void produceTexturingSubmenu(GLMotif::Menu* mainMenu);
     void produceVerticalScaleDialog();
     void produceLightingDialog();
@@ -123,6 +140,10 @@ private:
 
     GLMotif::PopupMenu*   popMenu;
     GLMotif::RadioBox*    curTool;
+
+    GLMotif::PopupWindow* dataDialog;
+    GLMotif::Label*       dataDemFile;
+    GLMotif::Label*       dataColorFile;
 
     GLMotif::PopupWindow* verticalScaleDialog;
     GLMotif::Label*       verticalScaleLabel;

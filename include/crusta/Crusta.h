@@ -57,9 +57,11 @@ struct CrustaGlData : public GLObject::DataItem
 class Crusta : public GLObject
 {
 public:
-    void init(const std::string& demFileBase, const std::string& colorFileBase,
-              const std::string& settingsFile);
+    void init(const std::string& settingsFile);
     void shutdown();
+
+    void load(const std::string& demFileBase, const std::string& colorFileBase);
+    void unload();
 
 ///\todo potentially deprecate
     /** snap the given cartesian point to the surface of the terrain (at an

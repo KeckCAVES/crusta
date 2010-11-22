@@ -80,7 +80,7 @@ HitResult QuadTerrain::
 intersect(const Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout,
           const Scalar gout) const
 {
-CRUSTA_DEBUG_OUT(40, "\n\nIntersecting Ray with Globe:\n\n");
+CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "\n\nIntersecting Ray with Globe:\n\n";)
     return intersectNode(getRootBuffer(), ray, tin, sin, tout, sout, gout);
 }
 
@@ -212,8 +212,8 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
         Point3(-1,1,-1), Point3(-1,-1,1), Point3(1,1,1));
 
     //the elevation range might be flat. Make sure to give the frustum depth
-    DemHeight elevationRange[2] = { node.elevationRange[0],
-                                    node.elevationRange[1] };
+    DemHeight elevationRange[2];
+    node.getElevationRange(elevationRange);
     Scalar sideLen = Geometry::dist(node.scope.corners[0],
                                     node.scope.corners[1]);
     if (Math::abs(elevationRange[0]-elevationRange[1]) < sideLen)
@@ -694,7 +694,7 @@ intersectNode(const MainBuffer& nodeBuf, const Ray& ray,
 {
     MainData mainData = DATAMANAGER->getData(nodeBuf);
     const NodeData& node = *mainData.node;
-CRUSTA_DEBUG_OUT(40, "%s\n", node.index.med_str().c_str());
+CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << node.index.med_str() << "\n";)
 
 //- determine the exit point and side
     tout = Math::Constants<Scalar>::max;
@@ -725,13 +725,15 @@ const QuadNodeMainData::Vertex::Position* positions[4] = {
     &(cellV->position), &((cellV+tileRes-1)->position),
     &((cellV+(tileRes-1)*tileRes)->position), &((cellV+(tileRes-1)*tileRes + tileRes-1)->position) };
 Vector3 cellCorners[4];
+DemHeight elevationRange[2];
+node.getElevationRange(elevationRange);
 for (int i=0; i<4; ++i)
 {
     for (int j=0; j<3; ++j)
         cellCorners[i][j] = (*(positions[i]))[j] + node.centroid[j];
     Vector3 extrude(cellCorners[i]);
     extrude.normalize();
-    extrude *= node.elevationRange[0] * crusta->getVerticalScale();
+    extrude *= elevationRange[0] * crusta->getVerticalScale();
     cellCorners[i] += extrude;
 }
 CrustaVisualizer::addTriangle(Triangle(cellCorners[0], cellCorners[3], cellCorners[2]), 4, Color(0.9, 0.6, 0.7, 1.0));
@@ -788,8 +790,11 @@ CrustaVisualizer::clear(5);
     const Scalar& verticalScale = crusta->getVerticalScale();
 
 //- check intersection with upper boundary
+    DemHeight elevationRange[2];
+    node.getElevationRange(elevationRange);
+
     Sphere shell(Point3(0), SETTINGS->globeRadius +
-                 verticalScale*node.elevationRange[1]);
+                 verticalScale*elevationRange[1]);
     Scalar t0, t1;
     bool intersects = shell.intersectRay(ray, t0, t1);
 
@@ -953,7 +958,8 @@ intersectLeaf(const MainData& leafData, const Ray& ray,
               Scalar param, int side, const Scalar gout) const
 {
     NodeData& leaf = *leafData.node;
-CRUSTA_DEBUG_OUT(40, "* %s\n", leaf.index.med_str().c_str());
+CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT <<
+"* " << leaf.index.med_str() << "\n";)
 
 #if DEBUG_INTERSECT_CRAP
 if (DEBUG_INTERSECT) {
@@ -1013,14 +1019,15 @@ if (DEBUG_INTERSECT) {
 {
 Scalar verticalScale = crusta->getVerticalScale();
 int offset = cellY*tileRes + cellX;
-QuadNodeMainData::Vertex* cellV = leaf.geometry + offset;
-DemHeight*                cellH = leaf.height   + offset;
+QuadNodeMainData::Vertex* cellV = leafData.geometry + offset;
+DemHeight*                cellH = leafData.height   + offset;
 
 const QuadNodeMainData::Vertex::Position* positions[4] = {
     &(cellV->position), &((cellV+1)->position),
     &((cellV+tileRes)->position), &((cellV+tileRes+1)->position) };
-const DemHeight* heights[4] = {
-    cellH, cellH+1, cellH+tileRes, cellH+tileRes+1
+DemHeight heights[4] = {
+    leaf.getHeight(*cellH),           leaf.getHeight(*(cellH+1)),
+    leaf.getHeight(*(cellH+tileRes)), leaf.getHeight(*(cellH+tileRes+1))
 };
 //construct the corners of the current cell
 Vector3 cellCorners[4];
@@ -1030,7 +1037,7 @@ for (int i=0; i<4; ++i)
         cellCorners[i][j] = (*(positions[i]))[j] + leaf.centroid[j];
     Vector3 extrude(cellCorners[i]);
     extrude.normalize();
-    extrude *= *(heights[i]) * verticalScale;
+    extrude *= heights[i] * verticalScale;
     cellCorners[i] += extrude;
 }
 
@@ -1218,9 +1225,11 @@ int traversedCells = 0;
         const Vertex::Position* positions[4] = {
             &(cellV->position), &((cellV+1)->position),
             &((cellV+tileRes)->position), &((cellV+tileRes+1)->position) };
-        const DemHeight* heights[4] = {
-            cellH, cellH+1, cellH+tileRes, cellH+tileRes+1
+        DemHeight heights[4] = {
+            leaf.getHeight(*cellH),           leaf.getHeight(*(cellH+1)),
+            leaf.getHeight(*(cellH+tileRes)), leaf.getHeight(*(cellH+tileRes+1))
         };
+
         //construct the corners of the current cell
         Vector3 cellCorners[4];
         for (int i=0; i<4; ++i)
@@ -1229,7 +1238,7 @@ int traversedCells = 0;
                 cellCorners[i][j] = (*(positions[i]))[j] + leaf.centroid[j];
             Vector3 extrude(cellCorners[i]);
             extrude.normalize();
-            extrude *= *(heights[i]) * verticalScale;
+            extrude *= heights[i] * verticalScale;
             cellCorners[i] += extrude;
         }
 

@@ -6,12 +6,17 @@
 
 #include <crusta/Crusta.h>
 #include <crusta/map/MapManager.h>
-#include <crusta/Polyhedron.h>
+#include <crusta/PixelOps.h>
+#include <crusta/PolyhedronLoader.h>
 #include <crusta/QuadCache.h>
 #include <crusta/QuadTerrain.h>
+#include <crusta/Triacontahedron.h>
 
 
 BEGIN_CRUSTA
+
+
+DataManager::GlData* DataManager::glData = NULL;
 
 
 DataManager::Request::
@@ -46,72 +51,166 @@ operator >(const Request& other) const
 
 
 DataManager::
-DataManager(const Polyhedron& polyhedron, const std::string& demBase,
-            const std::string& colorBase)
+DataManager() :
+    demFile(NULL), colorFile(NULL), polyhedron(NULL),
+    demNodata(0), colorNodata(128, 128, 128), terminateFetch(false),
+    clearGpuCachesStamp(0)
 {
-    uint resolution[2] = { TILE_RESOLUTION, TILE_RESOLUTION };
-    uint numPatches = polyhedron.getNumPatches();
-
-    if (!demBase.empty())
-    {
-        demFiles.resize(numPatches);
-        for (uint i=0; i<numPatches; ++i)
-        {
-            std::ostringstream demName;
-            demName << demBase << "_" << i << ".qtf";
-            demFiles[i] = new DemFile(demName.str().c_str(), resolution);
-        }
-        demNodata = demFiles[0]->getDefaultPixelValue();
-    }
-    else
-        demNodata = DemHeight(0);
-
-    if (!colorBase.empty())
-    {
-        colorFiles.resize(numPatches);
-        for (uint i=0; i<numPatches; ++i)
-        {
-            std::ostringstream colorName;
-            colorName << colorBase << "_" << i << ".qtf";
-            colorFiles[i] = new ColorFile(colorName.str().c_str(), resolution);
-        }
-        colorNodata = colorFiles[0]->getDefaultPixelValue();
-    }
-    else
-        colorNodata = TextureColor(128, 128, 128);
-
     tempGeometryBuf = new double[TILE_RESOLUTION*TILE_RESOLUTION*3];
-
-    //start the fetching thread
-    fetchThread.start(this, &DataManager::fetchThreadFunc);
+    glData = new GlData;
 }
 
 DataManager::
 ~DataManager()
 {
-    for (DemFiles::iterator it=demFiles.begin(); it!=demFiles.end(); ++it)
-        delete *it;
-    for (ColorFiles::iterator it=colorFiles.begin(); it!=colorFiles.end(); ++it)
-        delete *it;
+    unload();
 
-    delete[] tempGeometryBuf;
+    delete tempGeometryBuf;
+    delete glData;
+}
 
+void DataManager::
+load(const std::string& demPath, const std::string& colorPath)
+{
+    //detach from existing databases
+    unload();
+
+    if (!demPath.empty())
+    {
+        demFile = new DemFile;
+        try
+        {
+            demFile->open(demPath);
+            polyhedron = PolyhedronLoader::load(demFile->getPolyhedronType(),
+                                                SETTINGS->globeRadius);
+            demNodata  = demFile->getNodata();
+        }
+        catch (std::runtime_error e)
+        {
+            delete demFile;
+            demFile = NULL;
+            demNodata = GlobeData<DemHeight>::defaultNodata();
+
+            std::cerr << e.what();
+        }
+    }
+    else
+        demNodata = GlobeData<DemHeight>::defaultNodata();
+
+    if (!colorPath.empty())
+    {
+        colorFile = new ColorFile;
+        try
+        {
+            colorFile->open(colorPath);
+            colorNodata = colorFile->getNodata();
+
+            if (polyhedron != NULL)
+            {
+                if (polyhedron->getType() != colorFile->getPolyhedronType())
+                {
+                    std::cerr << "Mismatching polyhedron for " <<
+                                 demPath.c_str() << " and " <<
+                                 colorPath.c_str() << ".\n";
+
+                    delete colorFile;
+                    colorFile = NULL;
+                    colorNodata = GlobeData<TextureColor>::defaultNodata();
+                }
+            }
+            else
+            {
+                polyhedron =
+                    PolyhedronLoader::load(colorFile->getPolyhedronType(),
+                                           SETTINGS->globeRadius);
+            }
+
+        }
+        catch (std::runtime_error e)
+        {
+            delete colorFile;
+            colorFile = NULL;
+            colorNodata = GlobeData<TextureColor>::defaultNodata();
+
+            std::cerr << e.what();
+        }
+    }
+    else
+        colorNodata = GlobeData<TextureColor>::defaultNodata();
+
+    if (polyhedron == NULL)
+        polyhedron = new Triacontahedron(SETTINGS->globeRadius);
+
+    startFetchThread();
+}
+
+void DataManager::
+unload()
+{
     //stop the fetching thread
-    fetchThread.cancel();
-    fetchThread.join();
+    terminateFetchThread();
+
+    //clear all the requests
+    childRequests.clear();
+    fetchRequests.clear();
+    fetchResults.clear();
+
+    //clear the main memory caches and flag the GPU ones
+    MainCache& mc = CACHE->getMainCache();
+    mc.node.clear();
+    mc.geometry.clear();
+    mc.height.clear();
+    mc.imagery.clear();
+
+    clearGpuCachesStamp = CURRENT_FRAME;
+
+    if (demFile)
+    {
+        delete demFile;
+        demFile = NULL;
+    }
+    if (colorFile)
+    {
+        delete colorFile;
+        colorFile = NULL;
+    }
+    if (polyhedron)
+    {
+        delete polyhedron;
+        polyhedron = NULL;
+    }
 }
 
 
 bool DataManager::
 hasDemData() const
 {
-    return !demFiles.empty();
+    return demFile != NULL;
 }
 
 bool DataManager::
 hasColorData() const
 {
-    return !colorFiles.empty();
+    return colorFile != NULL;
+}
+
+
+const Polyhedron* const DataManager::
+getPolyhedron() const
+{
+    return polyhedron;
+}
+
+const DemHeight& DataManager::
+getDemNodata()
+{
+    return demNodata;
+}
+
+const TextureColor& DataManager::
+getColorNodata()
+{
+    return colorNodata;
 }
 
 
@@ -140,8 +239,20 @@ loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope)
 
     nodeData.index     = rootIndex;
     nodeData.scope     = scope;
-    nodeData.demTile   = hasDemData()   ? 0 :   DemFile::INVALID_TILEINDEX;
-    nodeData.colorTile = hasColorData() ? 0 : ColorFile::INVALID_TILEINDEX;
+    nodeData.demTile   = hasDemData()   ? 0 : INVALID_TILEINDEX;
+    nodeData.colorTile = hasColorData() ? 0 : INVALID_TILEINDEX;
+
+    //clear the old quadtreefile tile indices
+    for (int i=0; i<4; ++i)
+    {
+        nodeData.childDemTiles[i]   = INVALID_TILEINDEX;
+        nodeData.childColorTiles[i] = INVALID_TILEINDEX;
+    }
+
+    //clear the old line data
+    nodeData.lineCoverage.clear();
+    nodeData.lineNumSegments = 0;
+    nodeData.lineData.clear();
 
     sourceDem(   NULL, NULL, &nodeData,   heightData);
     sourceColor( NULL, NULL, &nodeData,  imageryData);
@@ -163,8 +274,8 @@ loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope)
 void DataManager::
 frame()
 {
-CRUSTA_DEBUG_OUT(14, "\n++++++++  DataManager::frame() //\n");
-CRUSTA_DEBUG(14, MainCache& mc=CACHE->getMainCache(); mc.node.printCache());
+CRUSTA_DEBUG(14, CRUSTA_DEBUG_OUT << "\n++++++++  DataManager::frame() //\n";
+             MainCache& mc=CACHE->getMainCache(); mc.node.printCache();)
 
     //reprioritize the requests (do this here as the rest blocks fetching)
     std::sort(childRequests.begin(), childRequests.end(),
@@ -204,8 +315,8 @@ CRUSTA_DEBUG(14, MainCache& mc=CACHE->getMainCache(); mc.node.printCache());
         fetch.child  = grabMainBuffer(childIndex, false);
         if (!isComplete(fetch.child))
         {
-CRUSTA_DEBUG_OUT(10,"Datamanager::frame: no more room in the cache for ");
-CRUSTA_DEBUG_OUT(10,"new data\n");
+CRUSTA_DEBUG(10, CRUSTA_DEBUG_OUT <<
+"Datamanager::frame: no more room in the cache for new data\n";)
             break;
         }
 
@@ -224,13 +335,15 @@ CRUSTA_DEBUG_OUT(10,"new data\n");
         TreeIndex childIndex = it->parent.node->getData().index.down(it->which);
         releaseMainBuffer(childIndex, it->child);
 
-CRUSTA_DEBUG_OUT(14, "MainCache::frame: request for Index %s:%d processed\n",
-childIndex.med_str().c_str(), it->which);
+CRUSTA_DEBUG(14, CRUSTA_DEBUG_OUT <<
+"MainCache::frame: request for Index " << childIndex.med_str() << ":" <<
+it->which << " processed\n";)
     }
     fetchResults.clear();
 
-CRUSTA_DEBUG_OUT(14, "\n********  DataManager::frame() //end\n");
-CRUSTA_DEBUG(14, MainCache& mc=CACHE->getMainCache(); mc.node.printCache());
+CRUSTA_DEBUG(14, CRUSTA_DEBUG_OUT <<
+"\n********  DataManager::frame() //end\n"; MainCache& mc=CACHE->getMainCache();
+mc.node.printCache();)
 }
 
 void DataManager::
@@ -291,8 +404,8 @@ existsChildData(const NodeMainData& parent)
     bool ret = false;
     for (int i=0; i<4; ++i)
     {
-        if (parent.node->childDemTiles[i]  !=  DemFile::INVALID_TILEINDEX ||
-            parent.node->childColorTiles[i]!=ColorFile::INVALID_TILEINDEX)
+        if (parent.node->childDemTiles[i]   != INVALID_TILEINDEX ||
+            parent.node->childColorTiles[i] != INVALID_TILEINDEX)
         {
             ret = true;
         }
@@ -322,6 +435,21 @@ void DataManager::
 startGpuBatch(GLContextData& contextData, const SurfaceApproximation& surface,
               Batch& batch)
 {
+    //check if the GPU caches need to be cleared
+    GlData::Item* glItem = contextData.retrieveDataItem<GlData::Item>(glData);
+    if (glItem->clearGpuCachesStamp != clearGpuCachesStamp)
+    {
+        GpuCache& gc = CACHE->getGpuCache(contextData);
+        gc.geometry.clear();
+        gc.height.clear();
+        gc.imagery.clear();
+        gc.coverage.clear();
+        gc.lineData.clear();
+
+        //validate the clear
+        glItem->clearGpuCachesStamp = clearGpuCachesStamp;
+    }
+
     batch.clear();
 
     //go through all the render nodes and collect the appropriate data
@@ -434,13 +562,14 @@ operator ==(const FetchRequest& other) const
            which == other.which;
 }
 
-#if 0
-bool DataManager::FetchRequest::
-operator <(const FetchRequest& other) const
+
+void DataManager::GlData::
+initContext(GLContextData& contextData) const
 {
-    return (size_t)(parent) < (size_t)(other.parent);
+    Item* item = new Item;
+    item->clearGpuCachesStamp = 0;
+    contextData.addDataItem(this, item);
 }
-#endif
 
 
 
@@ -620,8 +749,8 @@ loadChild(Crusta* crusta, NodeMainData& parent,
     //clear the old quadtreefile tile indices
     for (int i=0; i<4; ++i)
     {
-        child.node->childDemTiles[i]   =   DemFile::INVALID_TILEINDEX;
-        child.node->childColorTiles[i] = ColorFile::INVALID_TILEINDEX;
+        child.node->childDemTiles[i]   = INVALID_TILEINDEX;
+        child.node->childColorTiles[i] = INVALID_TILEINDEX;
     }
 
     //clear the old line data
@@ -670,8 +799,10 @@ generateGeometry(Crusta* crusta, NodeData* child, Vertex* v)
 template <typename PixelParam>
 inline void
 sampleParentBase(int child, PixelParam range[2], PixelParam* dst,
-                 const PixelParam* const src)
+                 const PixelParam* const src, const PixelParam& nodata)
 {
+    typedef PixelOps<PixelParam> po;
+
     static const int offsets[4] = {
         0, (TILE_RESOLUTION-1)>>1, ((TILE_RESOLUTION-1)>>1)*TILE_RESOLUTION,
         ((TILE_RESOLUTION-1)>>1)*TILE_RESOLUTION + ((TILE_RESOLUTION-1)>>1) };
@@ -684,22 +815,21 @@ sampleParentBase(int child, PixelParam range[2], PixelParam* dst,
 
         for (int x=0; x<halfSize[0]; ++x, wbase+=2, ++rbase)
         {
-            range[0] = pixelMin(range[0], rbase[0]);
-            range[1] = pixelMax(range[1], rbase[0]);
+            range[0] = po::minimum(range[0], rbase[0], nodata);
+            range[1] = po::maximum(range[1], rbase[0], nodata);
 
             wbase[0] = rbase[0];
             if (x<halfSize[0]-1)
-                wbase[1] = pixelAvg(rbase[0], rbase[1]);
+                wbase[1] = po::average(rbase[0], rbase[1], nodata);
             if (y<halfSize[1]-1)
             {
-                wbase[TILE_RESOLUTION] = pixelAvg(rbase[0],
-                                                  rbase[TILE_RESOLUTION]);
+                wbase[TILE_RESOLUTION] =
+                    po::average(rbase[0], rbase[TILE_RESOLUTION], nodata);
             }
             if (x<halfSize[0]-1 && y<halfSize[1]-1)
             {
-                wbase[TILE_RESOLUTION+1] = pixelAvg(rbase[0], rbase[1],
-                                                    rbase[TILE_RESOLUTION],
-                                                    rbase[TILE_RESOLUTION+1]);
+                wbase[TILE_RESOLUTION+1] = po::average(rbase[0], rbase[1],
+                    rbase[TILE_RESOLUTION], rbase[TILE_RESOLUTION+1], nodata);
             }
         }
     }
@@ -707,34 +837,37 @@ sampleParentBase(int child, PixelParam range[2], PixelParam* dst,
 
 inline void
 sampleParent(int child, DemHeight range[2], DemHeight* dst,
-             const DemHeight* const src)
+             const DemHeight* const src, const DemHeight& nodata)
 {
     range[0] = Math::Constants<DemHeight>::max;
     range[1] = Math::Constants<DemHeight>::min;
 
-    sampleParentBase(child, range, dst, src);
+    sampleParentBase(child, range, dst, src, nodata);
 }
 
 inline void
 sampleParent(int child, TextureColor range[2], TextureColor* dst,
-             const TextureColor* const src)
+             const TextureColor* const src, const TextureColor& nodata)
 {
     range[0] = TextureColor(255,255,255);
     range[1] = TextureColor(0,0,0);
 
-    sampleParentBase(child, range, dst, src);
+    sampleParentBase(child, range, dst, src, nodata);
 }
 
 void DataManager::
 sourceDem(const NodeData* const parent, const DemHeight* const parentHeight,
           NodeData* child, DemHeight* childHeight)
 {
-    DemHeight* range = &child->elevationRange[0];
+    typedef DemFile::File    File;
+    typedef File::TileHeader TileHeader;
 
-    if (child->demTile != DemFile::INVALID_TILEINDEX)
+    DemHeight* range   = &child->elevationRange[0];
+
+    if (child->demTile != INVALID_TILEINDEX)
     {
-        DemTileHeader header;
-        DemFile* file = demFiles[child->index.patch];
+        TileHeader header;
+        File* file = demFile->getPatch(child->index.patch);
         if (!file->readTile(child->demTile, child->childDemTiles, header,
                             childHeight))
         {
@@ -748,10 +881,12 @@ sourceDem(const NodeData* const parent, const DemHeight* const parentHeight,
     else
     {
         if (parent != NULL)
-            sampleParent(child->index.child, range, childHeight, parentHeight);
+            sampleParent(child->index.child, range, childHeight, parentHeight,
+                         demNodata);
         else
         {
-            range[0] = range[1] = demNodata;
+            range[0] =  Math::Constants<DemHeight>::max;
+            range[1] = -Math::Constants<DemHeight>::max;
             for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
                 childHeight[i] = demNodata;
         }
@@ -763,9 +898,11 @@ sourceColor(
     const NodeData* const parent, const TextureColor* const parentImagery,
     NodeData* child, TextureColor* childImagery)
 {
-    if (child->colorTile != ColorFile::INVALID_TILEINDEX)
+    typedef ColorFile::File File;
+
+    if (child->colorTile != INVALID_TILEINDEX)
     {
-        ColorFile* file = colorFiles[child->index.patch];
+        File* file = colorFile->getPatch(child->index.patch);
         if (!file->readTile(child->colorTile, child->childColorTiles,
                             childImagery))
         {
@@ -778,12 +915,34 @@ sourceColor(
     {
         TextureColor range[2];
         if (parent != NULL)
-            sampleParent(child->index.child, range, childImagery,parentImagery);
+            sampleParent(child->index.child, range, childImagery, parentImagery,
+                         colorNodata);
         else
         {
             for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
                 childImagery[i] = colorNodata;
         }
+    }
+}
+
+void DataManager::
+startFetchThread()
+{
+    terminateFetch = false;
+    fetchThread.start(this, &DataManager::fetchThreadFunc);
+}
+
+void DataManager::
+terminateFetchThread()
+{
+    if (!fetchThread.isJoined())
+    {
+        //let the fetch thread know that it should terminate
+        terminateFetch = true;
+        //make sure the thread is not stuck waiting for requests
+        fetchCond.signal();
+        //wait for the termination
+        fetchThread.join();
     }
 }
 
@@ -803,10 +962,19 @@ fetchThreadFunc()
                 //need to reactivate cache to process fetch completion
                 Vrui::requestUpdate();
             }
-            //attempt to grab new request
+            //terminate before trying to fetch more?
+            if (terminateFetch)
+                return NULL;
+
+            //wait for new requests if there are none pending
             if (fetchRequests.empty())
                 fetchCond.wait(requestMutex);
-            fetch = &fetchRequests.front();
+
+            //was the signal actually to terminate? If not grab the request
+            if (terminateFetch)
+                return NULL;
+            else
+                fetch = &fetchRequests.front();
         }
 
         //fetch it

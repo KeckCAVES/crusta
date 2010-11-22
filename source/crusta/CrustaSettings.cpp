@@ -17,6 +17,9 @@ CrustaSettings::CrustaSettings() :
 
     decorateVectorArt(false),
 
+    terrainDefaultHeight(0.0f),
+    terrainDefaultColor(0.5f, 0.5f, 0.5f, 1.0f),
+
     terrainAmbientColor(0.4f, 0.4f, 0.4f, 1.0f),
     terrainDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f),
     terrainEmissiveColor(0.0f, 0.0f, 0.0f, 1.0f),
@@ -83,16 +86,21 @@ loadFromFile(std::string configurationFileName, bool merge)
 
     //try to extract the terrain properties
     cfgFile.setCurrentSection("/Crusta/Terrain");
+    terrainDefaultHeight = cfgFile.retrieveValue<float>(
+        "./defaultHeight", terrainDefaultHeight);
+    terrainDefaultColor = cfgFile.retrieveValue<Color>(
+        "./defaultColor", terrainDefaultColor);
+
     terrainAmbientColor = cfgFile.retrieveValue<Color>(
-        "./terrainAmbientColor", terrainAmbientColor);
+        "./ambientColor", terrainAmbientColor);
     terrainDiffuseColor = cfgFile.retrieveValue<Color>(
-        "./terrainDiffuseColor", terrainDiffuseColor);
+        "./diffuseColor", terrainDiffuseColor);
     terrainEmissiveColor = cfgFile.retrieveValue<Color>(
-        "./terrainEmissiveColor", terrainEmissiveColor);
+        "./emissiveColor", terrainEmissiveColor);
     terrainSpecularColor = cfgFile.retrieveValue<Color>(
-        "./terrainSpecularColor", terrainSpecularColor);
+        "./specularColor", terrainSpecularColor);
     terrainShininess = cfgFile.retrieveValue<double>(
-        "./terrainShininess", terrainShininess);
+        "./shininess", terrainShininess);
 
     //try to extract the cache settings
     cfgFile.setCurrentSection("/Crusta/Cache");

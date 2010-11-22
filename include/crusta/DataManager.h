@@ -1,12 +1,16 @@
 #ifndef _DataManager_H_
 #define _DataManager_H_
 
+#include <GL/VruiGlew.h> //must be included before gl.h
+#include <GL/GLContextData.h>
+#include <GL/GLObject.h>
 #include <Threads/Cond.h>
 #include <Threads/Mutex.h>
 #include <Threads/Thread.h>
 
+#include <crusta/GlobeFile.h>
+#include <crusta/QuadCache.h>
 #include <crusta/QuadNodeData.h>
-#include <crusta/QuadtreeFileSpecs.h>
 #include <crusta/SurfaceApproximation.h>
 
 
@@ -25,9 +29,10 @@ database of the requested data, etc.). For now I'm using Crusta pointers */
 class DataManager
 {
 public:
-    typedef std::vector<DemFile*>   DemFiles;
-    typedef std::vector<ColorFile*> ColorFiles;
+    typedef GlobeFile<DemHeight>    DemFile;
+    typedef GlobeFile<TextureColor> ColorFile;
 
+    /** the relevant main and gpu memory data for a tile */    
     struct BatchElement
     {
         NodeMainData main;
@@ -58,22 +63,34 @@ public:
         /** index of the child to be loaded */
         uint8 child;
     };
-
     typedef std::vector<Request> Requests;
-    DataManager(const Polyhedron& polyhedron, const std::string& demBase,
-                const std::string& colorBase);
+    
+    DataManager();
     ~DataManager();
+
+    /** assign the given databases to the data manager */
+    void load(const std::string& demPath, const std::string& colorPath);
+    /** detach the data manager from the current databases */
+    void unload();
 
     /** check if DEM data is available from the manager */
     bool hasDemData() const;
     /** check if color data is available from the manager */
     bool hasColorData() const;
 
+    /** get the polyhedron that serves as the basis for the managed data */
+    const Polyhedron* const getPolyhedron() const;
+    /** get the value used to indicate the abscence of height data */
+    const DemHeight& getDemNodata();
+    /** get the value used to indicate the abscence of color data */
+    const TextureColor& getColorNodata();
+    
     /** load the root data of a patch */
     void loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope);
 
     /** process requests */
     void frame();
+    
     /** request data fetch/generation for a node */
     void request(const Request& req);
     /** request data fetch/generation for a set of tree indices */
@@ -107,7 +124,7 @@ public:
     void pin(NodeMainBuffer& mainBuf) const;
     /** unpin main buffers */
     void unpin(NodeMainBuffer& mainBuf) const;
-
+    
 protected:
     struct FetchRequest
     {
@@ -118,9 +135,23 @@ protected:
 
         FetchRequest();
         bool operator ==(const FetchRequest& other) const;
-//        bool operator <(const FetchRequest& other) const;
     };
     typedef std::list<FetchRequest> FetchRequests;
+
+    /** required for mainpulating GPU caches since they are per context */
+    class GlData : public GLObject
+    {
+    public:
+        struct Item : public GLObject::DataItem
+        {
+            /** flag used to trigger the clearing of the GPU caches */
+            FrameStamp clearGpuCachesStamp;
+        };
+
+    //- inherited from GLObject
+    public:
+        virtual void initContext(GLContextData& contextData) const;
+    };
 
     /** get main buffers from the managed caches */
     const NodeMainBuffer grabMainBuffer(const TreeIndex& index,
@@ -147,13 +178,20 @@ protected:
                      const TextureColor* const parentImagery, NodeData* child,
                      TextureColor* childImagery);
 
+    /** start the fetching thread */
+    void startFetchThread();
+    /** terminate the fetching thread */
+    void terminateFetchThread();
+    
     /** fetch thread function: process the generation/reading of the data */
     void* fetchThreadFunc();
 
-    /** quadtree file from which to source data for the elevation */
-    DemFiles demFiles;
-    /** quadtree file from which to source data for the color */
-    ColorFiles colorFiles;
+    /** globe file from which to source data for the elevation */
+    DemFile* demFile;
+    /** globe file from which to source data for the color */
+    ColorFile* colorFile;
+    /** polyhedron serving as the basis for the managed data */
+    Polyhedron* polyhedron;
 
     /** value for "no-data" elevations */
     DemHeight demNodata;
@@ -181,8 +219,18 @@ protected:
     /** allow the fetching thread to blocking wait for requests */
     Threads::Cond fetchCond;
 
+    /** flags the fetch thread to terminate */
+    bool terminateFetch;
+    
     /** thread handling fetch request processing */
     Threads::Thread fetchThread;
+    
+    /** used in conjuction with the flag in the GlData to clear GPU caches */
+    FrameStamp clearGpuCachesStamp;
+
+    /** gl data for general datamanager use.
+    \todo due to VruiGlew dependency must be dynamically allocated */
+    static GlData* glData;    
 };
 
 

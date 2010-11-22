@@ -34,7 +34,9 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <sys/stat.h>
 #include <fstream>
 
+
 BEGIN_CRUSTA
+
 
 /*************************************************
 Static elements of class LightingShader:
@@ -240,14 +242,18 @@ const char* LightingShader::fetchTerrainColorFromColorMap =
 "\
     float e = sampleHeight(coord);\n\
           e = (e-minColorMapElevation) * colorMapElevationInvRange;\n\
-    vec4 mapColor     = texture1D(colorMap, e);\n\
-    vec4 terrainColor = sampleColor(coord);\n\
-    terrainColor      = mix(terrainColor, mapColor, mapColor.w);\
+    vec4 mapColor    = texture1D(colorMap, e);\n\
+    vec3 texColor    = sampleColor(coord).rgb;\n\
+    vec4 terrainColor= texColor==colorNodata ? vec4(colorDefault, 1.0) :\n\
+                                               vec4(texColor, 1.0);\n\
+    terrainColor     = mix(terrainColor, mapColor, mapColor.w);\
 ";
 
 const char* LightingShader::fetchTerrainColorFromTexture =
 "\
-    vec4 terrainColor = sampleColor(coord);\n\
+    vec3 texColor     = sampleColor(coord).rgb;\n\
+    vec4 terrainColor = texColor==colorNodata ? vec4(colorDefault, 1.0) :\n\
+                                                vec4(texColor, 1.0);\
 ";
 
 /*****************************************
@@ -355,7 +361,8 @@ checkFileForChanges(const char* fileName)
     }
     else
     {
-        Misc::throwStdErr("LightingShader: can't find FP to check");
+        Misc::throwStdErr("LightingShader: can't find FP to check (%s)",
+                          fileName);
         return false;
     }
 }
@@ -468,18 +475,22 @@ void LightingShader::compileShader()
         uniform float verticalScale;\n\
         uniform vec3  center;\n\
         \n\
+        uniform float demNodata;\n\
+        uniform vec3  colorNodata;\n\
+        uniform float demDefault;\n\
+        uniform vec3  colorDefault;\n\
+        \n\
         uniform vec3 heightTexOffset;\n\
         uniform vec2 heightTexScale;\n\
         uniform vec3 geometryTexOffset;\n\
         uniform vec2 geometryTexScale;\n\
         uniform vec3 colorTexOffset;\n\
         uniform vec2 colorTexScale;\n\
-    ";
-
-    vertexShaderUniforms += "\n\
+        \n\
         varying vec3 position;\n\
         varying vec3 normal;\n\
         varying vec2 texCoord;\n\
+        \n\
     ";
 
     vertexShaderFunctions +=
@@ -505,6 +516,7 @@ void LightingShader::compileShader()
             vec3 res      = sampleGeometry(coords);\n\
             vec3 dir      = normalize(center + res);\n\
             float height  = sampleHeight(coords);\n\
+            height        = height==demNodata ? demDefault : height;\n\
             height       *= verticalScale;\n\
             res          += height * dir;\n\
             return res;\n\
@@ -726,6 +738,11 @@ catch (std::exception& e){
     colorTexScaleUniform = glGetUniformLocation(programObject,
                                                    "colorTexScale");
 
+    demNodataUniform    = glGetUniformLocationARB(programObject,"demNodata");
+    colorNodataUniform  = glGetUniformLocationARB(programObject,"colorNodata");
+    demDefaultUniform   = glGetUniformLocationARB(programObject,"demDefault");
+    colorDefaultUniform = glGetUniformLocationARB(programObject,"colorDefault");
+
 
     if (linesDecorated)
     {
@@ -800,4 +817,6 @@ void LightingShader::disable()
     /* Disable the shader: */
     glUseProgramObjectARB(0);
     }
+
+
 END_CRUSTA

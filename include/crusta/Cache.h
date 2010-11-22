@@ -113,6 +113,9 @@ public:
     /** initialize the data of the buffers */
     virtual void initData(typename BufferParam::DataType& data);
 
+    /** reset the unit, unpinning and invalidating all the current entries */
+    void clear();
+
     /** check to see if the buffer is valid */
     bool isValid(const BufferParam* const buffer) const;
     /** check to see if the buffer is pinned */

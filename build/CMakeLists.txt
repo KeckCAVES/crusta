@@ -1,275 +1,151 @@
-cmake_minimum_required(VERSION 2.6)
-#cmake_policy(SET CMP0011 NEW)
+# Version 2.8 or greater is required for packaging
+cmake_minimum_required(VERSION 2.8)
 
+# Add local cmake directory to the module search path (for FindVrui)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
 
-project(CRUSTA)
-
-#-------------------
-# Include VRUI variables and macros
-#-------------------
-find_package(VRUI REQUIRED HINTS ${CMAKE_SOURCE_DIR})
 
 
 #-------------------
 # Target independent configuration
 #-------------------
-set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
-    CACHE INTERNAL "CMAKE_INSTALL_PREFIX")
 
+
+##-- Set project name and target version
+
+project(Crusta)
+set(${PROJECT_NAME}_MAJOR_VERSION 0)
+set(${PROJECT_NAME}_MINOR_VERSION 0)
+set(${PROJECT_NAME}_PATCH_VERSION 3)
+
+
+##-- Setup the default build
+
+# Setup the distribution build option
+option(DIST_BUILD "Build for packaging and distribution" OFF)
+
+# Setup the default build type
+if(NOT CMAKE_BUILD_TYPE)
+    set(DEFAULT_BUILD_TYPE Release CACHE INTERNAL "Default build type")
+    set(CMAKE_BUILD_TYPE ${DEFAULT_BUILD_TYPE} CACHE STRING
+        "Choose the type of build (Debug Release RelWithDebInfo MinSizeRel)"
+        FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
+
+
+##-- Setup default paths
+
+# Setup the default install prefix
+if(NOT DIST_BUILD AND DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX
+        "${CMAKE_SOURCE_DIR}/../install/${CMAKE_BUILD_TYPE}"
+        CACHE INTERNAL "Install path prefix, used to setup install paths."
+        FORCE)
+endif(NOT DIST_BUILD AND DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+
+# Setup the default install paths
 set(CRUSTA_EXECUTABLE_PATH "${CMAKE_INSTALL_PREFIX}/bin"
     CACHE PATH "Crusta install executable path")
 set(CRUSTA_LIBRARY_PATH "${CMAKE_INSTALL_PREFIX}/lib"
     CACHE PATH "Crusta install library path")
 set(CRUSTA_SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share/crusta"
     CACHE PATH "Crusta install share path")
-add_definitions(-DCRUSTA_SHARE_PATH=\"${CRUSTA_SHARE_PATH}\" -DGLEW_MX)
 
-include_directories(${VRUI_INCLUDE_DIR})
+# Only use rpath for non-distribution builds
+if(NOT DIST_BUILD)
+    set(CMAKE_SKIP_BUILD_RPATH FALSE)
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+    set(CMAKE_INSTALL_RPATH "${CRUSTA_LIBRARY_PATH}")
+    set(CMAKE_INSTALL_NAME_DIR "${CRUSTA_LIBRARY_PATH}")
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    message(STATUS "Using rpath for executables")
+endif(NOT DIST_BUILD)
+
+
+##-- Setup compile properties
+
+# Add the Crusta include directory
 include_directories(../include)
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
+# Set GLEW to multi-context mode and add the share path
+add_definitions(-DGLEW_MX -DCRUSTA_SHARE_PATH=\"${CRUSTA_SHARE_PATH}\")
 
-set(CMAKE_SKIP_BUILD_RPATH FALSE)
-set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-set(CMAKE_INSTALL_RPATH "${CRUSTA_LIBRARY_PATH}")
-set(CMAKE_INSTALL_NAME_DIR "${CRUSTA_LIBRARY_PATH}")
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+# Show all warnings, don't complain about variadic macros
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
-#GDAL
+
+##-- Setup required external libraries
+
+# Setup GDAL
 if(APPLE)
-   find_library(GDAL_LIBRARY GDAL)
+    find_library(GDAL_LIBRARY GDAL)
+    if(GDAL_NOT_FOUND)
+        message(FATAL_ERROR "Required GDAL library not found")
+    endif(GDAL_NOT_FOUND)
 else(APPLE)
-   find_package(GDAL)
-   include_directories(${GDAL_INCLUDE_DIR})
+    find_package(GDAL REQUIRED)
+    include_directories(${GDAL_INCLUDE_DIR})
 endif(APPLE)
 
+# Setup Vrui
+find_package(Vrui REQUIRED)
 
-#-------------------
-# Crusta shared dynamic link library containing the core crusta components
-#-------------------
+# Setup GLU
+find_library(X11_OPENGL_GLU_LIBRARIES
+             NAMES GLU
+             PATH_SUFFIXES X11)
 
-add_library(CrustaCore SHARED
-    ../include/crusta/basics.h
-    ../include/crusta/Cache.h
-    ../include/crusta/Cache.hpp
-    ../include/crusta/checkGl.h
-    ../include/crusta/ColorTextureSpecs.h
-    ../include/crusta/Crusta.h
-    ../include/crusta/CrustaComponent.h
-    ../include/crusta/CrustaSettings.h
-    ../include/crusta/CrustaVisualizer.h
-    ../include/crusta/DataManager.h
-    ../include/crusta/DebugTool.h
-    ../include/crusta/DemSpecs.h
-    ../include/crusta/ElevationRangeTool.h
-    ../include/crusta/Ellipsoid.h
-    ../include/crusta/FocusViewEvaluator.h
-    ../include/crusta/FrustumVisibility.h
-    ../include/crusta/Homography.h
-    ../include/crusta/IdGenerator.h
-    ../include/crusta/LightingShader.h
-    ../include/crusta/LodEvaluator.h
-    ../include/crusta/map/MapManager.h
-    ../include/crusta/map/MapTool.h
-    ../include/crusta/map/Polyline.h
-    ../include/crusta/map/PolylineRenderer.h
-    ../include/crusta/map/PolylineTool.h
-    ../include/crusta/map/Shape.h
-    ../include/crusta/PixelSpecs.h
-    ../include/crusta/Polyhedron.h
-    ../include/crusta/QuadCache.h
-    ../include/crusta/QuadCache.hpp
-    ../include/crusta/QuadNodeData.h
-    ../include/crusta/QuadNodeDataBundles.h
-    ../include/crusta/QuadTerrain.h
-    ../include/crusta/QuadtreeFile.h
-    ../include/crusta/QuadtreeFile.hpp
-    ../include/crusta/QuadtreeFileHeaders.h
-    ../include/crusta/QuadtreeFileSpecs.h
-    ../include/crusta/Refinement.h
-    ../include/crusta/Refinement.hpp
-    ../include/crusta/Scope.h
-    ../include/crusta/Scope.hpp
-    ../include/crusta/Section.h
-    ../include/crusta/Sphere.h
-    ../include/crusta/StatsManager.h
-    ../include/crusta/SurfaceApproximation.h
-    ../include/crusta/SurfaceTool.h
-    ../include/crusta/Timer.h
-    ../include/crusta/Tool.h
-    ../include/crusta/TreeIndex.h
-    ../include/crusta/Triacontahedron.h
-    ../include/crusta/Triangle.h
-    ../include/crusta/ViewLod.h
-    ../include/crusta/VisibilityEvaluator.h
-    ../include/crusta/Visualizer.h
-    ../include/GL/glew.h
-    ../include/GL/GlProgram.h
-    ../include/GL/glxew.h
-    ../include/GL/VruiGlew.h
-    ../include/GLMotif/ColorHexagon.h
-    ../include/GLMotif/ColorMap.h
-    ../include/GLMotif/ColorPicker.h
-    ../include/GLMotif/ColorPickerWindow.h
-    ../include/GLMotif/PaletteEditor.h
 
-    ../source/crusta/ColorTextureSpecs.cpp
-    ../source/crusta/Crusta.cpp
-    ../source/crusta/CrustaSettings.cpp
-    ../source/crusta/CrustaVisualizer.cpp
-    ../source/crusta/DataManager.cpp
-    ../source/crusta/DebugTool.cpp
-    ../source/crusta/DemSpecs.cpp
-    ../source/crusta/ElevationRangeTool.cpp
-    ../source/crusta/FocusViewEvaluator.cpp
-    ../source/crusta/FrustumVisibility.cpp
-    ../source/crusta/Homography.cpp
-    ../source/crusta/LightingShader.cpp
-    ../source/crusta/LodEvaluator.cpp
-    ../source/crusta/map/MapManager.cpp
-    ../source/crusta/map/MapTool.cpp
-    ../source/crusta/map/Polyline.cpp
-    ../source/crusta/map/PolylineRenderer.cpp
-    ../source/crusta/map/PolylineTool.cpp
-    ../source/crusta/map/Shape.cpp
-    ../source/crusta/QuadCache.cpp
-    ../source/crusta/QuadNodeData.cpp
-    ../source/crusta/QuadNodeDataBundles.cpp
-    ../source/crusta/QuadTerrain.cpp
-    ../source/crusta/Scope.cpp
-    ../source/crusta/Sphere.cpp
-    ../source/crusta/Section.cpp
-    ../source/crusta/StatsManager.cpp
-    ../source/crusta/SurfaceApproximation.cpp
-    ../source/crusta/SurfaceTool.cpp
-    ../source/crusta/Tool.cpp
-    ../source/crusta/TreeIndex.cpp
-    ../source/crusta/Triacontahedron.cpp
-    ../source/crusta/ViewLod.cpp
-    ../source/crusta/Visualizer.cpp
-    ../source/GL/glew.c
-    ../source/GL/GlProgram.cpp
-    ../source/GL/VruiGlew.cpp
-    ../source/GLMotif/ColorHexagon.cpp
-    ../source/GLMotif/ColorMap.cpp
-    ../source/GLMotif/ColorPicker.cpp
-    ../source/GLMotif/ColorPickerWindow.cpp
-    ../source/GLMotif/PaletteEditor.cpp
-)
+##--Check and report build type
 
-vrui_set_target_properties(CrustaCore)
-target_link_libraries(CrustaCore ${GDAL_LIBRARY})
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message(STATUS "Build type: Debug")
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+    message(STATUS "Build type: Release")
+elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    message(STATUS "Build type: Release with debug info")
+elseif(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+    message(STATUS "Build type: Minimum size release")
+else()
+    message(FATAL_ERROR "Invalid build type \"${CMAKE_BUILD_TYPE}\". "
+                        "Valid values are:\n\t" "Debug\n\t" "Release\n\t"
+                        "RelWithDebInfo\n\t" "MinSizeRel")
+endif()
 
-#-------------------
-# Crusta application wrapping the core components into an executable
-#-------------------
+if(DIST_BUILD)
+    message(STATUS "Building in distribution mode: assuming we are going to "
+                   "make release packages")
+else()
+    message(STATUS "Building in non-distribution mode: assuming non-standard "
+                   "install location and no packaging")
+endif()
+message(STATUS "Install to:\n\t"
+               "Executables: ${CRUSTA_EXECUTABLE_PATH}\n\t"
+               "Libraries: ${CRUSTA_LIBRARY_PATH}\n\t"
+               "Shared Files: ${CRUSTA_SHARE_PATH}")
 
-add_executable(crusta
-    ../include/crusta/CrustaApp.h
-
-    ../source/crusta/CrustaApp.cpp
-)
-
-vrui_set_target_properties(crusta)
-target_link_libraries(crusta CrustaCore)
 
 
 #-------------------
-# Crusta vislet module wrapping the core components into a vislet
+# Target specifications
 #-------------------
 
-add_library(CrustaVislet MODULE
-    ../include/crusta/CrustaVislet.h
 
-    ../source/crusta/CrustaVislet.cpp
-)
+##-- Main Crusta components
 
-vrui_set_target_properties(CrustaVislet)
-target_link_libraries(CrustaVislet CrustaCore)
+include(CrustaCore)
 
-if(APPLE)
-set_target_properties(CrustaVislet PROPERTIES
-                      SUFFIX ".bundle")
-endif(APPLE)
+include(CrustaApp)
+
+include(CrustaVislet)
+
+include(Construo)
 
 
-#-------------------
-# Construo application
-#-------------------
+##-- Installation and packaging
 
-add_executable(construo
-    ../include/construo/ArcInfoBinaryGridImageFile.h
-    ../include/construo/Builder.h
-    ../include/construo/Builder.hpp
-    ../include/construo/construoGlobals.h
-    ../include/construo/ConstruoSettings.h
-    ../include/construo/ConstruoVisualizer.h
-    ../include/construo/Converters.h
-    ../include/construo/DynamicFilter.h
-    ../include/construo/Filter.h
-    ../include/construo/GdalImageFile.h
-    ../include/construo/GdalImageFile.hpp
-    ../include/construo/GdalTransform.h
-    ../include/construo/GeometryTypes.h
-    ../include/construo/GeoTransform.h
-    ../include/construo/ImageCoverage.h
-    ../include/construo/ImageFile.h
-    ../include/construo/ImageFile.hpp
-    ../include/construo/ImageFileLoader.h
-    ../include/construo/ImageFileLoader.hpp
-    ../include/construo/ImagePatch.h
-    ../include/construo/ImagePatch.hpp
-    ../include/construo/ImageTransform.h
-    ../include/construo/ImageTransformReader.h
-    ../include/construo/PixelHelpers.h
-    ../include/construo/Sampler.h
-    ../include/construo/SphereCoverage.h
-    ../include/construo/TpmFile.h
-    ../include/construo/TpmImageFile.h
-    ../include/construo/Tree.h
-    ../include/construo/Tree.hpp
-    ../include/construo/UtmTransform.h
+include(Install)
 
-    ../source/construo/ArcInfoBinaryGridImageFile.cpp
-    ../source/construo/Construo.cpp
-    ../source/construo/construoGlobals.cpp
-    ../source/construo/ConstruoSettings.cpp
-    ../source/construo/ConstruoVisualizer.cpp
-    ../source/construo/Filter.cpp
-    ../source/construo/GdalTransform.cpp
-    ../source/construo/GdalImageFile.cpp
-    ../source/construo/GeoTransform.cpp
-    ../source/construo/ImageCoverage.cpp
-    ../source/construo/ImageTransform.cpp
-    ../source/construo/ImageTransformReader.cpp
-    ../source/construo/SphereCoverage.cpp
-    ../source/construo/TpmFile.cpp
-    ../source/construo/TpmImageFile.cpp
-    ../source/construo/UtmTransform.cpp
-)
-
-#cmake fraking sucks if you don't follow their directory structure!!!!
-#set_target_properties(construo PROPERTIES
-#                               COMPILE_DEFINITIONS "CONSTRUO_BUILD")
-
-vrui_set_target_properties(construo)
-
-target_link_libraries(construo CrustaCore ${GDAL_LIBRARY})
-
-#-------------------
-# Crusta installation
-#-------------------
-
-install(TARGETS CrustaCore  crusta construo CrustaVislet
-        RUNTIME DESTINATION "${CRUSTA_EXECUTABLE_PATH}"
-        LIBRARY DESTINATION "${CRUSTA_LIBRARY_PATH}"
-        ARCHIVE DESTINATION "${CRUSTA_LIBRARY_PATH}"
-)
-
-set(CRUSTA_SHARES ../share/mapSymbolAtlas.tga
-                  ../share/mapSymbols.cfg
-                  ../share/decoratedRenderer.fp
-                  ../share/plainRenderer.fp
-)
-install(FILES ${CRUSTA_SHARES} DESTINATION ${CRUSTA_SHARE_PATH})
+#if(DIST_BUILD)
+    include(Package)
+#endif(DIST_BUILD)

@@ -96,6 +96,13 @@ Triacontahedron(Scope::Scalar sphereRadius) :
     radius(sphereRadius)
 {}
 
+
+std::string Triacontahedron::
+getType() const
+{
+    return "Triacontahedron";
+}
+
 uint Triacontahedron::
 getNumPatches() const
 {

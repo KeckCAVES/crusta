@@ -3,7 +3,7 @@
 /***********************************************************************
 ImageFile - Base class to represent image files for simple reading of
 individual tiles
-Copyright (c) 2005-2008 Oliver Kreylos
+Copyright (c) 2005-2008 Oliver Kreylos, Tony Bernardin
 
 This file is part of the DEM processing and visualization package.
 
@@ -26,56 +26,49 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #ifndef _ImageFile_H_
 #define _ImageFile_H_
 
-#include <string>
 
 #include <crusta/basics.h>
 
+
 BEGIN_CRUSTA
 
-template <typename PixelParam>
-struct Nodata;
 
 template <typename PixelParam>
-class ImageFileBase
+class ImageFile
 {
 public:
-    ///data type for pixel values stored in images
-    typedef PixelParam Pixel;
-
-    ImageFileBase();
-    virtual ~ImageFileBase();
+    ImageFile();
+    virtual ~ImageFile();
 
     ///set the uniform scale of the pixel values
     void setPixelScale(double scale);
     ///retrieve the uniform scale fo the pixel values
     double getPixelScale() const;
-    ///set a nodata value to use
-    virtual void setNodata(const std::string& nodataString) = 0;
     ///retrieve the nodata value
-    const Nodata<PixelParam>& getNodata() const;
+    const PixelParam& getNodata() const;
+    ///set the nodata value
+    void setNodata(const PixelParam& nodataValue);
     ///returns image size
     const int* getSize() const;
     ///reads a rectangle of pixel data into the given buffer
     virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
-                               Pixel* rectBuffer) const = 0;
+                               PixelParam* rectBuffer) const = 0;
 
 protected:
     /** the uniform scale of the values of the image (in particular for DEMs
         that would be the elevation resolution in meters) */
     double pixelScale;
     ///the value corresponding to "no data"
-    Nodata<PixelParam> nodata;
+    PixelParam nodata;
     ///size of the image in pixels (width x height)
     int size[2];
 };
 
-template <typename PixelParam>
-class ImageFile : public ImageFileBase<PixelParam>
-{
-};
 
 END_CRUSTA
 
+
 #include <construo/ImageFile.hpp>
+
 
 #endif //_ImageFile_H_

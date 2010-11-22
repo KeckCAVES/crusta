@@ -4,6 +4,7 @@
 
 #include <crusta/checkGl.h>
 #include <crusta/Crusta.h>
+#include <crusta/DataManager.h>
 
 BEGIN_CRUSTA
 
@@ -13,22 +14,26 @@ NodeData() :
     index(TreeIndex::invalid),
     boundingAge(0), boundingCenter(0,0,0), boundingRadius(0)
 {
-    demTile   = DemFile::INVALID_TILEINDEX;
-    colorTile = ColorFile::INVALID_TILEINDEX;
+    demTile   = INVALID_TILEINDEX;
+    colorTile = INVALID_TILEINDEX;
     for (int i=0; i<4; ++i)
     {
-        childDemTiles[i]   = DemFile::INVALID_TILEINDEX;
-        childColorTiles[i] = ColorFile::INVALID_TILEINDEX;
+        childDemTiles[i]   = INVALID_TILEINDEX;
+        childColorTiles[i] = INVALID_TILEINDEX;
     }
 
     centroid[0] = centroid[1] = centroid[2] = DemHeight(0.0);
-    elevationRange[0] = elevationRange[1]   = DemHeight(0.0);
+    elevationRange[0] =  Math::Constants<DemHeight>::max;
+    elevationRange[1] = -Math::Constants<DemHeight>::max;
 }
 
 void NodeData::
 computeBoundingSphere(Scalar radius, Scalar verticalScale)
 {
-    DemHeight avgElevation = (elevationRange[0] + elevationRange[1]);
+    DemHeight range[2];
+    getElevationRange(range);
+
+    DemHeight avgElevation = (range[0] + range[1]);
     avgElevation          *= DemHeight(0.5)* verticalScale;
 
     boundingCenter = scope.getCentroid(radius + avgElevation);
@@ -40,7 +45,7 @@ computeBoundingSphere(Scalar radius, Scalar verticalScale)
         {
             Scope::Vertex corner = scope.corners[i];
             Scope::Scalar norm   = Scope::Scalar(radius);
-            norm += elevationRange[j]*verticalScale;
+            norm += range[j]*verticalScale;
             norm /= sqrt(corner[0]*corner[0] + corner[1]*corner[1] +
                          corner[2]*corner[2]);
             Scope::Vertex toCorner;
@@ -60,13 +65,39 @@ computeBoundingSphere(Scalar radius, Scalar verticalScale)
 void NodeData::
 init(Scalar radius, Scalar verticalScale)
 {
-    //compute the centroid on the average elevation (see split)
+    //compute the centroid
     Scope::Vertex scopeCentroid = scope.getCentroid(radius);
     centroid[0] = scopeCentroid[0];
     centroid[1] = scopeCentroid[1];
     centroid[2] = scopeCentroid[2];
 
+    //update the bounding sphere
     computeBoundingSphere(radius, verticalScale);
+}
+
+void NodeData::
+getElevationRange(DemHeight range[2]) const
+{
+    if (elevationRange[0]== Math::Constants<DemHeight>::max ||
+        elevationRange[1]==-Math::Constants<DemHeight>::max)
+    {
+        range[0] = SETTINGS->terrainDefaultHeight;
+        range[1] = SETTINGS->terrainDefaultHeight;
+    }
+    else
+    {
+        range[0] = elevationRange[0];
+        range[1] = elevationRange[1];
+    }
+}
+
+DemHeight NodeData::
+getHeight(const DemHeight& test) const
+{
+    if (test == DATAMANAGER->getDemNodata())
+        return SETTINGS->terrainDefaultHeight;
+    else
+        return test;
 }
 
 

@@ -32,10 +32,10 @@
 #endif
 
 #include <construo/ImageFile.h>
-#include <crusta/ColorTextureSpecs.h>
-#include <crusta/DemSpecs.h>
+
 
 BEGIN_CRUSTA
+
 
 extern bool GdalAllRegisteredCalled;
 
@@ -43,49 +43,33 @@ template <typename PixelParam>
 class GdalImageFileBase : public ImageFile<PixelParam>
 {
 public:
-    typedef ImageFile<PixelParam> ImageBase;
-
     ///opens an image file by name
-	GdalImageFileBase(const char* imageFileName);
+    GdalImageFileBase(const std::string& imageFileName);
     ///closes the image file
-	virtual ~GdalImageFileBase();
+    virtual ~GdalImageFileBase();
 
 protected:
     GDALDataset* dataset;
 };
 
-class GdalDemImageFile : public GdalImageFileBase<DemHeight>
+template <typename PixelParam>
+class GdalImageFile : public GdalImageFileBase<PixelParam>
 {
 public:
-    ///type of base class
-    typedef GdalImageFileBase<DemHeight> Base;
+    typedef GdalImageFileBase<PixelParam> Base;
 
-    GdalDemImageFile(const char* imageFileName);
+    GdalImageFile(const std::string& imageFileName);
 
 //- inherited from ImageFileBase
 public:
-    virtual void setNodata(const std::string& nodataString);
-	virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
-                               Pixel* rectBuffer) const;
-};
-
-class GdalColorImageFile : public GdalImageFileBase<TextureColor>
-{
-public:
-    ///type of base class
-    typedef GdalImageFileBase<TextureColor> Base;
-
-    GdalColorImageFile(const char* imageFileName);
-
-//- inherited from ImageFileBase
-public:
-    virtual void setNodata(const std::string& nodataString);
-	virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
-                               Pixel* rectBuffer) const;
+    virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
+                               PixelParam* rectBuffer) const;
 };
 
 END_CRUSTA
 
+
 #include <construo/GdalImageFile.hpp>
+
 
 #endif //_GdalImageFile_H_
