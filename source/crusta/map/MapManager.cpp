@@ -391,16 +391,16 @@ std::cerr << " )\n\n";
 
     for (Shape::ControlPointHandle start=startCP; end!=endCP; ++start, ++end)
     {
-CRUSTA_DEBUG(42, std::cerr << "adding segment " << start << "\n");
+CRUSTA_DEBUG(42, std::cerr << "adding segment " << start << "\n";)
         adder.setSegment(start);
         crusta->intersect(start, adder);
-CRUSTA_DEBUG(42, std::cerr << "\n");
+CRUSTA_DEBUG(42, std::cerr << "\n";)
     }
 
 #if CHECK_CONVERAGE_VALIDITY
-CRUSTA_DEBUG_ONLY(crusta->validateLineCoverage();)
+CRUSTA_DEBUG(110, crusta->validateLineCoverage();)
 #endif //CHECK_CONVERAGE_VALIDITY
-CRUSTA_DEBUG(41, std::cerr << "--ADD\n\n");
+CRUSTA_DEBUG(41, std::cerr << "--ADD\n\n";)
 }
 
 void MapManager::
@@ -426,19 +426,19 @@ std::cerr << " )\n";
 
     for (Shape::ControlPointHandle start=startCP; end!=endCP; ++start, ++end)
     {
-CRUSTA_DEBUG(42, std::cerr << "removing segment " << start << "\n");
+CRUSTA_DEBUG(42, std::cerr << "removing segment " << start << "\n";)
         remover.setSegment(start);
         crusta->intersect(start, remover);
 #if CHECK_CONVERAGE_VALIDITY
-CRUSTA_DEBUG_ONLY(crusta->confirmLineCoverageRemoval(shape, start);)
+CRUSTA_DEBUG(110, crusta->confirmLineCoverageRemoval(shape, start);)
 #endif //CHECK_CONVERAGE_VALIDITY
-CRUSTA_DEBUG(42, std::cerr << "\n");
+CRUSTA_DEBUG(42, std::cerr << "\n";)
     }
 
 #if CHECK_CONVERAGE_VALIDITY
-CRUSTA_DEBUG_ONLY(crusta->validateLineCoverage();)
+CRUSTA_DEBUG(110, crusta->validateLineCoverage();)
 #endif //CHECK_CONVERAGE_VALIDITY
-CRUSTA_DEBUG(41, std::cerr << "--REM\n\n");
+CRUSTA_DEBUG(41, std::cerr << "--REM\n\n";)
 }
 
 void MapManager::
@@ -495,7 +495,7 @@ statsMan.start(StatsManager::INHERITSHAPECOVERAGE);
     child.lineData.clear();
 
 #if CHECK_CONVERAGE_VALIDITY
-CRUSTA_DEBUG_ONLY(crusta->validateLineCoverage();)
+CRUSTA_DEBUG(110, crusta->validateLineCoverage();)
 #endif //CHECK_CONVERAGE_VALIDITY
 
 statsMan.stop(StatsManager::INHERITSHAPECOVERAGE);
@@ -745,7 +745,7 @@ operator()(NodeData& node, bool isLeaf)
 
 CRUSTA_DEBUG(43, std::cerr << "+" << node.index;)
 
-CRUSTA_DEBUG_ONLY(
+CRUSTA_DEBUG(110,
     HandleList::const_iterator fit;
     for (fit=handles.begin(); fit!=handles.end() && *fit!=segment; ++fit);
     if (fit != handles.end())

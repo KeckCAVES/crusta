@@ -80,7 +80,7 @@ HitResult QuadTerrain::
 intersect(const Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout,
           const Scalar gout) const
 {
-CRUSTA_DEBUG_OUT(40, "\n\nIntersecting Ray with Globe:\n\n");
+CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "\n\nIntersecting Ray with Globe:\n\n";)
     return intersectNode(getRootBuffer(), ray, tin, sin, tout, sout, gout);
 }
 
@@ -694,7 +694,7 @@ intersectNode(const MainBuffer& nodeBuf, const Ray& ray,
 {
     MainData mainData = DATAMANAGER->getData(nodeBuf);
     const NodeData& node = *mainData.node;
-CRUSTA_DEBUG_OUT(40, "%s\n", node.index.med_str().c_str());
+CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << node.index.med_str() << "\n";)
 
 //- determine the exit point and side
     tout = Math::Constants<Scalar>::max;
@@ -958,7 +958,8 @@ intersectLeaf(const MainData& leafData, const Ray& ray,
               Scalar param, int side, const Scalar gout) const
 {
     NodeData& leaf = *leafData.node;
-CRUSTA_DEBUG_OUT(40, "* %s\n", leaf.index.med_str().c_str());
+CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT <<
+"* " << leaf.index.med_str() << "\n";)
 
 #if DEBUG_INTERSECT_CRAP
 if (DEBUG_INTERSECT) {

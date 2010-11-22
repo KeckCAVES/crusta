@@ -274,8 +274,8 @@ loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope)
 void DataManager::
 frame()
 {
-CRUSTA_DEBUG_OUT(14, "\n++++++++  DataManager::frame() //\n");
-CRUSTA_DEBUG(14, MainCache& mc=CACHE->getMainCache(); mc.node.printCache());
+CRUSTA_DEBUG(14, CRUSTA_DEBUG_OUT << "\n++++++++  DataManager::frame() //\n";
+             MainCache& mc=CACHE->getMainCache(); mc.node.printCache();)
 
     //reprioritize the requests (do this here as the rest blocks fetching)
     std::sort(childRequests.begin(), childRequests.end(),
@@ -315,8 +315,8 @@ CRUSTA_DEBUG(14, MainCache& mc=CACHE->getMainCache(); mc.node.printCache());
         fetch.child  = grabMainBuffer(childIndex, false);
         if (!isComplete(fetch.child))
         {
-CRUSTA_DEBUG_OUT(10,"Datamanager::frame: no more room in the cache for ");
-CRUSTA_DEBUG_OUT(10,"new data\n");
+CRUSTA_DEBUG(10, CRUSTA_DEBUG_OUT <<
+"Datamanager::frame: no more room in the cache for new data\n";)
             break;
         }
 
@@ -335,13 +335,15 @@ CRUSTA_DEBUG_OUT(10,"new data\n");
         TreeIndex childIndex = it->parent.node->getData().index.down(it->which);
         releaseMainBuffer(childIndex, it->child);
 
-CRUSTA_DEBUG_OUT(14, "MainCache::frame: request for Index %s:%d processed\n",
-childIndex.med_str().c_str(), it->which);
+CRUSTA_DEBUG(14, CRUSTA_DEBUG_OUT <<
+"MainCache::frame: request for Index " << childIndex.med_str() << ":" <<
+it->which << " processed\n";)
     }
     fetchResults.clear();
 
-CRUSTA_DEBUG_OUT(14, "\n********  DataManager::frame() //end\n");
-CRUSTA_DEBUG(14, MainCache& mc=CACHE->getMainCache(); mc.node.printCache());
+CRUSTA_DEBUG(14, CRUSTA_DEBUG_OUT <<
+"\n********  DataManager::frame() //end\n"; MainCache& mc=CACHE->getMainCache();
+mc.node.printCache();)
 }
 
 void DataManager::
@@ -967,7 +969,7 @@ fetchThreadFunc()
             //wait for new requests if there are none pending
             if (fetchRequests.empty())
                 fetchCond.wait(requestMutex);
-            
+
             //was the signal actually to terminate? If not grab the request
             if (terminateFetch)
                 return NULL;

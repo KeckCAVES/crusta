@@ -195,31 +195,7 @@ writeHeader()
     header.write(quadtreeFile);
     fileHeader.write(quadtreeFile);
 }
-#endif //CONSTRUO_BUILD
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
-TileIndex QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
-checkTile(const TreeIndex& node) const
-{
-    return checkTile(TreePath(node), 0);
-}
-
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
-TileIndex QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
-checkTile(const TreePath& path, TileIndex i) const
-{
-    TileIndex childIndices[4];
-    for (uint8 child=path.pop(); child!=TreePath::END && i!=INVALID_TILEINDEX;
-         child=path.pop())
-    {
-        readTile(i, childIndices);
-        i = childIndices[child];
-    }
-
-    return i;
-}
-
-#if CONSTRUO_BUILD
 template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
 TileIndex QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
 appendTile(const Pixel* const blank)
@@ -361,14 +337,14 @@ const TileIndex* QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
 getLastChildPointers() const
 {
     return lastTileChildPointers;
-};
+}
 
 template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
 TileIndex QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
 getLastChildPointer(int childIndex) const
 {
     return lastTileChildPointers[childIndex];
-};
+}
 
 template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
 const typename
@@ -377,6 +353,6 @@ QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
 getLastTileHeader() const
 {
     return lastTileHeader;
-};
+}
 
 END_CRUSTA

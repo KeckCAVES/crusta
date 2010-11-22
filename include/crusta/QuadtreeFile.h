@@ -89,12 +89,7 @@ public:
 #if CONSTRUO_BUILD
     ///writes the quadtree file header to the file again
     void writeHeader();
-#endif
 
-    ///check the existence of a tile (does not create a new one)
-    TileIndex checkTile(const TreeIndex& node) const;
-    TileIndex checkTile(const TreePath& path, TileIndex start) const;
-#if CONSTRUO_BUILD
     ///appends a new tile to the file (only reserves the space for it)
     TileIndex appendTile(const Pixel* const blank=NULL);
 #endif //CONSTRUO_BUILD

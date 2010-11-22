@@ -29,22 +29,12 @@ BEGIN_CRUSTA
 extern int CRUSTA_DEBUG_LEVEL_MIN;
 extern int CRUSTA_DEBUG_LEVEL_MAX;
 
-#define CRUSTA_DEBUG_ONLY(x) {x;}
-#define CRUSTA_DEBUG_ONLY_SINGLE(x) x
 #define CRUSTA_DEBUG(l,x) if (l>=CRUSTA_DEBUG_LEVEL_MIN &&\
-                              l<=CRUSTA_DEBUG_LEVEL_MAX){x;}
-#ifndef CRUSTA_DEBUG_OUTPUT_DESTINATION
-#define CRUSTA_DEBUG_OUTPUT_DESTINATION stderr
-#endif //CRUSTA_DEBUG_OUTPUT_DESTINATION
-#define CRUSTA_DEBUG_OUT(l, b, args...)\
-if (l>=CRUSTA_DEBUG_LEVEL_MIN && l<=CRUSTA_DEBUG_LEVEL_MAX) {\
-    fprintf(CRUSTA_DEBUG_OUTPUT_DESTINATION, b, ## args); }
+                              l<=CRUSTA_DEBUG_LEVEL_MAX){x}
+#define CRUSTA_DEBUG_OUT std::cerr
 #else
 
-#define CRUSTA_DEBUG_ONLY(x)
-#define CRUSTA_DEBUG_ONLY_SINGLE(x)
 #define CRUSTA_DEBUG(l,x)
-#define CRUSTA_DEBUG_OUT(a, b, args...)
 
 #endif //CRUSTA_ENABLE_DEBUG
 

@@ -410,7 +410,8 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
         if (!hit.isValid())
         {
 ///\todo this should not be possible!!!
-CRUSTA_DEBUG_OUT(70, "SnapToSurface failed triangle intersection test!\n");
+CRUSTA_DEBUG(70, CRUSTA_DEBUG_OUT <<
+"SnapToSurface failed triangle intersection test!\n";)
             Scalar height = nodeData.height[offset[1]*TILE_RESOLUTION +
                                             offset[0]];
             height        = node->getHeight(height) + elevationOffset;
@@ -716,8 +717,9 @@ if (debugTool!=NULL)
 }
 #endif //CRUSTA_ENABLE_DEBUG
 
-CRUSTA_DEBUG_OUT(8, "\n\n\n--------------------------------------\n%f\n\n\n",
-CURRENT_FRAME);
+CRUSTA_DEBUG(8, CRUSTA_DEBUG_OUT <<
+"\n\n\n--------------------------------------\n" << CURRENT_FRAME <<
+"\n\n\n";)
 
     //apply the vertical scale changes
     if (verticalScale != changedVerticalScale)
@@ -775,8 +777,8 @@ display(GLContextData& contextData)
 
 statsMan.extractTileStats(surface);
 
-CRUSTA_DEBUG_OUT(50, "Number of nodes to render: %i\n",
-                 static_cast<int>(surface.visibles.size()));
+CRUSTA_DEBUG(50, CRUSTA_DEBUG_OUT <<
+"Number of nodes to render: " << surface.visibles.size() << "\n";)
 
     GLint activeTexture;
     glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
