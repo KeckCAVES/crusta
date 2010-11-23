@@ -10,7 +10,6 @@ add_library(CrustaCore SHARED
     ../include/crusta/DataManager.h
     ../include/crusta/DemHeight.h
     ../include/crusta/DemHeightGlobeData.h
-    ../include/crusta/DemHeightPixelOps.h
     ../include/crusta/DebugTool.h
     ../include/crusta/ElevationRangeTool.h
     ../include/crusta/FocusViewEvaluator.h
@@ -29,6 +28,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/map/PolylineTool.h
     ../include/crusta/map/Shape.h
     ../include/crusta/PixelOps.h
+    ../include/crusta/PixelOps.hpp
     ../include/crusta/Polyhedron.h
     ../include/crusta/PolyhedronLoader.h
     ../include/crusta/QuadCache.h
@@ -49,13 +49,13 @@ add_library(CrustaCore SHARED
     ../include/crusta/SurfaceTool.h
     ../include/crusta/TextureColor.h
     ../include/crusta/TextureColorGlobeData.h
-    ../include/crusta/TextureColorPixelOps.h
     ../include/crusta/TileIndex.h
     ../include/crusta/Timer.h
     ../include/crusta/Tool.h
     ../include/crusta/TreeIndex.h
     ../include/crusta/Triacontahedron.h
     ../include/crusta/Triangle.h
+    ../include/crusta/Vector3ui8.h
     ../include/crusta/ViewLod.h
     ../include/crusta/VisibilityEvaluator.h
     ../include/crusta/Visualizer.h

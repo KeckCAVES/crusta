@@ -5,7 +5,6 @@ add_executable(construo
     ../include/construo/ConstruoSettings.h
     ../include/construo/ConstruoVisualizer.h
     ../include/construo/Converters.h
-    ../include/construo/DemHeightSubsampleFilter.h
     ../include/construo/GdalImageFile.h
     ../include/construo/GdalImageFile.hpp
     ../include/construo/GdalTransform.h
@@ -21,7 +20,7 @@ add_executable(construo
     ../include/construo/ImageTransform.h
     ../include/construo/SphereCoverage.h
     ../include/construo/SubsampleFilter.h
-    ../include/construo/TextureColorSubsampleFilter.h
+    ../include/construo/SubsampleFilter.hpp
     ../include/construo/TpmFile.h
     ../include/construo/TpmImageFile.h
     ../include/construo/TpmImageFile.hpp
