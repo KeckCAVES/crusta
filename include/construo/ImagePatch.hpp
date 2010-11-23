@@ -1,29 +1,31 @@
 #include <construo/ImageFileLoader.h>
 #include <construo/GdalTransform.h>
 
+#include <crusta/Vector3ui8.h>
+
 
 BEGIN_CRUSTA
 
 
-template <typename PixelParam>
-ImagePatch<PixelParam>::
+template <typename PixelType>
+ImagePatch<PixelType>::
 ImagePatch() :
     image(NULL), transform(NULL), imageCoverage(NULL), sphereCoverage(NULL)
 {}
 
-template <typename PixelParam>
-ImagePatch<PixelParam>::
+template <typename PixelType>
+ImagePatch<PixelType>::
 ImagePatch(const std::string patchName, double pixelScale,
            const std::string& nodataString, bool pointSampled) :
     image(NULL), transform(NULL), imageCoverage(NULL), sphereCoverage(NULL)
 {
     //load the image file
-    image = ImageFileLoader<PixelParam>::loadImageFile(patchName.c_str());
+    image = ImageFileLoader<PixelType>::loadImageFile(patchName.c_str());
     image->setPixelScale(pixelScale);
     if (!nodataString.empty())
     {
         std::istringstream iss(nodataString);
-        PixelParam nodata;
+        PixelType nodata;
         iss >> nodata;
         image->setNodata(nodata);
         std::cout << "Forced nodata value:\n" << nodataString << "\n\n";
@@ -86,8 +88,8 @@ sphereCoverage = new StaticSphereCoverage(3, imageCoverage, transform);
 //    sphereCoverage = new StaticSphereCoverage(3, imageCoverage, transform);
 }
 
-template <typename PixelParam>
-ImagePatch<PixelParam>::
+template <typename PixelType>
+ImagePatch<PixelType>::
 ~ImagePatch()
 {
     delete image;

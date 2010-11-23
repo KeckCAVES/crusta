@@ -23,20 +23,23 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 ***********************************************************************/
 
 #include <string>
+
 #include <Misc/ThrowStdErr.h>
+
 
 BEGIN_CRUSTA
 
-template <class PixelParam, class FileHeaderParam, class TileHeaderParam>
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::Header::
+
+template <class PixelType, class FileHeaderParam, class TileHeaderParam>
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::Header::
 Header() :
     maxTileIndex(INVALID_TILEINDEX)
 {
     tileSize[0] = tileSize[1] = 0;
 }
 
-template <class PixelParam, class FileHeaderParam, class TileHeaderParam>
-void QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::Header::
+template <class PixelType, class FileHeaderParam, class TileHeaderParam>
+void QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::Header::
 read(Misc::LargeFile* quadtreeFile)
 {
     quadtreeFile->rewind();
@@ -46,8 +49,8 @@ read(Misc::LargeFile* quadtreeFile)
 }
 
 #if CONSTRUO_BUILD
-template <class PixelParam, class FileHeaderParam, class TileHeaderParam>
-void QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::Header::
+template <class PixelType, class FileHeaderParam, class TileHeaderParam>
+void QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::Header::
 write(Misc::LargeFile* quadtreeFile)
 {
     quadtreeFile->rewind();
@@ -61,8 +64,8 @@ write(Misc::LargeFile* quadtreeFile)
 Methods of class QuadtreeFile:
 *****************************/
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 QuadtreeFile(const char* quadtreeFileName, const uint32 iTileSize[2]) :
     quadtreeFile(NULL)
 {
@@ -98,7 +101,7 @@ QuadtreeFile(const char* quadtreeFileName, const uint32 iTileSize[2]) :
         for (int i=0; i<2; ++i)
             header.tileSize[i] = iTileSize[i];
 ///\todo deprecated
-        header.defaultPixelValue = PixelParam();
+        header.defaultPixelValue = PixelType();
 
         //reserve header space and record tile data start location
         writeHeader();
@@ -116,8 +119,8 @@ QuadtreeFile(const char* quadtreeFileName, const uint32 iTileSize[2]) :
     fileTileSize += Misc::LargeFile::Offset(TileHeader::getSize());
 }
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 ~QuadtreeFile()
 {
 #if CONSTRUO_BUILD
@@ -129,51 +132,51 @@ QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
     delete quadtreeFile;
 }
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
-typename QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::FileHeader&
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
+typename QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::FileHeader&
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 getCustomFileHeader() const
 {
     return fileHeader;
 }
 
 #if CONSTRUO_BUILD
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 void
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 setDefaultPixelValue(
-    const typename QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+    const typename QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
     Pixel& newDefaultPixelValue)
 {
     header.defaultPixelValue = newDefaultPixelValue;
 }
 #endif //CONSTRUO_BUILD
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
-const typename QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::Pixel&
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
+const typename QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::Pixel&
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 getDefaultPixelValue(void) const
 {
     return header.defaultPixelValue;
 }
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
-const uint32* QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
+const uint32* QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 getTileSize() const
 {
     return header.tileSize;
 }
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
-TileIndex QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
+TileIndex QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 getNumTiles() const
 {
     return header.maxTileIndex==INVALID_TILEINDEX ? 0 : header.maxTileIndex+1;
 }
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 void
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 readHeader()
 {
     if(quadtreeFile == NULL)
@@ -184,9 +187,9 @@ readHeader()
 }
 
 #if CONSTRUO_BUILD
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 void
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 writeHeader()
 {
     if(quadtreeFile == NULL)
@@ -196,8 +199,8 @@ writeHeader()
     fileHeader.write(quadtreeFile);
 }
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
-TileIndex QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
+TileIndex QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 appendTile(const Pixel* const blank)
 {
     static const TileIndex invalidChildren[4] = {
@@ -212,13 +215,13 @@ appendTile(const Pixel* const blank)
 }
 #endif //CONSTRUO_BUILD
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 bool
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 readTile(TileIndex tileIndex, TileIndex childPointers[4],
-         typename QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+         typename QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
          TileHeader& tileHeader,
-         typename QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+         typename QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
          Pixel* tileBuffer)
 {
     if(tileIndex>header.maxTileIndex || quadtreeFile==NULL)
@@ -243,38 +246,38 @@ readTile(TileIndex tileIndex, TileIndex childPointers[4],
     return true;
 }
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 bool
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 readTile(TileIndex tileIndex, Pixel* tileBuffer)
 {
     return readTile(tileIndex,lastTileChildPointers,lastTileHeader,tileBuffer);
 }
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 bool
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 readTile(TileIndex tileIndex,TileIndex childPointers[4],Pixel* tileBuffer)
 {
     return readTile(tileIndex,childPointers,lastTileHeader,tileBuffer);
 }
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 bool
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 readTile(TileIndex tileIndex,TileHeader& tileHeader,Pixel* tileBuffer)
 {
     return readTile(tileIndex,lastTileChildPointers,tileHeader,tileBuffer);
 }
 
 #if CONSTRUO_BUILD
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 void
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 writeTile(TileIndex tileIndex, const TileIndex childPointers[4],
-    const typename QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+    const typename QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
     TileHeader& tileHeader,
-    const typename QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+    const typename QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
     Pixel* tileBuffer)
 {
     if (tileIndex>header.maxTileIndex || quadtreeFile==NULL)
@@ -305,26 +308,26 @@ writeTile(TileIndex tileIndex, const TileIndex childPointers[4],
         quadtreeFile->write(tileBuffer, tileNumPixels);
 }
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 void
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 writeTile(TileIndex tileIndex, const Pixel* tileBuffer)
 {
     writeTile(tileIndex,lastTileChildPointers,lastTileHeader,tileBuffer);
 }
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 void
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 writeTile(TileIndex tileIndex, const TileIndex childPointers[4],
           const Pixel* tileBuffer)
 {
     writeTile(tileIndex,childPointers,lastTileHeader,tileBuffer);
 }
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 void
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 writeTile(TileIndex tileIndex, const TileHeader& tileHeader,
           const Pixel* tileBuffer)
 {
@@ -332,27 +335,28 @@ writeTile(TileIndex tileIndex, const TileHeader& tileHeader,
 }
 #endif //CONSTRUO_BUILD
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
-const TileIndex* QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
+const TileIndex* QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 getLastChildPointers() const
 {
     return lastTileChildPointers;
 }
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
-TileIndex QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
+TileIndex QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 getLastChildPointer(int childIndex) const
 {
     return lastTileChildPointers[childIndex];
 }
 
-template <class PixelParam,class FileHeaderParam,class TileHeaderParam>
+template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 const typename
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::TileHeader&
-QuadtreeFile<PixelParam,FileHeaderParam,TileHeaderParam>::
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::TileHeader&
+QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 getLastTileHeader() const
 {
     return lastTileHeader;
 }
+
 
 END_CRUSTA

@@ -8,30 +8,29 @@
 BEGIN_CRUSTA
 
 
-template <typename PixelParam>
+template <typename PixelType>
 struct PixelOps
 {
     /** average two values */
-    static PixelParam average(const PixelParam& a, const PixelParam& b,
-                              const PixelParam& nodata);
+    static PixelType average(const PixelType& a, const PixelType& b,
+                             const PixelType& nodata);
     /** average four values */
-    static PixelParam average(const PixelParam& a, const PixelParam& b,
-                              const PixelParam& c, const PixelParam& d,
-                              const PixelParam& nodata);
+    static PixelType average(const PixelType& a, const PixelType& b,
+                             const PixelType& c, const PixelType& d,
+                             const PixelType& nodata);
     /** compute the minimum of two values */
-    static PixelParam minimum(const PixelParam& a, const PixelParam& b,
-                              const PixelParam& nodata);
+    static PixelType minimum(const PixelType& a, const PixelType& b,
+                             const PixelType& nodata);
     /** compute the maximum of two values */
-    static PixelParam maximum(const PixelParam& a, const PixelParam& b,
-                              const PixelParam& nodata);
+    static PixelType maximum(const PixelType& a, const PixelType& b,
+                             const PixelType& nodata);
 };
 
 
 END_CRUSTA
 
 
-#include <crusta/DemHeightPixelOps.h>
-#include <crusta/TextureColorPixelOps.h>
+#include <crusta/PixelOps.hpp>
 
 
 #endif //_PixelOps_H_

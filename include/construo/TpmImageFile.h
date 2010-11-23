@@ -33,12 +33,16 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 BEGIN_CRUSTA
 
 
-template <typename PixelParam>
-class TpmImageFileBase : public ImageFile<PixelParam>
+template <typename PixelType>
+class TpmImageFile : public ImageFile<PixelType>
 {
 public:
     ///opens an image file by name
-    TpmImageFileBase(const char* imageFileName);
+    TpmImageFile(const char* imageFileName);
+
+    ///reads a portion of the image
+    void readRectangle(const int rectOrigin[2], const int rectSize[2],
+                       PixelType* rectBuffer) const;
 
 protected:
     ///mutex protecting the tpm file during reading
@@ -47,18 +51,6 @@ protected:
     mutable TpmFile tpmFile;
 };
 
-
-template <typename PixelParam>
-class TpmImageFile : public TpmImageFileBase<PixelParam>
-{
-public:
-    TpmImageFile(const char* imageFileName);
-
-//- inherited from ImageFileBase
-public:
-    virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
-                               PixelParam* rectBuffer) const;
-};
 
 END_CRUSTA
 

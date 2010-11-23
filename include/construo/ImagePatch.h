@@ -15,13 +15,13 @@ BEGIN_CRUSTA
 /**
     Structure describing a source image patch
 */
-template <typename PixelParam>
+template <typename PixelType>
 class ImagePatch
 {
 public:
     /** pointer to object representing the image's pixel data, transformation,
         and coverage */
-    ImageFile<PixelParam>* image;
+    ImageFile<PixelType>* image;
     /** transformation from the image's image coordinate system to the world
         coordinate system */
     ImageTransform* transform;

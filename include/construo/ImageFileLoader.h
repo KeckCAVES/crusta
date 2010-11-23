@@ -33,15 +33,15 @@ BEGIN_CRUSTA
 
 
 /* Forward declarations: */
-template <typename PixelParam>
+template <typename PixelType>
 class ImageFile;
 
-template <typename PixelParam>
+template <typename PixelType>
 class ImageFileLoader
 {
 public:
     ///loads an image file of the given type and name
-    static ImageFile<PixelParam>* loadImageFile(const char* fileName);
+    static ImageFile<PixelType>* loadImageFile(const char* fileName);
 };
 
 

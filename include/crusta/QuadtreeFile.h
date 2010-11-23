@@ -35,14 +35,14 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 BEGIN_CRUSTA
 
 
-template <typename PixelParam,
+template <typename PixelType,
           typename FileHeaderParam,
           typename TileHeaderParam>
 class QuadtreeFile
 {
 public:
     ///data type of pixel values stored in image tiles
-    typedef PixelParam Pixel;
+    typedef PixelType Pixel;
     ///type for extra data in the file header
     typedef FileHeaderParam FileHeader;
     ///type for extra data in each tile header

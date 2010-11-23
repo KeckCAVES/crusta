@@ -22,19 +22,19 @@ NodeData() :
         childColorTiles[i] = INVALID_TILEINDEX;
     }
 
-    centroid[0] = centroid[1] = centroid[2] = DemHeight(0.0);
-    elevationRange[0] =  Math::Constants<DemHeight>::max;
-    elevationRange[1] = -Math::Constants<DemHeight>::max;
+    centroid[0] = centroid[1] = centroid[2] = DemHeight::Type(0.0);
+    elevationRange[0] =  Math::Constants<DemHeight::Type>::max;
+    elevationRange[1] = -Math::Constants<DemHeight::Type>::max;
 }
 
 void NodeData::
 computeBoundingSphere(Scalar radius, Scalar verticalScale)
 {
-    DemHeight range[2];
+    DemHeight::Type range[2];
     getElevationRange(range);
 
-    DemHeight avgElevation = (range[0] + range[1]);
-    avgElevation          *= DemHeight(0.5)* verticalScale;
+    DemHeight::Type avgElevation = (range[0] + range[1]);
+    avgElevation                *= DemHeight::Type(0.5)* verticalScale;
 
     boundingCenter = scope.getCentroid(radius + avgElevation);
 
@@ -76,10 +76,10 @@ init(Scalar radius, Scalar verticalScale)
 }
 
 void NodeData::
-getElevationRange(DemHeight range[2]) const
+getElevationRange(DemHeight::Type range[2]) const
 {
-    if (elevationRange[0]== Math::Constants<DemHeight>::max ||
-        elevationRange[1]==-Math::Constants<DemHeight>::max)
+    if (elevationRange[0]== Math::Constants<DemHeight::Type>::max ||
+        elevationRange[1]==-Math::Constants<DemHeight::Type>::max)
     {
         range[0] = SETTINGS->terrainDefaultHeight;
         range[1] = SETTINGS->terrainDefaultHeight;
@@ -91,8 +91,8 @@ getElevationRange(DemHeight range[2]) const
     }
 }
 
-DemHeight NodeData::
-getHeight(const DemHeight& test) const
+DemHeight::Type NodeData::
+getHeight(const DemHeight::Type& test) const
 {
     if (test == DATAMANAGER->getDemNodata())
         return SETTINGS->terrainDefaultHeight;

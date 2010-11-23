@@ -78,7 +78,7 @@ public:
     SphereCoverage coverage;
     Scope::Scalar resolution;
 
-    PixelParam* data;
+    typename PixelParam::Type* data;
 
     bool mustBeUpdated;
 

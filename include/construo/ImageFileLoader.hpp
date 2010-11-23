@@ -34,17 +34,17 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 BEGIN_CRUSTA
 
 
-template <typename PixelParam>
-ImageFile<PixelParam>* ImageFileLoader<PixelParam>::
+template <typename PixelType>
+ImageFile<PixelType>* ImageFileLoader<PixelType>::
 loadImageFile(const char* fileName)
 {
     if (Misc::hasCaseExtension(fileName, ".tpm"))
     {
-        return new TpmImageFile<PixelParam>(fileName);
+        return new TpmImageFile<PixelType>(fileName);
     }
     else
     {
-        return new GdalImageFile<PixelParam>(fileName);
+        return new GdalImageFile<PixelType>(fileName);
     }
 }
 

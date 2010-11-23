@@ -40,12 +40,12 @@ assert(size[0]==size[1]);
 
     scopeBuf          = new Scope::Scalar[tileSize[0]*tileSize[1]*3];
     sampleBuf         = new Point[tileSize[0]*tileSize[1]];
-    nodeDataBuf       = new PixelParam[tileSize[0]*tileSize[1]];
-    nodeDataSampleBuf = new PixelParam[tileSize[0]*tileSize[1]];
+    nodeDataBuf       = new PixelType[tileSize[0]*tileSize[1]];
+    nodeDataSampleBuf = new PixelType[tileSize[0]*tileSize[1]];
     //the -3 takes into account the shared edges of the tiles
     domainSize[0] = 4*tileSize[0] - 3;
     domainSize[1] = 4*tileSize[1] - 3;
-    domainBuf     = new PixelParam[domainSize[0]*domainSize[1]];
+    domainBuf     = new PixelType[domainSize[0]*domainSize[1]];
 }
 
 template <typename PixelParam>
@@ -66,14 +66,14 @@ void Builder<PixelParam>::
 subsampleChildren(Node* node)
 {
     typedef GlobeData<PixelParam> gd;
-    typedef PixelOps<PixelParam>  po;
+    typedef PixelOps<PixelType>   po;
 
     assert(node->children != NULL);
     //read in the node's existing data from file
     typename gd::File* file = node->globeFile->getPatch(node->treeIndex.patch);
     file->readTile(node->tileIndex, nodeDataSampleBuf);
 
-    const PixelParam& nodata = node->globeFile->getNodata();
+    const PixelType& nodata = node->globeFile->getNodata();
 
     const int offsets[4] = {
         0, (tileSize[0]-1)>>1, ((tileSize[1]-1)>>1)*tileSize[0],
@@ -84,8 +84,8 @@ subsampleChildren(Node* node)
 //        #pragma omp parallel for
         for (int y=0; y<halfSize[1]; ++y)
         {
-            PixelParam* wbase = nodeDataBuf + y*2*tileSize[0];
-            PixelParam* rbase = nodeDataSampleBuf + y*tileSize[0] + offsets[i];
+            PixelType* wbase = nodeDataBuf + y*2*tileSize[0];
+            PixelType* rbase = nodeDataSampleBuf + y*tileSize[0] + offsets[i];
             for (int x=0; x<halfSize[0]; ++x, wbase+=2, ++rbase)
             {
                 wbase[0] = rbase[0];
@@ -208,8 +208,8 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
     typedef GlobeData<PixelParam> gd;
 
     ImgBoxes imgBoxes;
-    const int*        imgSize   = imgPatch->image->getSize();
-    const PixelParam& imgNodata = imgPatch->image->getNodata();
+    const int*        imgSize  = imgPatch->image->getSize();
+    const PixelType& imgNodata = imgPatch->image->getNodata();
     const Point::Scalar allowedBoxSize[2]  = { imgSize[0]>>1, imgSize[1]>>1 };
 
     //transform all the sample points into the image space
@@ -254,7 +254,7 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
     file->readTile(node->tileIndex, node->data);
 
     //go through all the image boxes and sample them
-    const PixelParam& globeNodata = node->globeFile->getNodata();
+    const PixelType& globeNodata = node->globeFile->getNodata();
 //    #pragma omp parallel for
     for (int box=0; box<static_cast<int>(imgBoxes.size()); ++box)
     {
@@ -269,17 +269,17 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
             rectSize[i]   = static_cast<int>(Math::ceil (ib.max[i])) -
                             rectOrigin[i] + 1;
         }
-        PixelParam* rectBuffer = new PixelParam[rectSize[0] * rectSize[1]];
+        PixelType* rectBuffer = new PixelType[rectSize[0] * rectSize[1]];
         imgPatch->image->readRectangle(rectOrigin, rectSize, rectBuffer);
 
         //sample the points
 //        #pragma omp parallel for
-        typedef SubsampleFilter<PixelParam, DYNAMIC_FILTER_TYPE> Filter;
+        typedef SubsampleFilter<PixelType, DYNAMIC_FILTER_TYPE> Filter;
         for (int i=0; i<static_cast<int>(ib.indices.size()); ++i)
         {
             const int& idx = ib.indices[i];
-            double at[2] = { sampleBuf[idx][0], sampleBuf[idx][1] };
-            PixelParam& defaultValue = node->data[idx];
+            double at[2]   = { sampleBuf[idx][0], sampleBuf[idx][1] };
+            PixelType& defaultValue = node->data[idx];
             node->data[idx] = Filter::sample(rectBuffer, rectOrigin, at,
                 rectSize, imgNodata, defaultValue, globeNodata);
 
@@ -491,8 +491,8 @@ ConstruoVisualizer::show();
     for (int i=0; i<16; ++i)
     {
     //- retrieve the kin
-        Node* kin          = NULL;
-        PixelParam* domain = domainBuf + (tileSize[1]-1)*domainSize[0] +
+        Node* kin         = NULL;
+        PixelType* domain = domainBuf + (tileSize[1]-1)*domainSize[0] +
                              tileSize[0]-1;
 
         int domainOff[2] = {offsets[i][0], offsets[i][1]};
@@ -508,7 +508,7 @@ ConstruoVisualizer::show();
 
     //- retrieve data as appropriate
         //default to blank data
-        const PixelParam* data = node->globeFile->getBlank();
+        const PixelType* data = node->globeFile->getBlank();
 
         //read the data from file
 /**\todo disabled reading from neighbors that aren't from the same base patch.
@@ -544,11 +544,11 @@ Note: getKin across patches seem to be broken: e.g. offset==3 returned. */
                 double at[2];
                 int rectOrigin[2] = {0,0};
                 int rectSize[2]   = {tileSize[0], tileSize[1]};
-                const PixelParam& nodata = kin->globeFile->getNodata();
-                PixelParam* wbase = nodeDataBuf;
+                const PixelType& nodata = kin->globeFile->getNodata();
+                PixelType* wbase = nodeDataBuf;
 
 //                #pragma omp parallel for
-                typedef SubsampleFilter<PixelParam, DYNAMIC_FILTER_TYPE> Filter;
+                typedef SubsampleFilter<PixelType, DYNAMIC_FILTER_TYPE> Filter;
                 for (uint ny=0; ny<tileSize[1]; ++ny)
                 {
                     at[1] = nodeOff[1]*scale + ny*step[1];
@@ -569,9 +569,9 @@ reading of neighbor data with differring orientation is currently absolutely
 broken, overwrites random memory regions and breaks fraking everything */
 kinO = 0;
     //- insert the data at the appropriate location
-        PixelParam* base = domain +
-                           domainOff[1] * (tileSize[1]-1) * domainSize[0] +
-                           domainOff[0] * (tileSize[0]-1);
+        PixelType* base = domain +
+                          domainOff[1] * (tileSize[1]-1) * domainSize[0] +
+                          domainOff[0] * (tileSize[0]-1);
         int startY[4] = { 0, tileSize[1]-1, tileSize[1]-1, 0 };
         int stepY[4]  = { tileSize[0], 1,  -tileSize[0], -1 };
         int startX[4] = { 0, 0, tileSize[0]-1, tileSize[0]-1 };
@@ -579,8 +579,8 @@ kinO = 0;
 //        #pragma omp parallel for
         for (uint y=0; y<tileSize[1]; ++y)
         {
-            PixelParam* to         = base + y*domainSize[0];
-            const PixelParam* from = data + startY[kinO] + y*stepY[kinO] +
+            PixelType* to         = base + y*domainSize[0];
+            const PixelType* from = data + startY[kinO] + y*stepY[kinO] +
                                      startX[kinO];
             for (uint x=0; x<tileSize[0]; ++x, ++to, from+=stepX[kinO])
                 *to = *from;
@@ -615,12 +615,12 @@ ConstruoVisualizer::peek();
 
     /* walk the pixels of the node's data and performed filtered look-ups into
        the domain */
-    typedef SubsampleFilter<PixelParam, SUBSAMPLEFILTER_PYRAMID> Filter;
+    typedef SubsampleFilter<PixelType, SUBSAMPLEFILTER_PYRAMID> Filter;
 
-    const PixelParam& globeNodata = node->globeFile->getNodata();
+    const PixelType& globeNodata = node->globeFile->getNodata();
 
-    PixelParam* data = nodeDataBuf;
-    PixelParam* domain;
+    PixelType* data = nodeDataBuf;
+    PixelType* domain;
     for (domain = domainBuf +   (tileSize[1]-1)*domainSize[0]+  (tileSize[0]-1);
          domain<= domainBuf + 3*(tileSize[1]-1)*domainSize[0]+3*(tileSize[0]-1);
          domain+= 2*domainSize[0] - 2*tileSize[0])

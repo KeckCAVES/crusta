@@ -33,7 +33,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 BEGIN_CRUSTA
 
 
-template <typename PixelParam>
+template <typename PixelType>
 class ImageFile
 {
 public:
@@ -45,21 +45,21 @@ public:
     ///retrieve the uniform scale fo the pixel values
     double getPixelScale() const;
     ///retrieve the nodata value
-    const PixelParam& getNodata() const;
+    const PixelType& getNodata() const;
     ///set the nodata value
-    void setNodata(const PixelParam& nodataValue);
+    void setNodata(const PixelType& nodataValue);
     ///returns image size
     const int* getSize() const;
     ///reads a rectangle of pixel data into the given buffer
     virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
-                               PixelParam* rectBuffer) const = 0;
+                               PixelType* rectBuffer) const = 0;
 
 protected:
     /** the uniform scale of the values of the image (in particular for DEMs
         that would be the elevation resolution in meters) */
     double pixelScale;
     ///the value corresponding to "no data"
-    PixelParam nodata;
+    PixelType nodata;
     ///size of the image in pixels (width x height)
     int size[2];
 };

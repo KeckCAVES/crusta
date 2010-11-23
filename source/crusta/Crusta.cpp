@@ -374,15 +374,15 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
 
 //- sample the cell
     static const int tileRes = TILE_RESOLUTION;
-    int linearOffset = offset[1]*tileRes + offset[0];
-    Vertex*    cellV = nodeData.geometry + linearOffset;
-    DemHeight* cellH = nodeData.height   + linearOffset;
+    int              linearOffset = offset[1]*tileRes + offset[0];
+    Vertex*          cellV        = nodeData.geometry + linearOffset;
+    DemHeight::Type* cellH        = nodeData.height   + linearOffset;
 
     const Vertex::Position* positions[4] = {
         &(cellV->position), &((cellV+1)->position),
         &((cellV+tileRes)->position), &((cellV+tileRes+1)->position) };
 
-    DemHeight heights[4] = {
+    DemHeight::Type heights[4] = {
         node->getHeight(*cellH),           node->getHeight(*(cellH+1)),
         node->getHeight(*(cellH+tileRes)), node->getHeight(*(cellH+tileRes+1))
     };
@@ -835,7 +835,7 @@ if (SETTINGS->decorateVectorArt)
     glData->terrainShader.setVerticalScale(getVerticalScale());
     glData->terrainShader.setTextureStep(TILE_TEXTURE_COORD_STEP);
     glData->terrainShader.setDemNodata(DATAMANAGER->getDemNodata());
-    const TextureColor& cnd = DATAMANAGER->getColorNodata();
+    const TextureColor::Type& cnd = DATAMANAGER->getColorNodata();
     glData->terrainShader.setColorNodata(cnd[0], cnd[1], cnd[2]);
     glData->terrainShader.setDemDefault(SETTINGS->terrainDefaultHeight);
     glData->terrainShader.setColorDefault(SETTINGS->terrainDefaultColor);

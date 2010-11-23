@@ -25,57 +25,57 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 BEGIN_CRUSTA
 
-template <class PixelParam>
+template <class PixelType>
 inline
-ImageFile<PixelParam>::
+ImageFile<PixelType>::
 ImageFile() :
     pixelScale(1.0)
 {
     size[0] = size[1] = 0;
 }
 
-template <class PixelParam>
+template <class PixelType>
 inline
-ImageFile<PixelParam>::
+ImageFile<PixelType>::
 ~ImageFile()
 {
 }
 
-template <class PixelParam>
+template <class PixelType>
 inline void
-ImageFile<PixelParam>::
+ImageFile<PixelType>::
 setPixelScale(double scale)
 {
     pixelScale = scale;
 }
 
-template <class PixelParam>
+template <class PixelType>
 inline double
-ImageFile<PixelParam>::
+ImageFile<PixelType>::
 getPixelScale() const
 {
     return pixelScale;
 }
 
-template <class PixelParam>
+template <class PixelType>
 inline
-const PixelParam& ImageFile<PixelParam>::
+const PixelType& ImageFile<PixelType>::
 getNodata() const
 {
     return nodata;
 }
 
-template <class PixelParam>
+template <class PixelType>
 inline
-void ImageFile<PixelParam>::
-setNodata(const PixelParam& nodataValue)
+void ImageFile<PixelType>::
+setNodata(const PixelType& nodataValue)
 {
     nodata = nodataValue;
 }
 
-template <class PixelParam>
+template <class PixelType>
 inline
-const int* ImageFile<PixelParam>::
+const int* ImageFile<PixelType>::
 getSize() const
 {
     return size;

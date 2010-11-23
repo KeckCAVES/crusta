@@ -32,7 +32,7 @@ public:
     typedef GlobeFile<DemHeight>    DemFile;
     typedef GlobeFile<TextureColor> ColorFile;
 
-    /** the relevant main and gpu memory data for a tile */    
+    /** the relevant main and gpu memory data for a tile */
     struct BatchElement
     {
         NodeMainData main;
@@ -64,7 +64,7 @@ public:
         uint8 child;
     };
     typedef std::vector<Request> Requests;
-    
+
     DataManager();
     ~DataManager();
 
@@ -81,16 +81,16 @@ public:
     /** get the polyhedron that serves as the basis for the managed data */
     const Polyhedron* const getPolyhedron() const;
     /** get the value used to indicate the abscence of height data */
-    const DemHeight& getDemNodata();
+    const DemHeight::Type& getDemNodata();
     /** get the value used to indicate the abscence of color data */
-    const TextureColor& getColorNodata();
-    
+    const TextureColor::Type& getColorNodata();
+
     /** load the root data of a patch */
     void loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope);
 
     /** process requests */
     void frame();
-    
+
     /** request data fetch/generation for a node */
     void request(const Request& req);
     /** request data fetch/generation for a set of tree indices */
@@ -124,7 +124,7 @@ public:
     void pin(NodeMainBuffer& mainBuf) const;
     /** unpin main buffers */
     void unpin(NodeMainBuffer& mainBuf) const;
-    
+
 protected:
     struct FetchRequest
     {
@@ -171,18 +171,18 @@ protected:
     void generateGeometry(Crusta* crusta, NodeData* child, Vertex* v);
     /** source the elevation data for a node */
     void sourceDem(const NodeData* const parent,
-                   const DemHeight* const parentHeight, NodeData* child,
-                   DemHeight* childHeight);
+                   const DemHeight::Type* const parentHeight, NodeData* child,
+                   DemHeight::Type* childHeight);
     /** source the color data for a node */
     void sourceColor(const NodeData* const parent,
-                     const TextureColor* const parentImagery, NodeData* child,
-                     TextureColor* childImagery);
+                     const TextureColor::Type* const parentImagery,
+                     NodeData* child, TextureColor::Type* childImagery);
 
     /** start the fetching thread */
     void startFetchThread();
     /** terminate the fetching thread */
     void terminateFetchThread();
-    
+
     /** fetch thread function: process the generation/reading of the data */
     void* fetchThreadFunc();
 
@@ -194,9 +194,9 @@ protected:
     Polyhedron* polyhedron;
 
     /** value for "no-data" elevations */
-    DemHeight demNodata;
+    DemHeight::Type demNodata;
     /** value for "no-data" colors */
-    TextureColor colorNodata;
+    TextureColor::Type colorNodata;
 
     /** index into the first node of the surface that needs to be considered
         for the next gpu batch */
@@ -221,16 +221,16 @@ protected:
 
     /** flags the fetch thread to terminate */
     bool terminateFetch;
-    
+
     /** thread handling fetch request processing */
     Threads::Thread fetchThread;
-    
+
     /** used in conjuction with the flag in the GlData to clear GPU caches */
     FrameStamp clearGpuCachesStamp;
 
     /** gl data for general datamanager use.
     \todo due to VruiGlew dependency must be dynamically allocated */
-    static GlData* glData;    
+    static GlData* glData;
 };
 
 

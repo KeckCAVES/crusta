@@ -24,10 +24,10 @@ typedef std::vector<NodeMainBuffer> NodeMainBuffers;
 struct NodeMainData
 {
     NodeMainData();
-    NodeData*     node;
-    Vertex*       geometry;
-    DemHeight*    height;
-    TextureColor* imagery;
+    NodeData*           node;
+    Vertex*             geometry;
+    DemHeight::Type*    height;
+    TextureColor::Type* imagery;
 };
 typedef std::vector<NodeMainData> NodeMainDatas;
 

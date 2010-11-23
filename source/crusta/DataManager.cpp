@@ -201,13 +201,13 @@ getPolyhedron() const
     return polyhedron;
 }
 
-const DemHeight& DataManager::
+const DemHeight::Type& DataManager::
 getDemNodata()
 {
     return demNodata;
 }
 
-const TextureColor& DataManager::
+const TextureColor::Type& DataManager::
 getColorNodata()
 {
     return colorNodata;
@@ -790,18 +790,18 @@ generateGeometry(Crusta* crusta, NodeData* child, Vertex* v)
     for (double* g=tempGeometryBuf;
          g<tempGeometryBuf+TILE_RESOLUTION*TILE_RESOLUTION*3; g+=3, ++v)
     {
-        v->position[0] = DemHeight(g[0] - child->centroid[0]);
-        v->position[1] = DemHeight(g[1] - child->centroid[1]);
-        v->position[2] = DemHeight(g[2] - child->centroid[2]);
+        v->position[0] = DemHeight::Type(g[0] - child->centroid[0]);
+        v->position[1] = DemHeight::Type(g[1] - child->centroid[1]);
+        v->position[2] = DemHeight::Type(g[2] - child->centroid[2]);
     }
 }
 
-template <typename PixelParam>
+template <typename PixelType>
 inline void
-sampleParentBase(int child, PixelParam range[2], PixelParam* dst,
-                 const PixelParam* const src, const PixelParam& nodata)
+sampleParentBase(int child, PixelType range[2], PixelType* dst,
+                 const PixelType* const src, const PixelType& nodata)
 {
-    typedef PixelOps<PixelParam> po;
+    typedef PixelOps<PixelType> po;
 
     static const int offsets[4] = {
         0, (TILE_RESOLUTION-1)>>1, ((TILE_RESOLUTION-1)>>1)*TILE_RESOLUTION,
@@ -810,8 +810,8 @@ sampleParentBase(int child, PixelParam range[2], PixelParam* dst,
 
     for (int y=0; y<halfSize[1]; ++y)
     {
-        PixelParam*       wbase = dst + y*2*TILE_RESOLUTION;
-        const PixelParam* rbase = src + y*TILE_RESOLUTION + offsets[child];
+        PixelType*       wbase = dst + y*2*TILE_RESOLUTION;
+        const PixelType* rbase = src + y*TILE_RESOLUTION + offsets[child];
 
         for (int x=0; x<halfSize[0]; ++x, wbase+=2, ++rbase)
         {
@@ -836,33 +836,35 @@ sampleParentBase(int child, PixelParam range[2], PixelParam* dst,
 }
 
 inline void
-sampleParent(int child, DemHeight range[2], DemHeight* dst,
-             const DemHeight* const src, const DemHeight& nodata)
+sampleParent(int child, DemHeight::Type range[2], DemHeight::Type* dst,
+             const DemHeight::Type* const src, const DemHeight::Type& nodata)
 {
-    range[0] = Math::Constants<DemHeight>::max;
-    range[1] = Math::Constants<DemHeight>::min;
+    range[0] = Math::Constants<DemHeight::Type>::max;
+    range[1] = Math::Constants<DemHeight::Type>::min;
 
     sampleParentBase(child, range, dst, src, nodata);
 }
 
 inline void
-sampleParent(int child, TextureColor range[2], TextureColor* dst,
-             const TextureColor* const src, const TextureColor& nodata)
+sampleParent(int child, TextureColor::Type range[2], TextureColor::Type* dst,
+             const TextureColor::Type* const src,
+             const TextureColor::Type& nodata)
 {
-    range[0] = TextureColor(255,255,255);
-    range[1] = TextureColor(0,0,0);
+    range[0] = TextureColor::Type(255,255,255);
+    range[1] = TextureColor::Type(0,0,0);
 
     sampleParentBase(child, range, dst, src, nodata);
 }
 
 void DataManager::
-sourceDem(const NodeData* const parent, const DemHeight* const parentHeight,
-          NodeData* child, DemHeight* childHeight)
+sourceDem(const NodeData* const parent,
+          const DemHeight::Type* const parentHeight,
+          NodeData* child, DemHeight::Type* childHeight)
 {
     typedef DemFile::File    File;
     typedef File::TileHeader TileHeader;
 
-    DemHeight* range   = &child->elevationRange[0];
+    DemHeight::Type* range   = &child->elevationRange[0];
 
     if (child->demTile != INVALID_TILEINDEX)
     {
@@ -885,8 +887,8 @@ sourceDem(const NodeData* const parent, const DemHeight* const parentHeight,
                          demNodata);
         else
         {
-            range[0] =  Math::Constants<DemHeight>::max;
-            range[1] = -Math::Constants<DemHeight>::max;
+            range[0] =  Math::Constants<DemHeight::Type>::max;
+            range[1] = -Math::Constants<DemHeight::Type>::max;
             for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
                 childHeight[i] = demNodata;
         }
@@ -895,8 +897,8 @@ sourceDem(const NodeData* const parent, const DemHeight* const parentHeight,
 
 void DataManager::
 sourceColor(
-    const NodeData* const parent, const TextureColor* const parentImagery,
-    NodeData* child, TextureColor* childImagery)
+    const NodeData* const parent, const TextureColor::Type* const parentImagery,
+    NodeData* child, TextureColor::Type* childImagery)
 {
     typedef ColorFile::File File;
 
@@ -913,7 +915,7 @@ sourceColor(
     }
     else
     {
-        TextureColor range[2];
+        TextureColor::Type range[2];
         if (parent != NULL)
             sampleParent(child->index.child, range, childImagery, parentImagery,
                          colorNodata);

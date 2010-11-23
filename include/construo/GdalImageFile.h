@@ -39,8 +39,8 @@ BEGIN_CRUSTA
 
 extern bool GdalAllRegisteredCalled;
 
-template <typename PixelParam>
-class GdalImageFileBase : public ImageFile<PixelParam>
+template <typename PixelType>
+class GdalImageFileBase : public ImageFile<PixelType>
 {
 public:
     ///opens an image file by name
@@ -52,18 +52,18 @@ protected:
     GDALDataset* dataset;
 };
 
-template <typename PixelParam>
-class GdalImageFile : public GdalImageFileBase<PixelParam>
+template <typename PixelType>
+class GdalImageFile : public GdalImageFileBase<PixelType>
 {
 public:
-    typedef GdalImageFileBase<PixelParam> Base;
+    typedef GdalImageFileBase<PixelType> Base;
 
     GdalImageFile(const std::string& imageFileName);
 
 //- inherited from ImageFileBase
 public:
     virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
-                               PixelParam* rectBuffer) const;
+                               PixelType* rectBuffer) const;
 };
 
 END_CRUSTA

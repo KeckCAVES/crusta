@@ -2,12 +2,11 @@
 #define _DemHeightGlobeData_H_
 
 
-#include <crusta/DemHeight.h>
 #include <crusta/GlobeData.h>
 
-#include <sstream>
-
 #include <Math/Constants.h>
+
+#include <crusta/DemHeight.h>
 
 
 BEGIN_CRUSTA
@@ -16,11 +15,13 @@ BEGIN_CRUSTA
 template <>
 struct GlobeData<DemHeight>
 {
+    typedef DemHeight::Type PixelType;
+
     struct FileHeader;
     struct TileHeader;
 
     ///template type for a corresponding quadtree file
-    typedef QuadtreeFile<DemHeight, FileHeader, TileHeader> File;
+    typedef QuadtreeFile<PixelType, FileHeader, TileHeader> File;
 
     struct FileHeader
     {
@@ -36,7 +37,7 @@ struct GlobeData<DemHeight>
     struct TileHeader
     {
         ///range of height values of DEM tile
-        DemHeight range[2];
+        PixelType range[2];
 
         void read(Misc::LargeFile* file)
         {
@@ -45,14 +46,14 @@ struct GlobeData<DemHeight>
 
         static size_t getSize()
         {
-            return 2 * sizeof(DemHeight);
+            return 2 * sizeof(PixelType);
         }
 
 #if CONSTRUO_BUILD
         TileHeader()
         {
-            range[0] =  Math::Constants<DemHeight>::max;
-            range[1] = -Math::Constants<DemHeight>::max;
+            range[0] =  Math::Constants<PixelType>::max;
+            range[1] = -Math::Constants<PixelType>::max;
         }
 
         void write(Misc::LargeFile* file) const
@@ -77,9 +78,9 @@ struct GlobeData<DemHeight>
         return "Triacontahedron";
     }
 
-    static DemHeight defaultNodata()
+    static PixelType defaultNodata()
     {
-        return DemHeight(-4.294967296e+9);
+        return PixelType(-4.294967296e+9);
     }
 };
 

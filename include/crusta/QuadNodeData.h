@@ -35,9 +35,9 @@ struct NodeData
     void init(Scalar radius, Scalar verticalScale);
 
     /** get the elevation range of the node or the default range */
-    void getElevationRange(DemHeight range[2]) const;
+    void getElevationRange(DemHeight::Type range[2]) const;
     /** get the height value if it is valid or the default */
-    DemHeight getHeight(const DemHeight& test) const;
+    DemHeight::Type getHeight(const DemHeight::Type& test) const;
 
 ///\todo integrate me properly into the caching scheme (VIS 2010)
 bool          lineCoverageDirty;
@@ -61,9 +61,9 @@ Colors        lineData;
     Scope::Scalar boundingRadius;
 
     /** centroid of the node geometry on the average elevation shell */
-    DemHeight centroid[3];
+    DemHeight::Type centroid[3];
     /** the range of the elevation values */
-    DemHeight elevationRange[2];
+    DemHeight::Type elevationRange[2];
 
     /** index of the DEM tile in the database */
     TileIndex demTile;

@@ -51,7 +51,9 @@ int main(int argc, char* argv[])
     {
         UNDEFINED_BUILD,
         DEM_BUILD,
-        COLORTEXTURE_BUILD
+        COLORTEXTURE_BUILD,
+        LAYERF_BUILD,
+        LAYERI8_BUILD,
     };
 
 //- Parse the command line

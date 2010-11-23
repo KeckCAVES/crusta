@@ -101,11 +101,11 @@ typedef GLVertex<void, 0, void, 0, void, float, 3> Vertex;
 typedef CacheArrayBuffer<Vertex>    GeometryBuffer;
 typedef Main2dCache<GeometryBuffer> GeometryCache;
 
-typedef CacheArrayBuffer<DemHeight> HeightBuffer;
+typedef CacheArrayBuffer<DemHeight::Type> HeightBuffer;
 typedef Main2dCache<HeightBuffer>   HeightCache;
 
-typedef CacheArrayBuffer<TextureColor> ImageryBuffer;
-typedef Main2dCache<ImageryBuffer>     ImageryCache;
+typedef CacheArrayBuffer<TextureColor::Type> ImageryBuffer;
+typedef Main2dCache<ImageryBuffer>           ImageryCache;
 
 
 typedef CacheBuffer<SubRegion> SubRegionBuffer;

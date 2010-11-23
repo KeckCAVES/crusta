@@ -23,42 +23,35 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <cstring>
 #include <Misc/ThrowStdErr.h>
 
-#include <crusta/GlobeData.h>
+#include <crusta/Vector3ui8.h>
 
 
 BEGIN_CRUSTA
 
 
-template <typename PixelParam>
-TpmImageFileBase<PixelParam>::
-TpmImageFileBase(const char* imageFileName) :
-    tpmFile(imageFileName)
-{
-    typedef GlobeData<PixelParam> gd;
-
-    if (static_cast<int>(tpmFile.getNumChannels())!=gd::numChannels())
-    {
-        Misc::throwStdErr("TpmImageFile: mismatching pixel type. Expecting "
-                          "%d channels, got %d channels", gd::numChannels(),
-                          tpmFile.getNumChannels());
-    }
-    /* Read the image size: */
-    this->size[0] = tpmFile.getSize(0);
-    this->size[1] = tpmFile.getSize(1);
-}
+//- single channel float -------------------------------------------------------
 
 template <>
-class TpmImageFile<DemHeight> : public TpmImageFileBase<DemHeight>
+class TpmImageFile<float> : public ImageFile<float>
 {
 public:
     TpmImageFile(const char* imageFileName) :
-        TpmImageFileBase<DemHeight>(imageFileName)
+        tpmFile(imageFileName)
     {
+        if (static_cast<int>(tpmFile.getNumChannels()) != 1)
+        {
+            Misc::throwStdErr("TpmImageFile: mismatching pixel type. Expecting "
+                              "1 channel, got %d channels",
+                              tpmFile.getNumChannels());
+        }
+        /* Read the image size: */
+        this->size[0] = tpmFile.getSize(0);
+        this->size[1] = tpmFile.getSize(1);
     }
 
 public:
-    virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
-                               DemHeight* rectBuffer) const
+    void readRectangle(const int rectOrigin[2], const int rectSize[2],
+                       float* rectBuffer) const
     {
         /* Lock the image file (no sense in multithreading at this point): */
         Threads::Mutex::Lock lock(tpmFileMutex);
@@ -82,7 +75,7 @@ public:
                 tpmFile.readRectangle(ro, rs, imgData);
 
                 for (int i=0; i<rectSize[0]*rectSize[1]; ++i)
-                    rectBuffer[i] = DemHeight(imgData[i]);
+                    rectBuffer[i] = float(imgData[i]);
 
                 delete[] imgData;
             }break;
@@ -93,7 +86,7 @@ public:
                 tpmFile.readRectangle(ro, rs, imgData);
 
                 for (int i=0; i<rectSize[0]*rectSize[1]; ++i)
-                    rectBuffer[i] = DemHeight(imgData[i]);
+                    rectBuffer[i] = float(imgData[i]);
 
                 delete[] imgData;
             }break;
@@ -104,30 +97,45 @@ public:
                 tpmFile.readRectangle(ro, rs, imgData);
 
                 for (int i=0; i<rectSize[0]*rectSize[1]; ++i)
-                    rectBuffer[i] = DemHeight(imgData[i]);
+                    rectBuffer[i] = float(imgData[i]);
 
                 delete[] imgData;
             }break;
         }
     }
+
+protected:
+    ///mutex protecting the tpm file during reading
+    mutable Threads::Mutex tpmFileMutex;
+    ///the underlying TPM file driver
+    mutable TpmFile tpmFile;
 };
 
 
+//- 3-channel unit8 ------------------------------------------------------------
+
 template <>
-class TpmImageFile<TextureColor> : public TpmImageFileBase<TextureColor>
+class TpmImageFile<Vector3ui8> : public ImageFile<Vector3ui8>
 {
 public:
     TpmImageFile(const char* imageFileName) :
-        TpmImageFileBase<TextureColor>(imageFileName)
+        tpmFile(imageFileName)
     {
+        if (static_cast<int>(tpmFile.getNumChannels()) != 3)
+        {
+            Misc::throwStdErr("TpmImageFile: mismatching pixel type. Expecting "
+                              "%d channel, got %d channels",
+                              Vector3ui8::dimension, tpmFile.getNumChannels());
+        }
+        /* Read the image size: */
+        this->size[0] = tpmFile.getSize(0);
+        this->size[1] = tpmFile.getSize(1);
     }
 
 public:
-    virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
-                               TextureColor* rectBuffer) const
+    void readRectangle(const int rectOrigin[2], const int rectSize[2],
+                       Vector3ui8* rectBuffer) const
     {
-        typedef GlobeData<TextureColor> gd;
-
         /* Lock the image file (no sense in multithreading at this point): */
         Threads::Mutex::Lock lock(tpmFileMutex);
 
@@ -153,7 +161,7 @@ public:
 
                 for (int p=0, e=0; p<numPixels; ++p)
                 {
-                    for (int c=0; c<gd::numChannels(); ++c, ++e)
+                    for (int c=0; c<Vector3ui8::dimension; ++c, ++e)
                         rectBuffer[p][c] = imgData[e];
                 }
 
@@ -167,7 +175,7 @@ public:
 
                 for (int p=0, e=0; p<numPixels; ++p)
                 {
-                    for (int c=0; c<gd::numChannels(); ++c, ++e)
+                    for (int c=0; c<Vector3ui8::dimension; ++c, ++e)
                         rectBuffer[p][c] = imgData[e];
                 }
 
@@ -181,7 +189,7 @@ public:
 
                 for (int p=0, e=0; p<numPixels; ++p)
                 {
-                    for (int c=0; c<gd::numChannels(); ++c, ++e)
+                    for (int c=0; c<Vector3ui8::dimension; ++c, ++e)
                         rectBuffer[p][c] = imgData[e];
                 }
 
@@ -189,6 +197,12 @@ public:
             }break;
         }
     }
+
+protected:
+    ///mutex protecting the tpm file during reading
+    mutable Threads::Mutex tpmFileMutex;
+    ///the underlying TPM file driver
+    mutable TpmFile tpmFile;
 };
 
 

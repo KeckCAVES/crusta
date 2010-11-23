@@ -20,8 +20,9 @@ template <typename PixelParam>
 class GlobeFile
 {
 public:
-    typedef GlobeData<PixelParam> gd;
-    typedef typename gd::File     File;
+    typedef typename PixelParam::Type PixelType;
+    typedef GlobeData<PixelParam>     gd;
+    typedef typename gd::File         File;
 
     ~GlobeFile();
 
@@ -35,14 +36,14 @@ public:
     File* getPatch(uint8 patch);
 
     /** retrieve the nodata value filled data buffer */
-    const PixelParam* getBlank() const;
+    const PixelType* getBlank() const;
 
     /** returns the string identifier for the data type */
     const std::string& getDataType();
     /** returns the number of channels in the data */
     const int& getNumChannels();
     /** returns the pixel value for out-of-bounds tiles */
-    const PixelParam& getNodata() const;
+    const PixelType& getNodata() const;
 
     /** returns the descriptor of the polyhedron used for the globe file */
     const std::string& getPolyhedronType() const;
@@ -57,12 +58,12 @@ protected:
     void loadConfiguration(const std::string& cfgName);
     void createBaseFolder(const std::string& path, bool parent=false);
 
-    std::vector<PixelParam> blank;
+    std::vector<PixelType> blank;
     PatchFiles patches;
 
     std::string dataType;
     int         numChannels;
-    PixelParam  nodata;
+    PixelType   nodata;
     std::string polyhedronType;
     int         numPatches;
     int         tileSize[2];

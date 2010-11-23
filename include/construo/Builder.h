@@ -54,9 +54,11 @@ public:
     ~Builder();
 
 protected:
-    typedef Spheroid<PixelParam>   Globe;
-    typedef TreeNode<PixelParam>   Node;
-    typedef ImagePatch<PixelParam> Patch;
+    typedef typename PixelParam::Type PixelType;
+
+    typedef Spheroid<PixelParam>  Globe;
+    typedef TreeNode<PixelParam>  Node;
+    typedef ImagePatch<PixelType> Patch;
 
     ///subsamples data from the given node into that node's children
     void subsampleChildren(Node* node);
@@ -90,13 +92,13 @@ protected:
     ///temporary buffer to hold sample positions for sourcing data
     Point* sampleBuf;
     ///temporary buffer to hold node data
-    PixelParam* nodeDataBuf;
+    PixelType* nodeDataBuf;
     ///temporary buffer to hold node data that needs to be sampled before use
-    PixelParam* nodeDataSampleBuf;
+    PixelType* nodeDataSampleBuf;
     ///size of the tiles to be generated/updated
     uint tileSize[2];
     ///temporary buffer to hold the subsampling domain
-    PixelParam* domainBuf;
+    PixelType* domainBuf;
     ///size of the temporary subsampling domain
     uint domainSize[2];
 

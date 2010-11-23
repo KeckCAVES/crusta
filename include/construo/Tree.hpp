@@ -29,16 +29,16 @@ TreeNodeCreateTileHeader(const TreeNode<DemHeight>& node)
 
     TileHeader header;
 
-    header.range[0] =  Math::Constants<DemHeight>::max;
-    header.range[1] = -Math::Constants<DemHeight>::max;
+    header.range[0] =  Math::Constants<DemHeight::Type>::max;
+    header.range[1] = -Math::Constants<DemHeight::Type>::max;
 
-    DemHeight* tile = node.data;
+    DemHeight::Type* tile = node.data;
     assert(tile != NULL);
 
     //calculate the tile's pixel value range
 ///\todo OpenMP this
     assert(node.globeFile != NULL);
-    const DemHeight& nodata = node.globeFile->getNodata();
+    const DemHeight::Type& nodata = node.globeFile->getNodata();
     gd::File* file = node.globeFile->getPatch(node.treeIndex.patch);
     const int* tileSize = node.globeFile->getTileSize();
     for(int i=0; i<tileSize[0]*tileSize[1]; ++i)

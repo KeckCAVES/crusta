@@ -116,7 +116,7 @@ getPatch(uint8 patch)
 
 
 template <typename PixelParam>
-const PixelParam* GlobeFile<PixelParam>::
+const typename GlobeFile<PixelParam>::PixelType* GlobeFile<PixelParam>::
 getBlank() const
 {
     return &blank.front();
@@ -151,7 +151,7 @@ getNumPatches() const
 }
 
 template <typename PixelParam>
-const PixelParam& GlobeFile<PixelParam>::
+const typename GlobeFile<PixelParam>::PixelType& GlobeFile<PixelParam>::
 getNodata() const
 {
     return nodata;

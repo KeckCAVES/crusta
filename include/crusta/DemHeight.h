@@ -8,8 +8,12 @@
 BEGIN_CRUSTA
 
 
-/// data type for values of a DEM stored in the preprocessed hierarchies
-typedef float DemHeight;
+/// serves as a container for the semantics of a topography value
+struct DemHeight
+{
+    /// data type for values of a DEM stored in the preprocessed hierarchies
+    typedef float Type;
+};
 
 
 END_CRUSTA

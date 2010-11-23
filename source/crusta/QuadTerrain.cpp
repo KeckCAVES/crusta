@@ -212,13 +212,14 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
         Point3(-1,1,-1), Point3(-1,-1,1), Point3(1,1,1));
 
     //the elevation range might be flat. Make sure to give the frustum depth
-    DemHeight elevationRange[2];
+    DemHeight::Type elevationRange[2];
     node.getElevationRange(elevationRange);
     Scalar sideLen = Geometry::dist(node.scope.corners[0],
                                     node.scope.corners[1]);
     if (Math::abs(elevationRange[0]-elevationRange[1]) < sideLen)
     {
-        DemHeight midElevation = (elevationRange[0] + elevationRange[1]) * 0.5;
+        DemHeight::Type midElevation = (elevationRange[0] + elevationRange[1]) *
+                                       DemHeight::Type(0.5);
         sideLen *= 0.5;
         elevationRange[0] = midElevation - sideLen;
         elevationRange[1] = midElevation + sideLen;
@@ -725,7 +726,7 @@ const QuadNodeMainData::Vertex::Position* positions[4] = {
     &(cellV->position), &((cellV+tileRes-1)->position),
     &((cellV+(tileRes-1)*tileRes)->position), &((cellV+(tileRes-1)*tileRes + tileRes-1)->position) };
 Vector3 cellCorners[4];
-DemHeight elevationRange[2];
+DemHeight::Type elevationRange[2];
 node.getElevationRange(elevationRange);
 for (int i=0; i<4; ++i)
 {
@@ -790,7 +791,7 @@ CrustaVisualizer::clear(5);
     const Scalar& verticalScale = crusta->getVerticalScale();
 
 //- check intersection with upper boundary
-    DemHeight elevationRange[2];
+    DemHeight::Type elevationRange[2];
     node.getElevationRange(elevationRange);
 
     Sphere shell(Point3(0), SETTINGS->globeRadius +
@@ -1020,12 +1021,12 @@ if (DEBUG_INTERSECT) {
 Scalar verticalScale = crusta->getVerticalScale();
 int offset = cellY*tileRes + cellX;
 QuadNodeMainData::Vertex* cellV = leafData.geometry + offset;
-DemHeight*                cellH = leafData.height   + offset;
+DemHeight::Type*          cellH = leafData.height   + offset;
 
 const QuadNodeMainData::Vertex::Position* positions[4] = {
     &(cellV->position), &((cellV+1)->position),
     &((cellV+tileRes)->position), &((cellV+tileRes+1)->position) };
-DemHeight heights[4] = {
+DemHeight::Type heights[4] = {
     leaf.getHeight(*cellH),           leaf.getHeight(*(cellH+1)),
     leaf.getHeight(*(cellH+tileRes)), leaf.getHeight(*(cellH+tileRes+1))
 };
@@ -1137,12 +1138,12 @@ if (DEBUG_INTERSECT) {
 Scalar verticalScale = crusta->getVerticalScale();
 int offset = cellY*tileRes + cellX;
 QuadNodeMainData::Vertex* cellV = leaf.geometry + offset;
-DemHeight*                cellH = leaf.height   + offset;
+DemHeight::Type*          cellH = leaf.height   + offset;
 
 const QuadNodeMainData::Vertex::Position* positions[4] = {
     &(cellV->position), &((cellV+1)->position),
     &((cellV+tileRes)->position), &((cellV+tileRes+1)->position) };
-const DemHeight* heights[4] = {
+const DemHeight::Type* heights[4] = {
     cellH, cellH+1, cellH+tileRes, cellH+tileRes+1
 };
 //construct the corners of the current cell
@@ -1218,14 +1219,14 @@ int traversedCells = 0;
 #endif //DEBUG_INTERSECT_CRAP
     Scalar verticalScale = crusta->getVerticalScale();
     int offset = cellY*tileRes + cellX;
-    Vertex*    cellV = leafData.geometry + offset;
-    DemHeight* cellH = leafData.height   + offset;
+    Vertex*          cellV = leafData.geometry + offset;
+    DemHeight::Type* cellH = leafData.height   + offset;
     while (true)
     {
         const Vertex::Position* positions[4] = {
             &(cellV->position), &((cellV+1)->position),
             &((cellV+tileRes)->position), &((cellV+tileRes+1)->position) };
-        DemHeight heights[4] = {
+        DemHeight::Type heights[4] = {
             leaf.getHeight(*cellH),           leaf.getHeight(*(cellH+1)),
             leaf.getHeight(*(cellH+tileRes)), leaf.getHeight(*(cellH+tileRes+1))
         };

@@ -2,14 +2,11 @@
 #define _TextureColorGlobeData_H_
 
 
+#include <crusta/GlobeData.h>
+
 #include <Math/Constants.h>
 
-#include <crusta/GlobeData.h>
 #include <crusta/TextureColor.h>
-
-#if CONSTRUO_BUILD
-#include <construo/Tree.h>
-#endif //CONSTRUO_BUILD
 
 
 BEGIN_CRUSTA
@@ -18,11 +15,13 @@ BEGIN_CRUSTA
 template <>
 struct GlobeData<TextureColor>
 {
+    typedef TextureColor::Type PixelType;
+
     struct FileHeader;
     struct TileHeader;
 
     ///template type for a corresponding quadtree file
-    typedef QuadtreeFile<TextureColor, FileHeader, TileHeader> File;
+    typedef QuadtreeFile<PixelType, FileHeader, TileHeader> File;
 
     struct FileHeader
     {
@@ -60,9 +59,9 @@ struct GlobeData<TextureColor>
         return "Triacontahedron";
     }
 
-    static TextureColor defaultNodata()
+    static PixelType defaultNodata()
     {
-        return TextureColor(0,0,0);
+        return PixelType(0,0,0);
     }
 };
 

@@ -19,31 +19,30 @@ enum SubsampleFilterType
 };
 
 
-template <typename PixelParam, SubsampleFilterType FilterParam>
+template <typename PixelType, SubsampleFilterType FilterParam>
 struct SubsampleFilter
 {
     /** width of the (static) subsampling filter */
     static int width();
-    
+
     /** arbitrary filtered lookups into two dimensional pixel domains */
-    static PixelParam sample(
-        const PixelParam* img, const int origin[2],
+    static PixelType sample(
+        const PixelType* img, const int origin[2],
         const double at[2], const int size[2],
-        const PixelParam& imgNodata, const PixelParam& defaultValue,
-        const PixelParam& globeNodata);
-    
+        const PixelType& imgNodata, const PixelType& defaultValue,
+        const PixelType& globeNodata);
+
     /** fixed subsampled lookup (requires knowledge on the row length of the
         domain) */
-    static PixelParam sample(PixelParam* at, int rowLen,
-                             const PixelParam& globeNodata);
+    static PixelType sample(PixelType* at, int rowLen,
+                             const PixelType& globeNodata);
 };
 
 
 END_CRUSTA
 
 
-#include <construo/DemHeightSubsampleFilter.h>
-#include <construo/TextureColorSubsampleFilter.h>
+#include <construo/SubsampleFilter.hpp>
 
 
 #endif //_SubsampleFilter_H_

@@ -13,12 +13,14 @@ BEGIN_CRUSTA
 template <typename PixelParam>
 struct GlobeData
 {
+    typedef typename PixelParam::Type PixelType;
+
 //- quadtree file management
     struct FileHeader;
     struct TileHeader;
 
     ///template type for a corresponding quadtree file
-    typedef QuadtreeFile<PixelParam, FileHeader, TileHeader> File;
+    typedef QuadtreeFile<PixelType, FileHeader, TileHeader> File;
 
     ///generic header for file scope meta-data. Defaults to an empty header.
     struct FileHeader
@@ -51,7 +53,7 @@ struct GlobeData
 
 ///\todo these should go into a construo configuration file
     static std::string defaultPolyhedronType();
-    static PixelParam  defaultNodata();
+    static PixelType  defaultNodata();
 };
 
 

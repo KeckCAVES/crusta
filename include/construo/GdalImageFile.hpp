@@ -6,15 +6,14 @@
 #include <limits>
 #include <sstream>
 
-#include <crusta/DemHeight.h>
-#include <crusta/TextureColor.h>
+#include <crusta/Vector3ui8.h>
 
 
 BEGIN_CRUSTA
 
 
-template <typename PixelParam>
-GdalImageFileBase<PixelParam>::
+template <typename PixelType>
+GdalImageFileBase<PixelType>::
 GdalImageFileBase(const std::string& imageFileName)
 {
     if (!GdalAllRegisteredCalled)
@@ -114,8 +113,8 @@ GdalImageFileBase(const std::string& imageFileName)
     }
 }
 
-template <typename PixelParam>
-GdalImageFileBase<PixelParam>::
+template <typename PixelType>
+GdalImageFileBase<PixelType>::
 ~GdalImageFileBase()
 {
     if (dataset != NULL)
@@ -123,12 +122,13 @@ GdalImageFileBase<PixelParam>::
 }
 
 
+//- single channel float -------------------------------------------------------
 
 template <>
-class GdalImageFile<DemHeight> : public GdalImageFileBase<DemHeight>
+class GdalImageFile<float> : public GdalImageFileBase<float>
 {
 public:
-    typedef GdalImageFileBase<DemHeight> Base;
+    typedef GdalImageFileBase<float> Base;
 
     GdalImageFile(const std::string& imageFileName) :
         Base(imageFileName)
@@ -141,7 +141,7 @@ public:
         GDALRasterBand* band = dataset->GetRasterBand(1);
 
         //try to retrieve the nodata value from the band
-        nodata = DemHeight(band->GetNoDataValue());
+        nodata = float(band->GetNoDataValue());
 
         //output the no-data value
         std::cout << "Internal nodata value:\n" << nodata << "\n";
@@ -150,7 +150,7 @@ public:
 
 public:
     virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
-                               DemHeight* rectBuffer) const
+                               float* rectBuffer) const
     {
         //retrieve raster bands from the data set
         int numBands = dataset->GetRasterCount();
@@ -172,18 +172,18 @@ assert(rectOrigin[i]+rectSize[i]-1 < size[i]);
         }
 
         int readSize[2] = { max[0] - min[0], max[1] - min[1] };
-        int rowWidth  = rectSize[0] * sizeof(DemHeight);
-        DemHeight* dst = rectBuffer + ( (min[1]-rectOrigin[1])*rectSize[0] +
+        int rowWidth  = rectSize[0] * sizeof(float);
+        float* dst = rectBuffer + ( (min[1]-rectOrigin[1])*rectSize[0] +
                                         (min[0]-rectOrigin[0]) );
 
         band->RasterIO(GF_Read, min[0], min[1], readSize[0], readSize[1],
                        dst, readSize[0], readSize[1], GDT_Float32,
-                       sizeof(DemHeight), rowWidth);
+                       sizeof(float), rowWidth);
 
         //scale the pixel values
         if (pixelScale != 1.0)
         {
-            for (DemHeight* p=rectBuffer; p<rectBuffer+ rectSize[0]*rectSize[1];
+            for (float* p=rectBuffer; p < rectBuffer + rectSize[0]*rectSize[1];
                  ++p)
             {
                 *p = pixelScale * (*p);
@@ -194,11 +194,13 @@ assert(rectOrigin[i]+rectSize[i]-1 < size[i]);
 };
 
 
+//- 3-channel unit8 ------------------------------------------------------------
+
 template <>
-class GdalImageFile<TextureColor> : public GdalImageFileBase<TextureColor>
+class GdalImageFile<Vector3ui8> : public GdalImageFileBase<Vector3ui8>
 {
 public:
-    typedef GdalImageFileBase<TextureColor> Base;
+    typedef GdalImageFileBase<Vector3ui8> Base;
 
     GdalImageFile(const std::string& imageFileName) :
         Base(imageFileName)
@@ -214,14 +216,14 @@ public:
         std::vector<GDALRasterBand*> bands;
         bands.push_back(dataset->GetRasterBand(1));
 
-        for (int i=1; i<TextureColor::dimension; ++i)
+        for (int i=1; i<Vector3ui8::dimension; ++i)
         {
             bands.push_back(numBands<i+1 ? bands[i-1] :
                                            dataset->GetRasterBand(i+1));
         }
 
-        for (int i=0; i<TextureColor::dimension; ++i)
-            nodata[i] = TextureColor::Scalar(bands[i]->GetNoDataValue());
+        for (int i=0; i<Vector3ui8::dimension; ++i)
+            nodata[i] = Vector3ui8::Scalar(bands[i]->GetNoDataValue());
 
         //output the no-data value
         std::cout << "Internal nodata value:\n(" << nodata << ")\n";
@@ -230,7 +232,7 @@ public:
 
 public:
     virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
-                               TextureColor* rectBuffer) const
+                               Vector3ui8* rectBuffer) const
     {
         //retrieve raster bands from the data set
         int numBands = dataset->GetRasterCount();
@@ -243,7 +245,7 @@ public:
         std::vector<GDALRasterBand*> bands;
         bands.push_back(dataset->GetRasterBand(1));
 
-        for (int i=1; i<TextureColor::dimension; ++i)
+        for (int i=1; i<Vector3ui8::dimension; ++i)
         {
             bands.push_back(numBands<i+1 ? bands[i-1] :
                                            dataset->GetRasterBand(i+1));
@@ -262,21 +264,21 @@ assert(rectOrigin[i]+rectSize[i]-1 < size[i]);
         }
 
         int readSize[2] = { max[0] - min[0], max[1] - min[1] };
-        int rowWidth  = rectSize[0] * sizeof(TextureColor);
-        TextureColor* dst = rectBuffer + ( (min[1]-rectOrigin[1])*rectSize[0] +
-                                           (min[0]-rectOrigin[0]) );
+        int rowWidth  = rectSize[0] * sizeof(Vector3ui8);
+        Vector3ui8* dst = rectBuffer + ( (min[1]-rectOrigin[1])*rectSize[0] +
+                                         (min[0]-rectOrigin[0]) );
 
-        for (int i=0; i<TextureColor::dimension; ++i)
+        for (int i=0; i<Vector3ui8::dimension; ++i)
         {
             bands[i]->RasterIO(GF_Read, min[0], min[1], readSize[0],readSize[1],
                                &dst[0][i], readSize[0], readSize[1], GDT_Byte,
-                               sizeof(TextureColor), rowWidth);
+                               sizeof(Vector3ui8), rowWidth);
         }
 
         //scale the pixel values
         if (pixelScale != 1.0)
         {
-            for (TextureColor* p=rectBuffer;
+            for (Vector3ui8* p=rectBuffer;
                  p < (rectBuffer + rectSize[0]*rectSize[1]); ++p)
             {
                 *p = pixelScale * (*p);
