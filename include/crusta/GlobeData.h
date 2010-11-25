@@ -61,6 +61,7 @@ END_CRUSTA
 
 
 #include <crusta/DemHeightGlobeData.h>
+#include <crusta/LayerDataGlobeData.h>
 #include <crusta/TextureColorGlobeData.h>
 
 

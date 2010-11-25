@@ -201,6 +201,8 @@ struct ImgBox
 };
 typedef std::vector<ImgBox> ImgBoxes;
 
+
+///\todo overlap is apparently unused here
 template <typename PixelParam>
 void Builder<PixelParam>::
 sourceFinest(Node* node, Patch* imgPatch, uint overlap)

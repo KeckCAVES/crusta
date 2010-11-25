@@ -65,7 +65,7 @@ struct GlobeData<DemHeight>
 
     static const std::string typeName()
     {
-        return "Topography";
+        return std::string("Topography");
     }
 
     static const int numChannels()
@@ -75,7 +75,7 @@ struct GlobeData<DemHeight>
 
     static std::string defaultPolyhedronType()
     {
-        return "Triacontahedron";
+        return std::string("Triacontahedron");
     }
 
     static PixelType defaultNodata()

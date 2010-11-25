@@ -101,17 +101,13 @@ typedef GLVertex<void, 0, void, 0, void, float, 3> Vertex;
 typedef CacheArrayBuffer<Vertex>    GeometryBuffer;
 typedef Main2dCache<GeometryBuffer> GeometryCache;
 
-typedef CacheArrayBuffer<DemHeight::Type> HeightBuffer;
-typedef Main2dCache<HeightBuffer>   HeightCache;
-
-typedef CacheArrayBuffer<TextureColor::Type> ImageryBuffer;
-typedef Main2dCache<ImageryBuffer>           ImageryCache;
+typedef CacheArrayBuffer<LayerDataf::Type> LayerfBuffer;
+typedef Main2dCache<LayerfBuffer>          LayerfCache;
 
 
 typedef CacheBuffer<SubRegion> SubRegionBuffer;
 typedef Gpu2dAtlasCache<SubRegionBuffer> GpuGeometryCache;
-typedef Gpu2dAtlasCache<SubRegionBuffer> GpuHeightCache;
-typedef Gpu2dAtlasCache<SubRegionBuffer> GpuImageryCache;
+typedef Gpu2dAtlasCache<SubRegionBuffer> GpuLayerfCache;
 
 typedef Gpu2dRenderAtlasCache<SubRegionBuffer> GpuCoverageCache;
 
@@ -124,15 +120,13 @@ struct MainCache
 {
     NodeCache     node;
     GeometryCache geometry;
-    HeightCache   height;
-    ImageryCache  imagery;
+    LayerfCache   layerf;
 };
 
 struct GpuCache
 {
     GpuGeometryCache geometry;
-    GpuHeightCache   height;
-    GpuImageryCache  imagery;
+    GpuLayerfCache   layerf;
     GpuCoverageCache coverage;
     GpuLineDataCache lineData;
 };

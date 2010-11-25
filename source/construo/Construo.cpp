@@ -28,15 +28,8 @@
 
 #include <construo/Builder.h>
 
-#include <crusta/Triacontahedron.h>
+#include <crusta/LayerData.h>
 
-///\todo remove
-BEGIN_CRUSTA
-template <>
-bool TreeNode<TextureColor>::debugGetKin = false;
-template <>
-bool TreeNode<DemHeight>::debugGetKin    = false;
-END_CRUSTA
 
 using namespace crusta;
 
@@ -52,8 +45,7 @@ int main(int argc, char* argv[])
         UNDEFINED_BUILD,
         DEM_BUILD,
         COLORTEXTURE_BUILD,
-        LAYERF_BUILD,
-        LAYERI8_BUILD,
+        LAYERF_BUILD
     };
 
 //- Parse the command line
@@ -82,7 +74,6 @@ int main(int argc, char* argv[])
             //create/update a color texture spheroid
             buildType = DEM_BUILD;
 
-            //read the spheroid filename
             ++i;
             if (i<argc)
             {
@@ -110,6 +101,24 @@ int main(int argc, char* argv[])
             {
                 std::cerr << "Dangling globe file name argument" <<
                              std::endl;
+                return 1;
+            }
+        }
+        else if (strcasecmp(argv[i], "-layerf") == 0)
+        {
+            //create/update a color texture spheroid
+            buildType = LAYERF_BUILD;
+
+            //read the spheroid filename
+            ++i;
+            if (i<argc)
+            {
+                globeFileName = std::string(argv[i]);
+            }
+            else
+            {
+                std::cerr << "Dangling globe file name argument" <<
+                std::endl;
                 return 1;
             }
         }
@@ -174,8 +183,8 @@ int main(int argc, char* argv[])
 
     if (buildType == UNDEFINED_BUILD)
     {
-        std::cerr << "Usage:" << std::endl << "construo -dem | -color "
-                     "<globe file name> [-scale <scalar>] [-nodata " <<
+        std::cerr << "Usage:" << std::endl << "construo -dem | -color | -layerf"
+                     " <globe file name> [-scale <scalar>] [-nodata " <<
                      "<value>] [-pointsampling] [-areasampling] " <<
                      "[-settings <settings file>] <input files>" << std::endl;
         return 1;
@@ -206,6 +215,9 @@ int main(int argc, char* argv[])
             break;
         case COLORTEXTURE_BUILD:
             builder = new Builder<TextureColor>(globeFileName, tileSize);
+            break;
+        case LAYERF_BUILD:
+            builder = new Builder<LayerDataf>(globeFileName, tileSize);
             break;
         default:
             std::cerr << "Unsupported build type" << std::endl;

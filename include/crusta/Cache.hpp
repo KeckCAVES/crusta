@@ -47,7 +47,7 @@ CacheArrayBuffer<DataParam>::
 
 template <typename BufferParam>
 IndexedBuffer<BufferParam>::
-IndexedBuffer(TreeIndex iIndex, BufferParam* iBuffer) :
+IndexedBuffer(DataIndex iIndex, BufferParam* iBuffer) :
     index(iIndex), buffer(iBuffer)
 {
 }
@@ -109,7 +109,7 @@ init(const std::string& iName, int size)
     {
         BufferParam* buffer = new BufferParam;
         initData(buffer->getData());
-        TreeIndex dummyIndex(~0,~0,~0,i);
+        DataIndex dummyIndex(~0, TreeIndex(~0,~0,~0,i));
         cached.insert(typename BufferPtrMap::value_type(dummyIndex, buffer));
     }
 }
@@ -208,7 +208,7 @@ unpin(BufferParam* buffer)
 
 template <typename BufferParam>
 BufferParam* CacheUnit<BufferParam>::
-find(const TreeIndex& index) const
+find(const DataIndex& index) const
 {
     typename BufferPtrMap::const_iterator it = cached.find(index);
     if (it!=cached.end())
@@ -236,7 +236,7 @@ grabBuffer(bool grabCurrent)
 CRUSTA_DEBUG(18, printCache();)
 
     //check the tail of the LRU sequence for valid buffers
-    IndexedBuffer<BufferParam> lruBuf(TreeIndex(), NULL);
+    IndexedBuffer<BufferParam> lruBuf(DataIndex(), NULL);
 
     if (!lruCached.empty())
     {
@@ -268,7 +268,7 @@ name << "Cache" << cached.size() << ":: unable to provide buffer\n";)
 
 template <typename BufferParam>
 void CacheUnit<BufferParam>::
-releaseBuffer(const TreeIndex& index, BufferParam* buffer)
+releaseBuffer(const DataIndex& index, BufferParam* buffer)
 {
     //silently ignore buffers that have not been grabbed
     if (buffer->state.grabbed == 0)

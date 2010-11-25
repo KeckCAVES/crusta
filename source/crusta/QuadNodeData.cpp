@@ -6,7 +6,18 @@
 #include <crusta/Crusta.h>
 #include <crusta/DataManager.h>
 
+
 BEGIN_CRUSTA
+
+
+NodeData::Tile::
+Tile() :
+    dataId(~0), node(INVALID_TILEINDEX)
+{
+    for (int i=0; i<4; ++i)
+        children[i] = INVALID_TILEINDEX;
+}
+
 
 NodeData::
 NodeData() :
@@ -14,14 +25,6 @@ NodeData() :
     index(TreeIndex::invalid),
     boundingAge(0), boundingCenter(0,0,0), boundingRadius(0)
 {
-    demTile   = INVALID_TILEINDEX;
-    colorTile = INVALID_TILEINDEX;
-    for (int i=0; i<4; ++i)
-    {
-        childDemTiles[i]   = INVALID_TILEINDEX;
-        childColorTiles[i] = INVALID_TILEINDEX;
-    }
-
     centroid[0] = centroid[1] = centroid[2] = DemHeight::Type(0.0);
     elevationRange[0] =  Math::Constants<DemHeight::Type>::max;
     elevationRange[1] = -Math::Constants<DemHeight::Type>::max;
@@ -96,6 +99,15 @@ getHeight(const DemHeight::Type& test) const
 {
     if (test == DATAMANAGER->getDemNodata())
         return SETTINGS->terrainDefaultHeight;
+    else
+        return test;
+}
+
+LayerDataf::Type NodeData::
+getLayerData(const LayerDataf::Type& test) const
+{
+    if (test == DATAMANAGER->getLayerfNodata())
+        return SETTINGS->terrainDefaultLayerfData;
     else
         return test;
 }

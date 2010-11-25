@@ -57,10 +57,12 @@ struct CrustaGlData : public GLObject::DataItem
 class Crusta : public GLObject
 {
 public:
-    void init(const std::string& settingsFile);
+    typedef std::vector<std::string> Strings;
+
+    void init(const Strings& settingsFiles);
     void shutdown();
 
-    void load(const std::string& demFileBase, const std::string& colorFileBase);
+    void load(Strings& dataBases);
     void unload();
 
 ///\todo potentially deprecate

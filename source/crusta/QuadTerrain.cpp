@@ -457,9 +457,7 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
     glActiveTexture(GL_TEXTURE0);
     gpuCache.geometry.bind();
     glActiveTexture(GL_TEXTURE1);
-    gpuCache.height.bind();
-    glActiveTexture(GL_TEXTURE2);
-    gpuCache.imagery.bind();
+    gpuCache.layerf.bind();
     CHECK_GLA
 
     if (SETTINGS->decorateVectorArt)
@@ -1493,7 +1491,6 @@ drawNode(GLContextData& contextData, CrustaGlData* crustaGl,
         Point3f(main.centroid[0], main.centroid[1], main.centroid[2]));
     crustaGl->terrainShader.setGeometrySubRegion(*gpuData.geometry);
     crustaGl->terrainShader.setHeightSubRegion(*gpuData.height);
-    crustaGl->terrainShader.setColorSubRegion(*gpuData.imagery);
     CHECK_GLA
 
     if (SETTINGS->decorateVectorArt)

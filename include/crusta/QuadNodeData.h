@@ -7,8 +7,8 @@
 #include <GL/GLVertex.h>
 
 #include <crusta/DemHeight.h>
+#include <crusta/LayerData.h>
 #include <crusta/map/Shape.h>
-#include <crusta/TextureColor.h>
 #include <crusta/TileIndex.h>
 #include <crusta/TreeIndex.h>
 #include <crusta/Scope.h>
@@ -22,6 +22,17 @@ BEGIN_CRUSTA
     hierarchy */
 struct NodeData
 {
+    /** encapsulates the tile indices of the node and the children for a data
+        source */
+    struct Tile
+    {
+        Tile();
+        uint8     dataId;
+        TileIndex node;
+        TileIndex children[4];
+    };
+    typedef std::vector<Tile> Tiles;
+
     typedef std::map<const Shape*, Shape::ControlPointHandleList>
         ShapeCoverage;
 
@@ -38,6 +49,8 @@ struct NodeData
     void getElevationRange(DemHeight::Type range[2]) const;
     /** get the height value if it is valid or the default */
     DemHeight::Type getHeight(const DemHeight::Type& test) const;
+    /** get the layer data value if it is valid or the default */
+    LayerDataf::Type getLayerData(const LayerDataf::Type& test) const;
 
 ///\todo integrate me properly into the caching scheme (VIS 2010)
 bool          lineCoverageDirty;
@@ -65,14 +78,10 @@ Colors        lineData;
     /** the range of the elevation values */
     DemHeight::Type elevationRange[2];
 
-    /** index of the DEM tile in the database */
-    TileIndex demTile;
-    /** indices of the children in the DEM file */
-    TileIndex childDemTiles[4];
-    /** index of the color texture tile in the database */
-    TileIndex colorTile;
-    /** indices of the children in the texture file */
-    TileIndex childColorTiles[4];
+    /** indices for the DEM tiles in the database */
+    Tile demTile;
+    /** indices for the Layer tiles in the databases */
+    Tiles layerTiles;
 };
 
 

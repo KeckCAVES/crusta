@@ -138,13 +138,13 @@ CrustaGlData::
 
 ///\todo split crusta and planet
 void Crusta::
-init(const std::string& settingsFile)
+init(const std::vector<std::string>& settingsFiles)
 {
 ///\todo split crusta and planet
 ///\todo extend the interface to pass an optional configuration file
     //initialize the crusta user settings
     SETTINGS = new CrustaSettings;
-    SETTINGS->loadFromFile(settingsFile);
+    SETTINGS->loadFromFiles(settingsFiles);
 
     //initialize the surface transformation tool
     SurfaceTool::init();
@@ -183,12 +183,36 @@ init(const std::string& settingsFile)
 }
 
 void Crusta::
-load(const std::string& demFileBase, const std::string& colorFileBase)
+shutdown()
+{
+    delete mapMan;
+    for (RenderPatches::iterator it=renderPatches.begin();
+         it!=renderPatches.end(); ++it)
+    {
+        delete *it;
+    }
+
+///\todo separate crusta the application from a planet instance (current)
+    delete DATAMANAGER;
+    delete CACHE;
+///\todo VruiGlew dependent dynamic allocation
+    QuadTerrain::deleteGlData();
+
+    delete SETTINGS;
+
+#if CRUSTA_ENABLE_RECORD_FRAMERATE
+delete CRUSTA_FRAMERATE_RECORDER;
+#endif //CRUSTA_ENABLE_RECORD_FRAMERATE
+}
+
+
+void Crusta::
+load(Strings& dataBases)
 {
     //clear the currently loaded data
     unload();
 
-    DATAMANAGER->load(demFileBase, colorFileBase);
+    DATAMANAGER->load(dataBases);
 
     globalElevationRange[0] =  Math::Constants<Scalar>::max;
     globalElevationRange[1] = -Math::Constants<Scalar>::max;
@@ -247,27 +271,6 @@ unload()
     DATAMANAGER->unload();
 }
 
-
-void Crusta::
-shutdown()
-{
-    delete mapMan;
-    for (RenderPatches::iterator it=renderPatches.begin();
-         it!=renderPatches.end(); ++it)
-    {
-        delete *it;
-    }
-
-///\todo separate crusta the application from a planet instance (current)
-    delete DATAMANAGER;
-    delete CACHE;
-///\todo VruiGlew dependent dynamic allocation
-    QuadTerrain::deleteGlData();
-
-#if CRUSTA_ENABLE_RECORD_FRAMERATE
-delete CRUSTA_FRAMERATE_RECORDER;
-#endif //CRUSTA_ENABLE_RECORD_FRAMERATE
-}
 
 Point3 Crusta::
 snapToSurface(const Point3& pos, Scalar elevationOffset)

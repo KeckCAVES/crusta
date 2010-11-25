@@ -1,21 +1,22 @@
-#ifndef _TextureColorGlobeData_H_
-#define _TextureColorGlobeData_H_
+#ifndef _LayerDataGlobeData_H_
+#define _LayerDataGlobeData_H_
 
 
 #include <crusta/GlobeData.h>
 
 #include <Math/Constants.h>
 
-#include <crusta/TextureColor.h>
+#include <crusta/LayerData.h>
 
 
 BEGIN_CRUSTA
 
 
-template <>
-struct GlobeData<TextureColor>
+template <typename TypeParam>
+struct GlobeData< LayerData<TypeParam> >
 {
-    typedef TextureColor::Type PixelType;
+    typedef LayerData<TypeParam>      LayerDataT;
+    typedef typename LayerDataT::Type PixelType;
 
     struct FileHeader;
     struct TileHeader;
@@ -38,7 +39,7 @@ struct GlobeData<TextureColor>
     {
         void read(Misc::LargeFile*)        {}
         static size_t getSize()            {return 0;}
-
+        
 #if CONSTRUO_BUILD
         void write(Misc::LargeFile*) const {}
 #endif //CONSTRUO_BUILD
@@ -46,12 +47,12 @@ struct GlobeData<TextureColor>
 
     static const std::string typeName()
     {
-        return std::string("ImageRGB");
+        return std::string("LayerData") + LayerDataT::suffix();
     }
 
     static const int numChannels()
     {
-        return 3;
+        return 1;
     }
 
     static std::string defaultPolyhedronType()
@@ -61,7 +62,7 @@ struct GlobeData<TextureColor>
 
     static PixelType defaultNodata()
     {
-        return PixelType(0,0,0);
+        return LayerDataT::defaultNodata();
     }
 };
 
@@ -69,4 +70,4 @@ struct GlobeData<TextureColor>
 END_CRUSTA
 
 
-#endif //_TextureColorGlobeData_H_
+#endif //_LayerDataGlobeData_H_

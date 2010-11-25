@@ -36,7 +36,6 @@
 #include <Vrui/Vrui.h>
 
 #include <crusta/Crusta.h>
-#include <crusta/GlobeFile.h>
 #include <crusta/map/MapManager.h>
 #include <crusta/QuadTerrain.h>
 
@@ -64,23 +63,22 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     sun(0), sunAzimuth(180.0), sunElevation(45.0),
     paletteEditor(new PaletteEditor)
 {
-    std::string demName;
-    std::string colorName;
-    std::string settingsName;
-    for (int i=0; i<argc; ++i)
-    {
-        std::string name = std::string(argv[i]);
-        if (GlobeFile<DemHeight>::isCompatible(name))
-            demName = name;
-        if (GlobeFile<TextureColor>::isCompatible(name))
-            colorName = name;
+    typedef std::vector<std::string> Strings;
 
-        if (strcmp(argv[i], "-settings")==0)
-            settingsName = std::string(argv[++i]);
+    Strings dataNames;
+    Strings settingsNames;
+    for (int i=1; i<argc; ++i)
+    {
+        std::string token = std::string(argv[i]);
+        if (token == std::string("-settings"))
+            settingsNames.push_back(argv[++i]);
+        else
+            dataNames.push_back(token);
+
     }
 
     crusta = new Crusta;
-    crusta->init(settingsName);
+    crusta->init(settingsNames);
 
     /* Create the sun lightsource: */
     sun=Vrui::getLightsourceManager()->createLightsource(false);
@@ -108,10 +106,12 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     resetNavigationCallback(NULL);
 
     //load data passed through command line?
-    crusta->load(demName, colorName);
+    crusta->load(dataNames);
 
-    dataDemFile->setLabel(demName.c_str());
-    dataColorFile->setLabel(colorName.c_str());
+///\todo fix the loading UI
+//LoadDataWidget.setFileNames(dataNames)
+    dataDemFile->setLabel("");
+    dataColorFile->setLabel("");
 
 #if CRUSTA_ENABLE_DEBUG
     DebugTool::init();
@@ -496,10 +496,11 @@ void CrustaApp::
 loadDataOkCallback(GLMotif::Button::SelectCallbackData*)
 {
     //load the current data selection
-    std::string demFile(dataDemFile->getLabel());
-    std::string colorFile(dataColorFile->getLabel());
+    std::vector<std::string> dataFiles;
+    dataFiles.push_back(dataDemFile->getLabel());
+    dataFiles.push_back(dataColorFile->getLabel());
 
-    crusta->load(demFile, colorFile);
+    crusta->load(dataFiles);
 
     //close the dialog
     Vrui::popdownPrimaryWidget(dataDialog);

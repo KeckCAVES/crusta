@@ -19,6 +19,7 @@ CrustaSettings::CrustaSettings() :
 
     terrainDefaultHeight(0.0f),
     terrainDefaultColor(0.5f, 0.5f, 0.5f, 1.0f),
+    terrainDefaultLayerfData(0.0f),
 
     terrainAmbientColor(0.4f, 0.4f, 0.4f, 1.0f),
     terrainDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f),
@@ -28,14 +29,13 @@ CrustaSettings::CrustaSettings() :
 
     cacheMainNodeSize(4096),
     cacheMainGeometrySize(4096),
-    cacheMainHeightSize(4096),
-    cacheMainImagerySize(4096),
+    cacheMainLayerfSize(4096),
     cacheGpuGeometrySize(1024),
-    cacheGpuHeightSize(1024),
-    cacheGpuImagerySize(1024),
+    cacheGpuLayerfSize(1024),
     cacheGpuCoverageSize(1024),
     cacheGpuLineDataSize(1024),
 
+    dataManMaxDataLayers(32),
     dataManMaxFetchRequests(16),
 
     lineDataTexSize(8192),
@@ -46,38 +46,52 @@ CrustaSettings::CrustaSettings() :
 }
 
 void CrustaSettings::
-loadFromFile(std::string configurationFileName, bool merge)
+loadFromFiles(const Strings& cfgNames)
 {
     Misc::ConfigurationFile cfgFile;
 
-    //try to load the specified configuration file
-    if (!configurationFileName.empty())
+    //try to load the default system-wide configuration
+    try
     {
-        try {
-            cfgFile.load(configurationFileName.c_str());
-        }
-        catch (std::runtime_error e) {
-            std::cout << "Caught exception " << e.what() << " while reading " <<
-                         "the following configuration file: " <<
-                         configurationFileName << std::endl;
-        }
+        cfgFile.merge((std::string(CRUSTA_SHARE_PATH) +
+                       std::string("crustaSettings.cfg")).c_str());
+    }
+    catch (Misc::File::OpenError e) {
+        //ignore this exception
+    }
+    catch (std::runtime_error e) {
+        std::cout << "Caught exception " << e.what() << " while reading " <<
+                     "the system-wide crustaSettings.cfg configuration file." <<
+                     std::endl;
     }
 
-    //try to merge the local edits if requested
-    if (merge)
+    //try to load the default local configuration file
+    try
+    {
+        cfgFile.merge("crustaSettings.cfg");
+    }
+    catch (Misc::File::OpenError e) {
+        //ignore this exception
+    }
+    catch (std::runtime_error e) {
+        std::cout << "Caught exception " << e.what() << " while reading " <<
+                     "the local crustaSettings.cfg configuration file." <<
+                     std::endl;
+    }
+
+    //try to load the specified configuration files
+    for (Strings::const_iterator it=cfgNames.begin(); it!=cfgNames.end(); ++it)
     {
         try {
-            cfgFile.merge("crustaSettings.cfg");
-        }
-        catch (Misc::File::OpenError e) {
-            //ignore this exception
+            cfgFile.merge(it->c_str());
         }
         catch (std::runtime_error e) {
             std::cout << "Caught exception " << e.what() << " while reading " <<
-                         "the local crustaSettings.cfg configuration file." <<
+                         "the following configuration file: " << *it <<
                          std::endl;
         }
     }
+
 
     //try to extract the globe specifications
     cfgFile.setCurrentSection("/Crusta/Globe");
@@ -90,6 +104,8 @@ loadFromFile(std::string configurationFileName, bool merge)
         "./defaultHeight", terrainDefaultHeight);
     terrainDefaultColor = cfgFile.retrieveValue<Color>(
         "./defaultColor", terrainDefaultColor);
+    terrainDefaultLayerfData = cfgFile.retrieveValue<float>(
+        "./defaultLayerfData", terrainDefaultLayerfData);
 
     terrainAmbientColor = cfgFile.retrieveValue<Color>(
         "./ambientColor", terrainAmbientColor);
@@ -108,16 +124,12 @@ loadFromFile(std::string configurationFileName, bool merge)
         "./mainNodeSize", cacheMainNodeSize);
     cacheMainGeometrySize = cfgFile.retrieveValue<int>(
         "./mainGeometrySize", cacheMainGeometrySize);
-    cacheMainHeightSize = cfgFile.retrieveValue<int>(
-        "./mainHeightSize", cacheMainHeightSize);
-    cacheMainImagerySize = cfgFile.retrieveValue<int>(
-        "./mainImagerySize", cacheMainImagerySize);
+    cacheMainLayerfSize = cfgFile.retrieveValue<int>(
+        "./mainLayerfSize", cacheMainLayerfSize);
     cacheGpuGeometrySize = cfgFile.retrieveValue<int>(
         "./gpuGeometrySize", cacheGpuGeometrySize);
-    cacheGpuHeightSize = cfgFile.retrieveValue<int>(
-        "./gpuHeightSize", cacheGpuHeightSize);
-    cacheGpuImagerySize = cfgFile.retrieveValue<int>(
-        "./gpuImagerySize", cacheGpuImagerySize);
+    cacheGpuLayerfSize = cfgFile.retrieveValue<int>(
+        "./gpuLayerfSize", cacheGpuLayerfSize);
     cacheGpuCoverageSize = cfgFile.retrieveValue<int>(
         "./gpuCoverageSize", cacheGpuCoverageSize);
     cacheGpuLineDataSize = cfgFile.retrieveValue<int>(

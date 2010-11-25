@@ -17,10 +17,8 @@ Cache()
     mainCache.node.init("MainNode", SETTINGS->cacheMainNodeSize);
     mainCache.geometry.init("MainGeometry", SETTINGS->cacheMainGeometrySize,
                             TILE_RESOLUTION);
-    mainCache.height.init("MainHeight", SETTINGS->cacheMainHeightSize,
+    mainCache.layerf.init("MainLayerf", SETTINGS->cacheMainLayerfSize,
                           TILE_RESOLUTION);
-    mainCache.imagery.init("MainImagery", SETTINGS->cacheMainImagerySize,
-                           TILE_RESOLUTION);
 }
 
 
@@ -47,10 +45,8 @@ initContext(GLContextData& contextData) const
     //initialize all the gpu memory caches
     gpuCache.geometry.init("GpuGeometry", SETTINGS->cacheGpuGeometrySize,
                            TILE_RESOLUTION, GL_RGB32F_ARB, GL_LINEAR);
-    gpuCache.height.init("GpuHeight", SETTINGS->cacheGpuHeightSize,
+    gpuCache.layerf.init("GpuLayerf", SETTINGS->cacheGpuLayerfSize,
                          TILE_RESOLUTION, GL_INTENSITY32F_ARB, GL_LINEAR);
-    gpuCache.imagery.init("GpuImagery", SETTINGS->cacheGpuImagerySize,
-                          TILE_RESOLUTION, GL_RGB, GL_LINEAR);
     gpuCache.lineData.init("GpuLineData", SETTINGS->cacheGpuLineDataSize,
                            SETTINGS->lineDataTexSize,
                            GL_RGBA32F_ARB, GL_LINEAR);

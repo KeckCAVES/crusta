@@ -26,11 +26,11 @@ operator() (const TreeIndex& i) const
 
 TreeIndex::
 TreeIndex(uint8 iPatch, uint8 iChild, uint8 iLevel, uint64 iIndex) :
-    patch(iPatch), child(iChild), level(iLevel), index(iIndex)
+    reserved(0), patch(iPatch), child(iChild), level(iLevel), index(iIndex)
 {}
 TreeIndex::
 TreeIndex(const TreeIndex& i) :
-    patch(i.patch), child(i.child), level(i.level), index(i.index)
+    reserved(0), patch(i.patch), child(i.child), level(i.level), index(i.index)
 {}
 
 

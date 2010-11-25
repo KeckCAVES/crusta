@@ -29,8 +29,10 @@ database of the requested data, etc.). For now I'm using Crusta pointers */
 class DataManager
 {
 public:
-    typedef GlobeFile<DemHeight>    DemFile;
-    typedef GlobeFile<TextureColor> ColorFile;
+    typedef std::vector<std::string> Strings;
+    typedef GlobeFile<DemHeight>     DemFile;
+    typedef GlobeFile<TextureColor>  ColorFile;
+    typedef GlobeFile<LayerDataf>    LayerfFile;
 
     /** the relevant main and gpu memory data for a tile */
     struct BatchElement
@@ -69,14 +71,9 @@ public:
     ~DataManager();
 
     /** assign the given databases to the data manager */
-    void load(const std::string& demPath, const std::string& colorPath);
+    void load(Strings& dataPaths);
     /** detach the data manager from the current databases */
     void unload();
-
-    /** check if DEM data is available from the manager */
-    bool hasDemData() const;
-    /** check if color data is available from the manager */
-    bool hasColorData() const;
 
     /** get the polyhedron that serves as the basis for the managed data */
     const Polyhedron* const getPolyhedron() const;
@@ -84,6 +81,8 @@ public:
     const DemHeight::Type& getDemNodata();
     /** get the value used to indicate the abscence of color data */
     const TextureColor::Type& getColorNodata();
+    /** get the value used to indicate the abscence of layerf data */
+    const LayerDataf::Type& getLayerfNodata();
 
     /** load the root data of a patch */
     void loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope);
@@ -116,16 +115,13 @@ public:
 
     /** check if all main buffers were acquired */
     bool isComplete(const NodeMainBuffer& mainBuf) const;
-    /** check if all gpu buffers were acquired */
-    bool isComplete(const NodeGpuBuffer& gpuBuf) const;
     /** touch the main buffers */
     void touch(NodeMainBuffer& mainBuf) const;
-    /** pin main buffers */
-    void pin(NodeMainBuffer& mainBuf) const;
-    /** unpin main buffers */
-    void unpin(NodeMainBuffer& mainBuf) const;
 
 protected:
+    typedef std::vector<ColorFile*>  ColorFiles;
+    typedef std::vector<LayerfFile*> LayerfFiles;
+
     struct FetchRequest
     {
         Crusta*        crusta;
@@ -175,8 +171,18 @@ protected:
                    DemHeight::Type* childHeight);
     /** source the color data for a node */
     void sourceColor(const NodeData* const parent,
-                     const TextureColor::Type* const parentImagery,
-                     NodeData* child, TextureColor::Type* childImagery);
+                     const LayerDataf::Type* const parentRed,
+                     const LayerDataf::Type* const parentGreen,
+                     const LayerDataf::Type* const parentBlue,
+                     NodeData* child, uint8 layer,
+                     LayerDataf::Type* childRed,
+                     LayerDataf::Type* childGreen,
+                     LayerDataf::Type* childBlue);
+    /** source the layerf data for a node */
+    void sourceLayerf(const NodeData* const parent,
+                      const LayerDataf::Type* const parentLayerf,
+                      NodeData* child, uint8 layer,
+                      LayerDataf::Type* childLayerf);
 
     /** start the fetching thread */
     void startFetchThread();
@@ -188,8 +194,11 @@ protected:
 
     /** globe file from which to source data for the elevation */
     DemFile* demFile;
-    /** globe file from which to source data for the color */
-    ColorFile* colorFile;
+    /** globe files from which to source 3-channel color data */
+    ColorFiles colorFiles;
+    /** globe files from which to source 1-channel float data */
+    LayerfFiles layerfFiles;
+
     /** polyhedron serving as the basis for the managed data */
     Polyhedron* polyhedron;
 
@@ -197,6 +206,8 @@ protected:
     DemHeight::Type demNodata;
     /** value for "no-data" colors */
     TextureColor::Type colorNodata;
+    /** value for the "no-data" float layer data element */
+    LayerDataf::Type layerfNodata;
 
     /** index into the first node of the surface that needs to be considered
         for the next gpu batch */

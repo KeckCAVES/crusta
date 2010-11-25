@@ -27,14 +27,15 @@ struct TreeIndex
     friend std::ostream& operator<<(std::ostream& os, const TreeIndex& i);
 
     static const TreeIndex invalid;
-    
-    uint64 patch :  8; ///< index of the base patch of the global hierarchy
-    uint64 child :  2; ///< index within the group of siblings
-    uint64 level :  8; ///< level in the global hierarchy (0 is root)
+
+    uint64 reserved : 5; ///< reserved for differentiating same indices
+    uint64 patch    : 5; ///< index of the base patch of the global hierarchy
+    uint64 child    : 2; ///< index within the group of siblings
+    uint64 level    : 6; ///< level in the global hierarchy (0 is root)
     /** describes a path from the root to the indicated node as a sequence
      of two-bit child-indices. The sequence starts with the least
      significant bits. */
-    uint64 index : 46;
+    uint64 index    : 46;
 };
 
 /** A traversal helper for following the path from the root to a node specified

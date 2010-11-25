@@ -17,7 +17,7 @@
 #include <list>
 #include <vector>
 
-#include <crusta/TreeIndex.h>
+#include <crusta/DataIndex.h>
 
 #ifdef __GNUC__
     #if __GNUC__ > 3 && __GNUC_MINOR__ > 0
@@ -90,10 +90,10 @@ public:
 template <typename BufferParam>
 struct IndexedBuffer
 {
-    IndexedBuffer(TreeIndex iIndex, BufferParam* iBuffer);
+    IndexedBuffer(DataIndex iIndex, BufferParam* iBuffer);
     bool operator >(const IndexedBuffer& other) const;
 
-    TreeIndex   index;
+    DataIndex   index;
     BufferParam* buffer;
 };
 
@@ -137,7 +137,7 @@ public:
     void unpin(BufferParam* buffer);
 
     /** find a buffer within the cached set. Returns NULL if not found. */
-    BufferParam* find(const TreeIndex& index) const;
+    BufferParam* find(const DataIndex& index) const;
     /** request a buffer from the cache. The least recently used that is not
         pinned buffer is returned. An additional filter may limit available
         buffer to ones that are not current. The buffer is removed from the
@@ -148,14 +148,14 @@ public:
     BufferParam* grabBuffer(bool grabCurrent);
     /** return a buffer to the cache. The buffer will be reinserted into the
         cache with the given index */
-    void releaseBuffer(const TreeIndex& index, BufferParam* buffer);
+    void releaseBuffer(const DataIndex& index, BufferParam* buffer);
 
 ///\todo move back to the protected group
     /** prints the content of the cache in LRU order */
     void printCache();
 
 protected:
-    typedef PortableTable<TreeIndex,BufferParam*,TreeIndex::hash> BufferPtrMap;
+    typedef PortableTable<DataIndex,BufferParam*,DataIndex::hash> BufferPtrMap;
     typedef std::vector< IndexedBuffer<BufferParam> > IndexedBuffers;
 
     /** prints the state of the LRU */

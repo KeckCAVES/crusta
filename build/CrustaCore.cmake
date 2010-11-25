@@ -7,6 +7,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/CrustaComponent.h
     ../include/crusta/CrustaSettings.h
     ../include/crusta/CrustaVisualizer.h
+    ../include/crusta/DataIndex.h
     ../include/crusta/DataManager.h
     ../include/crusta/DemHeight.h
     ../include/crusta/DemHeightGlobeData.h
@@ -19,6 +20,8 @@ add_library(CrustaCore SHARED
     ../include/crusta/GlobeFile.hpp
     ../include/crusta/Homography.h
     ../include/crusta/IdGenerator.h
+    ../include/crusta/LayerData.h
+    ../include/crusta/LayerDataGlobeData.h
     ../include/crusta/LightingShader.h
     ../include/crusta/LodEvaluator.h
     ../include/crusta/map/MapManager.h
@@ -73,6 +76,7 @@ add_library(CrustaCore SHARED
     ../source/crusta/Crusta.cpp
     ../source/crusta/CrustaSettings.cpp
     ../source/crusta/CrustaVisualizer.cpp
+    ../source/crusta/DataIndex.cpp
     ../source/crusta/DataManager.cpp
     ../source/crusta/DebugTool.cpp
     ../source/crusta/ElevationRangeTool.cpp
