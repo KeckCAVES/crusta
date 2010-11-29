@@ -56,6 +56,7 @@ typedef int64_t     int64;
 
 typedef uint        error;
 
+///\todo turn this into a simple class with comparators and a stamp() method
 typedef double                  FrameStamp;
 typedef std::vector<FrameStamp> FrameStamps;
 

@@ -33,7 +33,7 @@ public:
 
     void bind() const;
     void stream(const SubRegion& sub, GLenum dataFormat, GLenum dataType,
-                void* data);
+                const void* data);
 
 protected:
     GLuint texture;
@@ -76,7 +76,7 @@ public:
 
     void bind() const;
     void stream(const SubRegion& sub, GLenum dataFormat, GLenum dataType,
-                void* data);
+                const void* data);
 
 protected:
     GLuint texture;
@@ -136,12 +136,18 @@ class Cache : public GLObject
 public:
     Cache();
 
+    void clear();
+
+    void display(GLContextData& contextData);
+
     MainCache& getMainCache();
     GpuCache&  getGpuCache(GLContextData& contextData);
 
 protected:
     /** the main memory caches */
     MainCache mainCache;
+    /** stamp used to trigger resetting of the gpu caches */
+    FrameStamp clearStamp;
 
 //- inherited from GLObject
 public:
@@ -152,6 +158,8 @@ protected:
     {
         /** the gpu memory cache unit for the GL context */
         GpuCache gpuCache;
+        /** stamp used to trigger resetting the caches */
+        FrameStamp clearStamp;
     };
 };
 

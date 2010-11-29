@@ -86,13 +86,6 @@ public:
     /** retrieve the vertical exaggeration factor */
     double getVerticalScale() const;
 
-    /** query the color map for external update */
-    GLColorMap* getColorMap();
-    /** signal crusta that changes have been made to the color map */
-    void touchColorMap();
-    /** upload the color map to the GL */
-    void uploadColorMap(GLuint colorTex);
-
     /** map a 3D cartesian point specified wrt an unscaled globe representation
         to the corresponding point in a scaled representation */
     Point3 mapToScaledGlobe(const Point3& pos);
@@ -149,12 +142,6 @@ protected:
 
     /** the global height range */
     Scalar globalElevationRange[2];
-
-    /** flags if the color map has been changed and needs to be updated to the
-        GL */
-    bool colorMapDirty;
-    /** the color map used to color the elevation of the terrain */
-    GLColorMap* colorMap;
 
 //- inherited from GLObject
 public:

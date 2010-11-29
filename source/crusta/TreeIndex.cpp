@@ -1,37 +1,45 @@
 #include <crusta/TreeIndex.h>
 
+
 #include <cassert>
 #include <sstream>
 
+
 BEGIN_CRUSTA
 
+
 const TreeIndex TreeIndex::invalid(~0,~0,~0,~0);
-
-size_t TreeIndex::hash::
-operator() (const TreeIndex& i) const
-{
-    //taken from http://www.concentric.net/~Ttwang/tech/inthash.htm
-
-    uint64 key = *(reinterpret_cast<const uint64*>(&i));
-    key = (~key) + (key << 18); // key = (key << 18) - key - 1;
-    key = key ^ (key >> 31);
-    key = key * 21; // key = (key + (key << 2)) + (key << 4);
-    key = key ^ (key >> 11);
-    key = key + (key << 6);
-    key = key ^ (key >> 22);
-
-    return static_cast<size_t>(key);
-}
 
 
 TreeIndex::
 TreeIndex(uint8 iPatch, uint8 iChild, uint8 iLevel, uint64 iIndex) :
-    reserved(0), patch(iPatch), child(iChild), level(iLevel), index(iIndex)
+    reserved(31),
+    patch(iPatch), child(iChild), level(iLevel), index(iIndex)
 {}
 TreeIndex::
 TreeIndex(const TreeIndex& i) :
-    reserved(0), patch(i.patch), child(i.child), level(i.level), index(i.index)
+    reserved(31),
+    patch(i.patch), child(i.child), level(i.level), index(i.index)
 {}
+
+
+TreeIndex& TreeIndex::
+operator=(const TreeIndex& other)
+{
+    reserved = 31;
+    patch    = other.patch;
+    child    = other.child;
+    level    = other.level;
+    index    = other.index;
+    return *this;
+}
+
+bool TreeIndex::
+operator==(const TreeIndex& other) const
+{
+    return *(reinterpret_cast<const uint64*>(this)) ==
+           *(reinterpret_cast<const uint64*>(&other));
+}
 
 
 TreeIndex TreeIndex::
@@ -56,13 +64,6 @@ down(uint8 which) const
     return TreeIndex(patch, which, level+1, newIndex);
 }
 
-bool TreeIndex::
-operator==(const TreeIndex& other) const
-{
-    return *(reinterpret_cast<const uint64*>(this)) ==
-           *(reinterpret_cast<const uint64*>(&other));
-}
-
 
 std::string TreeIndex::
 str() const
@@ -85,6 +86,10 @@ std::string TreeIndex::
 med_str() const
 {
     std::ostringstream os;
+    if (reserved == uint8(~0))
+        os << "i|";
+    else
+        os << reserved << "|";
     os << patch << ".";
 
     if (level == uint8(~0))

@@ -130,7 +130,8 @@ bind() const
 
 template <typename BufferParam>
 void Gpu2dAtlasCache<BufferParam>::
-stream(const SubRegion& sub, GLenum dataFormat, GLenum dataType, void* data)
+stream(const SubRegion& sub, GLenum dataFormat, GLenum dataType,
+       const void* data)
 {
     glPushAttrib(GL_TEXTURE_BIT);
 
@@ -306,7 +307,8 @@ bind() const
 
 template <typename BufferParam>
 void Gpu1dAtlasCache<BufferParam>::
-stream(const SubRegion& sub, GLenum dataFormat, GLenum dataType, void* data)
+stream(const SubRegion& sub, GLenum dataFormat, GLenum dataType,
+       const void* data)
 {
     CHECK_GL_CLEAR_ERROR;
 

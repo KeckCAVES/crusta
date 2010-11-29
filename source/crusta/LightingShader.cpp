@@ -27,6 +27,8 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <iostream>
 #include <Misc/ThrowStdErr.h>
 
+#include <crusta/ColorMapper.h>
+#include <crusta/DataManager.h>
 ///\todo integrate properly (VIS 2010)
 #include <crusta/Crusta.h>
 
@@ -233,29 +235,6 @@ const char* LightingShader::applyAttenuatedSpotLightTemplate=
         }\n\
     \n";
 
-const char* LightingShader::fetchTerrainColorAsConstant =
-"\
-    vec4 terrainColor = vec4(0.6); //60% grey\n\
-";
-
-const char* LightingShader::fetchTerrainColorFromColorMap =
-"\
-    float e = sampleHeight(coord);\n\
-          e = (e-minColorMapElevation) * colorMapElevationInvRange;\n\
-    vec4 mapColor    = texture1D(colorMap, e);\n\
-    vec3 texColor    = sampleColor(coord).rgb;\n\
-    vec4 terrainColor= texColor==colorNodata ? vec4(colorDefault, 1.0) :\n\
-                                               vec4(texColor, 1.0);\n\
-    terrainColor     = mix(terrainColor, mapColor, mapColor.w);\
-";
-
-const char* LightingShader::fetchTerrainColorFromTexture =
-"\
-    vec3 texColor     = sampleColor(coord).rgb;\n\
-    vec4 terrainColor = texColor==colorNodata ? vec4(colorDefault, 1.0) :\n\
-                                                vec4(texColor, 1.0);\
-";
-
 /*****************************************
 Methods of class LightingShader:
 *****************************************/
@@ -312,7 +291,6 @@ LightingShader::LightingShader() :
     mustRecompile(true),
     colorMaterial(false),
     linesDecorated(false),
-    texturingMode(2),
     lightStates(0),
     vertexShader(0),fragmentShader(0),
     programObject(0)
@@ -368,7 +346,7 @@ checkFileForChanges(const char* fileName)
 }
 
 void LightingShader::
-update()
+update(GLContextData& contextData)
 {
     /* Update light states and recompile the shader if necessary: */
     updateLightingState();
@@ -383,7 +361,12 @@ mustRecompile |= checkFileForChanges(progFile.c_str());
 
     if (mustRecompile)
     {
-        compileShader();
+        compileShader(contextData);
+
+        glUseProgramObjectARB(programObject);
+        initUniforms(contextData);
+        glUseProgramObjectARB(0);
+
         mustRecompile = false;
     }
 }
@@ -452,11 +435,73 @@ void readFileToString(const char* fileName, std::string& content)
     content.assign((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 }
 
-void LightingShader::compileShader()
+void LightingShader::initUniforms(GLContextData& contextData)
+{
+    //setup "constant uniforms"
+    GLint uniform;
+    uniform = glGetUniformLocation(programObject, "geometryTex");
+    glUniform1i(uniform, 0);
+    uniform = glGetUniformLocation(programObject, "layerfTex");
+    glUniform1i(uniform, 1);
+
+    uniform = glGetUniformLocation(programObject, "colorMapTex");
+    glUniform1i(uniform, 6);
+
+    textureStepUniform  =glGetUniformLocation(programObject,"texStep");
+    verticalScaleUniform=glGetUniformLocation(programObject,"verticalScale");
+    centroidUniform     =glGetUniformLocation(programObject,"center");
+
+    layerfNodataUniform = glGetUniformLocation(programObject, "layerfNodata");
+    demDefaultUniform   = glGetUniformLocation(programObject, "demDefault");
+
+    DataManager::SourceShaders& dataSources =
+        DATAMANAGER->getSourceShaders(contextData);
+    dataSources.topography.initUniforms(programObject);
+    typedef DataManager::Shader2dAtlasDataSources::iterator Iterator;
+    for (Iterator it=dataSources.layers.begin(); it!=dataSources.layers.end();
+         ++it)
+    {
+        it->initUniforms(programObject);
+    }
+    COLORMAPPER->getColorSource(contextData)->initUniforms(programObject);;
+
+    if (linesDecorated)
+    {
+        uniform = glGetUniformLocation(programObject, "lineDataTex");
+        glUniform1i(uniform, 3);
+        uniform = glGetUniformLocation(programObject, "lineCoverageTex");
+        glUniform1i(uniform, 4);
+        uniform = glGetUniformLocation(programObject, "symbolTex");
+        glUniform1i(uniform, 5);
+
+        uniform = glGetUniformLocation(programObject, "lineStartCoord");
+        glUniform1f(uniform, crusta::SETTINGS->lineDataStartCoord);
+        uniform = glGetUniformLocation(programObject, "lineCoordStep");
+        glUniform1f(uniform, crusta::SETTINGS->lineDataCoordStep);
+
+        lineNumSegmentsUniform =
+            glGetUniformLocation(programObject, "lineNumSegments");
+        lineCoordScaleUniform =
+            glGetUniformLocation(programObject, "lineCoordScale");
+        lineWidthUniform = glGetUniformLocation(programObject, "lineWidth");
+    }
+
+}
+
+void LightingShader::compileShader(GLContextData& contextData)
     {
     std::string vertexShaderUniforms;
     std::string vertexShaderFunctions;
     std::string vertexShaderMain;
+
+    //import the shaders from the data manager and color mapper
+    DataManager::SourceShaders& dataSources =
+        DATAMANAGER->getSourceShaders(contextData);
+    ShaderDataSource& colorSource = *COLORMAPPER->getColorSource(contextData);
+
+    typedef std::pair<std::string, std::string> ShaderCode;
+    ShaderCode topoCode(dataSources.topography.getUniformsAndFunctionsCode());
+    ShaderCode colorCode(colorSource.getUniformsAndFunctionsCode());
 
     vertexShaderUniforms +=
     "\
@@ -464,28 +509,14 @@ void LightingShader::compileShader()
         #extension GL_EXT_texture_array : enable\n\
         \n\
         uniform sampler2DArray geometryTex;\n\
-        uniform sampler2DArray heightTex;\n\
-        uniform sampler2DArray colorTex;\n\
+        uniform sampler2DArray layerfTex;\n\
+        uniform sampler2D colorMapTex;\n\
         \n\
-        uniform sampler1D colorMap;\n\
-        \n\
-        uniform float colorMapElevationInvRange;\n\
-        uniform float minColorMapElevation;\n\
         uniform float texStep;\n\
         uniform float verticalScale;\n\
-        uniform vec3  center;\n\
         \n\
-        uniform float demNodata;\n\
-        uniform vec3  colorNodata;\n\
+        uniform float layerfNodata;\n\
         uniform float demDefault;\n\
-        uniform vec3  colorDefault;\n\
-        \n\
-        uniform vec3 heightTexOffset;\n\
-        uniform vec2 heightTexScale;\n\
-        uniform vec3 geometryTexOffset;\n\
-        uniform vec2 geometryTexScale;\n\
-        uniform vec3 colorTexOffset;\n\
-        uniform vec2 colorTexScale;\n\
         \n\
         varying vec3 position;\n\
         varying vec3 normal;\n\
@@ -493,33 +524,17 @@ void LightingShader::compileShader()
         \n\
     ";
 
+    vertexShaderUniforms += topoCode.first;
+    vertexShaderUniforms += colorCode.first;
+
+    vertexShaderFunctions += topoCode.second;
+    vertexShaderFunctions += colorCode.second;
+
     vertexShaderFunctions +=
     "\
-        vec3 sampleGeometry(in vec2 tc)\n\
-        {\n\
-            vec3 tc2 = geometryTexOffset + vec3((tc * geometryTexScale),0.0);\n\
-            return texture2DArray(geometryTex, tc2).xyz;\n\
-        }\n\
-        float sampleHeight(in vec2 tc)\n\
-        {\n\
-            vec3 tc2 = heightTexOffset + vec3((tc * heightTexScale),0.0);\n\
-            return texture2DArray(heightTex, tc2).x;\n\
-        }\n\
-        vec4 sampleColor(in vec2 tc)\n\
-        {\n\
-            vec3 tc2 = colorTexOffset + vec3((tc * colorTexScale),0.0);\n\
-            return texture2DArray(colorTex, tc2);\n\
-        }\n\
-        \n\
         vec3 surfacePoint(in vec2 coords)\n\
         {\n\
-            vec3 res      = sampleGeometry(coords);\n\
-            vec3 dir      = normalize(center + res);\n\
-            float height  = sampleHeight(coords);\n\
-            height        = height==demNodata ? demDefault : height;\n\
-            height       *= verticalScale;\n\
-            res          += height * dir;\n\
-            return res;\n\
+            return " + dataSources.topography.getSamplingFunctionName() + "(coords);\n\
         }\n\
     ";
 
@@ -590,22 +605,8 @@ void LightingShader::compileShader()
     vertexShaderMain+=
         "\
         /* Modulate with the texture color: */\n\
-        \n";
-
-    switch (texturingMode)
-    {
-        case 0:
-            vertexShaderMain+=fetchTerrainColorAsConstant;
-            break;
-        case 1:
-            vertexShaderMain+=fetchTerrainColorFromColorMap;
-            break;
-        case 2:
-            vertexShaderMain+=fetchTerrainColorFromTexture;
-            break;
-        default:
-            vertexShaderMain+="vec4 terrainColor(1.0, 0.0, 0.0, 1.0);";
-    }
+        vec4 terrainColor = " + colorSource.getSamplingFunctionName() + "(coord);\n\
+        ";
 
     vertexShaderMain+=
         "\
@@ -664,6 +665,7 @@ void LightingShader::compileShader()
     std::string vertexShaderSource = vertexShaderUniforms  +
                                      vertexShaderFunctions +
                                      vertexShaderMain;
+std::cerr << vertexShaderSource << std::endl;
     compileShaderFromString(vertexShader,vertexShaderSource.c_str());
 
     /* Compile the standard fragment shader: */
@@ -701,80 +703,6 @@ catch (std::exception& e){
                                   "void main(){gl_FragColor=vec4(1.0);}");
         glLinkProgram(programObject);
     }
-
-    glUseProgramObjectARB(programObject);
-    //setup "constant uniforms"
-    GLint uniform;
-    uniform = glGetUniformLocation(programObject, "geometryTex");
-    glUniform1i(uniform, 0);
-    uniform = glGetUniformLocation(programObject, "heightTex");
-    glUniform1i(uniform, 1);
-    uniform = glGetUniformLocation(programObject, "colorTex");
-    glUniform1i(uniform, 2);
-
-    uniform = glGetUniformLocation(programObject, "colorMap");
-    glUniform1i(uniform, 6);
-
-    colorMapElevationInvRangeUniform =
-        glGetUniformLocation(programObject, "colorMapElevationInvRange");
-    minColorMapElevationUniform =
-        glGetUniformLocation(programObject, "minColorMapElevation");
-    textureStepUniform  =glGetUniformLocation(programObject,"texStep");
-    verticalScaleUniform=glGetUniformLocation(programObject,"verticalScale");
-    centroidUniform     =glGetUniformLocation(programObject,"center");
-
-    geometryTexOffsetUniform = glGetUniformLocation(programObject,
-                                                       "geometryTexOffset");
-    geometryTexScaleUniform = glGetUniformLocation(programObject,
-                                                      "geometryTexScale");
-
-    heightTexOffsetUniform = glGetUniformLocation(programObject,
-                                                     "heightTexOffset");
-    heightTexScaleUniform = glGetUniformLocation(programObject,
-                                                    "heightTexScale");
-
-    colorTexOffsetUniform = glGetUniformLocation(programObject,
-                                                    "colorTexOffset");
-    colorTexScaleUniform = glGetUniformLocation(programObject,
-                                                   "colorTexScale");
-
-    demNodataUniform    = glGetUniformLocationARB(programObject,"demNodata");
-    colorNodataUniform  = glGetUniformLocationARB(programObject,"colorNodata");
-    demDefaultUniform   = glGetUniformLocationARB(programObject,"demDefault");
-    colorDefaultUniform = glGetUniformLocationARB(programObject,"colorDefault");
-
-
-    if (linesDecorated)
-    {
-        uniform = glGetUniformLocation(programObject, "lineDataTex");
-        glUniform1i(uniform, 3);
-        uniform = glGetUniformLocation(programObject, "lineCoverageTex");
-        glUniform1i(uniform, 4);
-        uniform = glGetUniformLocation(programObject, "symbolTex");
-        glUniform1i(uniform, 5);
-
-        uniform = glGetUniformLocation(programObject, "lineStartCoord");
-        glUniform1f(uniform, crusta::SETTINGS->lineDataStartCoord);
-        uniform = glGetUniformLocation(programObject, "lineCoordStep");
-        glUniform1f(uniform, crusta::SETTINGS->lineDataCoordStep);
-
-        lineNumSegmentsUniform =
-            glGetUniformLocation(programObject, "lineNumSegments");
-        lineCoordScaleUniform =
-            glGetUniformLocation(programObject, "lineCoordScale");
-        lineWidthUniform = glGetUniformLocation(programObject, "lineWidth");
-
-        coverageTexOffsetUniform = glGetUniformLocation(
-            programObject, "coverageTexOffset");
-        coverageTexScaleUniform = glGetUniformLocation(
-            programObject, "coverageTexScale");
-        lineDataTexOffsetUniform = glGetUniformLocation(
-            programObject, "lineDataTexOffset");
-        lineDataTexScaleUniform = glGetUniformLocation(
-            programObject, "lineDataTexScale");
-    }
-
-    glUseProgramObjectARB(0);
 }
 
 void LightingShader::compileShaderFromString(GLhandleARB shaderObject,const char* shaderSource)

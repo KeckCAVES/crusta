@@ -60,6 +60,11 @@ public:
     int dataManMaxFetchRequests;
     ///\}
 
+    ///\{ color mapper settings
+    /** size of the color map */
+    int colorMapTexSize;
+    ///\}
+
     ///\{ decorated line settings
 ///\todo these depend on GL capabilities and should be wrapped in GLObjects
     int   lineDataTexSize;

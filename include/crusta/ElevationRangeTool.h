@@ -33,6 +33,9 @@ public:
                 const Vrui::ToolInputAssignment& inputAssignment);
     virtual ~ElevationRangeTool();
 
+    /** update the range values from the color map itself */
+    void externalUpdate();
+    
     static Vrui::ToolFactory* init(Vrui::ToolFactory* parent);
 
 protected:

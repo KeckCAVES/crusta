@@ -62,40 +62,26 @@ class LightingShader
     static const char* applyAttenuatedLightTemplate;
     static const char* applySpotLightTemplate;
     static const char* applyAttenuatedSpotLightTemplate;
-    static const char* fetchTerrainColorAsConstant;
-    static const char* fetchTerrainColorFromColorMap;
-    static const char* fetchTerrainColorFromTexture;
+
     bool mustRecompile;
     bool colorMaterial; // Flag whether material color tracking is enabled
     bool linesDecorated; // Flag whether decorated lines should be processed
-    int texturingMode; // Flag whether the color is fetch from a texture or is just a constant
+
     int maxNumLights; // Maximum number of lights supported by local OpenGL
     LightState* lightStates; // Array of tracking states for each OpenGL light source
     GLhandleARB vertexShader,fragmentShader; // Handle for the vertex and fragment shaders
     GLhandleARB programObject; // Handle for the linked program object
-    GLint colorMapElevationInvRangeUniform;
-    GLint minColorMapElevationUniform;
+
     GLint textureStepUniform;
     GLint verticalScaleUniform;
     GLint centroidUniform;
+
     GLint lineNumSegmentsUniform;
     GLint lineCoordScaleUniform;
     GLint lineWidthUniform;
-    GLint demNodataUniform;
-    GLint colorNodataUniform;
-    GLint demDefaultUniform;
-    GLint colorDefaultUniform;
 
-    GLint geometryTexOffsetUniform;
-    GLint geometryTexScaleUniform;
-    GLint heightTexOffsetUniform;
-    GLint heightTexScaleUniform;
-    GLint colorTexOffsetUniform;
-    GLint colorTexScaleUniform;
-    GLint coverageTexOffsetUniform;
-    GLint coverageTexScaleUniform;
-    GLint lineDataTexOffsetUniform;
-    GLint lineDataTexScaleUniform;
+    GLint layerfNodataUniform;
+    GLint demDefaultUniform;
 
     /* Private methods: */
     std::string createApplyLightFunction(const char* functionTemplate,int lightIndex) const;
@@ -106,9 +92,10 @@ class LightingShader
     ~LightingShader(void);
 
     /* Methods: */
-    void update();
+    void update(GLContextData& contextData);
     void updateLightingState(); // Updates tracked lighting state; returns true if shader needs to be recompiled
-    void compileShader(void); // Recompiles the point-based lighting shader based on the current states of all OpenGL light sources
+    void initUniforms(GLContextData& contextData);
+    void compileShader(GLContextData& contextData); // Recompiles the point-based lighting shader based on the current states of all OpenGL light sources
     void compileShaderFromString(GLhandleARB shaderObject,const char* shaderSource);
     void enable(void); // Enables point-based lighting in the current OpenGL context
     void disable(void); // Disables point-based lighting in the current OpenGL context
@@ -122,23 +109,6 @@ class LightingShader
         }
     }
 
-    void setTexturingMode(int mode)
-    {
-        if (texturingMode != mode)
-        {
-            texturingMode = mode;
-            mustRecompile = true;
-        }
-    }
-
-    void setColorMapElevationInvRange(float ir)
-    {
-        glUniform1f(colorMapElevationInvRangeUniform, ir);
-    }
-    void setMinColorMapElevation(float me)
-    {
-        glUniform1f(minColorMapElevationUniform, me);
-    }
     void setTextureStep(float ts)
     {
         glUniform1f(textureStepUniform, ts);
@@ -164,55 +134,14 @@ class LightingShader
     {
         glUniform1f(lineWidthUniform, lw);
     }
-    void setDemNodata(float dn)
+
+    void setLayerfNodata(float ln)
     {
-        glUniform1f(demNodataUniform, dn);
-    }
-    void setColorNodata(unsigned char r, unsigned char g, unsigned char b)
-    {
-        glUniform3f(colorNodataUniform, r/255.0f, g/255.0f, b/255.0f);
+        glUniform1f(layerfNodataUniform, ln);
     }
     void setDemDefault(float dn)
     {
         glUniform1f(demDefaultUniform, dn);
-    }
-    void setColorDefault(const Color& cd)
-    {
-        glUniform3f(colorDefaultUniform, cd[0], cd[1], cd[2]);
-    }
-
-    void setGeometrySubRegion(const SubRegion& s)
-    {
-        glUniform3f(geometryTexOffsetUniform,
-                    s.offset[0], s.offset[1], s.offset[2]);
-        glUniform2f(geometryTexScaleUniform, s.size[0], s.size[1]);
-    }
-
-   void setHeightSubRegion(const SubRegion& s)
-    {
-        glUniform3f(heightTexOffsetUniform,
-                    s.offset[0], s.offset[1], s.offset[2]);
-        glUniform2f(heightTexScaleUniform, s.size[0], s.size[1]);
-    }
-
-    void setColorSubRegion(const SubRegion& s)
-    {
-        glUniform3f(colorTexOffsetUniform,
-                    s.offset[0], s.offset[1], s.offset[2]);
-        glUniform2f(colorTexScaleUniform, s.size[0], s.size[1]);
-    }
-
-    void setCoverageSubRegion(const SubRegion& s)
-    {
-        glUniform3f(coverageTexOffsetUniform,
-                    s.offset[0], s.offset[1], s.offset[2]);
-        glUniform2f(coverageTexScaleUniform, s.size[0], s.size[1]);
-    }
-
-    void setLineDataSubRegion(const SubRegion& s)
-    {
-        glUniform2f(lineDataTexOffsetUniform, s.offset[0], s.offset[1]);
-        glUniform2f(lineDataTexScaleUniform, s.size[0], s.size[1]);
     }
 };
 

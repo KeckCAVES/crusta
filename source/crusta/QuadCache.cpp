@@ -11,7 +11,8 @@ BEGIN_CRUSTA
 
 
 Cache::
-Cache()
+Cache() :
+    clearStamp(0)
 {
     //initialize all the main memory caches
     mainCache.node.init("MainNode", SETTINGS->cacheMainNodeSize);
@@ -19,6 +20,34 @@ Cache()
                             TILE_RESOLUTION);
     mainCache.layerf.init("MainLayerf", SETTINGS->cacheMainLayerfSize,
                           TILE_RESOLUTION);
+}
+
+
+void Cache::
+clear()
+{
+    mainCache.node.clear();
+    mainCache.geometry.clear();
+    mainCache.layerf.clear();
+
+    clearStamp = CURRENT_FRAME;
+}
+
+
+void Cache::
+display(GLContextData& contextData)
+{
+    GlData* glData = contextData.retrieveDataItem<GlData>(this);
+    if (glData->clearStamp < clearStamp)
+    {
+        GpuCache& gpuCache = glData->gpuCache;
+        gpuCache.geometry.clear();
+        gpuCache.layerf.clear();
+        gpuCache.coverage.clear();
+        gpuCache.lineData.clear();
+
+        glData->clearStamp = clearStamp;
+    }
 }
 
 
@@ -39,7 +68,9 @@ getGpuCache(GLContextData& contextData)
 void Cache::
 initContext(GLContextData& contextData) const
 {
-    GlData*   glData   = new GlData;
+    GlData* glData = new GlData;
+    glData->clearStamp = 0;
+
     GpuCache& gpuCache = glData->gpuCache;
 
     //initialize all the gpu memory caches

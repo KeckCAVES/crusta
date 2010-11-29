@@ -23,6 +23,7 @@
 #include <GLMotif/PopupWindow.h>
 #include <GLMotif/RadioBox.h>
 #include <GLMotif/RowColumn.h>
+#include <GLMotif/ScrolledListBox.h>
 #include <GLMotif/StyleSheet.h>
 #include <GLMotif/SubMenu.h>
 #include <GLMotif/TextField.h>
@@ -35,6 +36,7 @@
 #include <Vrui/Viewer.h>
 #include <Vrui/Vrui.h>
 
+#include <crusta/ColorMapper.h>
 #include <crusta/Crusta.h>
 #include <crusta/map/MapManager.h>
 #include <crusta/QuadTerrain.h>
@@ -79,6 +81,8 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
 
     crusta = new Crusta;
     crusta->init(settingsNames);
+    //load data passed through command line?
+    crusta->load(dataNames);
 
     /* Create the sun lightsource: */
     sun=Vrui::getLightsourceManager()->createLightsource(false);
@@ -104,9 +108,6 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
         paletteEditor->getColorMap());
     changeColorMapCallback(&initMap);
     resetNavigationCallback(NULL);
-
-    //load data passed through command line?
-    crusta->load(dataNames);
 
 ///\todo fix the loading UI
 //LoadDataWidget.setFileNames(dataNames)
@@ -268,6 +269,61 @@ shininessChangedCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
     shininessField->setValue(shininess);
 }
 
+CrustaApp::ColorMapSettingsDialog::
+ColorMapSettingsDialog()
+{
+    name  = "ColorMapSettings";
+    label = "Color Map Settings";
+}
+
+void CrustaApp::ColorMapSettingsDialog::
+init()
+{
+    Dialog::init();
+
+    GLMotif::RowColumn* root = new GLMotif::RowColumn("Root", dialog, false);
+
+    GLMotif::ScrolledListBox* box = new GLMotif::ScrolledListBox(
+        "ColorMapListBox", root, GLMotif::ListBox::ALWAYS_ONE, 50, 15);
+    listBox = box->getListBox();
+    listBox->getValueChangedCallbacks().add(
+        this, &ColorMapSettingsDialog::layerChangedCallback);
+    
+    updateLayerList();
+
+    root->setNumMinorWidgets(1);
+    root->manageChild();
+}
+
+
+void CrustaApp::ColorMapSettingsDialog::
+updateLayerList()
+{
+    listBox->clear();
+
+    int numLayers = COLORMAPPER->getNumColorMaps();
+    for (int i=0; i<numLayers; ++i)
+    {
+        std::ostringstream oss;
+        oss << "Layer " << i;
+        listBox->addItem(oss.str().c_str());
+    }
+}
+
+void CrustaApp::ColorMapSettingsDialog::
+setRangeTool(ElevationRangeTool* tool)
+{
+    rangeTool = tool;
+}
+
+void CrustaApp::ColorMapSettingsDialog::
+layerChangedCallback(GLMotif::ListBox::ValueChangedCallbackData* cbData)
+{
+    COLORMAPPER->setActiveMap(cbData->newSelectedItem);
+    if (rangeTool != NULL)
+        rangeTool->externalUpdate();
+}
+
 
 
 void CrustaApp::
@@ -308,7 +364,10 @@ produceMainMenu()
     /* Inject the map management menu entries */
     crusta->getMapManager()->addMenuEntry(mainMenu);
 
-    /* Create a button to open or hide the vertical scale adjustment dialog: */
+    //color map settings dialog toggle
+    colorMapSettings.createMenuEntry(mainMenu);
+    
+    /* Create a button to open or hide the palette editor dialog: */
     GLMotif::ToggleButton* showPaletteEditorToggle = new GLMotif::ToggleButton(
         "ShowPaletteEditorToggle", mainMenu, "Palette Editor");
     showPaletteEditorToggle->setToggle(false);
@@ -502,6 +561,8 @@ loadDataOkCallback(GLMotif::Button::SelectCallbackData*)
 
     crusta->load(dataFiles);
 
+    colorMapSettings.updateLayerList();
+
     //close the dialog
     Vrui::popdownPrimaryWidget(dataDialog);
 }
@@ -664,9 +725,13 @@ changeTexturingModeCallback(
 void CrustaApp::
 changeColorMapCallback(GLMotif::ColorMap::ColorMapChangedCallbackData* cbData)
 {
-    GLColorMap* colorMap = crusta->getColorMap();
+    int mapIndex = COLORMAPPER->getActiveMap();
+    if (mapIndex < 0)
+        return;
+
+    GLColorMap* colorMap = COLORMAPPER->getColorMap(mapIndex);
     cbData->colorMap->exportColorMap(*colorMap);
-    crusta->touchColorMap();
+    COLORMAPPER->touchColor(mapIndex);
 }
 
 
@@ -870,6 +935,12 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
     CrustaComponent* component = dynamic_cast<CrustaComponent*>(cbData->tool);
     if (component != NULL)
         component->setupComponent(crusta);
+    
+    //range tool needs to be passed along to the color map settings
+    ElevationRangeTool* rangeTool =
+        dynamic_cast<ElevationRangeTool*>(cbData->tool);
+    if (rangeTool != NULL)
+        colorMapSettings.setRangeTool(rangeTool);
 
 #if CRUSTA_ENABLE_DEBUG
     //check for the creation of the debug tool
@@ -888,6 +959,13 @@ toolDestructionCallback(Vrui::ToolManager::ToolDestructionCallbackData* cbData)
     SurfaceTool* surface = dynamic_cast<SurfaceTool*>(cbData->tool);
     if (surface != NULL)
         PROJECTION_FAILED = false;
+
+    //range tool needs to be passed along to the color map settings
+    ElevationRangeTool* rangeTool =
+    dynamic_cast<ElevationRangeTool*>(cbData->tool);
+    if (rangeTool != NULL)
+        colorMapSettings.setRangeTool(NULL);
+    
 #if CRUSTA_ENABLE_DEBUG
     if (cbData->tool == crusta->debugTool)
         crusta->debugTool = NULL;

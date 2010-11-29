@@ -1487,11 +1487,20 @@ drawNode(GLContextData& contextData, CrustaGlData* crustaGl,
     nav *= Vrui::NavTransform::translate(centroidTranslation);
     glLoadMatrix(nav);
 
-    crustaGl->terrainShader.setCentroid(
-        Point3f(main.centroid[0], main.centroid[1], main.centroid[2]));
-    crustaGl->terrainShader.setGeometrySubRegion(*gpuData.geometry);
-    crustaGl->terrainShader.setHeightSubRegion(*gpuData.height);
+    DataManager::SourceShaders& dataSources =
+        DATAMANAGER->getSourceShaders(contextData);
+
+    dataSources.geometry.setSubRegion(*gpuData.geometry);
     CHECK_GLA
+    dataSources.height.setSubRegion(*gpuData.height);
+    CHECK_GLA
+    dataSources.topography.setCentroid(main.centroid);
+    CHECK_GLA
+
+    int numLayers = static_cast<int>(gpuData.layers.size());
+    assert(numLayers == static_cast<int>(dataSources.layers.size()));
+    for (int i=0; i<numLayers; ++i)
+        dataSources.layers[i].setSubRegion(*gpuData.layers[i]);
 
     if (SETTINGS->decorateVectorArt)
     {
@@ -1499,9 +1508,11 @@ drawNode(GLContextData& contextData, CrustaGlData* crustaGl,
         crustaGl->terrainShader.setLineNumSegments(main.lineNumSegments);
         if (main.lineNumSegments > 0)
         {
+#if 0
             crustaGl->terrainShader.setCoverageSubRegion(*gpuData.coverage);
             crustaGl->terrainShader.setLineDataSubRegion(
                 (SubRegion)(*gpuData.lineData));
+#endif
         }
         CHECK_GLA
     }

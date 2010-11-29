@@ -93,7 +93,7 @@ struct IndexedBuffer
     IndexedBuffer(DataIndex iIndex, BufferParam* iBuffer);
     bool operator >(const IndexedBuffer& other) const;
 
-    DataIndex   index;
+    DataIndex    index;
     BufferParam* buffer;
 };
 

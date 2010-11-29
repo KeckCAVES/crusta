@@ -283,7 +283,9 @@ releaseBuffer(const DataIndex& index, BufferParam* buffer)
 
 CRUSTA_DEBUG(15, CRUSTA_DEBUG_OUT <<
 name << "Cache" << cached.size() << "::released " << index.med_str() << "\n";)
+
     cached.insert(typename BufferPtrMap::value_type(index, buffer));
+    assert(cached.find(index)!=cached.end());
 
     //validate the buffer
     buffer->state.grabbed = 0;
@@ -299,7 +301,7 @@ void CacheUnit<BufferParam>::
 printCache()
 {
 #if CRUSTA_ENABLE_DEBUG
-if (name != std::string("GpuGeometry"))
+if (name != std::string("MainLayerf"))
     return;
 
     CRUSTA_DEBUG_OUT << "print" << name << "Cache" << cached.size() <<

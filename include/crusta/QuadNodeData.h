@@ -74,7 +74,7 @@ Colors        lineData;
     Scope::Scalar boundingRadius;
 
     /** centroid of the node geometry on the average elevation shell */
-    DemHeight::Type centroid[3];
+    Point3f centroid;
     /** the range of the elevation values */
     DemHeight::Type elevationRange[2];
 

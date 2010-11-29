@@ -11,6 +11,7 @@
 #include <Vrui/Vrui.h>
 
 #include <crusta/checkGl.h>
+#include <crusta/ColorMapper.h>
 #include <crusta/DataManager.h>
 #include <crusta/ElevationRangeTool.h>
 #include <crusta/map/MapManager.h>
@@ -47,7 +48,11 @@ bool DEBUG_INTERSECT = false;
 #endif //DEBUG_INTERSECT_CRAP
 
 
-FrameStamp CURRENT_FRAME(0);
+/** the value 0 is used to indicate an invalid frame. Initialize the current
+    stamp to be > 0 to allow the simple "< CURRENT_FRAME" tests to capture
+    stamps generated during the initialization process for deferred GPU
+    initializations */
+FrameStamp CURRENT_FRAME(0.00000001);
 
 
 #define CRUSTA_ENABLE_RECORD_FRAMERATE 0
@@ -164,22 +169,13 @@ init(const std::vector<std::string>& settingsFiles)
 ///\todo separate crusta the application from a planet instance (current)
     CACHE       = new Cache;
     DATAMANAGER = new DataManager;
+    COLORMAPPER = new ColorMapper;
 ///\todo VruiGlew dependent dynamic allocation
     QuadTerrain::initGlData();
 
     mapMan = new MapManager(crustaTool, this);
 
     ElevationRangeTool::init(crustaTool);
-
-    globalElevationRange[0] = 0;
-    globalElevationRange[1] = 0;
-
-    colorMapDirty = false;
-    static const int numColorMapEntries = 1024;
-    GLColorMap::Color dummyColorMap[numColorMapEntries];
-    colorMap = new GLColorMap(numColorMapEntries, dummyColorMap,
-                              GLdouble(globalElevationRange[0]),
-                              GLdouble(globalElevationRange[1]));
 }
 
 void Crusta::
@@ -193,6 +189,7 @@ shutdown()
     }
 
 ///\todo separate crusta the application from a planet instance (current)
+    delete COLORMAPPER;
     delete DATAMANAGER;
     delete CACHE;
 ///\todo VruiGlew dependent dynamic allocation
@@ -213,6 +210,7 @@ load(Strings& dataBases)
     unload();
 
     DATAMANAGER->load(dataBases);
+    COLORMAPPER->load();
 
     globalElevationRange[0] =  Math::Constants<Scalar>::max;
     globalElevationRange[1] = -Math::Constants<Scalar>::max;
@@ -238,12 +236,13 @@ load(Strings& dataBases)
         globalElevationRange[1] = SETTINGS->terrainDefaultHeight;
     }
 
-    colorMapDirty = true;
-    static const int numColorMapEntries = 1024;
-    GLColorMap::Color dummyColorMap[numColorMapEntries];
-    colorMap = new GLColorMap(numColorMapEntries, dummyColorMap,
-                              GLdouble(globalElevationRange[0]),
-                              GLdouble(globalElevationRange[1]));
+    int heightMapIndex = COLORMAPPER->getHeightColorMapIndex();
+    if (heightMapIndex >= 0)
+    {
+        GLColorMap* colorMap = COLORMAPPER->getColorMap(heightMapIndex);
+        colorMap->setScalarRange(GLdouble(globalElevationRange[0]),
+                                 GLdouble(globalElevationRange[1]));
+    }
 
 #if CRUSTA_ENABLE_DEBUG
 debugTool = NULL;
@@ -269,6 +268,7 @@ unload()
 
     //unload the data
     DATAMANAGER->unload();
+    COLORMAPPER->unload();
 }
 
 
@@ -631,26 +631,6 @@ getVerticalScale() const
 }
 
 
-GLColorMap* Crusta::
-getColorMap()
-{
-    return colorMap;
-}
-
-void Crusta::
-touchColorMap()
-{
-    colorMapDirty = true;
-}
-
-void Crusta::
-uploadColorMap(GLuint colorTex)
-{
-    glBindTexture(GL_TEXTURE_1D, colorTex);
-    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, colorMap->getNumEntries(), 0,
-                 GL_RGBA, GL_FLOAT, colorMap->getColors());
-}
-
 Point3 Crusta::
 mapToScaledGlobe(const Point3& pos)
 {
@@ -764,6 +744,13 @@ display(GLContextData& contextData)
 {
     CHECK_GLA
 
+    CACHE->display(contextData);
+    CHECK_GLA
+    DATAMANAGER->display(contextData);
+    CHECK_GLA
+    COLORMAPPER->configureShaders(contextData);
+    CHECK_GLA
+
     CrustaGlData* glData = contextData.retrieveDataItem<CrustaGlData>(this);
     glData->gpuCache = &CACHE->getGpuCache(contextData);
 
@@ -806,42 +793,23 @@ if (SETTINGS->decorateVectorArt)
 }
 
     //bind the colormap texture
-    if (texturingMode == 1)
-    {
-        //upload a modified color map
-        if (colorMapDirty)
-        {
-            uploadColorMap(glData->colorMap);
-            colorMapDirty = false;
-        }
-
-        glActiveTexture(GL_TEXTURE6);
-        glBindTexture(GL_TEXTURE_1D, glData->colorMap);
-        CHECK_GLA
-    }
+    glActiveTexture(GL_TEXTURE6);
+    COLORMAPPER->bindColorMaps(contextData);
 
     //have the QuadTerrain draw the surface approximation
     CHECK_GLA
 
     //draw the terrain
     glData->terrainShader.setLinesDecorated(SETTINGS->decorateVectorArt);
-    glData->terrainShader.setTexturingMode(texturingMode);
-    glData->terrainShader.update();
+    glData->terrainShader.update(contextData);
     glData->terrainShader.enable();
-    if (texturingMode == 1)
-    {
-        glData->terrainShader.setMinColorMapElevation(
-            colorMap->getScalarRangeMin());
-        glData->terrainShader.setColorMapElevationInvRange(
-            1.0/(colorMap->getScalarRangeMax()-colorMap->getScalarRangeMin()));
-    }
+
+    COLORMAPPER->updateShaders(contextData);
+
     glData->terrainShader.setVerticalScale(getVerticalScale());
     glData->terrainShader.setTextureStep(TILE_TEXTURE_COORD_STEP);
-    glData->terrainShader.setDemNodata(DATAMANAGER->getDemNodata());
-    const TextureColor::Type& cnd = DATAMANAGER->getColorNodata();
-    glData->terrainShader.setColorNodata(cnd[0], cnd[1], cnd[2]);
+    glData->terrainShader.setLayerfNodata(DATAMANAGER->getLayerfNodata());
     glData->terrainShader.setDemDefault(SETTINGS->terrainDefaultHeight);
-    glData->terrainShader.setColorDefault(SETTINGS->terrainDefaultColor);
 
 ///\todo this needs to be tweakable
     if (SETTINGS->decorateVectorArt)

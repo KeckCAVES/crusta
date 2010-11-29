@@ -11,6 +11,8 @@
 #include <crusta/GlobeFile.h>
 #include <crusta/QuadCache.h>
 #include <crusta/QuadNodeData.h>
+#include <crusta/shader/ShaderAtlasDataSource.h>
+#include <crusta/shader/ShaderTopographySource.h>
 #include <crusta/SurfaceApproximation.h>
 
 
@@ -26,13 +28,37 @@ class Polyhedron;
 
 /**\todo define proper handle to client specific information (requesting globe,
 database of the requested data, etc.). For now I'm using Crusta pointers */
-class DataManager
+class DataManager : public GLObject
 {
 public:
-    typedef std::vector<std::string> Strings;
-    typedef GlobeFile<DemHeight>     DemFile;
-    typedef GlobeFile<TextureColor>  ColorFile;
-    typedef GlobeFile<LayerDataf>    LayerfFile;
+    friend struct SourceShaders;
+
+    typedef std::vector<std::string>             Strings;
+    typedef std::vector<Shader2dAtlasDataSource> Shader2dAtlasDataSources;
+
+    typedef GlobeFile<DemHeight>    DemFile;
+    typedef GlobeFile<TextureColor> ColorFile;
+    typedef GlobeFile<LayerDataf>   LayerfFile;
+
+    /** the data sources for shader use */
+    class SourceShaders
+    {
+    public:
+        SourceShaders(int numLayers);
+
+        Shader2dAtlasDataSource geometry;
+        Shader2dAtlasDataSource height;
+
+///\todo this higher-level source should probably not be here
+        ShaderTopographySource topography;
+
+        Shader2dAtlasDataSources layers;
+
+    private:
+        //dissallow copy construction or assignment
+        SourceShaders(const SourceShaders& source);
+        SourceShaders& operator =(const SourceShaders& source);
+    };
 
     /** the relevant main and gpu memory data for a tile */
     struct BatchElement
@@ -75,6 +101,9 @@ public:
     /** detach the data manager from the current databases */
     void unload();
 
+    /** check if elevation data is available */
+    bool hasDem() const;
+
     /** get the polyhedron that serves as the basis for the managed data */
     const Polyhedron* const getPolyhedron() const;
     /** get the value used to indicate the abscence of height data */
@@ -84,11 +113,20 @@ public:
     /** get the value used to indicate the abscence of layerf data */
     const LayerDataf::Type& getLayerfNodata();
 
+    /** query the number of color data layers managed */
+    const int getNumColorLayers() const;
+    /** query the number of layerf data layers managed */
+    const int getNumLayerfLayers() const;
+    /** retrieve the data source shaders */
+    SourceShaders& getSourceShaders(GLContextData& contextData);
+
     /** load the root data of a patch */
     void loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope);
 
     /** process requests */
     void frame();
+    /** process any GL changes */
+    void display(GLContextData& contextData);
 
     /** request data fetch/generation for a node */
     void request(const Request& req);
@@ -134,19 +172,13 @@ protected:
     };
     typedef std::list<FetchRequest> FetchRequests;
 
-    /** required for mainpulating GPU caches since they are per context */
-    class GlData : public GLObject
+    struct GlItem : public GLObject::DataItem
     {
-    public:
-        struct Item : public GLObject::DataItem
-        {
-            /** flag used to trigger the clearing of the GPU caches */
-            FrameStamp clearGpuCachesStamp;
-        };
-
-    //- inherited from GLObject
-    public:
-        virtual void initContext(GLContextData& contextData) const;
+        GlItem();
+        /** source shaders for all the data */
+        SourceShaders* sourceShaders;
+        /** stamp used to trigger resetting */
+        FrameStamp resetSourceShadersStamp;
     };
 
     /** get main buffers from the managed caches */
@@ -236,12 +268,12 @@ protected:
     /** thread handling fetch request processing */
     Threads::Thread fetchThread;
 
-    /** used in conjuction with the flag in the GlData to clear GPU caches */
-    FrameStamp clearGpuCachesStamp;
+    /** used to reset the source shaders */
+    FrameStamp resetSourceShadersStamp;
 
-    /** gl data for general datamanager use.
-    \todo due to VruiGlew dependency must be dynamically allocated */
-    static GlData* glData;
+//- inherited from GLObject
+public:
+    virtual void initContext(GLContextData& contextData) const;
 };
 
 

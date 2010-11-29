@@ -10,17 +10,14 @@ BEGIN_CRUSTA
 /** uniquely specifies a node in the quadtree hierarchy */
 struct TreeIndex
 {
-    struct hash {
-        size_t operator() (const TreeIndex& i) const;
-    };
-
     TreeIndex(uint8 iPatch=0,uint8 iChild=0,uint8 iLevel=0,uint64 iIndex=0);
     TreeIndex(const TreeIndex& i);
 
+    TreeIndex& operator=(const TreeIndex& other);
+    bool operator==(const TreeIndex& other) const;
+    
     TreeIndex up() const;
     TreeIndex down(uint8 which) const;
-
-    bool operator==(const TreeIndex& other) const;
 
     std::string str() const;
     std::string med_str() const;

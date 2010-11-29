@@ -3,6 +3,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/Cache.h
     ../include/crusta/Cache.hpp
     ../include/crusta/checkGl.h
+    ../include/crusta/ColorMapper.h
     ../include/crusta/Crusta.h
     ../include/crusta/CrustaComponent.h
     ../include/crusta/CrustaSettings.h
@@ -46,6 +47,12 @@ add_library(CrustaCore SHARED
     ../include/crusta/Scope.h
     ../include/crusta/Scope.hpp
     ../include/crusta/Section.h
+    ../include/crusta/shader/ShaderAtlasDataSource.h
+    ../include/crusta/shader/ShaderColorMapper.h
+    ../include/crusta/shader/ShaderColorMixer.h
+    ../include/crusta/shader/ShaderDataSource.h
+    ../include/crusta/shader/ShaderFragment.h
+    ../include/crusta/shader/ShaderTopographySource.h
     ../include/crusta/Sphere.h
     ../include/crusta/StatsManager.h
     ../include/crusta/SurfaceApproximation.h
@@ -73,6 +80,7 @@ add_library(CrustaCore SHARED
     ../include/GLMotif/FileAndFolderSelectionDialog.h
     ../include/GLMotif/PaletteEditor.h
 
+    ../source/crusta/ColorMapper.cpp
     ../source/crusta/Crusta.cpp
     ../source/crusta/CrustaSettings.cpp
     ../source/crusta/CrustaVisualizer.cpp
@@ -98,6 +106,12 @@ add_library(CrustaCore SHARED
     ../source/crusta/QuadTerrain.cpp
     ../source/crusta/Scope.cpp
     ../source/crusta/Section.cpp
+    ../source/crusta/shader/ShaderAtlasDataSource.cpp
+    ../source/crusta/shader/ShaderColorMapper.cpp
+    ../source/crusta/shader/ShaderColorMixer.cpp
+    ../source/crusta/shader/ShaderDataSource.cpp
+    ../source/crusta/shader/ShaderFragment.cpp
+    ../source/crusta/shader/ShaderTopographySource.cpp
     ../source/crusta/Sphere.cpp
     ../source/crusta/StatsManager.cpp
     ../source/crusta/SurfaceApproximation.cpp

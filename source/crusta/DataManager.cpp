@@ -16,8 +16,16 @@
 BEGIN_CRUSTA
 
 
-DataManager::GlData* DataManager::glData = NULL;
-
+DataManager::SourceShaders::
+SourceShaders(int numLayers) :
+    geometry("geometryTex"), height("layerfTex"),
+    topography(&geometry, &height)
+{
+    assert(layers.empty());
+    layers.reserve(numLayers);
+    for (int i=0; i<numLayers; ++i)
+        layers.push_back(Shader2dAtlasDataSource("layerfTex"));
+}
 
 DataManager::Request::
 Request() :
@@ -54,10 +62,9 @@ DataManager() :
     demNodata(GlobeData<DemHeight>::defaultNodata()),
     colorNodata(GlobeData<TextureColor>::defaultNodata()),
     layerfNodata(GlobeData<LayerDataf>::defaultNodata()),
-    terminateFetch(false), clearGpuCachesStamp(0)
+    terminateFetch(false), resetSourceShadersStamp(0)
 {
     tempGeometryBuf = new double[TILE_RESOLUTION*TILE_RESOLUTION*3];
-    glData = new GlData;
 }
 
 DataManager::
@@ -66,7 +73,6 @@ DataManager::
     unload();
 
     delete tempGeometryBuf;
-    delete glData;
 }
 
 void DataManager::
@@ -155,6 +161,9 @@ for now just use the default polyhedron and no-data irrespective of sources */
 ///\todo get the polyhedron from the files and check compatibility
     polyhedron = new Triacontahedron(SETTINGS->globeRadius);
 
+    //reset the data source shaders
+    resetSourceShadersStamp = CURRENT_FRAME;
+
     startFetchThread();
 }
 
@@ -170,13 +179,9 @@ unload()
     fetchResults.clear();
 
     //clear the main memory caches and flag the GPU ones
-    MainCache& mc = CACHE->getMainCache();
-    mc.node.clear();
-    mc.geometry.clear();
-    mc.layerf.clear();
+    CACHE->clear();
 
-    clearGpuCachesStamp = CURRENT_FRAME;
-
+    //delete the open data files
     if (demFile)
     {
         delete demFile;
@@ -196,6 +201,7 @@ unload()
     }
     layerfFiles.clear();
 
+    //get rid of the polyhedron
     if (polyhedron)
     {
         delete polyhedron;
@@ -203,6 +209,12 @@ unload()
     }
 }
 
+
+bool DataManager::
+hasDem() const
+{
+    return demFile!=NULL;
+}
 
 const Polyhedron* const DataManager::
 getPolyhedron() const
@@ -229,6 +241,26 @@ getLayerfNodata()
 }
 
 
+const int DataManager::
+getNumColorLayers() const
+{
+    return static_cast<int>(colorFiles.size());
+}
+
+const int DataManager::
+getNumLayerfLayers() const
+{
+    return static_cast<int>(layerfFiles.size());
+}
+
+DataManager::SourceShaders& DataManager::
+getSourceShaders(GLContextData& contextData)
+{
+    GlItem* glItem = contextData.retrieveDataItem<GlItem>(this);
+    return *glItem->sourceShaders;
+}
+
+
 #define GRAB_BUFFER(cacheType, name, cache, index)\
 cacheType::BufferType* name##Buf = cache.find(index);\
 if (name##Buf == NULL)\
@@ -239,11 +271,11 @@ if (name##Buf == NULL)\
                          "buffer for root node of patch %d", #name,\
                          rootIndex.patch);\
    }\
-cacheType::BufferType::DataType& name##Data = name##Buf->getData()
+cacheType::BufferType::DataType& name##Data = name##Buf->getData();
 
 #define RELEASE_PIN_BUFFER(cache, index, buffer)\
 cache.releaseBuffer(index, buffer);\
-cache.pin(buffer)
+cache.pin(buffer);
 
 void DataManager::
 loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope)
@@ -255,7 +287,7 @@ loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope)
 
 //- Node data
     DataIndex rootDataIndex(0, rootIndex);
-    GRAB_BUFFER(NodeCache, node, mc.node, rootDataIndex);
+    GRAB_BUFFER(NodeCache, node, mc.node, rootDataIndex)
 
     //clear the data layers
     nodeData.layerTiles.resize(3*numColorLayers + numFloatLayers);
@@ -272,22 +304,22 @@ loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope)
 //- Geometry data
     {
         DataIndex index(0, rootIndex);
-        GRAB_BUFFER(GeometryCache, geometry, mc.geometry, index);
+        GRAB_BUFFER(GeometryCache, geometry, mc.geometry, index)
         generateGeometry(crusta, &nodeData, geometryData);
-        RELEASE_PIN_BUFFER(mc.geometry, index, geometryBuf);
+        RELEASE_PIN_BUFFER(mc.geometry, index, geometryBuf)
     }
 
 //- Topography data
     {
-        nodeData.demTile.node = demFile!=NULL ? 0 : INVALID_TILEINDEX;
+        nodeData.demTile.node = hasDem() ? 0 : INVALID_TILEINDEX;
         for (int i=0; i<4; ++i)
             nodeData.demTile.children[i] = INVALID_TILEINDEX;
 
         //topography reserves the first data id of the layerf cache
         DataIndex index(0, rootIndex);
-        GRAB_BUFFER(LayerfCache, height, mc.layerf, index);
+        GRAB_BUFFER(LayerfCache, height, mc.layerf, index)
         sourceDem(NULL, NULL, &nodeData, heightData);
-        RELEASE_PIN_BUFFER(mc.layerf, index, heightBuf);
+        RELEASE_PIN_BUFFER(mc.layerf, index, heightBuf)
     }
 
     //keep track of the split-layer data id for the data layers (0 = topography)
@@ -309,14 +341,14 @@ loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope)
         DataIndex   redIndex(dataId,   rootIndex);
         DataIndex greenIndex(dataId+1, rootIndex);
         DataIndex  blueIndex(dataId+2, rootIndex);
-        GRAB_BUFFER(LayerfCache,   red, mc.layerf,   redIndex);
-        GRAB_BUFFER(LayerfCache, green, mc.layerf, greenIndex);
-        GRAB_BUFFER(LayerfCache,  blue, mc.layerf,  blueIndex);
+        GRAB_BUFFER(LayerfCache,   red, mc.layerf,   redIndex)
+        GRAB_BUFFER(LayerfCache, green, mc.layerf, greenIndex)
+        GRAB_BUFFER(LayerfCache,  blue, mc.layerf,  blueIndex)
         sourceColor(     NULL,     NULL,      NULL,     NULL,
                     &nodeData,  dataId-1, redData, greenData, blueData);
-        RELEASE_PIN_BUFFER(mc.layerf,   redIndex,   redBuf);
-        RELEASE_PIN_BUFFER(mc.layerf, greenIndex, greenBuf);
-        RELEASE_PIN_BUFFER(mc.layerf,  blueIndex,  blueBuf);
+        RELEASE_PIN_BUFFER(mc.layerf,   redIndex,   redBuf)
+        RELEASE_PIN_BUFFER(mc.layerf, greenIndex, greenBuf)
+        RELEASE_PIN_BUFFER(mc.layerf,  blueIndex,  blueBuf)
     }
 
 //- Layerf layer data
@@ -331,14 +363,14 @@ loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope)
 
         //read in the layer
         DataIndex index(dataId, rootIndex);
-        GRAB_BUFFER(LayerfCache, layer, mc.layerf, index);
+        GRAB_BUFFER(LayerfCache, layer, mc.layerf, index)
         sourceLayerf(NULL, NULL, &nodeData, dataId-1, layerData);
-        RELEASE_PIN_BUFFER(mc.layerf, index, layerBuf);
+        RELEASE_PIN_BUFFER(mc.layerf, index, layerBuf)
     }
 
 //- Finalize the node
     nodeData.init(SETTINGS->globeRadius, crusta->getVerticalScale());
-    RELEASE_PIN_BUFFER(mc.node, rootDataIndex, nodeBuf);
+    RELEASE_PIN_BUFFER(mc.node, rootDataIndex, nodeBuf)
 }
 
 
@@ -416,6 +448,21 @@ CRUSTA_DEBUG(14, CRUSTA_DEBUG_OUT <<
 "\n********  DataManager::frame() //end\n"; MainCache& mc=CACHE->getMainCache();
 mc.node.printCache();)
 }
+
+void DataManager::
+display(GLContextData& contextData)
+{
+    //check if the GPU caches need to be cleared
+    GlItem* glItem = contextData.retrieveDataItem<GlItem>(this);
+    if (glItem->resetSourceShadersStamp < resetSourceShadersStamp)
+    {
+        delete glItem->sourceShaders;
+        glItem->sourceShaders = new SourceShaders(3*colorFiles.size() +
+                                                  layerfFiles.size());
+        glItem->resetSourceShadersStamp = CURRENT_FRAME;
+    }
+}
+
 
 void DataManager::
 request(const Request& req)
@@ -535,20 +582,6 @@ void DataManager::
 startGpuBatch(GLContextData& contextData, const SurfaceApproximation& surface,
               Batch& batch)
 {
-    //check if the GPU caches need to be cleared
-    GlData::Item* glItem = contextData.retrieveDataItem<GlData::Item>(glData);
-    if (glItem->clearGpuCachesStamp != clearGpuCachesStamp)
-    {
-        GpuCache& gc = CACHE->getGpuCache(contextData);
-        gc.geometry.clear();
-        gc.layerf.clear();
-        gc.coverage.clear();
-        gc.lineData.clear();
-
-        //validate the clear
-        glItem->clearGpuCachesStamp = clearGpuCachesStamp;
-    }
-
     batch.clear();
 
     //go through all the render nodes and collect the appropriate data
@@ -648,14 +681,11 @@ operator ==(const FetchRequest& other) const
 }
 
 
-void DataManager::GlData::
-initContext(GLContextData& contextData) const
+DataManager::GlItem::
+GlItem() :
+    sourceShaders(NULL), resetSourceShadersStamp(0)
 {
-    Item* item = new Item;
-    item->clearGpuCachesStamp = 0;
-    contextData.addDataItem(this, item);
 }
-
 
 
 #define GET_BUFFER(ret, cache, index, check)\
@@ -1186,7 +1216,15 @@ fetchThreadFunc()
 }
 
 
-DataManager* DATAMANAGER;
+void DataManager::
+initContext(GLContextData& contextData) const
+{
+    GlItem* glItem = new GlItem;
+    contextData.addDataItem(this, glItem);
+}
+
+
+DataManager* DATAMANAGER = NULL;
 
 
 END_CRUSTA

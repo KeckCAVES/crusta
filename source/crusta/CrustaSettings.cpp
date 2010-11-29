@@ -38,6 +38,8 @@ CrustaSettings::CrustaSettings() :
     dataManMaxDataLayers(32),
     dataManMaxFetchRequests(16),
 
+    colorMapTexSize(1024),
+
     lineDataTexSize(8192),
     lineDataCoordStep(1.0f / lineDataTexSize),
     lineDataStartCoord(0.5f * lineDataCoordStep),
@@ -140,6 +142,10 @@ loadFromFiles(const Strings& cfgNames)
     dataManMaxFetchRequests = cfgFile.retrieveValue<int>(
         "./maxFetchRequests", dataManMaxFetchRequests);
 
+    //try to extract the color mapper settings
+    cfgFile.setCurrentSection("/Crusta/ColorMapper");
+    colorMapTexSize = cfgFile.retrieveValue<int>("./texSize", colorMapTexSize);
+    
     //try to extract the line decoration settings
     cfgFile.setCurrentSection("/Crusta/DecoratedArt");
     decorateVectorArt = cfgFile.retrieveValue<bool>(

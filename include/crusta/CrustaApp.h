@@ -14,6 +14,7 @@
 
 #include <crusta/basics.h>
 #include <crusta/CrustaComponent.h>
+#include <crusta/ElevationRangeTool.h>
 
 
 class GLContextData;
@@ -79,6 +80,22 @@ private:
         GLMotif::ColorPickerWindow colorPicker;
         GLMotif::Button*           colorButton;
         GLMotif::TextField*        shininessField;
+    };
+    
+    class ColorMapSettingsDialog : public Dialog
+    {
+    public:
+        ColorMapSettingsDialog();
+        void updateLayerList();
+        void setRangeTool(ElevationRangeTool* tool);
+    protected:
+        void init();
+    private:
+        void layerChangedCallback(
+            GLMotif::ListBox::ValueChangedCallbackData* cbData);
+
+        GLMotif::ListBox*   listBox;
+        ElevationRangeTool* rangeTool;
     };
 
     void produceMainMenu();
@@ -162,6 +179,7 @@ private:
     PaletteEditor* paletteEditor;
 
     SpecularSettingsDialog specularSettings;
+    ColorMapSettingsDialog colorMapSettings;
 
     /** the crusta instance */
     Crusta* crusta;
