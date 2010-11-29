@@ -80,6 +80,7 @@ class LightingShader
     GLint lineCoordScaleUniform;
     GLint lineWidthUniform;
 
+    GLint colorNodataUniform;
     GLint layerfNodataUniform;
     GLint demDefaultUniform;
 
@@ -135,6 +136,10 @@ class LightingShader
         glUniform1f(lineWidthUniform, lw);
     }
 
+    void setColorNodata(const TextureColor::Type& tc)
+    {
+        glUniform3f(colorNodataUniform, tc[0]/255.0f,tc[1]/255.0f,tc[2]/255.0f);
+    }
     void setLayerfNodata(float ln)
     {
         glUniform1f(layerfNodataUniform, ln);

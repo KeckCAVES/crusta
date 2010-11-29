@@ -29,8 +29,10 @@ CrustaSettings::CrustaSettings() :
 
     cacheMainNodeSize(4096),
     cacheMainGeometrySize(4096),
+    cacheMainColorSize(4096),
     cacheMainLayerfSize(4096),
     cacheGpuGeometrySize(1024),
+    cacheGpuColorSize(1024),
     cacheGpuLayerfSize(1024),
     cacheGpuCoverageSize(1024),
     cacheGpuLineDataSize(1024),
@@ -126,10 +128,14 @@ loadFromFiles(const Strings& cfgNames)
         "./mainNodeSize", cacheMainNodeSize);
     cacheMainGeometrySize = cfgFile.retrieveValue<int>(
         "./mainGeometrySize", cacheMainGeometrySize);
+    cacheMainColorSize = cfgFile.retrieveValue<int>(
+        "./mainColorSize", cacheMainColorSize);
     cacheMainLayerfSize = cfgFile.retrieveValue<int>(
         "./mainLayerfSize", cacheMainLayerfSize);
     cacheGpuGeometrySize = cfgFile.retrieveValue<int>(
         "./gpuGeometrySize", cacheGpuGeometrySize);
+    cacheGpuColorSize = cfgFile.retrieveValue<int>(
+        "./gpuColorSize", cacheGpuColorSize);
     cacheGpuLayerfSize = cfgFile.retrieveValue<int>(
         "./gpuLayerfSize", cacheGpuLayerfSize);
     cacheGpuCoverageSize = cfgFile.retrieveValue<int>(

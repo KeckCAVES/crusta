@@ -9,6 +9,7 @@
 #include <crusta/DemHeight.h>
 #include <crusta/LayerData.h>
 #include <crusta/map/Shape.h>
+#include <crusta/TextureColor.h>
 #include <crusta/TileIndex.h>
 #include <crusta/TreeIndex.h>
 #include <crusta/Scope.h>
@@ -49,6 +50,8 @@ struct NodeData
     void getElevationRange(DemHeight::Type range[2]) const;
     /** get the height value if it is valid or the default */
     DemHeight::Type getHeight(const DemHeight::Type& test) const;
+    /** get the color value if it is valid or the default */
+    TextureColor::Type getColor(const TextureColor::Type& test) const;
     /** get the layer data value if it is valid or the default */
     LayerDataf::Type getLayerData(const LayerDataf::Type& test) const;
 
@@ -80,6 +83,8 @@ Colors        lineData;
 
     /** indices for the DEM tiles in the database */
     Tile demTile;
+    /** indices for the Color tiles in the database */
+    Tiles colorTiles;
     /** indices for the Layer tiles in the databases */
     Tiles layerTiles;
 };

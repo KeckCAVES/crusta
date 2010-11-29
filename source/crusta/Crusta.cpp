@@ -808,6 +808,7 @@ if (SETTINGS->decorateVectorArt)
 
     glData->terrainShader.setVerticalScale(getVerticalScale());
     glData->terrainShader.setTextureStep(TILE_TEXTURE_COORD_STEP);
+    glData->terrainShader.setColorNodata(DATAMANAGER->getColorNodata());
     glData->terrainShader.setLayerfNodata(DATAMANAGER->getLayerfNodata());
     glData->terrainShader.setDemDefault(SETTINGS->terrainDefaultHeight);
 

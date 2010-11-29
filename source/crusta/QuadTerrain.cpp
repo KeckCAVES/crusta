@@ -457,6 +457,8 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
     glActiveTexture(GL_TEXTURE0);
     gpuCache.geometry.bind();
     glActiveTexture(GL_TEXTURE1);
+    gpuCache.color.bind();
+    glActiveTexture(GL_TEXTURE2);
     gpuCache.layerf.bind();
     CHECK_GLA
 
@@ -1497,9 +1499,14 @@ drawNode(GLContextData& contextData, CrustaGlData* crustaGl,
     dataSources.topography.setCentroid(main.centroid);
     CHECK_GLA
 
-    int numLayers = static_cast<int>(gpuData.layers.size());
-    assert(numLayers == static_cast<int>(dataSources.layers.size()));
-    for (int i=0; i<numLayers; ++i)
+    int numColorLayers = static_cast<int>(gpuData.colors.size());
+    assert(numColorLayers == static_cast<int>(dataSources.colors.size()));
+    for (int i=0; i<numColorLayers; ++i)
+        dataSources.colors[i].setSubRegion(*gpuData.colors[i]);
+
+    int numFloatLayers = static_cast<int>(gpuData.layers.size());
+    assert(numFloatLayers == static_cast<int>(dataSources.layers.size()));
+    for (int i=0; i<numFloatLayers; ++i)
         dataSources.layers[i].setSubRegion(*gpuData.layers[i]);
 
     if (SETTINGS->decorateVectorArt)

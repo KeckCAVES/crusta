@@ -17,13 +17,18 @@ BEGIN_CRUSTA
 
 
 DataManager::SourceShaders::
-SourceShaders(int numLayers) :
+SourceShaders(int numColorLayers, int numLayerfLayers) :
     geometry("geometryTex"), height("layerfTex"),
     topography(&geometry, &height)
 {
+    assert(colors.empty());
+    colors.reserve(numColorLayers);
+    for (int i=0; i<numColorLayers; ++i)
+        colors.push_back(Shader2dAtlasDataSource("colorTex"));
+
     assert(layers.empty());
-    layers.reserve(numLayers);
-    for (int i=0; i<numLayers; ++i)
+    layers.reserve(numLayerfLayers);
+    for (int i=0; i<numLayerfLayers; ++i)
         layers.push_back(Shader2dAtlasDataSource("layerfTex"));
 }
 
@@ -290,7 +295,8 @@ loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope)
     GRAB_BUFFER(NodeCache, node, mc.node, rootDataIndex)
 
     //clear the data layers
-    nodeData.layerTiles.resize(3*numColorLayers + numFloatLayers);
+    nodeData.colorTiles.resize(numColorLayers);
+    nodeData.layerTiles.resize(numFloatLayers);
 
     //clear the old line data
     nodeData.lineCoverage.clear();
@@ -322,49 +328,38 @@ loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope)
         RELEASE_PIN_BUFFER(mc.layerf, index, heightBuf)
     }
 
-    //keep track of the split-layer data id for the data layers (0 = topography)
-    uint8 dataId = 1;
 //- Texture color layer data
-    for (int l=0; l<numColorLayers; ++l, dataId+=3)
+    for (int l=0; l<numColorLayers; ++l)
     {
         //generate and save the tile indices for this data
-        for (int i=0; i<3; ++i)
-        {
-            NodeData::Tile& tile = nodeData.layerTiles[dataId+i-1];
-            tile.dataId = dataId+i;
-            tile.node   = 0;
-            for (int c=0; c<4; ++c)
-                tile.children[c] = INVALID_TILEINDEX;
-        }
-
-        //read in the red, green and blue channels as separate layers
-        DataIndex   redIndex(dataId,   rootIndex);
-        DataIndex greenIndex(dataId+1, rootIndex);
-        DataIndex  blueIndex(dataId+2, rootIndex);
-        GRAB_BUFFER(LayerfCache,   red, mc.layerf,   redIndex)
-        GRAB_BUFFER(LayerfCache, green, mc.layerf, greenIndex)
-        GRAB_BUFFER(LayerfCache,  blue, mc.layerf,  blueIndex)
-        sourceColor(     NULL,     NULL,      NULL,     NULL,
-                    &nodeData,  dataId-1, redData, greenData, blueData);
-        RELEASE_PIN_BUFFER(mc.layerf,   redIndex,   redBuf)
-        RELEASE_PIN_BUFFER(mc.layerf, greenIndex, greenBuf)
-        RELEASE_PIN_BUFFER(mc.layerf,  blueIndex,  blueBuf)
+        NodeData::Tile& tile = nodeData.colorTiles[l];
+        tile.dataId = l;
+        tile.node   = 0;
+        for (int c=0; c<4; ++c)
+            tile.children[c] = INVALID_TILEINDEX;
+        
+        //read in the color data
+        DataIndex index(l, rootIndex);
+        GRAB_BUFFER(ColorCache, layer, mc.color, index)
+        sourceColor(NULL, NULL, &nodeData, l, layerData);
+        RELEASE_PIN_BUFFER(mc.color, index, layerBuf)
     }
-
+    
+    //topography reserved the 0th layer of the layerf cache
 //- Layerf layer data
-    for (int l=0; l<numFloatLayers; ++l, ++dataId)
+    for (int l=0; l<numFloatLayers; ++l)
     {
         //generate and save the tile indices for this data
-        NodeData::Tile& tile = nodeData.layerTiles[dataId-1];
-        tile.dataId = dataId;
+        NodeData::Tile& tile = nodeData.layerTiles[l];
+        tile.dataId = l+1;
         tile.node   = 0;
         for (int c=0; c<4; ++c)
             tile.children[c] = INVALID_TILEINDEX;
 
         //read in the layer
-        DataIndex index(dataId, rootIndex);
+        DataIndex index(l+1, rootIndex);
         GRAB_BUFFER(LayerfCache, layer, mc.layerf, index)
-        sourceLayerf(NULL, NULL, &nodeData, dataId-1, layerData);
+        sourceLayerf(NULL, NULL, &nodeData, l, layerData);
         RELEASE_PIN_BUFFER(mc.layerf, index, layerBuf)
     }
 
@@ -457,7 +452,7 @@ display(GLContextData& contextData)
     if (glItem->resetSourceShadersStamp < resetSourceShadersStamp)
     {
         delete glItem->sourceShaders;
-        glItem->sourceShaders = new SourceShaders(3*colorFiles.size() +
+        glItem->sourceShaders = new SourceShaders( colorFiles.size(),
                                                   layerfFiles.size());
         glItem->resetSourceShadersStamp = CURRENT_FRAME;
     }
@@ -502,8 +497,12 @@ getData(const NodeMainBuffer& mainBuf) const
     ret.geometry =  mainBuf.geometry->getData();
     ret.height   =  mainBuf.height->getData();
 
-    typedef NodeMainBuffer::LayerBufferPtrs::const_iterator Iterator;
-    for (Iterator it=mainBuf.layers.begin(); it!=mainBuf.layers.end(); ++it)
+    typedef NodeMainBuffer::ColorBufferPtrs::const_iterator ColorIte;
+    for (ColorIte it=mainBuf.colors.begin(); it!=mainBuf.colors.end(); ++it)
+        ret.colors.push_back((*it)->getData());
+    
+    typedef NodeMainBuffer::LayerBufferPtrs::const_iterator LayerIte;
+    for (LayerIte it=mainBuf.layers.begin(); it!=mainBuf.layers.end(); ++it)
         ret.layers.push_back((*it)->getData());
 
     return ret;
@@ -517,6 +516,9 @@ getData(const NodeGpuBuffer& gpuBuf) const
     ret.height   = &gpuBuf.height->getData();
 
     typedef NodeGpuBuffer::SubRegionBufferPtrs::const_iterator Iterator;
+    for (Iterator it=gpuBuf.colors.begin(); it!=gpuBuf.colors.end(); ++it)
+        ret.colors.push_back(&(*it)->getData());
+    
     for (Iterator it=gpuBuf.layers.begin(); it!=gpuBuf.layers.end(); ++it)
         ret.layers.push_back(&(*it)->getData());
 
@@ -538,6 +540,16 @@ existsChildData(const NodeMainData& parent)
     }
 
     typedef NodeData::Tiles::const_iterator Iterator;
+    for (Iterator it=node.colorTiles.begin(); it!=node.colorTiles.end();
+         ++it)
+    {
+        for (int i=0; i<4; ++i)
+        {
+            if (it->children[i] != INVALID_TILEINDEX)
+                return true;
+        }
+    }
+
     for (Iterator it=node.layerTiles.begin(); it!=node.layerTiles.end();
          ++it)
     {
@@ -565,11 +577,16 @@ find(const TreeIndex& index, NodeMainBuffer& mainBuf) const
     FIND_BUFFER(mainBuf.geometry, mc.geometry, DataIndex(0, index))
     FIND_BUFFER(  mainBuf.height,   mc.layerf, DataIndex(0, index))
 
-    const int numLayers = 3*static_cast<int>(colorFiles.size()) +
-                            static_cast<int>(layerfFiles.size());
+    const int numColorLayers = static_cast<int>(colorFiles.size());
+    mainBuf.colors.resize(numColorLayers, NULL);
+    for (int l=0; l<numColorLayers; ++l)
+    {
+        FIND_BUFFER(mainBuf.colors[l], mc.color, DataIndex(l, index))
+    }
 
-    mainBuf.layers.resize(numLayers, NULL);
-    for (int l=0; l<numLayers; ++l)
+    const int numFloatLayers = static_cast<int>(layerfFiles.size());
+    mainBuf.layers.resize(numFloatLayers, NULL);
+    for (int l=0; l<numFloatLayers; ++l)
     {
         FIND_BUFFER(mainBuf.layers[l], mc.layerf, DataIndex(l+1, index))
     }
@@ -643,8 +660,15 @@ isComplete(const NodeMainBuffer& mainBuf) const
     if (mainBuf.node==NULL || mainBuf.geometry==NULL || mainBuf.height==NULL)
         return false;
 
-    typedef NodeMainBuffer::LayerBufferPtrs::const_iterator Iterator;
-    for (Iterator it=mainBuf.layers.begin(); it!=mainBuf.layers.end(); ++it)
+    typedef NodeMainBuffer::ColorBufferPtrs::const_iterator ColorIte;
+    for (ColorIte it=mainBuf.colors.begin(); it!=mainBuf.colors.end(); ++it)
+    {
+        if (*it == NULL)
+            return false;
+    }
+    
+    typedef NodeMainBuffer::LayerBufferPtrs::const_iterator LayerIte;
+    for (LayerIte it=mainBuf.layers.begin(); it!=mainBuf.layers.end(); ++it)
     {
         if (*it == NULL)
             return false;
@@ -661,8 +685,12 @@ touch(NodeMainBuffer& mainBuf) const
     mc.geometry.touch(mainBuf.geometry);
     mc.layerf.touch(mainBuf.height);
 
-    typedef NodeMainBuffer::LayerBufferPtrs::iterator Iterator;
-    for (Iterator it=mainBuf.layers.begin(); it!=mainBuf.layers.end(); ++it)
+    typedef NodeMainBuffer::ColorBufferPtrs::iterator ColorIte;
+    for (ColorIte it=mainBuf.colors.begin(); it!=mainBuf.colors.end(); ++it)
+        mc.color.touch(*it);
+
+    typedef NodeMainBuffer::LayerBufferPtrs::iterator LayerIte;
+    for (LayerIte it=mainBuf.layers.begin(); it!=mainBuf.layers.end(); ++it)
         mc.layerf.touch(*it);
 }
 
@@ -703,11 +731,16 @@ grabMainBuffer(const TreeIndex& index, bool current) const
     GET_BUFFER(ret.geometry, mc.geometry, DataIndex(0,index), current);
     GET_BUFFER(  ret.height,   mc.layerf, DataIndex(0,index), current);
 
-    const int numLayers = 3*static_cast<int>(colorFiles.size()) +
-                            static_cast<int>(layerfFiles.size());
+    const int numColorLayers = static_cast<int>(colorFiles.size());
+    ret.colors.resize(numColorLayers, NULL);
+    for (int l=0; l<numColorLayers; ++l)
+    {
+        GET_BUFFER(ret.colors[l], mc.color, DataIndex(l, index), current)
+    }
 
-    ret.layers.resize(numLayers, NULL);
-    for (int l=0; l<numLayers; ++l)
+    const int numFloatLayers = static_cast<int>(layerfFiles.size());
+    ret.layers.resize(numFloatLayers, NULL);
+    for (int l=0; l<numFloatLayers; ++l)
     {
         GET_BUFFER(ret.layers[l], mc.layerf, DataIndex(l+1, index), current)
     }
@@ -727,13 +760,18 @@ releaseMainBuffer(const TreeIndex& index, const NodeMainBuffer& buffer) const
     if (buffer.height != NULL)
         mc.layerf.releaseBuffer(DataIndex(0,index), buffer.height);
 
-    typedef NodeMainBuffer::LayerBufferPtrs::const_iterator Iterator;
-    uint8 dataId = 1;
-    for (Iterator it=buffer.layers.begin(); it!=buffer.layers.end();
-         ++it, ++dataId)
+    const int numColorLayers = static_cast<int>(buffer.colors.size());
+    for (int l=0; l<numColorLayers; ++l)
     {
-        if (*it != NULL)
-            mc.layerf.releaseBuffer(DataIndex(dataId,index), *it);
+        if (buffer.colors[l] != NULL)
+            mc.color.releaseBuffer(DataIndex(l,index), buffer.colors[l]);
+    }
+
+    const int numFloatLayers = static_cast<int>(buffer.layers.size());
+    for (int l=0; l<numFloatLayers; ++l)
+    {
+        if (buffer.layers[l] != NULL)
+            mc.layerf.releaseBuffer(DataIndex(l+1,index), buffer.layers[l]);
     }
 }
 
@@ -768,13 +806,24 @@ streamGpuData(GLContextData& contextData, BatchElement& batchel)
 //- handle the geometry data
     STREAM(GpuGeometryCache, cache.geometry, DataIndex(0,index), main.geometry,
            gpu.geometry, GL_RGB, GL_FLOAT)
+    
 //- handle the height data
     STREAM(GpuLayerfCache, cache.layerf, DataIndex(0,index), main.height,
            gpu.height, GL_RED, GL_FLOAT)
+    
+//- handle the color data
+    int numColorLayers = static_cast<int>(main.colors.size());
+    gpu.colors.resize(numColorLayers, NULL);
+    for (int l=0; l<numColorLayers; ++l)
+    {
+        STREAM(GpuColorCache, cache.color, DataIndex(l,index),
+               main.colors[l], gpu.colors[l], GL_RGB, GL_UNSIGNED_BYTE)
+    }
+
 //- handle the layer data
-    int numLayers = static_cast<int>(main.layers.size());
-    gpu.layers.resize(main.layers.size(), NULL);
-    for (int l=0; l<numLayers; ++l)
+    int numFloatLayers = static_cast<int>(main.layers.size());
+    gpu.layers.resize(numFloatLayers, NULL);
+    for (int l=0; l<numFloatLayers; ++l)
     {
         STREAM(GpuLayerfCache, cache.layerf, DataIndex(l+1,index),
                main.layers[l], gpu.layers[l], GL_RED, GL_FLOAT)
@@ -858,8 +907,10 @@ loadChild(Crusta* crusta, NodeMainData& parent,
 
 //- Node data
     //clear the data layers
-    childNode.layerTiles.resize(3*numColorLayers + numFloatLayers);
-    child.layers.resize(3*numColorLayers + numFloatLayers, NULL);
+    childNode.colorTiles.resize(numColorLayers, NodeData::Tile());
+    child.colors.resize(numColorLayers, NULL);
+    childNode.layerTiles.resize(numFloatLayers, NodeData::Tile());
+    child.layers.resize(numFloatLayers, NULL);
 
     //clear the old line data
     childNode.lineCoverage.clear();
@@ -882,41 +933,34 @@ loadChild(Crusta* crusta, NodeMainData& parent,
 
     sourceDem(&parentNode, parent.height, &childNode, child.height);
 
-    //keep track of the split-layer data id for the data layers (0 = topography)
-    uint8 dataId = 1;
 //- Texture color layer data
-    for (int l=0; l<numColorLayers; ++l, dataId+=3)
+    for (int l=0; l<numColorLayers; ++l)
     {
         //generate and save the tile indices for this data
-        for (int i=0; i<3; ++i)
-        {
-            NodeData::Tile& tile = childNode.layerTiles[dataId+i-1];
-            tile.dataId = dataId+i;
-            tile.node   = parentNode.layerTiles[dataId+i-1].children[which];
-            for (int c=0; c<4; ++c)
-                tile.children[c] = INVALID_TILEINDEX;
-        }
+        NodeData::Tile& tile = childNode.colorTiles[l];
+        tile.dataId = l;
+        tile.node   = parentNode.colorTiles[l].children[which];
+        for (int c=0; c<4; ++c)
+            tile.children[c] = INVALID_TILEINDEX;
 
-        //read in the red, green and blue channels as separate layers
-        sourceColor(&parentNode, parent.layers[dataId-1], parent.layers[dataId],
-                    parent.layers[dataId+1], &childNode, dataId-1,
-                    child.layers[dataId-1], child.layers[dataId],
-                    child.layers[dataId+1]);
+        //read in the color data
+        sourceColor(&parentNode,   parent.colors[l],
+                     &childNode, l, child.colors[l]);
     }
 
 //- Layerf layer data
-    for (int l=0; l<numFloatLayers; ++l, ++dataId)
+    for (int l=0; l<numFloatLayers; ++l)
     {
         //generate and save the tile indices for this data
-        NodeData::Tile& tile = childNode.layerTiles[dataId-1];
-        tile.dataId = dataId;
-        tile.node   = parentNode.layerTiles[dataId-1].children[which];
+        NodeData::Tile& tile = childNode.layerTiles[l];
+        tile.dataId = l+1;
+        tile.node   = parentNode.layerTiles[l].children[which];
         for (int c=0; c<4; ++c)
             tile.children[c] = INVALID_TILEINDEX;
 
         //read in the layer
-        sourceLayerf(&parentNode,           parent.layers[dataId-1],
-                      &childNode, dataId-1,  child.layers[dataId-1]);
+        sourceLayerf(&parentNode,           parent.layers[l],
+                      &childNode, l,  child.layers[l]);
     }
 
 //- Finalize the node
@@ -1003,6 +1047,15 @@ sampleParent(int child, DemHeight::Type range[2], DemHeight::Type* dst,
 }
 
 inline void
+sampleParent(int child, TextureColor::Type* dst,
+             const TextureColor::Type* const src,
+             const TextureColor::Type& nodata)
+{
+    TextureColor::Type range[2] = {TextureColor::Type(0),TextureColor::Type(0)};
+    sampleParentBase(child, range, dst, src, nodata);
+}
+
+inline void
 sampleParent(int child, LayerDataf::Type* dst,
              const LayerDataf::Type* const src, const LayerDataf::Type& nodata)
 {
@@ -1053,66 +1106,36 @@ sourceDem(const NodeData* const parent,
 
 void DataManager::
 sourceColor(const NodeData* const parent,
-            const LayerDataf::Type* const parentRed,
-            const LayerDataf::Type* const parentGreen,
-            const LayerDataf::Type* const parentBlue,
+            const TextureColor::Type* const parentColor,
             NodeData* child, uint8 layer,
-            LayerDataf::Type* childRed,
-            LayerDataf::Type* childGreen,
-            LayerDataf::Type* childBlue)
+            TextureColor::Type* childColor)
 {
     typedef ColorFile::File File;
 
-    if (child->layerTiles[layer].node != INVALID_TILEINDEX)
+    if (child->colorTiles[layer].node != INVALID_TILEINDEX)
     {
-        assert(layer%3==0 && (layer/3)<colorFiles.size());
+        assert(layer < colorFiles.size());
         //get the color data into a temporary storage
-        TextureColor::Type* color =
-            new TextureColor::Type[TILE_RESOLUTION*TILE_RESOLUTION];
-        TileIndex childTiles[4];
-        File* file = colorFiles[layer/3]->getPatch(child->index.patch);
-        if (!file->readTile(child->layerTiles[layer].node,
-                            childTiles, color))
+        File* file = colorFiles[layer]->getPatch(child->index.patch);
+        if (!file->readTile(child->colorTiles[layer].node,
+                            child->colorTiles[layer].children, childColor))
         {
             Misc::throwStdErr("DataManager::sourceColor: Invalid Color "
                               "file: could not read node %s's data",
                               child->index.med_str().c_str());
         }
-        //split the data to where they belong
-        for (int l=0; l<3; ++l)
-        {
-            for (int c=0; c<4; ++c)
-                child->layerTiles[layer+l].children[c] = childTiles[c];
-        }
-
-        for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
-            childRed[i] = color[i][0];
-        for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
-            childGreen[i] = color[i][1];
-        for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
-            childBlue[i] = color[i][2];
-
-        delete[] color;
     }
     else
     {
         if (parent != NULL)
         {
-            sampleParent(child->index.child, childRed, parentRed,
-                         layerfNodata);
-            sampleParent(child->index.child, childGreen, parentGreen,
-                         layerfNodata);
-            sampleParent(child->index.child, childBlue, parentBlue,
-                         layerfNodata);
+            sampleParent(child->index.child, childColor, parentColor,
+                         colorNodata);
         }
         else
         {
             for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
-                childRed[i] = colorNodata[0];
-            for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
-                childGreen[i] = colorNodata[1];
-            for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
-                childBlue[i] = colorNodata[2];
+                childColor[i] = colorNodata;
         }
     }
 }

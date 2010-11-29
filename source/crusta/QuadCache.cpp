@@ -18,6 +18,8 @@ Cache() :
     mainCache.node.init("MainNode", SETTINGS->cacheMainNodeSize);
     mainCache.geometry.init("MainGeometry", SETTINGS->cacheMainGeometrySize,
                             TILE_RESOLUTION);
+    mainCache.color.init("MainColor", SETTINGS->cacheMainColorSize,
+                            TILE_RESOLUTION);
     mainCache.layerf.init("MainLayerf", SETTINGS->cacheMainLayerfSize,
                           TILE_RESOLUTION);
 }
@@ -28,6 +30,7 @@ clear()
 {
     mainCache.node.clear();
     mainCache.geometry.clear();
+    mainCache.color.clear();
     mainCache.layerf.clear();
 
     clearStamp = CURRENT_FRAME;
@@ -42,6 +45,7 @@ display(GLContextData& contextData)
     {
         GpuCache& gpuCache = glData->gpuCache;
         gpuCache.geometry.clear();
+        gpuCache.color.clear();
         gpuCache.layerf.clear();
         gpuCache.coverage.clear();
         gpuCache.lineData.clear();
@@ -76,6 +80,8 @@ initContext(GLContextData& contextData) const
     //initialize all the gpu memory caches
     gpuCache.geometry.init("GpuGeometry", SETTINGS->cacheGpuGeometrySize,
                            TILE_RESOLUTION, GL_RGB32F_ARB, GL_LINEAR);
+    gpuCache.color.init("GpuColor", SETTINGS->cacheGpuColorSize,
+                        TILE_RESOLUTION, GL_RGB, GL_LINEAR);
     gpuCache.layerf.init("GpuLayerf", SETTINGS->cacheGpuLayerfSize,
                          TILE_RESOLUTION, GL_INTENSITY32F_ARB, GL_LINEAR);
     gpuCache.lineData.init("GpuLineData", SETTINGS->cacheGpuLineDataSize,

@@ -44,7 +44,7 @@ public:
     class SourceShaders
     {
     public:
-        SourceShaders(int numLayers);
+        SourceShaders(int numColorLayers, int numLayerfLayers);
 
         Shader2dAtlasDataSource geometry;
         Shader2dAtlasDataSource height;
@@ -52,6 +52,7 @@ public:
 ///\todo this higher-level source should probably not be here
         ShaderTopographySource topography;
 
+        Shader2dAtlasDataSources colors;
         Shader2dAtlasDataSources layers;
 
     private:
@@ -203,13 +204,9 @@ protected:
                    DemHeight::Type* childHeight);
     /** source the color data for a node */
     void sourceColor(const NodeData* const parent,
-                     const LayerDataf::Type* const parentRed,
-                     const LayerDataf::Type* const parentGreen,
-                     const LayerDataf::Type* const parentBlue,
+                     const TextureColor::Type* const parentColor,
                      NodeData* child, uint8 layer,
-                     LayerDataf::Type* childRed,
-                     LayerDataf::Type* childGreen,
-                     LayerDataf::Type* childBlue);
+                     TextureColor::Type* childColor);
     /** source the layerf data for a node */
     void sourceLayerf(const NodeData* const parent,
                       const LayerDataf::Type* const parentLayerf,

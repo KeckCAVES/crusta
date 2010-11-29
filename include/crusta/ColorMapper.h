@@ -11,6 +11,7 @@
 #include <crusta/QuadCache.h>
 #include <crusta/shader/ShaderColorMapper.h>
 #include <crusta/shader/ShaderColorMixer.h>
+#include <crusta/shader/ShaderColorReader.h>
 
 
 BEGIN_CRUSTA
@@ -61,6 +62,7 @@ public:
 
 protected:
     typedef Gpu1dAtlasCache<SubRegionBuffer> GpuColorMapCache;
+    typedef std::vector<ShaderColorReader>   ShaderColorReaders;
 
     struct GpuLayer
     {
@@ -84,6 +86,8 @@ protected:
         GpuColorMapCache mapCache;
         /** the color mixer shader */
         ShaderColorMixer mixer;
+        /** reader for color layers */
+        ShaderColorReaders colors;
         /** individual layer components */
         GpuLayers layers;
         /** stamp used to update the GPU layers */
@@ -103,8 +107,6 @@ protected:
 
     /** the default transparent map */
     GLColorMap transparentMap;
-    /** the default RGB color maps used for color images */
-    GLColorMap rgbMaps[3];
 
 ///\todo eurovis 2011 does the active index stuff make sense here
     int activeMapIndex;

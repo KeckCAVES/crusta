@@ -23,26 +23,6 @@ ColorMapper() :
     GLColorMap::Color* colors =
         new GLColorMap::Color[SETTINGS->colorMapTexSize];
 
-    //setup the default R, G and B maps
-    float step  = 1.0f / float(SETTINGS->colorMapTexSize);
-    GLColorMap::Color rgbStep[3] = {GLColorMap::Color(step, 0.0f, 0.0f, 0.0f),
-                                    GLColorMap::Color(0.0f, step, 0.0f, 0.0f),
-                                    GLColorMap::Color(0.0f, 0.0f, step, 0.0f)};
-
-    for (int i=0; i<3; ++i)
-    {
-        GLColorMap::Color c(0.0f, 0.0f, 0.0f, 1.0f);
-        for (int j=0; j<SETTINGS->colorMapTexSize; ++j)
-        {
-            colors[j] = c;
-            for (int k=0; k<3; ++k)
-                c[k] += rgbStep[i][k];
-        }
-
-        rgbMaps[i].setColors(SETTINGS->colorMapTexSize, colors);
-        rgbMaps[i].setScalarRange(0.0, 255.0);
-    }
-
     //setup the default transparent map
     GLColorMap::Color transparentColor(0.0f, 0.0f, 0.0f, 0.0f);
     for (int i=0; i<SETTINGS->colorMapTexSize; ++i)
@@ -171,6 +151,7 @@ configureShaders(GLContextData& contextData)
 
 //- clear the old storage
     gl.mapCache.clear();
+    gl.colors.clear();
     gl.layers.clear();
 
 //- regenerate the layer regions and shaders
@@ -197,11 +178,22 @@ configureShaders(GLContextData& contextData)
         gl.layers.push_back(GpuLayer(layerfData, &(*it)));
         RELEASE_PIN_BUFFER(gl.mapCache, index, layerfBuf);
     }
+    //process all the color layers
+    for (Iterator it=sources.colors.begin(); it!=sources.colors.end(); ++it)
+        gl.colors.push_back(ShaderColorReader(&(*it)));
+    
 
 //- reconnect the mixer
     gl.mixer.clear();
+    for (ShaderColorReaders::iterator it=gl.colors.begin(); it!=gl.colors.end();
+         ++it)
+    {
+        gl.mixer.addSource(&(*it));
+    }
     for (GpuLayers::iterator it=gl.layers.begin(); it!=gl.layers.end(); ++it)
+    {
         gl.mixer.addSource(&(it->mapShader));
+    }
 
 //- validate the current configuration
     gl.layersStamp = CURRENT_FRAME;
@@ -267,26 +259,13 @@ void ColorMapper::
 configureMainLayers()
 {
     //create the new colorMaps with the current stamp to trigger their upload
-    int demOffset       = DATAMANAGER->hasDem() ? 1 : 0;
-    int numColorLayers  = DATAMANAGER->getNumColorLayers();
-    int numLayers       = 3 * numColorLayers;
-    numLayers          += DATAMANAGER->getNumLayerfLayers();
-    numLayers          += demOffset;
+    int demOffset = DATAMANAGER->hasDem() ? 1 : 0;
+    int numLayers = DATAMANAGER->getNumLayerfLayers();
+    numLayers    += demOffset;
     mainLayers.resize(numLayers, MainLayer(CURRENT_FRAME));
 
-    //initialize the color map associated with elevation
-    if (DATAMANAGER->hasDem())
-        mainLayers[0].mapColor = transparentMap;
-
-    //initialize the color maps associated with color inputs
-    for (int l=0; l<numColorLayers; ++l)
-    {
-        for (int c=0; c<3; ++c)
-            mainLayers[demOffset + 3*l + c].mapColor = rgbMaps[c];
-    }
-
-    //initialize the color maps associated with layerf inputs
-    for (int l=demOffset+3*numColorLayers; l<numLayers; ++l)
+    //initialize all additional layers as transparent
+    for (int l=0; l<numLayers; ++l)
         mainLayers[l].mapColor = transparentMap;
 }
 

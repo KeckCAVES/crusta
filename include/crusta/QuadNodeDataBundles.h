@@ -12,6 +12,7 @@ BEGIN_CRUSTA
     representation */
 struct NodeMainBuffer
 {
+    typedef std::vector<ColorBuffer*>  ColorBufferPtrs;
     typedef std::vector<LayerfBuffer*> LayerBufferPtrs;
 
     NodeMainBuffer();
@@ -19,6 +20,7 @@ struct NodeMainBuffer
     NodeBuffer*     node;
     GeometryBuffer* geometry;
     LayerfBuffer*   height;
+    ColorBufferPtrs colors;
     LayerBufferPtrs layers;
 };
 typedef std::vector<NodeMainBuffer> NodeMainBuffers;
@@ -26,13 +28,15 @@ typedef std::vector<NodeMainBuffer> NodeMainBuffers;
 /** contains pointers to all the main memory data pertaining to a node */
 struct NodeMainData
 {
-    typedef std::vector<LayerDataf::Type*> LayerPtrs;
+    typedef std::vector<TextureColor::Type*> ColorPtrs;
+    typedef std::vector<LayerDataf::Type*>   LayerPtrs;
 
     NodeMainData();
 
     NodeData*        node;
     Vertex*          geometry;
     DemHeight::Type* height;
+    ColorPtrs        colors;
     LayerPtrs        layers;
 };
 typedef std::vector<NodeMainData> NodeMainDatas;
@@ -47,6 +51,7 @@ struct NodeGpuBuffer
 
     SubRegionBuffer*        geometry;
     SubRegionBuffer*        height;
+    SubRegionBufferPtrs     colors;
     SubRegionBufferPtrs     layers;
     SubRegionBuffer*        coverage;
     StampedSubRegionBuffer* lineData;
@@ -62,6 +67,7 @@ struct NodeGpuData
 
     SubRegion*        geometry;
     SubRegion*        height;
+    SubRegionPtrs     colors;
     SubRegionPtrs     layers;
     SubRegion*        coverage;
     StampedSubRegion* lineData;

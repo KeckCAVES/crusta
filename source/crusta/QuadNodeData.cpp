@@ -103,6 +103,18 @@ getHeight(const DemHeight::Type& test) const
         return test;
 }
 
+TextureColor::Type NodeData::
+getColor(const TextureColor::Type& test) const
+{
+    if (test == DATAMANAGER->getColorNodata())
+    {
+        const Color& tdc = SETTINGS->terrainDefaultColor;
+        return TextureColor::Type(255*tdc[0], 255*tdc[1], 255*tdc[2]);
+    }
+    else
+        return test;
+}
+
 LayerDataf::Type NodeData::
 getLayerData(const LayerDataf::Type& test) const
 {

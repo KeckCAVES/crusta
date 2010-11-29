@@ -441,8 +441,10 @@ void LightingShader::initUniforms(GLContextData& contextData)
     GLint uniform;
     uniform = glGetUniformLocation(programObject, "geometryTex");
     glUniform1i(uniform, 0);
-    uniform = glGetUniformLocation(programObject, "layerfTex");
+    uniform = glGetUniformLocation(programObject, "colorTex");
     glUniform1i(uniform, 1);
+    uniform = glGetUniformLocation(programObject, "layerfTex");
+    glUniform1i(uniform, 2);
 
     uniform = glGetUniformLocation(programObject, "colorMapTex");
     glUniform1i(uniform, 6);
@@ -451,6 +453,7 @@ void LightingShader::initUniforms(GLContextData& contextData)
     verticalScaleUniform=glGetUniformLocation(programObject,"verticalScale");
     centroidUniform     =glGetUniformLocation(programObject,"center");
 
+    colorNodataUniform  = glGetUniformLocation(programObject, "colorNodata");
     layerfNodataUniform = glGetUniformLocation(programObject, "layerfNodata");
     demDefaultUniform   = glGetUniformLocation(programObject, "demDefault");
 
@@ -509,12 +512,14 @@ void LightingShader::compileShader(GLContextData& contextData)
         #extension GL_EXT_texture_array : enable\n\
         \n\
         uniform sampler2DArray geometryTex;\n\
+        uniform sampler2DArray colorTex;\n\
         uniform sampler2DArray layerfTex;\n\
         uniform sampler2D colorMapTex;\n\
         \n\
         uniform float texStep;\n\
         uniform float verticalScale;\n\
         \n\
+        uniform vec3  colorNodata;\n\
         uniform float layerfNodata;\n\
         uniform float demDefault;\n\
         \n\

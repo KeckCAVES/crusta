@@ -44,8 +44,10 @@ public:
 ///\todo deprecate both Height and Imagery caches
     int cacheMainNodeSize;
     int cacheMainGeometrySize;
+    int cacheMainColorSize;
     int cacheMainLayerfSize;
     int cacheGpuGeometrySize;
+    int cacheGpuColorSize;
     int cacheGpuLayerfSize;
     int cacheGpuCoverageSize;
     int cacheGpuLineDataSize;
