@@ -337,14 +337,14 @@ loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope)
         tile.node   = 0;
         for (int c=0; c<4; ++c)
             tile.children[c] = INVALID_TILEINDEX;
-        
+
         //read in the color data
         DataIndex index(l, rootIndex);
         GRAB_BUFFER(ColorCache, layer, mc.color, index)
         sourceColor(NULL, NULL, &nodeData, l, layerData);
         RELEASE_PIN_BUFFER(mc.color, index, layerBuf)
     }
-    
+
     //topography reserved the 0th layer of the layerf cache
 //- Layerf layer data
     for (int l=0; l<numFloatLayers; ++l)
@@ -500,7 +500,7 @@ getData(const NodeMainBuffer& mainBuf) const
     typedef NodeMainBuffer::ColorBufferPtrs::const_iterator ColorIte;
     for (ColorIte it=mainBuf.colors.begin(); it!=mainBuf.colors.end(); ++it)
         ret.colors.push_back((*it)->getData());
-    
+
     typedef NodeMainBuffer::LayerBufferPtrs::const_iterator LayerIte;
     for (LayerIte it=mainBuf.layers.begin(); it!=mainBuf.layers.end(); ++it)
         ret.layers.push_back((*it)->getData());
@@ -518,7 +518,7 @@ getData(const NodeGpuBuffer& gpuBuf) const
     typedef NodeGpuBuffer::SubRegionBufferPtrs::const_iterator Iterator;
     for (Iterator it=gpuBuf.colors.begin(); it!=gpuBuf.colors.end(); ++it)
         ret.colors.push_back(&(*it)->getData());
-    
+
     for (Iterator it=gpuBuf.layers.begin(); it!=gpuBuf.layers.end(); ++it)
         ret.layers.push_back(&(*it)->getData());
 
@@ -666,7 +666,7 @@ isComplete(const NodeMainBuffer& mainBuf) const
         if (*it == NULL)
             return false;
     }
-    
+
     typedef NodeMainBuffer::LayerBufferPtrs::const_iterator LayerIte;
     for (LayerIte it=mainBuf.layers.begin(); it!=mainBuf.layers.end(); ++it)
     {
@@ -806,11 +806,11 @@ streamGpuData(GLContextData& contextData, BatchElement& batchel)
 //- handle the geometry data
     STREAM(GpuGeometryCache, cache.geometry, DataIndex(0,index), main.geometry,
            gpu.geometry, GL_RGB, GL_FLOAT)
-    
+
 //- handle the height data
     STREAM(GpuLayerfCache, cache.layerf, DataIndex(0,index), main.height,
            gpu.height, GL_RED, GL_FLOAT)
-    
+
 //- handle the color data
     int numColorLayers = static_cast<int>(main.colors.size());
     gpu.colors.resize(numColorLayers, NULL);
@@ -1149,9 +1149,8 @@ sourceLayerf(const NodeData* const parent,
 
     if (child->layerTiles[layer].node != INVALID_TILEINDEX)
     {
-        size_t fileIndex = layer - 3*colorFiles.size();
-        assert(fileIndex>0 && fileIndex<layerfFiles.size());
-        File* file = layerfFiles[fileIndex]->getPatch(child->index.patch);
+        assert(layer<layerfFiles.size());
+        File* file = layerfFiles[layer]->getPatch(child->index.patch);
         if (!file->readTile(child->layerTiles[layer].node,
                             child->layerTiles[layer].children,
                             childLayerf))

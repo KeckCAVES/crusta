@@ -270,7 +270,8 @@ shininessChangedCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 }
 
 CrustaApp::ColorMapSettingsDialog::
-ColorMapSettingsDialog()
+ColorMapSettingsDialog() :
+    listBox(NULL), rangeTool(NULL)
 {
     name  = "ColorMapSettings";
     label = "Color Map Settings";
@@ -288,7 +289,7 @@ init()
     listBox = box->getListBox();
     listBox->getValueChangedCallbacks().add(
         this, &ColorMapSettingsDialog::layerChangedCallback);
-    
+
     updateLayerList();
 
     root->setNumMinorWidgets(1);
@@ -366,7 +367,7 @@ produceMainMenu()
 
     //color map settings dialog toggle
     colorMapSettings.createMenuEntry(mainMenu);
-    
+
     /* Create a button to open or hide the palette editor dialog: */
     GLMotif::ToggleButton* showPaletteEditorToggle = new GLMotif::ToggleButton(
         "ShowPaletteEditorToggle", mainMenu, "Palette Editor");
@@ -935,7 +936,7 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
     CrustaComponent* component = dynamic_cast<CrustaComponent*>(cbData->tool);
     if (component != NULL)
         component->setupComponent(crusta);
-    
+
     //range tool needs to be passed along to the color map settings
     ElevationRangeTool* rangeTool =
         dynamic_cast<ElevationRangeTool*>(cbData->tool);
@@ -965,7 +966,7 @@ toolDestructionCallback(Vrui::ToolManager::ToolDestructionCallbackData* cbData)
     dynamic_cast<ElevationRangeTool*>(cbData->tool);
     if (rangeTool != NULL)
         colorMapSettings.setRangeTool(NULL);
-    
+
 #if CRUSTA_ENABLE_DEBUG
     if (cbData->tool == crusta->debugTool)
         crusta->debugTool = NULL;
