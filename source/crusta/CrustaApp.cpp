@@ -63,7 +63,7 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     dataColorFile(NULL), enableSun(false),
     viewerHeadlightStates(new bool[Vrui::getNumViewers()]),
     sun(0), sunAzimuth(180.0), sunElevation(45.0),
-    paletteEditor(new PaletteEditor)
+    paletteEditor(new PaletteEditor), colorMapSettings(paletteEditor)
 {
     typedef std::vector<std::string> Strings;
 
@@ -270,8 +270,8 @@ shininessChangedCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 }
 
 CrustaApp::ColorMapSettingsDialog::
-ColorMapSettingsDialog() :
-    listBox(NULL), rangeTool(NULL)
+ColorMapSettingsDialog(PaletteEditor* editor) :
+    listBox(NULL), paletteEditor(editor), rangeTool(NULL)
 {
     name  = "ColorMapSettings";
     label = "Color Map Settings";
@@ -309,6 +309,8 @@ updateLayerList()
         oss << "Layer " << i;
         listBox->addItem(oss.str().c_str());
     }
+    if (numLayers>0)
+        listBox->selectItem(0);
 }
 
 void CrustaApp::ColorMapSettingsDialog::
@@ -321,6 +323,8 @@ void CrustaApp::ColorMapSettingsDialog::
 layerChangedCallback(GLMotif::ListBox::ValueChangedCallbackData* cbData)
 {
     COLORMAPPER->setActiveMap(cbData->newSelectedItem);
+    paletteEditor->getColorMap()->importColorMap(
+        COLORMAPPER->getColorMap(cbData->newSelectedItem));
     if (rangeTool != NULL)
         rangeTool->externalUpdate();
 }
@@ -730,8 +734,8 @@ changeColorMapCallback(GLMotif::ColorMap::ColorMapChangedCallbackData* cbData)
     if (mapIndex < 0)
         return;
 
-    GLColorMap* colorMap = COLORMAPPER->getColorMap(mapIndex);
-    cbData->colorMap->exportColorMap(*colorMap);
+    Misc::ColorMap& colorMap = COLORMAPPER->getColorMap(mapIndex);
+    cbData->colorMap->exportColorMap(colorMap);
     COLORMAPPER->touchColor(mapIndex);
 }
 
@@ -941,7 +945,11 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
     ElevationRangeTool* rangeTool =
         dynamic_cast<ElevationRangeTool*>(cbData->tool);
     if (rangeTool != NULL)
+    {
+///\todo fix eurovis 2011
+        rangeTool->paletteEditor = paletteEditor;
         colorMapSettings.setRangeTool(rangeTool);
+    }
 
 #if CRUSTA_ENABLE_DEBUG
     //check for the creation of the debug tool
@@ -963,7 +971,7 @@ toolDestructionCallback(Vrui::ToolManager::ToolDestructionCallbackData* cbData)
 
     //range tool needs to be passed along to the color map settings
     ElevationRangeTool* rangeTool =
-    dynamic_cast<ElevationRangeTool*>(cbData->tool);
+        dynamic_cast<ElevationRangeTool*>(cbData->tool);
     if (rangeTool != NULL)
         colorMapSettings.setRangeTool(NULL);
 

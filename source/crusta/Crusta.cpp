@@ -239,9 +239,10 @@ load(Strings& dataBases)
     int heightMapIndex = COLORMAPPER->getHeightColorMapIndex();
     if (heightMapIndex >= 0)
     {
-        GLColorMap* colorMap = COLORMAPPER->getColorMap(heightMapIndex);
-        colorMap->setScalarRange(GLdouble(globalElevationRange[0]),
-                                 GLdouble(globalElevationRange[1]));
+        Misc::ColorMap& colorMap = COLORMAPPER->getColorMap(heightMapIndex);
+        colorMap.setValueRange(Misc::ColorMap::ValueRange(
+            GLdouble(globalElevationRange[0]),
+            GLdouble(globalElevationRange[1])));
     }
 
 #if CRUSTA_ENABLE_DEBUG

@@ -19,19 +19,12 @@ ColorMapper::
 ColorMapper() :
     mapperConfigurationStamp(0), gpuLayersStamp(0), activeMapIndex(-1)
 {
-    //create temporary storage for colors
-    GLColorMap::Color* colors =
-        new GLColorMap::Color[SETTINGS->colorMapTexSize];
-
     //setup the default transparent map
-    GLColorMap::Color transparentColor(0.0f, 0.0f, 0.0f, 0.0f);
-    for (int i=0; i<SETTINGS->colorMapTexSize; ++i)
-        colors[i] = transparentColor;
-    transparentMap.setColors(SETTINGS->colorMapTexSize, colors);
-    transparentMap.setScalarRange(0.0, 1.0);
-
-    //clean-up temporary color storage
-    delete[] colors;
+    Misc::ColorMap::Points& points = transparentMap.getPoints();
+    points.push_back(Misc::ColorMap::Point(0.0,
+                     Misc::ColorMap::Color(0.0f, 0.0f, 0.0f, 0.0f)));
+    points.push_back(Misc::ColorMap::Point(1.0,
+                     Misc::ColorMap::Color(0.0f, 0.0f, 0.0f, 0.0f)));
 }
 
 
@@ -95,11 +88,18 @@ getHeightColorMapIndex() const
         return -1;
 }
 
-GLColorMap* ColorMapper::
+Misc::ColorMap& ColorMapper::
 getColorMap(int mapIndex)
 {
     assert(mapIndex>=0 && mapIndex<static_cast<int>(mainLayers.size()));
-    return &mainLayers[mapIndex].mapColor;
+    return mainLayers[mapIndex].mapColor;
+}
+
+const Misc::ColorMap& ColorMapper::
+getColorMap(int mapIndex) const
+{
+    assert(mapIndex>=0 && mapIndex<static_cast<int>(mainLayers.size()));
+    return mainLayers[mapIndex].mapColor;
 }
 
 int ColorMapper::
@@ -215,19 +215,20 @@ updateShaders(GLContextData& contextData)
         //stream the color data to the GPU if needed
         if (gpuLayer.mapColorStamp < mainLayer.mapColorStamp)
         {
-            assert(mainLayer.mapColor.getColors() != NULL);
+            assert(mainLayer.mapColor.getPoints().size() > 1);
+            Misc::ColorMap::DiscreteMap discrete(SETTINGS->colorMapTexSize);
+            mainLayer.mapColor.discretize(discrete);
             gl.mapCache.stream(
                 (SubRegion)gpuLayer.mapShader.getColorMapRegion(), GL_RGBA,
-                GL_FLOAT, mainLayer.mapColor.getColors()[0].getRgba());
+                GL_FLOAT, discrete.front().getRgba());
             CHECK_GLA
             gpuLayer.mapColorStamp = CURRENT_FRAME;
         }
         //update the range used in the shader if needed
         if (gpuLayer.mapRangeStamp < mainLayer.mapRangeStamp)
         {
-            gpuLayer.mapShader.setScalarRange(
-                mainLayer.mapColor.getScalarRangeMin(),
-                mainLayer.mapColor.getScalarRangeMax());
+            Misc::ColorMap::ValueRange vr = mainLayer.mapColor.getValueRange();
+            gpuLayer.mapShader.setScalarRange(vr.min, vr.max);
             CHECK_GLA
             gpuLayer.mapRangeStamp = CURRENT_FRAME;
         }

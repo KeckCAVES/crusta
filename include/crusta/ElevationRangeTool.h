@@ -12,6 +12,10 @@
 #include <crusta/Tool.h>
 
 
+///\todo remove eurovis 2011
+#include <GLMotif/PaletteEditor.h>
+
+
 namespace GLMotif
 {
     class TextField;
@@ -35,9 +39,11 @@ public:
 
     /** update the range values from the color map itself */
     void externalUpdate();
-    
+
     static Vrui::ToolFactory* init(Vrui::ToolFactory* parent);
 
+///\todo remove eurovis 2011
+PaletteEditor* paletteEditor;
 protected:
     /** modes of the range tool */
     enum Mode

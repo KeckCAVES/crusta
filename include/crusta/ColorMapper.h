@@ -7,6 +7,7 @@
 #include <GL/VruiGlew.h> //must include glew before any GL
 #include <GL/GLColorMap.h>
 #include <GL/GLObject.h>
+#include <Misc/ColorMap.h>
 
 #include <crusta/QuadCache.h>
 #include <crusta/shader/ShaderColorMapper.h>
@@ -24,8 +25,8 @@ public:
     {
         MainLayer(FrameStamp initialStamp=0);
         /** main memory representation for the color map. Used to interact with
-         the UI */
-        GLColorMap mapColor;
+            the UI */
+        Misc::ColorMap mapColor;
         /** stamp for the age of the colors of the map */
         FrameStamp mapColorStamp;
         /** stamp for the range of the map */
@@ -45,7 +46,8 @@ public:
 
     int getNumColorMaps() const;
     int getHeightColorMapIndex() const;
-    GLColorMap* getColorMap(int mapIndex);
+    Misc::ColorMap& getColorMap(int mapIndex);
+    const Misc::ColorMap& getColorMap(int mapIndex) const;
 
 ///\todo eurovis 2011 does the active index stuff make sense here
     int getActiveMap() const;
@@ -106,7 +108,7 @@ protected:
     FrameStamp gpuLayersStamp;
 
     /** the default transparent map */
-    GLColorMap transparentMap;
+    Misc::ColorMap transparentMap;
 
 ///\todo eurovis 2011 does the active index stuff make sense here
     int activeMapIndex;

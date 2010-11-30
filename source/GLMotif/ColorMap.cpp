@@ -419,6 +419,25 @@ void ColorMap::setSelectedControlPointColor(const Color& newSelectedControlPoint
     selectedControlPointColor=newSelectedControlPointColor;
     }
 
+void ColorMap::setValueRange(const ValueRange& newRange)
+    {
+    /* Remap the control points' values to the new range: */
+    double fac=(newRange.second-newRange.first)/(valueRange.second-valueRange.first);
+    for(ControlPoint*cpPtr=&first;cpPtr!=0;cpPtr=cpPtr->right)
+        cpPtr->value=newRange.first+(cpPtr->value-valueRange.first)*fac;
+
+    /* Update the value range: */
+    valueRange.first=first.value;
+    valueRange.second=last.value;
+
+    /* Update all control points: */
+    updateControlPoints();
+
+    /* Call the color map change callbacks: */
+    ColorMapChangedCallbackData cbData(this);
+    colorMapChangedCallbacks.call(&cbData);
+    }
+
 int ColorMap::getNumControlPoints(void) const
     {
     int result=0;
@@ -1026,4 +1045,60 @@ void ColorMap::saveColorMap(const char* colorMapFileName) const
         fprintf(colorMapFile.getFilePtr(),"%f %f %f %f %f\n",cpPtr->value,cpPtr->color[0],cpPtr->color[1],cpPtr->color[2],cpPtr->color[3]);
     }
 
+void ColorMap::exportColorMap(Misc::ColorMap& map) const
+    {
+    /* Count the number of control points in the list: */
+    int numControlPoints = 0;
+    for(const ControlPoint* cpPtr=&first;cpPtr!=0;cpPtr=cpPtr->right)
+        ++numControlPoints;
+
+    /* Allocate the storage arrays: */
+    Misc::ColorMap::Points& points = map.getPoints();
+    points.resize(numControlPoints);
+
+    /* Copy the control points: */
+    int i=0;
+    for(const ControlPoint* cpPtr=&first;cpPtr!=0;cpPtr=cpPtr->right,++i)
+        points[i] = Misc::ColorMap::Point(cpPtr->value, cpPtr->color);
+    }
+
+void ColorMap::importColorMap(const Misc::ColorMap& map)
+    {
+    /* Delete the current color map: */
+    deleteColorMap();
+
+    const Misc::ColorMap::Points& points = map.getPoints();
+    const int numPoints = static_cast<int>(points.size());
+
+    /* Set the first control point: */
+    first.value = points[0].value;
+    first.color = points[0].color;
+
+    /* Create and set the intermediate control points: */
+    ControlPoint* leftPtr=&first;
+    for(int i=1; i<numPoints-1; ++i)
+    {
+        ControlPoint* cp = new ControlPoint(points[i].value, points[i].color);
+        cp->left         = leftPtr;
+        leftPtr->right   = cp;
+        leftPtr          = cp;
+    }
+
+    /* Set the last control point: */
+    last.value     = points.back().value;
+    last.color     = points.back().color;
+    last.left      = leftPtr;
+    leftPtr->right = &last;
+
+    /* Update the value range: */
+    valueRange.first  = first.value;
+    valueRange.second = last.value;
+
+    /* Update all control points: */
+    updateControlPoints();
+
+    /* Call the color map change callbacks: */
+    ColorMapChangedCallbackData cbData(this);
+    colorMapChangedCallbacks.call(&cbData);
+    }
 }

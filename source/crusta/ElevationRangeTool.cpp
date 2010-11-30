@@ -169,7 +169,7 @@ setupComponent(Crusta* nCrusta)
 
     //update the range from the currently active map
     externalUpdate();
-    
+
     //popup the dialog
     const Vrui::NavTransform& navXform = Vrui::getNavigationTransformation();
     Vrui::popupPrimaryWidget(dialog,
@@ -361,19 +361,17 @@ buttonCallback(int, int, Vrui::InputDevice::ButtonCallbackData* cbData)
 void ElevationRangeTool::
 externalUpdate()
 {
-    Scalar min = 0;
-    Scalar max = 0;
-    
+    Misc::ColorMap::ValueRange vr = Misc::ColorMap::ValueRange::invalid;
+
     //update the sliders with the proper min and max values
     int mapIndex = COLORMAPPER->getActiveMap();
     if (mapIndex >= 0)
     {
-        GLColorMap* colorMap = COLORMAPPER->getColorMap(mapIndex);
-        min                  = colorMap->getScalarRangeMin();
-        max                  = colorMap->getScalarRangeMax();
+        const Misc::ColorMap& colorMap = COLORMAPPER->getColorMap(mapIndex);
+        vr = colorMap.getValueRange();
     }
 
-    updateLabels(min, max);
+    updateLabels(vr.min, vr.max);
 }
 
 void ElevationRangeTool::
@@ -399,20 +397,18 @@ applyToColorMap(const ManipulationSource& manip)
     int mapIndex = COLORMAPPER->getActiveMap();
     if (mapIndex<0)
         return;
-    
+
     //compute the new min/max
-    Scalar newMin, newMax;
+    Misc::ColorMap::ValueRange vr;
+    Misc::ColorMap& colorMap = COLORMAPPER->getColorMap(mapIndex);
     if (Vrui::isMaster())
     {
         switch (manip)
         {
             case MANIP_SLIDERS:
             {
-                Scalar* minMax[2] = {&newMin, &newMax};
                 //get the current range from the color map
-                GLColorMap* colorMap = COLORMAPPER->getColorMap(mapIndex);
-                *(minMax[0])         = colorMap->getScalarRangeMin();
-                *(minMax[1])         = colorMap->getScalarRangeMax();
+                vr = colorMap.getValueRange();
 
                 //grab the value from the proper slider
                 assert(rangeSliderDragged==1 || rangeSliderDragged==2);
@@ -424,62 +420,60 @@ applyToColorMap(const ManipulationSource& manip)
                 delta        = sliderValue<0.0 ? -delta : delta;
 
                 //apply the change to the corresponding limit
+                Misc::ColorMap::Value* minMax[2] = {&vr.min, &vr.max};
                 *(minMax[rangeSliderDragged-1]) += delta;
                 //don't allow the limits to cross over
                 if (rangeSliderDragged == 1)
-                    newMax = newMax<newMin ? newMin : newMax;
+                    vr.max = std::max(vr.max, vr.min);
                 else
-                    newMin = newMin>newMax ? newMax : newMin;
+                    vr.min = std::min(vr.min, vr.max);
 
                 break;
             }
             case MANIP_MIN_MAX_MARKERS:
             {
                 assert(markersSet == 2);
-                newMin = Vector3(markers[0]).mag() - SETTINGS->globeRadius;
-                newMax = Vector3(markers[1]).mag() - SETTINGS->globeRadius;
+                vr.min = Vector3(markers[0]).mag() - SETTINGS->globeRadius;
+                vr.max = Vector3(markers[1]).mag() - SETTINGS->globeRadius;
                 break;
             }
             case MANIP_SHIFT_MARKER:
             {
                 assert(markersSet == 1);
-                //compute the min elevation from the marker
-                newMin = Vector3(markers[0]).mag() - SETTINGS->globeRadius;
-
                 //get the current range from the color map
-                GLColorMap* colorMap = COLORMAPPER->getColorMap(mapIndex);
-                Scalar min           = colorMap->getScalarRangeMin();
-                Scalar max           = colorMap->getScalarRangeMax();
-                Scalar range         = max - min;
+                vr           = colorMap.getValueRange();
+                Scalar range = vr.max - vr.min;
 
-                newMax = newMin + range;
+                //compute the min elevation from the marker
+                vr.min = Vector3(markers[0]).mag() - SETTINGS->globeRadius;
+                vr.max = vr.min + range;
 
                 break;
             }
             default:
-                newMin = newMax = 0.0;
+                vr = Misc::ColorMap::ValueRange::invalid;
         }
         //send the new values to the slaves
         if (Vrui::getMainPipe() != NULL)
         {
-            Vrui::getMainPipe()->write<Scalar>(newMin);
-            Vrui::getMainPipe()->write<Scalar>(newMax);
+            Vrui::getMainPipe()->write<Scalar>(vr.min);
+            Vrui::getMainPipe()->write<Scalar>(vr.max);
         }
     }
     else
     {
         //read the new values from the master
-        Vrui::getMainPipe()->read<Scalar>(newMin);
-        Vrui::getMainPipe()->read<Scalar>(newMax);
+        Vrui::getMainPipe()->read<Scalar>(vr.min);
+        Vrui::getMainPipe()->read<Scalar>(vr.max);
     }
 
     //set the new min max in the color map
-    GLColorMap* colorMap = COLORMAPPER->getColorMap(mapIndex);
-    colorMap->setScalarRange(newMin, newMax);
+    colorMap.setValueRange(vr);
     COLORMAPPER->touchRange(mapIndex);
+paletteEditor->getColorMap()->setValueRange(GLMotif::ColorMap::ValueRange(vr.min, vr.max));
 
     //update the displayed min/max
-    updateLabels(newMin, newMax);
+    updateLabels(vr.min, vr.max);
 }
 
 
@@ -605,25 +599,25 @@ plusMinusCallback(GLMotif::Button::SelectCallbackData* cbData)
         return;
 
     //get the current range from the color map
-    GLColorMap* colorMap = COLORMAPPER->getColorMap(mapIndex);
-    Scalar newMin        = colorMap->getScalarRangeMin();
-    Scalar newMax        = colorMap->getScalarRangeMax();
+    Misc::ColorMap& colorMap = COLORMAPPER->getColorMap(mapIndex);
+    Misc::ColorMap::ValueRange vr = colorMap.getValueRange();
 
     if (strcmp(cbData->button->getName(), "ERmaxMinusButton") == 0)
-        newMax = floor(newMax - 1.0);
+        vr.max = floor(vr.max - 1.0);
     else if (strcmp(cbData->button->getName(), "ERmaxPlusButton") == 0)
-        newMax = floor(newMax + 1.0);
+        vr.max = floor(vr.max + 1.0);
     else if (strcmp(cbData->button->getName(), "ERminMinusButton") == 0)
-        newMin = floor(newMin - 1.0);
+        vr.min = floor(vr.min - 1.0);
     else if (strcmp(cbData->button->getName(), "ERminPlusButton") == 0)
-        newMin = floor(newMin + 1.0);
+        vr.min = floor(vr.min + 1.0);
 
     //set the new min max in the color map
-    colorMap->setScalarRange(newMin, newMax);
+    colorMap.setValueRange(vr);
     COLORMAPPER->touchRange(mapIndex);
+paletteEditor->getColorMap()->setValueRange(GLMotif::ColorMap::ValueRange(vr.min, vr.max));
 
     //update the displayed min/max
-    updateLabels(newMin, newMax);}
+    updateLabels(vr.min, vr.max);}
 
 void ElevationRangeTool::
 tickCallback(Misc::TimerEventScheduler::CallbackData* cbData)
@@ -663,11 +657,10 @@ saveCallback(GLMotif::Button::SelectCallbackData* cbData)
     int mapIndex = COLORMAPPER->getActiveMap();
     if (mapIndex<0)
         return;
-    
+
     //grab the current min and max values
-    GLColorMap* colorMap = COLORMAPPER->getColorMap(mapIndex);
-    Scalar min           = colorMap->getScalarRangeMin();
-    Scalar max           = colorMap->getScalarRangeMax();
+    const Misc::ColorMap& colorMap = COLORMAPPER->getColorMap(mapIndex);
+    const Misc::ColorMap::ValueRange vr = colorMap.getValueRange();
 
     //generate a numbered file name
     std::string fileName("Crusta_ElevationRange.rng");
@@ -682,7 +675,7 @@ saveCallback(GLMotif::Button::SelectCallbackData* cbData)
         return;
     }
 
-    osf << "Range minimum: " << min << "\n" << "Range maximum: " << max;
+    osf << "Range minimum: " << vr.min << "\n" << "Range maximum: " << vr.max;
     osf.close();
 }
 
@@ -696,7 +689,7 @@ loadFileOKCallback(GLMotif::FileSelectionDialog::OKCallbackData* cbData)
         Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
         return;
     }
-    
+
     //load the range from the selected file
     std::ifstream ifs(cbData->selectedFileName.c_str());
     if (ifs.fail())
@@ -706,9 +699,8 @@ loadFileOKCallback(GLMotif::FileSelectionDialog::OKCallbackData* cbData)
         return;
     }
 
-    GLColorMap* colorMap = COLORMAPPER->getColorMap(mapIndex);
-    Scalar newMin        = colorMap->getScalarRangeMin();
-    Scalar newMax        = colorMap->getScalarRangeMax();
+    Misc::ColorMap& colorMap = COLORMAPPER->getColorMap(mapIndex);
+    Misc::ColorMap::ValueRange vr = colorMap.getValueRange();
 
     std::string token;
     while (!ifs.eof())
@@ -716,21 +708,22 @@ loadFileOKCallback(GLMotif::FileSelectionDialog::OKCallbackData* cbData)
         std::getline(ifs, token, ':');
         if (token.compare("Range minimum") == 0)
         {
-            ifs >> newMin;
+            ifs >> vr.min;
             //read and discard the rest of the line
             std::getline(ifs, token);
         }
         else if (token.compare("Range maximum") == 0)
         {
-            ifs >> newMax;
+            ifs >> vr.max;
             //read and discard the rest of the line
             std::getline(ifs, token);
         }
     }
 
     //set the new min max in the color map
-    colorMap->setScalarRange(newMin, newMax);
+    colorMap.setValueRange(vr);
     COLORMAPPER->touchRange(mapIndex);
+paletteEditor->getColorMap()->setValueRange(GLMotif::ColorMap::ValueRange(vr.min, vr.max));
 
     //destroy the file selection dialog
     Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);

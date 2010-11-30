@@ -85,7 +85,7 @@ private:
     class ColorMapSettingsDialog : public Dialog
     {
     public:
-        ColorMapSettingsDialog();
+        ColorMapSettingsDialog(PaletteEditor* editor);
         void updateLayerList();
         void setRangeTool(ElevationRangeTool* tool);
     protected:
@@ -95,6 +95,7 @@ private:
             GLMotif::ListBox::ValueChangedCallbackData* cbData);
 
         GLMotif::ListBox*   listBox;
+        PaletteEditor*      paletteEditor;
         ElevationRangeTool* rangeTool;
     };
 
