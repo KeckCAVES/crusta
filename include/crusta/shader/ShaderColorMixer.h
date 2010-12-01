@@ -8,6 +8,7 @@
 BEGIN_CRUSTA
 
 
+///\todo abstract out the multi-source
 class ShaderColorMixer : public ShaderDataSource
 {
 public:

@@ -12,6 +12,7 @@
 #include <crusta/QuadCache.h>
 #include <crusta/shader/ShaderColorMapper.h>
 #include <crusta/shader/ShaderColorMixer.h>
+#include <crusta/shader/ShaderColorMultiplier.h>
 #include <crusta/shader/ShaderColorReader.h>
 
 
@@ -88,6 +89,8 @@ protected:
         GpuColorMapCache mapCache;
         /** the color mixer shader */
         ShaderColorMixer mixer;
+/** the color multiplier shader */
+ShaderColorMultiplier multiplier;
         /** reader for color layers */
         ShaderColorReaders colors;
         /** individual layer components */

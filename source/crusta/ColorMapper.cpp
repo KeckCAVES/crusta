@@ -181,8 +181,29 @@ configureShaders(GLContextData& contextData)
     //process all the color layers
     for (Iterator it=sources.colors.begin(); it!=sources.colors.end(); ++it)
         gl.colors.push_back(ShaderColorReader(&(*it)));
-    
 
+
+#if 1
+//- feed all the non-topography layerfs to the multiplier
+    gl.multiplier.clear();
+    int numLayerfLayers = static_cast<int>(gl.layers.size());
+    for (int i=DATAMANAGER->hasDem()?1:0; i<numLayerfLayers; ++i)
+        gl.multiplier.addSource(&gl.layers[i].mapShader);
+
+
+//- reconnect the mixer
+    gl.mixer.clear();
+    for (ShaderColorReaders::iterator it=gl.colors.begin(); it!=gl.colors.end();
+         ++it)
+    {
+        gl.mixer.addSource(&(*it));
+    }
+
+    if (DATAMANAGER->hasDem())
+        gl.mixer.addSource(&gl.layers[0].mapShader);
+
+    gl.mixer.addSource(&gl.multiplier);
+#else
 //- reconnect the mixer
     gl.mixer.clear();
     for (ShaderColorReaders::iterator it=gl.colors.begin(); it!=gl.colors.end();
@@ -194,6 +215,7 @@ configureShaders(GLContextData& contextData)
     {
         gl.mixer.addSource(&(it->mapShader));
     }
+#endif
 
 //- validate the current configuration
     gl.layersStamp = CURRENT_FRAME;
