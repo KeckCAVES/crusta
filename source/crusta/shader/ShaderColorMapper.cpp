@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include <crusta/checkGl.h>
+#include <crusta/CrustaSettings.h>
 
 
 BEGIN_CRUSTA
@@ -58,7 +59,6 @@ getUniformsAndFunctionsCode()
     code << colorSrcUniforms.second;
     code << scalarSrcUniforms.second;
 
-
     code << "vec4 " << getSamplingFunctionName() << "(in vec2 coords) {" << std::endl;
     code << "  float scalar = " << scalarSrc->getSamplingFunctionName() << "(coords).x;" << std::endl;
     code << "  if (scalar == layerfNodata)" << std::endl;
@@ -66,6 +66,11 @@ getUniformsAndFunctionsCode()
     code << "  scalar = (scalar-" << scalarRangeName << "[0]) * " << scalarRangeName << "[1];" << std::endl;
     if (clamp)
         code << "  scalar = clamp(scalar, 0.0, 1.0);" << std::endl;
+///\todo this could probably be folded into the subregion somehow
+float texStep  = 1.0f / SETTINGS->colorMapTexSize;
+float texRange = 1.0f - texStep;
+texStep       *= 0.5f;
+code << "  scalar = " << texStep << " + scalar * " << texRange << ";" << std::endl;
     code << "  return " << colorSrc.getSamplingFunctionName() << "(scalar);" << std::endl;
     code << "}" << std::endl;
 
