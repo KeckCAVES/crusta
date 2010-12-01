@@ -15,7 +15,8 @@ class ShaderColorMapper : public ShaderDataSource
 public:
     ShaderColorMapper(const std::string& samplerName,
                       const SubRegion& colorMapRegion,
-                      ShaderDataSource* scalarSource);
+                      ShaderDataSource* scalarSource,
+                      bool clampMap=false);
 
     const SubRegion& getColorMapRegion() const;
     void setScalarRange(float scalarMin, float scalarMax);
@@ -25,6 +26,7 @@ public:
     virtual void clearDefinitionsEmittedFlag();
 
 private:
+    bool                    clamp;
     SubRegion               mapRegion;
     Shader1dAtlasDataSource colorSrc;
     ShaderDataSource*       scalarSrc;

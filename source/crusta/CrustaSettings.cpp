@@ -30,10 +30,10 @@ CrustaSettings::CrustaSettings() :
     cacheMainNodeSize(4096),
     cacheMainGeometrySize(4096),
     cacheMainColorSize(4096),
-    cacheMainLayerfSize(4096),
+    cacheMainLayerfSize(16384),
     cacheGpuGeometrySize(1024),
     cacheGpuColorSize(1024),
-    cacheGpuLayerfSize(1024),
+    cacheGpuLayerfSize(4096),
     cacheGpuCoverageSize(1024),
     cacheGpuLineDataSize(1024),
 
@@ -151,7 +151,7 @@ loadFromFiles(const Strings& cfgNames)
     //try to extract the color mapper settings
     cfgFile.setCurrentSection("/Crusta/ColorMapper");
     colorMapTexSize = cfgFile.retrieveValue<int>("./texSize", colorMapTexSize);
-    
+
     //try to extract the line decoration settings
     cfgFile.setCurrentSection("/Crusta/DecoratedArt");
     decorateVectorArt = cfgFile.retrieveValue<bool>(

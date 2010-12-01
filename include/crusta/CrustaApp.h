@@ -81,7 +81,7 @@ private:
         GLMotif::Button*           colorButton;
         GLMotif::TextField*        shininessField;
     };
-    
+
     class ColorMapSettingsDialog : public Dialog
     {
     public:
@@ -93,6 +93,8 @@ private:
     private:
         void layerChangedCallback(
             GLMotif::ListBox::ValueChangedCallbackData* cbData);
+        void clampCallback(
+            GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
 
         GLMotif::ListBox*   listBox;
         PaletteEditor*      paletteEditor;
@@ -126,6 +128,8 @@ private:
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     void changeColorMapCallback(
         GLMotif::ColorMap::ColorMapChangedCallbackData* cbData);
+    void changeColorMapRangeCallback(
+        GLMotif::RangeWidget::RangeChangedCallbackData* cbData);
 
     void showVerticalScaleCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);

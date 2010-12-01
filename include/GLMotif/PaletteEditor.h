@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <GLMotif/ColorMap.h>
 #include <GLMotif/ColorPicker.h>
+#include <GLMotif/RangeWidget.h>
 
 /* Forward declarations: */
 namespace Misc {
@@ -65,6 +66,7 @@ class PaletteEditor:public GLMotif::PopupWindow
     /* Elements: */
     private:
     GLMotif::ColorMap* colorMap; // The color map widget
+    GLMotif::RangeWidget* rangeWidget;
     GLMotif::TextField* controlPointValue; // The data value of the currently selected control point
     GLMotif::Blind* colorPanel; // The control point color display widget
     GLMotif::ColorPicker* colorPicker; // The color picker widget
@@ -72,6 +74,7 @@ class PaletteEditor:public GLMotif::PopupWindow
     /* Private methods: */
     void selectedControlPointChangedCallback(Misc::CallbackData* cbData);
     void colorMapChangedCallback(Misc::CallbackData* cbData);
+    void rangeChangedCallback(GLMotif::RangeWidget::RangeChangedCallbackData* cbData);
     void colorPickerValueChangedCallback(
         GLMotif::ColorPicker::ColorChangedCallbackData* cbData);
     void removeControlPointCallback(Misc::CallbackData* cbData);
@@ -97,6 +100,14 @@ class PaletteEditor:public GLMotif::PopupWindow
         {
         return colorMap;
         }
+    const GLMotif::RangeWidget* getRangeWidget(void) const // Returns pointer to the underlying color map widget
+    {
+        return rangeWidget;
+    }
+    GLMotif::RangeWidget* getRangeWidget(void) // Ditto
+    {
+        return rangeWidget;
+    }
     Storage* getPalette(void) const; // Returns the current palette
     void setPalette(const Storage* newPalette); // Sets a new palette
     void createPalette(ColorMapCreationType colorMapType,const ValueRange& newValueRange); // Creates a standard palette
@@ -107,6 +118,11 @@ class PaletteEditor:public GLMotif::PopupWindow
         {
         return colorMap->getColorMapChangedCallbacks();
         }
+    Misc::CallbackList& getRangeChangedCallbacks(void)
+        {
+        return rangeWidget->getRangeChangedCallbacks();
+        }
+
     void exportColorMap(GLColorMap& glColorMap) const; // Exports color map to GLColorMap object
     };
 

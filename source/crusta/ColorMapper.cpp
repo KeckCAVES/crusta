@@ -17,7 +17,8 @@ MainLayer(FrameStamp initialStamp) :
 
 ColorMapper::
 ColorMapper() :
-    mapperConfigurationStamp(0), gpuLayersStamp(0), activeMapIndex(-1)
+    mapperConfigurationStamp(0), gpuLayersStamp(0), clampMap(false),
+    activeMapIndex(-1)
 {
     //setup the default transparent map
     Misc::ColorMap::Points& points = transparentMap.getPoints();
@@ -115,6 +116,17 @@ setActiveMap(int mapIndex)
     activeMapIndex = mapIndex;
 }
 
+void ColorMapper::
+setClamping(bool clamp)
+{
+    clampMap = clamp;
+
+    //flag the gpu representation for update
+    gpuLayersStamp = CURRENT_FRAME;
+    //flag the update of the configuration to external modules
+    mapperConfigurationStamp = CURRENT_FRAME;
+}
+
 
 ShaderDataSource*  ColorMapper::
 getColorSource(GLContextData& contextData)
@@ -164,7 +176,7 @@ configureShaders(GLContextData& contextData)
     {
         DataIndex index(mapId, TreeIndex(0));
         GRAB_BUFFER(GpuColorMapCache, dem, gl.mapCache, index)
-        gl.layers.push_back(GpuLayer(demData, &sources.height));
+        gl.layers.push_back(GpuLayer(demData, &sources.height, clampMap));
         RELEASE_PIN_BUFFER(gl.mapCache, index, demBuf)
         ++mapId;
     }
@@ -175,7 +187,7 @@ configureShaders(GLContextData& contextData)
     {
         DataIndex index(mapId, TreeIndex(0));
         GRAB_BUFFER(GpuColorMapCache, layerf, gl.mapCache, index)
-        gl.layers.push_back(GpuLayer(layerfData, &(*it)));
+        gl.layers.push_back(GpuLayer(layerfData, &(*it), clampMap));
         RELEASE_PIN_BUFFER(gl.mapCache, index, layerfBuf);
     }
     //process all the color layers
@@ -267,8 +279,9 @@ bindColorMaps(GLContextData& contextData)
 
 
 ColorMapper::GpuLayer::
-GpuLayer(const SubRegion& region, ShaderDataSource* source) :
-    mapShader("colorMapTex", region, source), mapColorStamp(0), mapRangeStamp(0)
+GpuLayer(const SubRegion& region, ShaderDataSource* source, bool clamp) :
+    mapShader("colorMapTex", region, source, clamp),
+    mapColorStamp(0), mapRangeStamp(0)
 {
 }
 

@@ -103,6 +103,8 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
 
     paletteEditor->getColorMapChangedCallbacks().add(
         this, &CrustaApp::changeColorMapCallback);
+    paletteEditor->getRangeChangedCallbacks().add(
+        this, &CrustaApp::changeColorMapRangeCallback);
 
     GLMotif::ColorMap::ColorMapChangedCallbackData initMap(
         paletteEditor->getColorMap());
@@ -285,14 +287,19 @@ init()
     GLMotif::RowColumn* root = new GLMotif::RowColumn("Root", dialog, false);
 
     GLMotif::ScrolledListBox* box = new GLMotif::ScrolledListBox(
-        "ColorMapListBox", root, GLMotif::ListBox::ALWAYS_ONE, 50, 15);
+        "ColorMapListBox", root, GLMotif::ListBox::ALWAYS_ONE, 30, 8);
     listBox = box->getListBox();
     listBox->getValueChangedCallbacks().add(
         this, &ColorMapSettingsDialog::layerChangedCallback);
 
+    GLMotif::ToggleButton* clampButton = new GLMotif::ToggleButton(
+        "ColoMapClampButton", root, "Clamp");
+    clampButton->getValueChangedCallbacks().add(
+        this, &ColorMapSettingsDialog::clampCallback);
+
     updateLayerList();
 
-    root->setNumMinorWidgets(1);
+    root->setNumMinorWidgets(2);
     root->manageChild();
 }
 
@@ -323,10 +330,21 @@ void CrustaApp::ColorMapSettingsDialog::
 layerChangedCallback(GLMotif::ListBox::ValueChangedCallbackData* cbData)
 {
     COLORMAPPER->setActiveMap(cbData->newSelectedItem);
-    paletteEditor->getColorMap()->importColorMap(
-        COLORMAPPER->getColorMap(cbData->newSelectedItem));
+    Misc::ColorMap& colorMap =
+        COLORMAPPER->getColorMap(cbData->newSelectedItem);
+    const Misc::ColorMap::ValueRange vr = colorMap.getValueRange();
+
+    paletteEditor->getColorMap()->importColorMap(colorMap);
+    paletteEditor->getRangeWidget()->setRange(vr.min, vr.max, false);
+
     if (rangeTool != NULL)
         rangeTool->externalUpdate();
+}
+
+void CrustaApp::ColorMapSettingsDialog::
+clampCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+{
+    COLORMAPPER->setClamping(cbData->set);
 }
 
 
@@ -737,6 +755,19 @@ changeColorMapCallback(GLMotif::ColorMap::ColorMapChangedCallbackData* cbData)
     Misc::ColorMap& colorMap = COLORMAPPER->getColorMap(mapIndex);
     cbData->colorMap->exportColorMap(colorMap);
     COLORMAPPER->touchColor(mapIndex);
+}
+
+void CrustaApp::
+changeColorMapRangeCallback(
+    GLMotif::RangeWidget::RangeChangedCallbackData* cbData)
+{
+    int mapIndex = COLORMAPPER->getActiveMap();
+    if (mapIndex < 0)
+        return;
+
+    Misc::ColorMap& colorMap = COLORMAPPER->getColorMap(mapIndex);
+    colorMap.setValueRange(Misc::ColorMap::ValueRange(cbData->min,cbData->max));
+    COLORMAPPER->touchRange(mapIndex);
 }
 
 

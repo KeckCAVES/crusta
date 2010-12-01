@@ -9,6 +9,8 @@ add_library(CrustaCore SHARED
     ../include/GLMotif/ColorPickerWindow.h
     ../include/GLMotif/FileAndFolderSelectionDialog.h
     ../include/GLMotif/PaletteEditor.h
+    ../include/GLMotif/RangeWidget.h
+    ../include/GLMotif/RelativeSlider.h
     ../include/Misc/ColorMap.h
 
     ../include/crusta/basics.h
@@ -94,6 +96,8 @@ add_library(CrustaCore SHARED
     ../source/GLMotif/ColorPickerWindow.cpp
     ../source/GLMotif/FileAndFolderSelectionDialog.cpp
     ../source/GLMotif/PaletteEditor.cpp
+    ../source/GLMotif/RangeWidget.cpp
+    ../source/GLMotif/RelativeSlider.cpp
     ../source/Misc/ColorMap.cpp
 
     ../source/crusta/ColorMapper.cpp

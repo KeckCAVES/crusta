@@ -71,6 +71,11 @@ void PaletteEditor::colorMapChangedCallback(Misc::CallbackData* cbData)
         }
     }
 
+void PaletteEditor::rangeChangedCallback(GLMotif::RangeWidget::RangeChangedCallbackData* cbData)
+{
+    colorMap->setValueRange(GLMotif::ColorMap::ValueRange(cbData->min, cbData->max));
+}
+
 void PaletteEditor::colorPickerValueChangedCallback(
     GLMotif::ColorPicker::ColorChangedCallbackData* cbData)
 {
@@ -129,7 +134,7 @@ void PaletteEditor::loadFileCancelCallback(
 
 PaletteEditor::PaletteEditor(void)
     :GLMotif::PopupWindow("PaletteEditorPopup",Vrui::getWidgetManager(),"Palette Editor"),
-     colorMap(0),controlPointValue(0),colorPanel(0)
+     colorMap(0),rangeWidget(0),controlPointValue(0),colorPanel(0)
     {
     const GLMotif::StyleSheet& ss=*Vrui::getWidgetManager()->getStyleSheet();
 
@@ -146,6 +151,10 @@ PaletteEditor::PaletteEditor(void)
     colorMap->setSelectedControlPointColor(GLMotif::Color(1.0f,0.0f,0.0f));
     colorMap->getSelectedControlPointChangedCallbacks().add(this,&PaletteEditor::selectedControlPointChangedCallback);
     colorMap->getColorMapChangedCallbacks().add(this,&PaletteEditor::colorMapChangedCallback);
+
+    /* Create the range editor GUI: */
+    rangeWidget = new GLMotif::RangeWidget("RangeWidget", colorMapDialog);
+    rangeWidget->getRangeChangedCallbacks().add(this, &PaletteEditor::rangeChangedCallback);
 
     /* Create the RGB color editor: */
     GLMotif::RowColumn* colorEditor=new GLMotif::RowColumn("ColorEditor",colorMapDialog,false);

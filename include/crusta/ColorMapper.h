@@ -53,6 +53,7 @@ public:
 ///\todo eurovis 2011 does the active index stuff make sense here
     int getActiveMap() const;
     void setActiveMap(int mapIndex);
+    void setClamping(bool clamp);
 
     /** retrieve the color mixer that provides the final color of the mapper */
     ShaderDataSource* getColorSource(GLContextData& contextData);
@@ -70,7 +71,8 @@ protected:
     struct GpuLayer
     {
         //use a regular SubRegion because we need a range stamp anyway
-        GpuLayer(const SubRegion& region, ShaderDataSource* source);
+        GpuLayer(const SubRegion& region, ShaderDataSource* source,
+                 bool clamp);
 
         /** stores the sub region of the color maps explicitly. Maps cannot
             be dynamically reassigned/swaped, thus we can keep the subregions
@@ -112,6 +114,9 @@ ShaderColorMultiplier multiplier;
 
     /** the default transparent map */
     Misc::ColorMap transparentMap;
+
+    /** flag if clamping should be performed on the mapping */
+    bool clampMap;
 
 ///\todo eurovis 2011 does the active index stuff make sense here
     int activeMapIndex;

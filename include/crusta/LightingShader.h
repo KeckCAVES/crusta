@@ -84,6 +84,8 @@ class LightingShader
     GLint layerfNodataUniform;
     GLint demDefaultUniform;
 
+    FrameStamp colorMapperConfigurationStamp;
+
     /* Private methods: */
     std::string createApplyLightFunction(const char* functionTemplate,int lightIndex) const;
 

@@ -293,7 +293,8 @@ LightingShader::LightingShader() :
     linesDecorated(false),
     lightStates(0),
     vertexShader(0),fragmentShader(0),
-    programObject(0)
+    programObject(0),
+    colorMapperConfigurationStamp(0)
 {
     /* Determine the maximum number of light sources supported by the local OpenGL: */
     glGetIntegerv(GL_MAX_LIGHTS,&maxNumLights);
@@ -358,6 +359,15 @@ if (linesDecorated)
 else
     progFile += "/plainRenderer.fp";
 mustRecompile |= checkFileForChanges(progFile.c_str());
+
+    //check that the color mapper hasn't changed
+    if (colorMapperConfigurationStamp <
+        COLORMAPPER->getMapperConfigurationStamp())
+    {
+        mustRecompile = true;
+        colorMapperConfigurationStamp =
+            COLORMAPPER->getMapperConfigurationStamp();
+    }
 
     if (mustRecompile)
     {
@@ -501,6 +511,8 @@ void LightingShader::compileShader(GLContextData& contextData)
     DataManager::SourceShaders& dataSources =
         DATAMANAGER->getSourceShaders(contextData);
     ShaderDataSource& colorSource = *COLORMAPPER->getColorSource(contextData);
+    dataSources.topography.clearDefinitionsEmittedFlag();
+    colorSource.clearDefinitionsEmittedFlag();
 
     typedef std::pair<std::string, std::string> ShaderCode;
     ShaderCode topoCode(dataSources.topography.getUniformsAndFunctionsCode());

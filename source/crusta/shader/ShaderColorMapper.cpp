@@ -12,8 +12,9 @@ BEGIN_CRUSTA
 ShaderColorMapper::
 ShaderColorMapper(const std::string& samplerName,
                   const SubRegion& colorMapRegion,
-                  ShaderDataSource* scalarSource) :
-    mapRegion(colorMapRegion), colorSrc(samplerName),
+                  ShaderDataSource* scalarSource,
+                  bool clampMap) :
+    clamp(clampMap), mapRegion(colorMapRegion), colorSrc(samplerName),
     scalarSrc(scalarSource), scalarRangeUniform(-2)
 {
     scalarRangeName = makeUniqueName("scalarRange");
@@ -63,6 +64,8 @@ getUniformsAndFunctionsCode()
     code << "  if (scalar == layerfNodata)" << std::endl;
     code << "    return vec4(0.0);" << std::endl;
     code << "  scalar = (scalar-" << scalarRangeName << "[0]) * " << scalarRangeName << "[1];" << std::endl;
+    if (clamp)
+        code << "  scalar = clamp(scalar, 0.0, 1.0);" << std::endl;
     code << "  return " << colorSrc.getSamplingFunctionName() << "(scalar);" << std::endl;
     code << "}" << std::endl;
 
