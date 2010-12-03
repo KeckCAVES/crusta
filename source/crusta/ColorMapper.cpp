@@ -198,8 +198,10 @@ configureShaders(GLContextData& contextData)
 #if 1
 //- feed all the non-topography layerfs to the multiplier
     gl.multiplier.clear();
+
+    int demOffset       = DATAMANAGER->hasDem() ? 1 : 0;
     int numLayerfLayers = static_cast<int>(gl.layers.size());
-    for (int i=DATAMANAGER->hasDem()?1:0; i<numLayerfLayers; ++i)
+    for (int i=demOffset; i<numLayerfLayers; ++i)
         gl.multiplier.addSource(&gl.layers[i].mapShader);
 
 
@@ -214,7 +216,9 @@ configureShaders(GLContextData& contextData)
     if (DATAMANAGER->hasDem())
         gl.mixer.addSource(&gl.layers[0].mapShader);
 
-    gl.mixer.addSource(&gl.multiplier);
+    int numAuxiliaryLayerfs = numLayerfLayers - demOffset;
+    if (numAuxiliaryLayerfs>0)
+        gl.mixer.addSource(&gl.multiplier);
 #else
 //- reconnect the mixer
     gl.mixer.clear();

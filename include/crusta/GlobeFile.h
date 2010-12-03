@@ -69,7 +69,7 @@ protected:
     int         tileSize[2];
 
 #if CONSTRUO_BUILD
-    Misc::ConfigurationFile cfg;
+    Misc::ConfigurationFile* cfg;
 #endif //CONSTRUO_BUILD
 };
 

@@ -95,7 +95,8 @@ void GlobeFile<PixelParam>::
 close()
 {
 #if CONSTRUO_BUILD
-    cfg.save();
+    cfg->save();
+    delete cfg;
 #endif //CONSTRUO_BUILD
 
     typedef typename PatchFiles::iterator PatchFileIterator;
@@ -171,23 +172,23 @@ loadConfiguration(const std::string& cfgName)
     typedef Geometry::Point<int, 2> Point2i;
 
 #if !CONSTRUO_BUILD
-    Misc::ConfigurationFile cfg;
+    Misc::ConfigurationFile* cfg = NULL;
 #endif //!CONSTRUO_BUILD
 
     try
     {
-        cfg.load(cfgName.c_str());
+        cfg = new Misc::ConfigurationFile(cfgName.c_str());
 
-        cfg.setCurrentSection("/CrustaGlobeFile");
-        dataType    = cfg.retrieveString("dataType");
-        numChannels = cfg.retrieveValue<int>("numChannels");
+        cfg->setCurrentSection("/CrustaGlobeFile");
+        dataType    = cfg->retrieveString("dataType");
+        numChannels = cfg->retrieveValue<int>("numChannels");
 
-        std::istringstream nodataIss(cfg.retrieveString("nodata"));
+        std::istringstream nodataIss(cfg->retrieveString("nodata"));
         nodataIss >> nodata;
 
-        polyhedronType = cfg.retrieveString("polyhedronType");
+        polyhedronType = cfg->retrieveString("polyhedronType");
 
-        Point2i tileSizeInput = cfg.retrieveValue<Point2i>("tileSize");
+        Point2i tileSizeInput = cfg->retrieveValue<Point2i>("tileSize");
         tileSize[0] = tileSizeInput[0];
         tileSize[1] = tileSizeInput[1];
 
@@ -196,6 +197,9 @@ loadConfiguration(const std::string& cfgName)
             numChannels!=gd::numChannels() ||
             tileSize[0]!=TILE_RESOLUTION || tileSize[1]!=TILE_RESOLUTION)
         {
+            delete cfg;
+            cfg = NULL;
+
             Misc::throwStdErr(
                 "Detected mismatch between desired data format:\n"
                 "data type: %s\nchannels: %d\ninternal tile size: %dx%d\n\n"
@@ -210,6 +214,9 @@ loadConfiguration(const std::string& cfgName)
             numChannels!=gd::numChannels() ||
             tileSize[0]!=TILE_RESOLUTION || tileSize[1]!=TILE_RESOLUTION)
         {
+            delete cfg;
+            cfg = NULL;
+
             Misc::throwStdErr(
                 "Detected mismatch between desired data format (%s %dx%d, %d "
                 "channels) and the format of the existing globe file "
@@ -238,19 +245,26 @@ loadConfiguration(const std::string& cfgName)
         std::ostringstream oss;
         oss << std::setprecision(std::numeric_limits<double>::digits10)<<nodata;
 
-        cfg.setCurrentSection("/CrustaGlobeFile");
-        cfg.storeString("dataType", dataType);
-        cfg.storeValue<int>("numChannels", numChannels);
-        cfg.storeString("nodata", oss.str().c_str());
-        cfg.storeString("polyhedronType", polyhedronType.c_str());
-        cfg.storeValue<Point2i>("tileSize",Point2i(tileSize[0], tileSize[1]));
+        cfg->setCurrentSection("/CrustaGlobeFile");
+        cfg->storeString("dataType", dataType);
+        cfg->storeValue<int>("numChannels", numChannels);
+        cfg->storeString("nodata", oss.str().c_str());
+        cfg->storeString("polyhedronType", polyhedronType.c_str());
+        cfg->storeValue<Point2i>("tileSize",Point2i(tileSize[0], tileSize[1]));
     }
 #endif //CONSTRUO_BUILD
     catch (std::runtime_error e)
     {
+        delete cfg;
+        cfg = NULL;
+
         Misc::throwStdErr("Caught exception %s while reading the globe file "
                           "metadata (%s)", e.what(), cfgName.c_str());
     }
+
+#if !CONSTRUO_BUILD
+    delete cfg;
+#endif //!CONSTRUO_BUILD
 }
 
 template <typename PixelParam>
