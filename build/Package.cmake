@@ -13,7 +13,11 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
 
 # Setup the system name
 if(APPLE)
-    set(CPACK_SYSTEM_NAME macosx)
+   if (CMAKE_SIZEOF_VOID_P EQUAL 4)
+       set(CPACK_SYSTEM_NAME macosx32)
+   else()
+       set(CPACK_SYSTEM_NAME macosx64)
+   endif()
 else()
    if (CMAKE_SIZEOF_VOID_P EQUAL 4)
       set(CPACK_SYSTEM_NAME Linux-i386)
@@ -49,7 +53,7 @@ set(CPACK_OSX_PACKAGE_VERSION "10.6")
 
 
 # Setup debian specific properties
-#set(CPACK_DEBIAN_PACKAGE_DEPENDS "libgdal1-1.7.0")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libgdal1-1.7.0 | libgdal1-1.6.0")
 
 # Include the Cpack module
 include(CPack)
