@@ -150,7 +150,7 @@ callback()
 }
 
 void RangeWidget::
-sliderCallback(GLMotif::RelativeSlider::ValueCallbackData* cbData)
+sliderCallback(RelativeSlider::ValueCallbackData* cbData)
 {
     static const double EPSILON = 0.000001;
 
@@ -159,16 +159,36 @@ sliderCallback(GLMotif::RelativeSlider::ValueCallbackData* cbData)
     {
         min += cbData->value;
         min  = std::min(min, max-EPSILON);
+        if (cbData->reason==RelativeSlider::ValueCallbackData::CLICKED_LEFT ||
+            cbData->reason==RelativeSlider::ValueCallbackData::CLICKED_RIGHT)
+        {
+            int factor = int(min / cbData->value);
+            min = factor * cbData->value;
+        }
     }
     else if (sliderName == "RmaxSlider")
     {
         max += cbData->value;
         max  = std::max(max, min+EPSILON);
+        if (cbData->reason==RelativeSlider::ValueCallbackData::CLICKED_LEFT ||
+            cbData->reason==RelativeSlider::ValueCallbackData::CLICKED_RIGHT)
+        {
+            int factor = int(max / cbData->value);
+            max = factor * cbData->value;
+        }
     }
     else if (sliderName == "RshiftSlider")
     {
         min += cbData->value;
         max += cbData->value;
+        if (cbData->reason==RelativeSlider::ValueCallbackData::CLICKED_LEFT ||
+            cbData->reason==RelativeSlider::ValueCallbackData::CLICKED_RIGHT)
+        {
+            int factor = int(min / cbData->value);
+            min = factor * cbData->value;
+            factor = int(max / cbData->value);
+            max = factor * cbData->value;
+        }
     }
 
     updateLabels();
