@@ -1,5 +1,5 @@
-#ifndef _GLMotif_RangeWidget_H_
-#define _GLMotif_RangeWidget_H_
+#ifndef _GLMotif_RangeEditor_H_
+#define _GLMotif_RangeEditor_H_
 
 
 #include <Misc/CallbackData.h>
@@ -15,31 +15,31 @@ namespace GLMotif {
 class TextField;
 
 
-class RangeWidget : public RowColumn
+class RangeEditor : public RowColumn
 {
 public:
     /** base class for callback data */
     class CallbackData : public Misc::CallbackData
     {
     public:
-        CallbackData(RangeWidget* widget);
-        RangeWidget* rangeWidget;
+        CallbackData(RangeEditor* editor);
+        RangeEditor* rangeEditor;
     };
     /** callback data for communicating a change in the range values */
     class RangeChangedCallbackData : public CallbackData
     {
     public:
-        RangeChangedCallbackData(RangeWidget* widget,
+        RangeChangedCallbackData(RangeEditor* editor,
                                  double minimum, double maximum);
         double min;
         double max;
     };
 
 
-    RangeWidget(const char* name, Container* parent, bool manageChild=true);
-    virtual ~RangeWidget();
+    RangeEditor(const char* name, Container* parent, bool manageChild=true);
+    virtual ~RangeEditor();
 
-    /** set the current range of the widget */
+    /** set the current range of the editor */
     void setRange(double min, double max, bool propagate=true);
 
     /** retrieve the list of registered range change callbacks */
@@ -68,4 +68,4 @@ protected:
 } //end namespace GLMotif
 
 
-#endif //_GLMotif_RangeWidget_H_
+#endif //_GLMotif_RangeEditor_H_

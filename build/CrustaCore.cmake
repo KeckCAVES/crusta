@@ -4,12 +4,12 @@ add_library(CrustaCore SHARED
     ../include/GL/glxew.h
     ../include/GL/VruiGlew.h
     ../include/GLMotif/ColorHexagon.h
-    ../include/GLMotif/ColorMap.h
+    ../include/GLMotif/ColorMapEditor.h
     ../include/GLMotif/ColorPicker.h
     ../include/GLMotif/ColorPickerWindow.h
     ../include/GLMotif/FileAndFolderSelectionDialog.h
     ../include/GLMotif/PaletteEditor.h
-    ../include/GLMotif/RangeWidget.h
+    ../include/GLMotif/RangeEditor.h
     ../include/GLMotif/RelativeSlider.h
     ../include/Misc/ColorMap.h
 
@@ -91,12 +91,12 @@ add_library(CrustaCore SHARED
     ../source/GL/GlProgram.cpp
     ../source/GL/VruiGlew.cpp
     ../source/GLMotif/ColorHexagon.cpp
-    ../source/GLMotif/ColorMap.cpp
+    ../source/GLMotif/ColorMapEditor.cpp
     ../source/GLMotif/ColorPicker.cpp
     ../source/GLMotif/ColorPickerWindow.cpp
     ../source/GLMotif/FileAndFolderSelectionDialog.cpp
     ../source/GLMotif/PaletteEditor.cpp
-    ../source/GLMotif/RangeWidget.cpp
+    ../source/GLMotif/RangeEditor.cpp
     ../source/GLMotif/RelativeSlider.cpp
     ../source/Misc/ColorMap.cpp
 

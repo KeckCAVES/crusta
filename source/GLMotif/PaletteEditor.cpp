@@ -1,29 +1,7 @@
-/***********************************************************************
-PaletteEditor - Class to represent a GLMotif popup window to edit
-one-dimensional transfer functions with RGB color and opacity.
-Copyright (c) 2005-2007 Oliver Kreylos
-
-This file is part of the 3D Data Visualizer (Visualizer).
-
-The 3D Data Visualizer is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License as published
-by the Free Software Foundation; either version 2 of the License, or (at
-your option) any later version.
-
-The 3D Data Visualizer is distributed in the hope that it will be
-useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with the 3D Data Visualizer; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-***********************************************************************/
-
 #include <GLMotif/PaletteEditor.h>
 
+
 #include <cstdio>
-#include <GL/GLColorMap.h>
 #include <GLMotif/StyleSheet.h>
 #include <GLMotif/Blind.h>
 #include <GLMotif/Label.h>
@@ -36,65 +14,242 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <Misc/File.h>
 #include <Vrui/Vrui.h>
 
-/******************************
-Methods of class PaletteEditor:
-******************************/
 
-void PaletteEditor::selectedControlPointChangedCallback(Misc::CallbackData* cbData)
-    {
-    GLMotif::ColorMap::SelectedControlPointChangedCallbackData* cbData2=static_cast<GLMotif::ColorMap::SelectedControlPointChangedCallbackData*>(cbData);
+namespace GLMotif {
 
-    if(cbData2->newSelectedControlPoint!=0)
-        {
-        /* Copy the selected control point's data and color value to the color editor: */
-        controlPointValue->setValue(colorMap->getSelectedControlPointValue());
-        GLMotif::ColorMap::ColorMapValue colorValue=colorMap->getSelectedControlPointColorValue();
-        colorPanel->setBackgroundColor(colorValue);
-        colorPicker->setCurrentColor(colorValue);
-        }
-    else
-        {
-        controlPointValue->setLabel("");
-        GLMotif::ColorMap::ColorMapValue color(0.5f,0.5f,0.5f, 1.0f);
-        colorPanel->setBackgroundColor(color);
-        colorPicker->setCurrentColor(color);
-        }
-    }
 
-void PaletteEditor::colorMapChangedCallback(Misc::CallbackData* cbData)
-    {
-    if(colorMap->hasSelectedControlPoint())
-        {
-        /* Copy the updated value of the selected control point to the color editor: */
-        controlPointValue->setValue(colorMap->getSelectedControlPointValue());
-        colorPicker->setCurrentColor(colorMap->getSelectedControlPointColorValue());
-        }
-    }
-
-void PaletteEditor::rangeChangedCallback(GLMotif::RangeWidget::RangeChangedCallbackData* cbData)
+PaletteEditor::CallbackData::
+CallbackData(PaletteEditor* paletteEditor_) :
+    paletteEditor(paletteEditor_)
 {
-    colorMap->setValueRange(GLMotif::ColorMap::ValueRange(cbData->min, cbData->max));
+}
+
+
+PaletteEditor::
+PaletteEditor() :
+    PopupWindow("PaletteEditorPopup", Vrui::getWidgetManager(),
+                "Palette Editor"),
+    colorMapEditor(NULL), rangeEditor(NULL), controlPointValue(NULL),
+    colorPanel(NULL), inColorMapEditorCallback(false),
+    inColorPickerCallback(false), inRangeEditorCallback(false)
+{
+    const StyleSheet& ss = *Vrui::getWidgetManager()->getStyleSheet();
+    
+    //create the palette editor GUI
+    RowColumn* colorMapDialog = new RowColumn("ColorMapDialog", this, false);
+    
+    colorMapEditor = new ColorMapEditor("ColorMapEditor", colorMapDialog);
+    colorMapEditor->setBorderWidth(ss.size*0.5f);
+    colorMapEditor->setBorderType(Widget::LOWERED);
+    colorMapEditor->setForegroundColor(Color(0.0f, 1.0f, 0.0f));
+    colorMapEditor->setMarginWidth(ss.size);
+    colorMapEditor->setPreferredSize(Vector(ss.fontHeight*20.0,
+                                            ss.fontHeight*10.0,
+                                            0.0f));
+    colorMapEditor->setControlPointSize(ss.size);
+    colorMapEditor->setSelectedControlPointColor(Color(1.0f, 0.0f, 0.0f));
+    colorMapEditor->getSelectedControlPointChangedCallbacks().add(
+        this, &PaletteEditor::selectedControlPointChangedCallback);
+    colorMapEditor->getColorMapChangedCallbacks().add(
+        this, &PaletteEditor::colorMapChangedCallback);
+    
+    //create the range editor GUI
+    rangeEditor = new RangeEditor("RangeEditor", colorMapDialog);
+    rangeEditor->getRangeChangedCallbacks().add(
+        this, &PaletteEditor::rangeChangedCallback);
+    
+    //create the RGB color editor
+    RowColumn* colorEditor = new RowColumn("ColorEditor", colorMapDialog,
+                                           false);
+    colorEditor->setOrientation(RowColumn::HORIZONTAL);
+    colorEditor->setAlignment(Alignment::HCENTER);
+    
+    RowColumn* controlPointData = new RowColumn("ControlPointData",
+                                                colorEditor, false);
+    controlPointData->setOrientation(RowColumn::VERTICAL);
+    controlPointData->setNumMinorWidgets(2);
+    
+    new Label("ControlPointValueLabel",controlPointData,"Control Point Value");
+    
+    controlPointValue = new TextField("ControlPointValue",controlPointData,12);
+    controlPointValue->setPrecision(6);
+    controlPointValue->setLabel("");
+    
+    new Label("ColorEditorLabel", controlPointData, "Control Point Color");
+    
+    colorPanel = new Blind("ColorPanel", controlPointData);
+    colorPanel->setBorderWidth(ss.size*0.5f);
+    colorPanel->setBorderType(Widget::LOWERED);
+    colorPanel->setBackgroundColor(Color(0.5f,0.5f,0.5f));
+    colorPanel->setPreferredSize(Vector(ss.fontHeight*2.5f,
+                                        ss.fontHeight*2.5f,
+                                        0.0f));
+
+    controlPointData->manageChild();
+    
+    RowColumn* pickerBox = new RowColumn("ColorPickerBox", colorEditor, false);
+
+    colorPicker = new ColorPicker("ColorPicker", pickerBox, true);
+    colorPicker->getColorChangedCallbacks().add(this,
+        &PaletteEditor::colorPickerValueChangedCallback);
+
+    pickerBox->setOrientation(RowColumn::HORIZONTAL);
+
+    pickerBox->manageChild();
+
+    colorEditor->manageChild();
+    
+    //create the button box
+    RowColumn* buttonBox = new RowColumn("ButtonBox", colorMapDialog, false);
+    buttonBox->setOrientation(RowColumn::HORIZONTAL);
+    buttonBox->setPacking(RowColumn::PACK_GRID);
+    buttonBox->setAlignment(Alignment::RIGHT);
+
+    Button* removeControlPointButton = new Button(
+        "RemoveControlPointButton", buttonBox, "Remove Control Point");
+    removeControlPointButton->getSelectCallbacks().add(
+        this, &PaletteEditor::removeControlPointCallback);
+
+    Button* loadPaletteButton = new Button(
+        "LoadPaletteButton", buttonBox, "Load Palette");
+    loadPaletteButton->getSelectCallbacks().add(
+        this, &PaletteEditor::loadPaletteCallback);
+
+    Button* savePaletteButton = new Button(
+        "SavePaletteButton", buttonBox, "Save Palette");
+    savePaletteButton->getSelectCallbacks().add(
+        this, &PaletteEditor::savePaletteCallback);
+    
+    buttonBox->manageChild();
+    
+    //let the color map widget eat any size increases
+    colorMapDialog->setRowWeight(0,1.0f);
+    
+    colorMapDialog->manageChild();
+}
+
+
+const ColorMapEditor* PaletteEditor::
+getColorMapEditor() const
+{
+    return colorMapEditor;
+}
+ColorMapEditor* PaletteEditor::
+getColorMapEditor()
+{
+    return colorMapEditor;
+}
+
+const RangeEditor* PaletteEditor::
+getRangeEditor() const
+{
+    return rangeEditor;
+}
+RangeEditor* PaletteEditor::
+getRangeEditor()
+{
+    return rangeEditor;
+}
+
+    
+void PaletteEditor::
+selectedControlPointChangedCallback(
+    ColorMapEditor::SelectedControlPointChangedCallbackData* cbData)
+{
+    if (inColorMapEditorCallback)
+        return;
+
+    inColorMapEditorCallback = true;
+    if (cbData->reason ==
+        ColorMapEditor::SelectedControlPointChangedCallbackData::DESELECT)
+    {
+        Misc::ColorMap::Color color(0.5f,0.5f,0.5f, 1.0f);
+        controlPointValue->setLabel("");
+        colorPanel->setBackgroundColor(color);
+        if (!inColorPickerCallback)
+            colorPicker->setCurrentColor(color);
+    }
+    else
+    {
+        //propagate the selected control point's properties
+        const Misc::ColorMap::Point& p =
+            colorMapEditor->getSelectedControlPoint();
+        controlPointValue->setValue(p.value);
+        colorPanel->setBackgroundColor(p.color);
+        if (!inColorPickerCallback)
+            colorPicker->setCurrentColor(p.color);
+    }
+    inColorMapEditorCallback = false;
+}
+
+void PaletteEditor::
+colorMapChangedCallback(Misc::CallbackData* cbData)
+{
+    if (inColorMapEditorCallback)
+        return;
+
+    inColorMapEditorCallback = true;
+    if (colorMapEditor->hasSelectedControlPoint())
+    {
+        const Misc::ColorMap::Point& p =
+            colorMapEditor->getSelectedControlPoint();
+        controlPointValue->setValue(p.value);
+        colorPanel->setBackgroundColor(p.color);
+        if (!inColorPickerCallback)
+            colorPicker->setCurrentColor(p.color);
+    }
+    if (!inRangeEditorCallback)
+    {
+        const Misc::ColorMap::ValueRange vr =
+            colorMapEditor->getColorMap().getValueRange();
+        rangeEditor->setRange(vr.min, vr.max);
+    }
+    inColorMapEditorCallback = false;
+}
+
+void PaletteEditor::
+rangeChangedCallback(RangeEditor::RangeChangedCallbackData* cbData)
+{
+    if (inRangeEditorCallback)
+        return;
+
+    inRangeEditorCallback = true;
+    if (!inColorMapEditorCallback)
+    {
+        colorMapEditor->getColorMap().setValueRange(
+            Misc::ColorMap::ValueRange(cbData->min, cbData->max));
+    }
+    inRangeEditorCallback = false;
 }
 
 void PaletteEditor::colorPickerValueChangedCallback(
-    GLMotif::ColorPicker::ColorChangedCallbackData* cbData)
+    ColorPicker::ColorChangedCallbackData* cbData)
 {
-    //copy the new color value to the color panel and the selected control point
-    colorPanel->setBackgroundColor(cbData->newColor);
-    colorMap->setSelectedControlPointColorValue(cbData->newColor);
+    if (inColorPickerCallback)
+        return;
+    
+    inColorPickerCallback = true;
+    if (!inColorMapEditorCallback && colorMapEditor->hasSelectedControlPoint())
+    {
+        colorPanel->setBackgroundColor(cbData->newColor);
+        Misc::ColorMap::Point& p = colorMapEditor->getSelectedControlPoint();
+        p.color = cbData->newColor;
+        colorMapEditor->touch();
+    }
+    inColorPickerCallback = false;
 }
 
-void PaletteEditor::removeControlPointCallback(Misc::CallbackData* cbData)
-    {
-    /* Remove the currently selected control point: */
-    colorMap->deleteSelectedControlPoint();
-    }
-
-void PaletteEditor::loadPaletteCallback(Misc::CallbackData*)
+void PaletteEditor::
+removeControlPointCallback(Misc::CallbackData*)
 {
-    GLMotif::FileSelectionDialog* fileDialog =
-        new GLMotif::FileSelectionDialog(Vrui::getWidgetManager(),
-                                         "Load Palette", 0, ".pal");
+    colorMapEditor->deleteSelectedControlPoint();
+}
+
+void PaletteEditor::
+loadPaletteCallback(Misc::CallbackData*)
+{
+    FileSelectionDialog* fileDialog = new FileSelectionDialog(
+        Vrui::getWidgetManager(), "Load Palette", 0, ".pal");
     fileDialog->getOKCallbacks().add(this, &PaletteEditor::loadFileOKCallback);
     fileDialog->getCancelCallbacks().add(this,
         &PaletteEditor::loadFileCancelCallback);
@@ -102,157 +257,37 @@ void PaletteEditor::loadPaletteCallback(Misc::CallbackData*)
         Vrui::getWidgetManager()->calcWidgetTransformation(this));
 }
 
-void PaletteEditor::savePaletteCallback(Misc::CallbackData* cbData)
+void PaletteEditor::
+savePaletteCallback(Misc::CallbackData* cbData)
 {
     try
     {
         char numberedFileName[40];
-        savePalette(Misc::createNumberedFileName("SavedPalette.pal",4,numberedFileName));
+        Misc::createNumberedFileName("SavedPalette.pal", 4, numberedFileName);
+        colorMapEditor->getColorMap().save(numberedFileName);
     }
-    catch(std::runtime_error)
+    catch (std::runtime_error)
     {
         /* Ignore errors and carry on: */
     }
 }
 
 void PaletteEditor::loadFileOKCallback(
-    GLMotif::FileSelectionDialog::OKCallbackData* cbData)
+    FileSelectionDialog::OKCallbackData* cbData)
 {
     //load the selected palette
-    loadPalette(cbData->selectedFileName.c_str());
+    colorMapEditor->getColorMap().load(cbData->selectedFileName);
+    colorMapEditor->touch();
     //destroy the file selection dialog
     Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
 }
 
 void PaletteEditor::loadFileCancelCallback(
-    GLMotif::FileSelectionDialog::CancelCallbackData* cbData)
+    FileSelectionDialog::CancelCallbackData* cbData)
 {
     //destroy the file selection dialog
     Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
 }
 
 
-PaletteEditor::PaletteEditor(void)
-    :GLMotif::PopupWindow("PaletteEditorPopup",Vrui::getWidgetManager(),"Palette Editor"),
-     colorMap(0),rangeWidget(0),controlPointValue(0),colorPanel(0)
-    {
-    const GLMotif::StyleSheet& ss=*Vrui::getWidgetManager()->getStyleSheet();
-
-    /* Create the palette editor GUI: */
-    GLMotif::RowColumn* colorMapDialog=new GLMotif::RowColumn("ColorMapDialog",this,false);
-
-    colorMap=new GLMotif::ColorMap("ColorMap",colorMapDialog);
-    colorMap->setBorderWidth(ss.size*0.5f);
-    colorMap->setBorderType(GLMotif::Widget::LOWERED);
-    colorMap->setForegroundColor(GLMotif::Color(0.0f,1.0f,0.0f));
-    colorMap->setMarginWidth(ss.size);
-    colorMap->setPreferredSize(GLMotif::Vector(ss.fontHeight*20.0,ss.fontHeight*10.0,0.0f));
-    colorMap->setControlPointSize(ss.size);
-    colorMap->setSelectedControlPointColor(GLMotif::Color(1.0f,0.0f,0.0f));
-    colorMap->getSelectedControlPointChangedCallbacks().add(this,&PaletteEditor::selectedControlPointChangedCallback);
-    colorMap->getColorMapChangedCallbacks().add(this,&PaletteEditor::colorMapChangedCallback);
-
-    /* Create the range editor GUI: */
-    rangeWidget = new GLMotif::RangeWidget("RangeWidget", colorMapDialog);
-    rangeWidget->getRangeChangedCallbacks().add(this, &PaletteEditor::rangeChangedCallback);
-
-    /* Create the RGB color editor: */
-    GLMotif::RowColumn* colorEditor=new GLMotif::RowColumn("ColorEditor",colorMapDialog,false);
-    colorEditor->setOrientation(GLMotif::RowColumn::HORIZONTAL);
-    colorEditor->setAlignment(GLMotif::Alignment::HCENTER);
-
-    GLMotif::RowColumn* controlPointData=new GLMotif::RowColumn("ControlPointData",colorEditor,false);
-    controlPointData->setOrientation(GLMotif::RowColumn::VERTICAL);
-    controlPointData->setNumMinorWidgets(2);
-
-    new GLMotif::Label("ControlPointValueLabel",controlPointData,"Control Point Value");
-
-    controlPointValue=new GLMotif::TextField("ControlPointValue",controlPointData,12);
-    controlPointValue->setPrecision(6);
-    controlPointValue->setLabel("");
-
-    new GLMotif::Label("ColorEditorLabel",controlPointData,"Control Point Color");
-
-    colorPanel=new GLMotif::Blind("ColorPanel",controlPointData);
-    colorPanel->setBorderWidth(ss.size*0.5f);
-    colorPanel->setBorderType(GLMotif::Widget::LOWERED);
-    colorPanel->setBackgroundColor(GLMotif::Color(0.5f,0.5f,0.5f));
-    colorPanel->setPreferredSize(GLMotif::Vector(ss.fontHeight*2.5f,ss.fontHeight*2.5f,0.0f));
-
-    controlPointData->manageChild();
-
-    GLMotif::RowColumn* pickerBox=new GLMotif::RowColumn("ColorPickerBox",colorEditor,false);
-
-
-    colorPicker = new GLMotif::ColorPicker("ColorPicker",
-        pickerBox, true);
-    colorPicker->getColorChangedCallbacks().add(this,
-        &PaletteEditor::colorPickerValueChangedCallback);
-
-    pickerBox->setOrientation(GLMotif::RowColumn::HORIZONTAL);
-
-    pickerBox->manageChild();
-
-    colorEditor->manageChild();
-
-    /* Create the button box: */
-    GLMotif::RowColumn* buttonBox=new GLMotif::RowColumn("ButtonBox",colorMapDialog,false);
-    buttonBox->setOrientation(GLMotif::RowColumn::HORIZONTAL);
-    buttonBox->setPacking(GLMotif::RowColumn::PACK_GRID);
-    buttonBox->setAlignment(GLMotif::Alignment::RIGHT);
-
-    GLMotif::Button* removeControlPointButton=new GLMotif::Button("RemoveControlPointButton",buttonBox,"Remove Control Point");
-    removeControlPointButton->getSelectCallbacks().add(this,&PaletteEditor::removeControlPointCallback);
-
-    GLMotif::Button* loadPaletteButton=new GLMotif::Button("LoadPaletteButton",buttonBox,"Load Palette");
-    loadPaletteButton->getSelectCallbacks().add(this,&PaletteEditor::loadPaletteCallback);
-
-    GLMotif::Button* savePaletteButton=new GLMotif::Button("SavePaletteButton",buttonBox,"Save Palette");
-    savePaletteButton->getSelectCallbacks().add(this,&PaletteEditor::savePaletteCallback);
-
-    buttonBox->manageChild();
-
-    /* Let the color map widget eat any size increases: */
-    colorMapDialog->setRowWeight(0,1.0f);
-
-    colorMapDialog->manageChild();
-    }
-
-PaletteEditor::Storage* PaletteEditor::getPalette(void) const
-    {
-    return colorMap->getColorMap();
-    }
-
-void PaletteEditor::setPalette(const PaletteEditor::Storage* newPalette)
-    {
-    colorMap->setColorMap(newPalette);
-    }
-
-void PaletteEditor::createPalette(PaletteEditor::ColorMapCreationType colorMapType,const PaletteEditor::ValueRange& newValueRange)
-    {
-    colorMap->createColorMap(colorMapType,newValueRange);
-    }
-
-void PaletteEditor::createPalette(const std::vector<GLMotif::ColorMap::ControlPoint>& controlPoints)
-    {
-    colorMap->createColorMap(controlPoints);
-    }
-
-void PaletteEditor::loadPalette(const char* paletteFileName)
-    {
-    colorMap->loadColorMap(paletteFileName, GLMotif::ColorMap::ValueRange(0,1));
-    }
-
-void PaletteEditor::savePalette(const char* paletteFileName) const
-    {
-    colorMap->saveColorMap(paletteFileName);
-    }
-
-void PaletteEditor::exportColorMap(GLColorMap& glColorMap) const
-    {
-    /* Update the color map's colors: */
-    colorMap->exportColorMap(glColorMap);
-
-    /* Update the color map's value range: */
-    glColorMap.setScalarRange(colorMap->getValueRange().first,colorMap->getValueRange().second);
-    }
+} //end namespace GLMotif

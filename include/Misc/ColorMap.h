@@ -2,6 +2,7 @@
 #define _Misc_ColorMap_H_
 
 
+#include <string>
 #include <vector>
 
 #include <GL/GLColor.h>
@@ -33,17 +34,27 @@ public:
         Color color;
     };
     typedef std::vector<Point> Points;
-    
-    void clear();
+
+    ColorMap();
+    ColorMap(int numPoints, const Point* initialPoints);
+
+    Points::iterator interpolate(Point& point);
 
     const Points& getPoints() const;
     Points& getPoints();
-    
+
     ValueRange getValueRange() const;
     void setValueRange(const ValueRange& newRange);
-    
+
     void discretize(DiscreteMap& discrete) const;
-    
+
+    void load(const std::string& fileName);
+    void save(const std::string& fileName) const;
+
+    static const ColorMap black;
+    static const ColorMap greyScale;
+    static const ColorMap white;
+
 protected:
     Points points;
 };

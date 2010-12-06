@@ -112,9 +112,6 @@ ShaderColorMultiplier multiplier;
     /** stamp used to flag the update of the GPU layers */
     FrameStamp gpuLayersStamp;
 
-    /** the default transparent map */
-    Misc::ColorMap transparentMap;
-
     /** flag if clamping should be performed on the mapping */
     bool clampMap;
 

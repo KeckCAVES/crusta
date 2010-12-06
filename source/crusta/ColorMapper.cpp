@@ -20,12 +20,6 @@ ColorMapper() :
     mapperConfigurationStamp(0), gpuLayersStamp(0), clampMap(false),
     activeMapIndex(-1)
 {
-    //setup the default transparent map
-    Misc::ColorMap::Points& points = transparentMap.getPoints();
-    points.push_back(Misc::ColorMap::Point(0.0,
-                     Misc::ColorMap::Color(0.0f, 0.0f, 0.0f, 0.0f)));
-    points.push_back(Misc::ColorMap::Point(1.0,
-                     Misc::ColorMap::Color(0.0f, 0.0f, 0.0f, 0.0f)));
 }
 
 
@@ -306,7 +300,7 @@ configureMainLayers()
 
     //initialize all additional layers as transparent
     for (int l=0; l<numLayers; ++l)
-        mainLayers[l].mapColor = transparentMap;
+        mainLayers[l].mapColor = Misc::ColorMap::black;
 }
 
 

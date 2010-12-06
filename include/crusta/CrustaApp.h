@@ -3,9 +3,10 @@
 
 
 #include <GLMotif/Button.h>
-#include <GLMotif/ColorMap.h>
+#include <GLMotif/ColorMapEditor.h>
 #include <GLMotif/ColorPickerWindow.h>
 #include <GLMotif/FileAndFolderSelectionDialog.h>
+#include <GLMotif/RangeEditor.h>
 #include <GLMotif/Slider.h>
 #include <GLMotif/ToggleButton.h>
 
@@ -18,12 +19,12 @@
 
 
 class GLContextData;
-class PaletteEditor;
 
 namespace GLMotif {
     class DropdownBox;
     class Label;
     class Menu;
+    class PaletteEditor;
     class PopupMenu;
     class PopupWindow;
     class RadioBox;
@@ -85,9 +86,8 @@ private:
     class ColorMapSettingsDialog : public Dialog
     {
     public:
-        ColorMapSettingsDialog(PaletteEditor* editor);
+        ColorMapSettingsDialog(GLMotif::PaletteEditor* editor);
         void updateLayerList();
-        void setRangeTool(ElevationRangeTool* tool);
     protected:
         void init();
     private:
@@ -96,9 +96,8 @@ private:
         void clampCallback(
             GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
 
-        GLMotif::ListBox*   listBox;
-        PaletteEditor*      paletteEditor;
-        ElevationRangeTool* rangeTool;
+        GLMotif::ListBox*       listBox;
+        GLMotif::PaletteEditor* paletteEditor;
     };
 
     void produceMainMenu();
@@ -127,9 +126,9 @@ private:
     void changeTexturingModeCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     void changeColorMapCallback(
-        GLMotif::ColorMap::ColorMapChangedCallbackData* cbData);
+        GLMotif::ColorMapEditor::ColorMapChangedCallbackData* cbData);
     void changeColorMapRangeCallback(
-        GLMotif::RangeWidget::RangeChangedCallbackData* cbData);
+        GLMotif::RangeEditor::RangeChangedCallbackData* cbData);
 
     void showVerticalScaleCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
@@ -181,7 +180,7 @@ private:
     GLMotif::TextField* sunElevationTextField;
     GLMotif::Slider* sunElevationSlider;
 
-    PaletteEditor* paletteEditor;
+    GLMotif::PaletteEditor* paletteEditor;
 
     SpecularSettingsDialog specularSettings;
     ColorMapSettingsDialog colorMapSettings;

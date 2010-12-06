@@ -470,7 +470,6 @@ applyToColorMap(const ManipulationSource& manip)
     //set the new min max in the color map
     colorMap.setValueRange(vr);
     COLORMAPPER->touchRange(mapIndex);
-paletteEditor->getColorMap()->setValueRange(GLMotif::ColorMap::ValueRange(vr.min, vr.max));
 
     //update the displayed min/max
     updateLabels(vr.min, vr.max);
@@ -614,7 +613,6 @@ plusMinusCallback(GLMotif::Button::SelectCallbackData* cbData)
     //set the new min max in the color map
     colorMap.setValueRange(vr);
     COLORMAPPER->touchRange(mapIndex);
-paletteEditor->getColorMap()->setValueRange(GLMotif::ColorMap::ValueRange(vr.min, vr.max));
 
     //update the displayed min/max
     updateLabels(vr.min, vr.max);}
@@ -723,7 +721,6 @@ loadFileOKCallback(GLMotif::FileSelectionDialog::OKCallbackData* cbData)
     //set the new min max in the color map
     colorMap.setValueRange(vr);
     COLORMAPPER->touchRange(mapIndex);
-paletteEditor->getColorMap()->setValueRange(GLMotif::ColorMap::ValueRange(vr.min, vr.max));
 
     //destroy the file selection dialog
     Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);

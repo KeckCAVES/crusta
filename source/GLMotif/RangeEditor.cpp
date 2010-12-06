@@ -1,4 +1,4 @@
-#include <GLMotif/RangeWidget.h>
+#include <GLMotif/RangeEditor.h>
 
 
 #include <string>
@@ -14,21 +14,21 @@
 namespace GLMotif {
 
 
-RangeWidget::CallbackData::
-CallbackData(RangeWidget* widget) :
-    rangeWidget(widget)
+RangeEditor::CallbackData::
+CallbackData(RangeEditor* editor) :
+    rangeEditor(editor)
 {
 }
 
-RangeWidget::RangeChangedCallbackData::
-RangeChangedCallbackData(RangeWidget* widget, double minimum, double maximum) :
-    CallbackData(widget), min(minimum), max(maximum)
+RangeEditor::RangeChangedCallbackData::
+RangeChangedCallbackData(RangeEditor* editor, double minimum, double maximum) :
+    CallbackData(editor), min(minimum), max(maximum)
 {
 }
 
 
-RangeWidget::
-RangeWidget(const char* name, Container* parent, bool childManaged) :
+RangeEditor::
+RangeEditor(const char* name, Container* parent, bool childManaged) :
     RowColumn(name, parent, false)
 {
     const StyleSheet* style = getManager()->getStyleSheet();
@@ -78,14 +78,14 @@ RangeWidget(const char* name, Container* parent, bool childManaged) :
                                 8.0 * style->fontHeight);
     slider->setValue(0.0);
     slider->setValueRange(-2.0, 2.0, 1.0);
-    slider->getValueCallbacks().add(this, &RangeWidget::sliderCallback);
+    slider->getValueCallbacks().add(this, &RangeEditor::sliderCallback);
 
     slider = new RelativeSlider("RmaxSlider", minmax,
                                 RelativeSlider::HORIZONTAL,
                                 8.0 * style->fontHeight);
     slider->setValue(0.0);
     slider->setValueRange(-2.0, 2.0, 1.0);
-    slider->getValueCallbacks().add(this, &RangeWidget::sliderCallback);
+    slider->getValueCallbacks().add(this, &RangeEditor::sliderCallback);
 
     minmax->manageChild();
 
@@ -99,7 +99,7 @@ RangeWidget(const char* name, Container* parent, bool childManaged) :
                                 8.0 * style->fontHeight);
     slider->setValue(0.0);
     slider->setValueRange(-2.0, 2.0, 1.0);
-    slider->getValueCallbacks().add(this, &RangeWidget::sliderCallback);
+    slider->getValueCallbacks().add(this, &RangeEditor::sliderCallback);
 
     shift->manageChild();
 
@@ -109,13 +109,13 @@ RangeWidget(const char* name, Container* parent, bool childManaged) :
         manageChild();
 }
 
-RangeWidget::
-~RangeWidget()
+RangeEditor::
+~RangeEditor()
 {
 }
 
 
-void RangeWidget::
+void RangeEditor::
 setRange(double newMin, double newMax, bool propagate)
 {
     min = newMin;
@@ -128,13 +128,13 @@ setRange(double newMin, double newMax, bool propagate)
 }
 
 
-Misc::CallbackList& RangeWidget::
+Misc::CallbackList& RangeEditor::
 getRangeChangedCallbacks()
 {
     return rangeChangedCallbacks;
 }
 
-void RangeWidget::
+void RangeEditor::
 updateLabels()
 {
     rangeLabels[0]->setValue(min);
@@ -142,14 +142,14 @@ updateLabels()
     rangeLabels[2]->setValue(max);
 }
 
-void RangeWidget::
+void RangeEditor::
 callback()
 {
     RangeChangedCallbackData cbData(this, min, max);
     rangeChangedCallbacks.call(&cbData);
 }
 
-void RangeWidget::
+void RangeEditor::
 sliderCallback(RelativeSlider::ValueCallbackData* cbData)
 {
     static const double EPSILON = 0.000001;
