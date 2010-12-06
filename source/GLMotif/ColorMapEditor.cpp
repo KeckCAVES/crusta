@@ -104,8 +104,8 @@ selectControlPoint(int controlPointIndex)
     {
         SelectedControlPointChangedCallbackData cbData(this, selected,
                                                        controlPointIndex);
-        selectedControlPointChangedCallbacks.call(&cbData);
         selected = controlPointIndex;
+        selectedControlPointChangedCallbacks.call(&cbData);
     }
 }
 
@@ -116,8 +116,8 @@ deleteSelectedControlPoint()
         selected!=static_cast<int>(controlPoints.size()))
     {
         SelectedControlPointChangedCallbackData selectCbData(this,selected,-1);
-        selectedControlPointChangedCallbacks.call(&selectCbData);
         selected = -1;
+        selectedControlPointChangedCallbacks.call(&selectCbData);
 
         //update all control points
         updateControlPoints();
@@ -212,9 +212,11 @@ updateControlPoints(bool propagate)
             {
                 SelectedControlPointChangedCallbackData cbData(this,
                                                                selected, -1);
+                selected = -1;
                 selectedControlPointChangedCallbacks.call(&cbData);
             }
-            selected = -1;
+            else
+                selected = -1;
         }
 
         //reassign the control points
@@ -465,8 +467,8 @@ pointerButtonDown(Event& event)
         //call callbacks if selected control point has changed
         SelectedControlPointChangedCallbackData cbData(this, selected,
                                                        newSelected);
-        selectedControlPointChangedCallbacks.call(&cbData);
         selected = newSelected;
+        selectedControlPointChangedCallbacks.call(&cbData);
     }
 }
 

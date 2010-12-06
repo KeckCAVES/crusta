@@ -5,6 +5,7 @@ add_library(CrustaCore SHARED
     ../include/GL/VruiGlew.h
     ../include/GLMotif/ColorHexagon.h
     ../include/GLMotif/ColorMapEditor.h
+    ../include/GLMotif/ColorMapInOut.h
     ../include/GLMotif/ColorPicker.h
     ../include/GLMotif/ColorPickerWindow.h
     ../include/GLMotif/FileAndFolderSelectionDialog.h
@@ -92,6 +93,7 @@ add_library(CrustaCore SHARED
     ../source/GL/VruiGlew.cpp
     ../source/GLMotif/ColorHexagon.cpp
     ../source/GLMotif/ColorMapEditor.cpp
+    ../source/GLMotif/ColorMapInOut.cpp
     ../source/GLMotif/ColorPicker.cpp
     ../source/GLMotif/ColorPickerWindow.cpp
     ../source/GLMotif/FileAndFolderSelectionDialog.cpp

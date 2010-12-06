@@ -38,7 +38,7 @@ CrustaSettings::CrustaSettings() :
     cacheGpuLineDataSize(1024),
 
     dataManMaxDataLayers(32),
-    dataManMaxFetchRequests(16),
+    dataManMaxFetchRequests(8),
 
     colorMapTexSize(1024),
 

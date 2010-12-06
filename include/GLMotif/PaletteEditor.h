@@ -7,6 +7,7 @@
 #include <GLMotif/PopupWindow.h>
 
 #include <GLMotif/ColorMapEditor.h>
+#include <GLMotif/ColorMapInOut.h>
 #include <GLMotif/ColorPicker.h>
 #include <GLMotif/RangeEditor.h>
 
@@ -18,7 +19,6 @@ class CallbackData;
 
 namespace GLMotif {
 
-class Blind;
 class TextField;
 class Slider;
 
@@ -51,26 +51,26 @@ protected:
         ColorMapEditor::SelectedControlPointChangedCallbackData* cbData);
     void colorMapChangedCallback(Misc::CallbackData* cbData);
     void rangeChangedCallback(RangeEditor::RangeChangedCallbackData* cbData);
+    void colorMapInCallback(ColorMapInOut::InCallbackData* cbData);
+    void colorMapOutCallback(ColorMapInOut::OutCallbackData* cbData);
     void colorPickerValueChangedCallback(
         ColorPicker::ColorChangedCallbackData* cbData);
     void removeControlPointCallback(Misc::CallbackData* cbData);
 
     void loadPaletteCallback(Misc::CallbackData* cbData);
     void savePaletteCallback(Misc::CallbackData* cbData);
-    
+
     void loadFileOKCallback(
         FileSelectionDialog::OKCallbackData* cbData);
     void loadFileCancelCallback(
         FileSelectionDialog::CancelCallbackData* cbData);
-    
+
     /** the color map editor */
     ColorMapEditor* colorMapEditor;
     /** the range editor */
     RangeEditor* rangeEditor;
     /** the data value of the currently selected control point */
     TextField* controlPointValue;
-    /** the control point color display widget */
-    Blind* colorPanel;
     /** the color picker widget */
     ColorPicker* colorPicker;
 
@@ -81,7 +81,7 @@ protected:
     /**\}*/
 };
 
-    
+
 } //end namespace GLMotif
 
 

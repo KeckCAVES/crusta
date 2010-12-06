@@ -2,8 +2,9 @@
 
 
 #include <cstdio>
+#include <sstream>
+
 #include <GLMotif/StyleSheet.h>
-#include <GLMotif/Blind.h>
 #include <GLMotif/Label.h>
 #include <GLMotif/Button.h>
 #include <GLMotif/TextField.h>
@@ -30,14 +31,14 @@ PaletteEditor() :
     PopupWindow("PaletteEditorPopup", Vrui::getWidgetManager(),
                 "Palette Editor"),
     colorMapEditor(NULL), rangeEditor(NULL), controlPointValue(NULL),
-    colorPanel(NULL), inColorMapEditorCallback(false),
-    inColorPickerCallback(false), inRangeEditorCallback(false)
+    inColorMapEditorCallback(false), inColorPickerCallback(false),
+    inRangeEditorCallback(false)
 {
     const StyleSheet& ss = *Vrui::getWidgetManager()->getStyleSheet();
-    
+
     //create the palette editor GUI
     RowColumn* colorMapDialog = new RowColumn("ColorMapDialog", this, false);
-    
+
     colorMapEditor = new ColorMapEditor("ColorMapEditor", colorMapDialog);
     colorMapEditor->setBorderWidth(ss.size*0.5f);
     colorMapEditor->setBorderType(Widget::LOWERED);
@@ -52,42 +53,64 @@ PaletteEditor() :
         this, &PaletteEditor::selectedControlPointChangedCallback);
     colorMapEditor->getColorMapChangedCallbacks().add(
         this, &PaletteEditor::colorMapChangedCallback);
-    
+
     //create the range editor GUI
     rangeEditor = new RangeEditor("RangeEditor", colorMapDialog);
     rangeEditor->getRangeChangedCallbacks().add(
         this, &PaletteEditor::rangeChangedCallback);
-    
-    //create the RGB color editor
-    RowColumn* colorEditor = new RowColumn("ColorEditor", colorMapDialog,
-                                           false);
-    colorEditor->setOrientation(RowColumn::HORIZONTAL);
-    colorEditor->setAlignment(Alignment::HCENTER);
-    
-    RowColumn* controlPointData = new RowColumn("ControlPointData",
-                                                colorEditor, false);
-    controlPointData->setOrientation(RowColumn::VERTICAL);
-    controlPointData->setNumMinorWidgets(2);
-    
-    new Label("ControlPointValueLabel",controlPointData,"Control Point Value");
-    
-    controlPointValue = new TextField("ControlPointValue",controlPointData,12);
+
+
+    RowColumn* lastRow = new RowColumn("LastRow", colorMapDialog, false);
+    lastRow->setOrientation(RowColumn::HORIZONTAL);
+    lastRow->setAlignment(Alignment::HCENTER);
+
+    //create the info and quick maps
+    RowColumn* infoQuick = new RowColumn("InfoQuick", lastRow, false);
+
+    RowColumn* info = new RowColumn("Info", infoQuick, false);
+    info->setOrientation(RowColumn::VERTICAL);
+    info->setNumMinorWidgets(2);
+
+    new Label("ControlPointValueLabel", info, "Control Point Value");
+
+    controlPointValue = new TextField("ControlPointValue", info, 12);
     controlPointValue->setPrecision(6);
     controlPointValue->setLabel("");
-    
-    new Label("ColorEditorLabel", controlPointData, "Control Point Color");
-    
-    colorPanel = new Blind("ColorPanel", controlPointData);
-    colorPanel->setBorderWidth(ss.size*0.5f);
-    colorPanel->setBorderType(Widget::LOWERED);
-    colorPanel->setBackgroundColor(Color(0.5f,0.5f,0.5f));
-    colorPanel->setPreferredSize(Vector(ss.fontHeight*2.5f,
-                                        ss.fontHeight*2.5f,
-                                        0.0f));
 
-    controlPointData->manageChild();
-    
-    RowColumn* pickerBox = new RowColumn("ColorPickerBox", colorEditor, false);
+    info->manageChild();
+
+
+    RowColumn* quickRoot = new RowColumn("QuickRoot", infoQuick, false);
+    quickRoot->setOrientation(RowColumn::VERTICAL);
+    quickRoot->setAlignment(Alignment::HCENTER);
+    quickRoot->setPacking(RowColumn::PACK_TIGHT);
+    quickRoot->setNumMinorWidgets(1);
+
+    new Label("ColorInOutLabel", quickRoot, "Quick Color Maps");
+
+    RowColumn* colorInOuts = new RowColumn("ColorInOuts", quickRoot,
+                                           false);
+    colorInOuts->setOrientation(RowColumn::VERTICAL);
+    colorInOuts->setPacking(RowColumn::PACK_GRID);
+    colorInOuts->setNumMinorWidgets(2);
+    for (int i=0; i<8; ++i)
+    {
+        std::ostringstream index;
+        index << i;
+        ColorMapInOut* inout = new ColorMapInOut(
+            (std::string("InOut")+index.str()).c_str(), colorInOuts,
+            index.str().c_str());
+        inout->getInCallbacks().add(this, &PaletteEditor::colorMapInCallback);
+        inout->getOutCallbacks().add(this, &PaletteEditor::colorMapOutCallback);
+    }
+
+    colorInOuts->manageChild();
+    quickRoot->manageChild();
+
+    infoQuick->manageChild();
+
+    //create the RGB color editor
+    RowColumn* pickerBox = new RowColumn("ColorPickerBox", lastRow, false);
 
     colorPicker = new ColorPicker("ColorPicker", pickerBox, true);
     colorPicker->getColorChangedCallbacks().add(this,
@@ -97,8 +120,8 @@ PaletteEditor() :
 
     pickerBox->manageChild();
 
-    colorEditor->manageChild();
-    
+    lastRow->manageChild();
+
     //create the button box
     RowColumn* buttonBox = new RowColumn("ButtonBox", colorMapDialog, false);
     buttonBox->setOrientation(RowColumn::HORIZONTAL);
@@ -119,12 +142,12 @@ PaletteEditor() :
         "SavePaletteButton", buttonBox, "Save Palette");
     savePaletteButton->getSelectCallbacks().add(
         this, &PaletteEditor::savePaletteCallback);
-    
+
     buttonBox->manageChild();
-    
+
     //let the color map widget eat any size increases
     colorMapDialog->setRowWeight(0,1.0f);
-    
+
     colorMapDialog->manageChild();
 }
 
@@ -151,7 +174,7 @@ getRangeEditor()
     return rangeEditor;
 }
 
-    
+
 void PaletteEditor::
 selectedControlPointChangedCallback(
     ColorMapEditor::SelectedControlPointChangedCallbackData* cbData)
@@ -165,7 +188,6 @@ selectedControlPointChangedCallback(
     {
         Misc::ColorMap::Color color(0.5f,0.5f,0.5f, 1.0f);
         controlPointValue->setLabel("");
-        colorPanel->setBackgroundColor(color);
         if (!inColorPickerCallback)
             colorPicker->setCurrentColor(color);
     }
@@ -175,7 +197,6 @@ selectedControlPointChangedCallback(
         const Misc::ColorMap::Point& p =
             colorMapEditor->getSelectedControlPoint();
         controlPointValue->setValue(p.value);
-        colorPanel->setBackgroundColor(p.color);
         if (!inColorPickerCallback)
             colorPicker->setCurrentColor(p.color);
     }
@@ -194,7 +215,6 @@ colorMapChangedCallback(Misc::CallbackData* cbData)
         const Misc::ColorMap::Point& p =
             colorMapEditor->getSelectedControlPoint();
         controlPointValue->setValue(p.value);
-        colorPanel->setBackgroundColor(p.color);
         if (!inColorPickerCallback)
             colorPicker->setCurrentColor(p.color);
     }
@@ -222,16 +242,28 @@ rangeChangedCallback(RangeEditor::RangeChangedCallbackData* cbData)
     inRangeEditorCallback = false;
 }
 
-void PaletteEditor::colorPickerValueChangedCallback(
-    ColorPicker::ColorChangedCallbackData* cbData)
+void PaletteEditor::
+colorMapInCallback(ColorMapInOut::InCallbackData* cbData)
+{
+    cbData->inout->setColorMap(colorMapEditor->getColorMap());
+}
+
+void PaletteEditor::
+colorMapOutCallback(ColorMapInOut::OutCallbackData* cbData)
+{
+    colorMapEditor->getColorMap() = cbData->inout->getColorMap();
+    colorMapEditor->touch();
+}
+
+void PaletteEditor::
+colorPickerValueChangedCallback( ColorPicker::ColorChangedCallbackData* cbData)
 {
     if (inColorPickerCallback)
         return;
-    
+
     inColorPickerCallback = true;
     if (!inColorMapEditorCallback && colorMapEditor->hasSelectedControlPoint())
     {
-        colorPanel->setBackgroundColor(cbData->newColor);
         Misc::ColorMap::Point& p = colorMapEditor->getSelectedControlPoint();
         p.color = cbData->newColor;
         colorMapEditor->touch();
