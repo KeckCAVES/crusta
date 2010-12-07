@@ -21,10 +21,6 @@ public:
     const SubRegion& getColorMapRegion() const;
     void setScalarRange(float scalarMin, float scalarMax);
 
-    virtual std::pair<std::string,std::string> getUniformsAndFunctionsCode();
-    virtual void initUniforms(GLuint programObj);
-    virtual void clearDefinitionsEmittedFlag();
-
 private:
     bool                    clamp;
     SubRegion               mapRegion;
@@ -33,6 +29,13 @@ private:
 
     std::string scalarRangeName;
     GLint       scalarRangeUniform;
+
+//- inherited from ShaderFragment
+public:
+    virtual std::string getUniforms();
+    virtual std::string getFunctions();
+    virtual void initUniforms(GLuint programObj);
+    virtual void reset();
 };
 
 

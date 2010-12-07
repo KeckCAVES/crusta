@@ -15,12 +15,16 @@ class ShaderColorReader : public ShaderDataSource
 public:
     ShaderColorReader(ShaderDataSource* colorSource);
     
-    virtual std::pair<std::string,std::string> getUniformsAndFunctionsCode();
-    virtual void initUniforms(GLuint programObj);
-    virtual void clearDefinitionsEmittedFlag();
-    
 private:
     ShaderDataSource* colorSrc;
+
+//- inherited from ShaderFragment
+public:
+    virtual std::string getUniforms();
+    virtual std::string getFunctions();
+    virtual void initUniforms(GLuint programObj);
+    virtual void clearDefinitionsEmittedFlag();
+    virtual void reset();
 };
 
 

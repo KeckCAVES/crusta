@@ -68,7 +68,9 @@ add_library(CrustaCore SHARED
     ../include/crusta/shader/ShaderColorMultiplier.h
     ../include/crusta/shader/ShaderColorReader.h
     ../include/crusta/shader/ShaderDataSource.h
+    ../include/crusta/shader/ShaderFileFragment.h
     ../include/crusta/shader/ShaderFragment.h
+    ../include/crusta/shader/ShaderMultiDataSource.h
     ../include/crusta/shader/ShaderTopographySource.h
     ../include/crusta/Sphere.h
     ../include/crusta/StatsManager.h
@@ -134,7 +136,9 @@ add_library(CrustaCore SHARED
     ../source/crusta/shader/ShaderColorMultiplier.cpp
     ../source/crusta/shader/ShaderColorReader.cpp
     ../source/crusta/shader/ShaderDataSource.cpp
+    ../source/crusta/shader/ShaderFileFragment.cpp
     ../source/crusta/shader/ShaderFragment.cpp
+    ../source/crusta/shader/ShaderMultiDataSource.cpp
     ../source/crusta/shader/ShaderTopographySource.cpp
     ../source/crusta/Sphere.cpp
     ../source/crusta/StatsManager.cpp

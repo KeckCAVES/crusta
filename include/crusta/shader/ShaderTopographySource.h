@@ -14,12 +14,7 @@ public:
     ShaderTopographySource(ShaderDataSource* _geometrySrc,
                            ShaderDataSource* _heightSrc);
 
-    virtual std::pair<std::string, std::string> getUniformsAndFunctionsCode();
-    virtual void initUniforms(GLuint programObj);
-
     void setCentroid(const Point3f& c);
-
-    void clearDefinitionsEmittedFlag();
 
 private:
     ShaderDataSource* geometrySrc;
@@ -27,6 +22,13 @@ private:
 
     GLint centroidUniform;
     std::string centroidName;
+
+//- inherited from ShaderFragment
+public:
+    virtual std::string getUniforms();
+    virtual std::string getFunctions();
+    virtual void initUniforms(GLuint programObj);
+    virtual void reset();
 };
 
 

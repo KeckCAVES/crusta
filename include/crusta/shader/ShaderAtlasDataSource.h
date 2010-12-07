@@ -14,16 +14,16 @@ class ShaderAtlasDataSourceBase : public ShaderDataSource
 public:
     ShaderAtlasDataSourceBase(const std::string& samplerName);
 
-    virtual void setSubRegion(const SubRegion& s) = 0;
-
-    virtual void initUniforms(GLuint programObj);
-
 protected:
     std::string texSamplerName;
     GLint texOffsetUniform;
     std::string texOffsetName;
     GLint texScaleUniform;
     std::string texScaleName;
+    
+//- inherited from ShaderFragment
+public:
+    virtual void initUniforms(GLuint programObj);
 };
 
 class Shader1dAtlasDataSource : public ShaderAtlasDataSourceBase
@@ -33,7 +33,18 @@ public:
 
     void setSubRegion(const SubRegion& s);
 
-    virtual std::pair<std::string, std::string> getUniformsAndFunctionsCode();
+protected:
+    static bool samplingFunctionEmitted;
+
+//- inherited from ShaderDataSource
+public:
+    virtual std::string sample(const std::string& params);
+    
+//- inherited from ShaderFragment
+public:
+    virtual std::string getUniforms();
+    virtual std::string getFunctions();
+    virtual void reset();
 };
 
 class Shader2dAtlasDataSource : public ShaderAtlasDataSourceBase
@@ -43,7 +54,18 @@ public:
 
     void setSubRegion(const SubRegion& s);
 
-    virtual std::pair<std::string, std::string> getUniformsAndFunctionsCode();
+protected:
+    static bool samplingFunctionEmitted;
+    
+//- inherited from ShaderDataSource
+public:
+    virtual std::string sample(const std::string& params);
+    
+//- inherited from ShaderFragment
+public:
+    virtual std::string getUniforms();
+    virtual std::string getFunctions();
+    virtual void reset();
 };
 
 

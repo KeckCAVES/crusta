@@ -35,49 +35,49 @@ setScalarRange(float scalarMin, float scalarMax)
     CHECK_GLA
 }
 
-std::pair<std::string,std::string> ShaderColorMapper::
-getUniformsAndFunctionsCode()
+std::string ShaderColorMapper::
+getUniforms()
 {
-    if (definitionsAlreadyEmitted)
-        return std::make_pair("", "");
-
-    //retrieve the uniforms and the code for the sources
-    std::pair<std::string, std::string> colorSrcUniforms(
-        colorSrc.getUniformsAndFunctionsCode());
-    std::pair<std::string, std::string> scalarSrcUniforms(
-        scalarSrc->getUniformsAndFunctionsCode());
+    if (uniformsEmitted)
+        return "";
 
     std::ostringstream uniforms;
-
-    uniforms << colorSrcUniforms.first;
-    uniforms << scalarSrcUniforms.first;
+    uniforms << colorSrc.getUniforms();
+    uniforms << scalarSrcUniforms->getUniforms();
 
     uniforms << "uniform vec2 " << scalarRangeName << ";" << std::endl;
 
-    std::ostringstream code;
+    uniformsEmitted = true;
+    return uniforms.str();
+}
 
-    code << colorSrcUniforms.second;
-    code << scalarSrcUniforms.second;
+std::string ShaderColorMapper::
+getFunctions()
+{
+    if (functionsEmitted)
+        return "";
 
-    code << "vec4 " << getSamplingFunctionName() << "(in vec2 coords) {" << std::endl;
-    code << "  float scalar = " << scalarSrc->getSamplingFunctionName() << "(coords).x;" << std::endl;
-    code << "  if (scalar == layerfNodata)" << std::endl;
-    code << "    return vec4(0.0);" << std::endl;
-    code << "  scalar = (scalar-" << scalarRangeName << "[0]) * " << scalarRangeName << "[1];" << std::endl;
+    std::ostringstream functions;
+    functions << colorSrc.getUniforms();
+    functions << scalarSrc->getUniforms();
+    
+    functions << "vec4 " << sample("in vec2 coords") <<  " {" << std::endl;
+    functions << "  float scalar = " << scalarSrc->sample("coords") << ".x;" << std::endl;
+    functions << "  if (scalar == layerfNodata)" << std::endl;
+    functions << "    return vec4(0.0);" << std::endl;
+    functions << "  scalar = (scalar-" << scalarRangeName << "[0]) * " << scalarRangeName << "[1];" << std::endl;
     if (clamp)
-        code << "  scalar = clamp(scalar, 0.0, 1.0);" << std::endl;
+        functions << "  scalar = clamp(scalar, 0.0, 1.0);" << std::endl;
 ///\todo this could probably be folded into the subregion somehow
 float texStep  = 1.0f / SETTINGS->colorMapTexSize;
 float texRange = 1.0f - texStep;
 texStep       *= 0.5f;
-code << "  scalar = " << texStep << " + scalar * " << texRange << ";" << std::endl;
-    code << "  return " << colorSrc.getSamplingFunctionName() << "(scalar);" << std::endl;
-    code << "}" << std::endl;
-
-//std::cout << code.str() << std::endl;
-
-    definitionsAlreadyEmitted = true;
-    return std::make_pair(uniforms.str(), code.str());
+    functions << "  scalar = " << texStep << " + scalar * " << texRange << ";" << std::endl;
+    functions << "  return " << colorSrc.sample("scalar") << ";" << std::endl;
+    functions << "}" << std::endl;
+    
+    functionsEmitted = true;
+    return functions.str();
 }
 
 void ShaderColorMapper::
@@ -95,10 +95,11 @@ initUniforms(GLuint programObj)
 }
 
 void ShaderColorMapper::
-clearDefinitionsEmittedFlag()
+reset()
 {
-    colorSrc.clearDefinitionsEmittedFlag();
-    scalarSrc->clearDefinitionsEmittedFlag();
+    colorSrc.reset();
+    scalarSrc->reset();
+    ShaderDataSource::reset();
 }
 
 

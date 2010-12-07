@@ -1,31 +1,24 @@
-#ifndef _ShaderColorMultiplier_H_
-#define _ShaderColorMultiplier_H_
+#ifndef _Crusta_ShaderColorMultiplier_H_
+#define _Crusta_ShaderColorMultiplier_H_
 
 
 #include <vector>
 
-#include <crusta/shader/ShaderAtlasDataSource.h>
+#include <crusta/shader/ShaderMultiDataSource.h>
 
 
 BEGIN_CRUSTA
 
 ///\todo abstract out the multi-source
-class ShaderColorMultiplier : public ShaderDataSource
+class ShaderColorMultiplier : public ShaderMultiDataSource
 {
+//- inherited from ShaderFragment
 public:
-    void clear();
-    void addSource(ShaderDataSource* src);
-
-    virtual std::pair<std::string,std::string> getUniformsAndFunctionsCode();
-    virtual void initUniforms(GLuint programObj);
-    virtual void clearDefinitionsEmittedFlag();
-
-private:
-    std::vector<ShaderDataSource*> sources;
+    virtual std::string getFunctions();
 };
 
 
 END_CRUSTA
 
 
-#endif //_ShaderColorMultiplier_H_
+#endif //_Crusta_ShaderColorMultiplier_H_

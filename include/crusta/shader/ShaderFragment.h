@@ -19,14 +19,20 @@ public:
     ShaderFragment();
     virtual ~ShaderFragment();
 
-    virtual std::pair<std::string, std::string>
-        getUniformsAndFunctionsCode() = 0;
+    virtual bool update();
 
-    virtual void initUniforms(GLuint programObj) = 0;
-    virtual void clearDefinitionsEmittedFlag();
+    virtual std::string getCode();
+///\todo deprecate the individual gets
+    virtual std::string getUniforms();
+    virtual std::string getFunctions();
+
+    virtual void initUniforms(GLuint programObj);
+    virtual void reset();
 
 protected:
-    bool definitionsAlreadyEmitted;
+    bool uniformsEmitted;
+    bool functionsEmitted;
+
     std::string makeUniqueName(const std::string& baseName) const;
 
 private:

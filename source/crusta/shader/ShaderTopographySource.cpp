@@ -25,61 +25,65 @@ setCentroid(const Point3f& c)
     CHECK_GLA
 }
 
+std::string ShaderTopographySource::
+getUniforms()
+{
+    if (uniformsEmitted)
+        return "";
+
+    std::ostringstream uniforms;
+
+    uniforms << geometrySrc->getUniforms();
+    uniforms << heightSrc->getUniforms();
+
+    uniforms << "uniform vec3 " << centroidName << ";" << std::endl;
+
+    uniformsEmitted = true;
+    return uniforms.str();
+}
+
+std::string ShaderTopographySource::
+getFunctions()
+{
+    if (functionsEmitted)
+        return "";
+    
+    std::ostringstream functions;
+    
+    functions << geometrySrc->getFunctions();
+    functions << heightSrc->getFunctions();
+    
+    functions << "vec3 " << sample("in vec2 coords") << " {" << std::endl;
+    functions << "  vec3 res      = " << geometrySrc->sample("coords") << ".xyz;" << std::endl;
+    functions << "  vec3 dir      = normalize(" << centroidName << " + res);" << std::endl;
+    functions << "  float height  = " << heightSrc->sample("coords") << ".x;" << std::endl;
+    functions << "  height        = height==layerfNodata ? demDefault : height;" << std::endl;
+    functions << "  height       *= verticalScale;" << std::endl;
+    functions << "  res          += height * dir;" << std::endl;
+    functions << "  return res;" << std::endl;
+    functions << "}" << std::endl;
+    
+    functionsEmitted = true;
+    return functions.str();
+}
+
 void ShaderTopographySource::
 initUniforms(GLuint programObj)
 {
     geometrySrc->initUniforms(programObj);
     heightSrc->initUniforms(programObj);
-
+    
     centroidUniform = glGetUniformLocation(programObj, centroidName.c_str());
     assert(centroidUniform>=0);
     CHECK_GLA
 }
 
-std::pair<std::string, std::string> ShaderTopographySource::
-getUniformsAndFunctionsCode()
-{
-    if (definitionsAlreadyEmitted)
-        return std::make_pair("", "");
-
-    std::pair<std::string, std::string> geomUF(
-        geometrySrc->getUniformsAndFunctionsCode());
-    std::pair<std::string, std::string> heightUF(
-        heightSrc->getUniformsAndFunctionsCode());
-
-    std::ostringstream uu;
-
-    uu << geomUF.first;
-    uu << heightUF.first;
-
-    uu << "uniform vec3 " << centroidName << ";" << std::endl;
-
-    std::ostringstream ss;
-
-    ss << geomUF.second;
-    ss << heightUF.second;
-
-    ss << "vec3 " << getSamplingFunctionName() << "(in vec2 coords) {" << std::endl;
-    ss << "  vec3 res      = " << geometrySrc->getSamplingFunctionName() << "(coords).xyz;" << std::endl;
-    ss << "  vec3 dir      = normalize(" << centroidName << " + res);" << std::endl;
-    ss << "  float height  = " << heightSrc->getSamplingFunctionName() << "(coords).x;" << std::endl;
-    ss << "  height        = height==layerfNodata ? demDefault : height;" << std::endl;
-    ss << "  height       *= verticalScale;" << std::endl;
-    ss << "  res          += height * dir;" << std::endl;
-    ss << "  return res;" << std::endl;
-    ss << "}" << std::endl;
-
-    definitionsAlreadyEmitted = true;
-
-    return std::make_pair(uu.str(), ss.str());
-}
-
 void ShaderTopographySource::
-clearDefinitionsEmittedFlag()
+reset()
 {
-    geometrySrc->clearDefinitionsEmittedFlag();
-    heightSrc->clearDefinitionsEmittedFlag();
-    definitionsAlreadyEmitted = false;
+    ShaderDataSource::reset();
+    geometrySrc->reset();
+    heightSrc->reset();
 }
 
 

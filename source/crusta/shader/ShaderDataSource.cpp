@@ -5,9 +5,9 @@ BEGIN_CRUSTA
 
 
 std::string ShaderDataSource::
-getSamplingFunctionName() const
+sample(const std::string& params) const
 {
-    return makeUniqueName("sampleFunc");
+    return makeUniqueName("sample") + "(" + params + ")";
 }
 
 

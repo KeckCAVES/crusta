@@ -11,13 +11,45 @@ int ShaderFragment::nextSequenceNumber = 0;
 
 ShaderFragment::
 ShaderFragment() :
-    definitionsAlreadyEmitted(false), sequenceNumber(nextSequenceNumber++)
+    uniformsEmitted(false), functionsEmitted(false),
+    sequenceNumber(nextSequenceNumber++)
 {
 }
 
 ShaderFragment::
 ~ShaderFragment()
 {
+}
+
+bool ShaderFragment::
+update()
+{
+    return false;
+}
+
+std::string ShaderFragment::
+getCode()
+{
+    return "";
+}
+
+std::string ShaderFragment::
+getUniforms()
+{
+    return "";
+}
+
+std::string ShaderFragment::
+getFunctions()
+{
+    return "";
+}
+
+void ShaderFragment::
+reset()
+{
+    uniformsEmitted  = false;
+    functionsEmitted = false;
 }
 
 std::string ShaderFragment::
@@ -27,12 +59,6 @@ makeUniqueName(const std::string& baseName) const
     generatedName << baseName << "_" << sequenceNumber;
 
     return generatedName.str();
-}
-
-void ShaderFragment::
-clearDefinitionsEmittedFlag()
-{
-    definitionsAlreadyEmitted = false;
 }
 
 

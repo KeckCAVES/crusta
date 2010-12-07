@@ -14,7 +14,7 @@ BEGIN_CRUSTA
 class ShaderDataSource : public ShaderFragment
 {
 public:
-    std::string getSamplingFunctionName() const;
+    virtual std::string sample(const std::string& params) const;
 };
 
 

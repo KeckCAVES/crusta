@@ -95,8 +95,12 @@ void GlobeFile<PixelParam>::
 close()
 {
 #if CONSTRUO_BUILD
-    cfg->save();
-    delete cfg;
+    if (cfg != NULL)
+    {
+        cfg->save();
+        delete cfg;
+        cfg = NULL;
+    }
 #endif //CONSTRUO_BUILD
 
     typedef typename PatchFiles::iterator PatchFileIterator;
@@ -229,6 +233,12 @@ loadConfiguration(const std::string& cfgName)
 #if CONSTRUO_BUILD
     catch (Misc::File::OpenError e)
     {
+        //create the file
+        delete new Misc::File(cfgName.c_str(), "wt");
+        //open it
+        cfg = new Misc::ConfigurationFile(cfgName.c_str());
+
+        //setup the configuration properties
         Polyhedron* polyhedron =
             PolyhedronLoader::load(gd::defaultPolyhedronType(),1.0);
 

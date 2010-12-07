@@ -31,6 +31,7 @@ initUniforms(GLuint programObj)
 
 
 
+bool Shader1dAtlasDataSource::samplingFunctionEmitted = false;
 
 Shader1dAtlasDataSource::
 Shader1dAtlasDataSource(const std::string& samplerName) :
@@ -47,30 +48,54 @@ setSubRegion(const SubRegion& s)
     CHECK_GLA
 }
 
-std::pair<std::string, std::string> Shader1dAtlasDataSource::
-getUniformsAndFunctionsCode()
+std::string Shader1dAtlasDataSource::
+sample(const std::string& params)
 {
-    if (definitionsAlreadyEmitted)
-        return std::make_pair("", "");
+    std::ostringstream oss;
+    oss << "sample1dAtlas(" << params << ", " <<
+           texOffsetName << ", " << texScaleName << ")";
+    return oss.str();
+}
+
+std::string Shader1dAtlasDataSource::
+getUniforms()
+{
+    if (uniformsEmitted)
+        return "";
 
     std::ostringstream uniforms;
     uniforms << "uniform vec2 " << texOffsetName << ";" << std::endl;
     uniforms << "uniform vec2 " <<  texScaleName << ";" << std::endl;
 
+    uniformsEmitted = true;
+    return uniforms.str();
+}
+
+std::string Shader1dAtlasDataSource::
+getFunctions()
+{
+    if (samplingFunctionEmitted)
+        return "";
 
     std::ostringstream functions;
-
-    functions << "vec4 " << getSamplingFunctionName() << "(in float tc) {" << std::endl;
-    functions << "   vec2 tc2 = " << texOffsetName << " + vec2(tc, 0.5) * " << texScaleName << ";" << std::endl;
+    functions << "vec4 sample1dAtlas(in float tc, in vec2 offset, in vec2 scale) {" << std::endl;
+    functions << "   vec2 tc2 = offset + vec2(tc, 0.5) * scale;" << std::endl;
     functions << "   return texture2D(" << texSamplerName << ", tc2);" << std::endl;
     functions << "}" << std::endl;
+    
+    samplingFunctionEmitted = true;
+    return functions.str();
+}
 
-    definitionsAlreadyEmitted = true;
-    return std::make_pair(uniforms.str(), functions.str());
+void Shader1dAtlasDataSource::
+reset()
+{
+    ShaderDataSource::reset();
+    samplingFunctionEmitted = false;
 }
 
 
-
+bool Shader2dAtlasDataSource::samplingFunctionEmitted = false;
 
 Shader2dAtlasDataSource::
 Shader2dAtlasDataSource(const std::string& samplerName) :
@@ -89,26 +114,50 @@ setSubRegion(const SubRegion& s)
     CHECK_GLA
 }
 
-std::pair<std::string, std::string> Shader2dAtlasDataSource::
-getUniformsAndFunctionsCode()
+std::string Shader2dAtlasDataSource::
+sample(const std::string& params)
 {
-    if (definitionsAlreadyEmitted)
-        return std::make_pair("", "");
+    std::ostringstream oss;
+    oss << "sample2dAtlas(" << params << ", " <<
+           texOffsetName << ", " << texScaleName << ")";
+    return oss.str();
+}
+
+std::string Shader2dAtlasDataSource::
+getUniforms()
+{
+    if (uniformsEmitted)
+        return "";
 
     std::ostringstream uniforms;
     uniforms << "uniform vec3 " << texOffsetName << ";" << std::endl;
     uniforms << "uniform vec2 " <<  texScaleName << ";" << std::endl;
 
+    uniformsEmitted = true;
+    return uniforms.str();
+}
+
+std::string Shader2dAtlasDataSource::
+getFunctions()
+{
+    if (samplingFunctionEmitted)
+        return "";
 
     std::ostringstream functions;
-
-    functions << "vec4 " << getSamplingFunctionName() << "(in vec2 tc) {" << std::endl;
-    functions << "   vec3 tc2 = " << texOffsetName << " + vec3(tc * " << texScaleName << ", 0.0);" << std::endl;
+    functions << "vec4 sample2dAtlas(in vec2 tc, in vec3 offset, in vec2 scale) {" << std::endl;
+    functions << "   vec3 tc2 = offset + vec3(tc * scale, 0.0);" << std::endl;
     functions << "   return texture2DArray(" << texSamplerName << ", tc2);" << std::endl;
     functions << "}" << std::endl;
 
-    definitionsAlreadyEmitted = true;
-    return std::make_pair(uniforms.str(), functions.str());
+    samplingFunctionEmitted = true;
+    return functions.str();
+}
+
+void Shader2dAtlasDataSource::
+reset()
+{
+    ShaderDataSource::reset();
+    samplingFunctionEmitted = false;
 }
 
 
