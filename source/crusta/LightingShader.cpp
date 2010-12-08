@@ -511,12 +511,8 @@ void LightingShader::compileShader(GLContextData& contextData)
     DataManager::SourceShaders& dataSources =
         DATAMANAGER->getSourceShaders(contextData);
     ShaderDataSource& colorSource = *COLORMAPPER->getColorSource(contextData);
-    dataSources.topography.clearDefinitionsEmittedFlag();
-    colorSource.clearDefinitionsEmittedFlag();
-
-    typedef std::pair<std::string, std::string> ShaderCode;
-    ShaderCode topoCode(dataSources.topography.getUniformsAndFunctionsCode());
-    ShaderCode colorCode(colorSource.getUniformsAndFunctionsCode());
+    dataSources.topography.reset();
+    colorSource.reset();
 
     vertexShaderUniforms +=
     "\
@@ -541,17 +537,14 @@ void LightingShader::compileShader(GLContextData& contextData)
         \n\
     ";
 
-    vertexShaderUniforms += topoCode.first;
-    vertexShaderUniforms += colorCode.first;
-
-    vertexShaderFunctions += topoCode.second;
-    vertexShaderFunctions += colorCode.second;
+    vertexShaderFunctions += dataSources.topography.getCode();
+    vertexShaderFunctions += colorSource.getCode();
 
     vertexShaderFunctions +=
     "\
         vec3 surfacePoint(in vec2 coords)\n\
         {\n\
-            return " + dataSources.topography.getSamplingFunctionName() + "(coords);\n\
+            return " + dataSources.topography.sample("coords") + ";\n\
         }\n\
     ";
 
@@ -622,7 +615,7 @@ void LightingShader::compileShader(GLContextData& contextData)
     vertexShaderMain+=
         "\
         /* Modulate with the texture color: */\n\
-        vec4 terrainColor = " + colorSource.getSamplingFunctionName() + "(coord);\n\
+        vec4 terrainColor = " + colorSource.sample("coord") + ";\n\
         ";
 
     vertexShaderMain+=

@@ -10,33 +10,37 @@ BEGIN_CRUSTA
 
 
 std::string ShaderColorMixer::
-getFunctions()
+getCode()
 {
-    if (functionsEmitted)
+    if (codeEmitted)
         return "";
 
-    std::ostringstream functions;
+    std::ostringstream code;
 
-    functions << ShaderMultiDataSource::getFunctions();
+    code << ShaderMultiDataSource::getCode();
+    code << std::endl;
 
-    functions << "vec4 " << sample("in vec2 tc") << " {" << std::endl;
+    code << "vec4 " << sample("in vec2 tc") << " {" << std::endl;
     const Color& defaultColor = SETTINGS->terrainDefaultColor;
-    functions << "  vec4 color = vec4(" << std::scientific << defaultColor[0] << ", " << defaultColor[1] << ", " << defaultColor[2] << ", " << defaultColor[3] << ");" << std::endl;
+    code << "  vec4 color = vec4(" << std::scientific << defaultColor[0] << ", " << defaultColor[1] << ", " << defaultColor[2] << ", " << defaultColor[3] << ");" << std::endl;
+    code << std::endl;
 
     for (size_t i=0; i<sources.size(); ++i)
     {
-        std::ostringstream result("result");
-        result << i;
+        std::ostringstream result;
+        result << "result" << i;
 
-        functions << "  vec4 " << result.str() << " = "<< sources[i]->sample("tc") << ";" << std::endl;
-        functions << "  color.rgb = mix(color.rgb, " << result.str() << ".rgb, " << result.str() << ".a);" << std::endl;
+        code << "  vec4 " << result.str() << " = "<< sources[i]->sample("tc") << ";" << std::endl;
+        code << "  color.rgb = mix(color.rgb, " << result.str() << ".rgb, " << result.str() << ".a);" << std::endl;
+        code << std::endl;
     }
 
-    functions << "  return color;" << std::endl;
-    functions << "}" << std::endl;
+    code << "  return color;" << std::endl;
+    code << "}" << std::endl;
+    code << std::endl;
 
-    functionsEmitted = true;
-    return functions.str();
+    codeEmitted = true;
+    return code.str();
 }
 
 

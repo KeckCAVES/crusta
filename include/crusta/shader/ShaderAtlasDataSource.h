@@ -20,10 +20,11 @@ protected:
     std::string texOffsetName;
     GLint texScaleUniform;
     std::string texScaleName;
-    
+
 //- inherited from ShaderFragment
 public:
     virtual void initUniforms(GLuint programObj);
+    virtual bool update();
 };
 
 class Shader1dAtlasDataSource : public ShaderAtlasDataSourceBase
@@ -38,13 +39,12 @@ protected:
 
 //- inherited from ShaderDataSource
 public:
-    virtual std::string sample(const std::string& params);
-    
+    virtual std::string sample(const std::string& params) const;
+
 //- inherited from ShaderFragment
 public:
-    virtual std::string getUniforms();
-    virtual std::string getFunctions();
     virtual void reset();
+    virtual std::string getCode();
 };
 
 class Shader2dAtlasDataSource : public ShaderAtlasDataSourceBase
@@ -56,16 +56,15 @@ public:
 
 protected:
     static bool samplingFunctionEmitted;
-    
+
 //- inherited from ShaderDataSource
 public:
-    virtual std::string sample(const std::string& params);
-    
+    virtual std::string sample(const std::string& params) const;
+
 //- inherited from ShaderFragment
 public:
-    virtual std::string getUniforms();
-    virtual std::string getFunctions();
     virtual void reset();
+    virtual std::string getCode();
 };
 
 

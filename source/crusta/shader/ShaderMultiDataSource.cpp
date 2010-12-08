@@ -19,38 +19,17 @@ addSource(ShaderDataSource *src)
     sources.push_back(src);
 }
 
-std::string ShaderMultiDataSource::
-getUniforms()
-{
-    if (uniformsEmitted)
-        return "";
-    
-    std::ostringstream uniforms;
-    for (std::vector<ShaderDataSource*>::iterator it=sources.begin();
-         it!=sources.end(); ++it)
-    {
-        uniforms << (*it)->getUniforms();
-    }
-        
-    uniformsEmitted = true;
-    return uniforms.str();
-}
 
-std::string ShaderMultiDataSource::
-getFunctions()
+void ShaderMultiDataSource::
+reset()
 {
-    if (functionsEmitted)
-        return "";
-    
-    std::ostringstream functions;
     for (std::vector<ShaderDataSource*>::iterator it=sources.begin();
          it!=sources.end(); ++it)
     {
-        functions << (*it)->getFunctions();
+        (*it)->reset();
     }
-    
-    functionsEmitted = true;
-    return functions.str();
+
+    ShaderDataSource::reset();
 }
 
 void ShaderMultiDataSource::
@@ -63,16 +42,34 @@ initUniforms(GLuint programObj)
     }
 }
 
-void ShaderMultiDataSource::
-reset()
+bool ShaderMultiDataSource::
+update()
 {
+    bool ret = false;
     for (std::vector<ShaderDataSource*>::iterator it=sources.begin();
          it!=sources.end(); ++it)
     {
-        (*it)->reset();
+        ret |= (*it)->update();
+    }
+    return ret;
+}
+
+std::string ShaderMultiDataSource::
+getCode()
+{
+    if (codeEmitted)
+        return "";
+
+    std::ostringstream code;
+    for (std::vector<ShaderDataSource*>::iterator it=sources.begin();
+         it!=sources.end(); ++it)
+    {
+        code << (*it)->getCode();
+        code << std::endl;
     }
 
-    ShaderDataSource::reset();
+    codeEmitted = true;
+    return code.str();
 }
 
 

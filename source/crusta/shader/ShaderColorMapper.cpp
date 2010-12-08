@@ -35,49 +35,13 @@ setScalarRange(float scalarMin, float scalarMax)
     CHECK_GLA
 }
 
-std::string ShaderColorMapper::
-getUniforms()
+
+void ShaderColorMapper::
+reset()
 {
-    if (uniformsEmitted)
-        return "";
-
-    std::ostringstream uniforms;
-    uniforms << colorSrc.getUniforms();
-    uniforms << scalarSrcUniforms->getUniforms();
-
-    uniforms << "uniform vec2 " << scalarRangeName << ";" << std::endl;
-
-    uniformsEmitted = true;
-    return uniforms.str();
-}
-
-std::string ShaderColorMapper::
-getFunctions()
-{
-    if (functionsEmitted)
-        return "";
-
-    std::ostringstream functions;
-    functions << colorSrc.getUniforms();
-    functions << scalarSrc->getUniforms();
-    
-    functions << "vec4 " << sample("in vec2 coords") <<  " {" << std::endl;
-    functions << "  float scalar = " << scalarSrc->sample("coords") << ".x;" << std::endl;
-    functions << "  if (scalar == layerfNodata)" << std::endl;
-    functions << "    return vec4(0.0);" << std::endl;
-    functions << "  scalar = (scalar-" << scalarRangeName << "[0]) * " << scalarRangeName << "[1];" << std::endl;
-    if (clamp)
-        functions << "  scalar = clamp(scalar, 0.0, 1.0);" << std::endl;
-///\todo this could probably be folded into the subregion somehow
-float texStep  = 1.0f / SETTINGS->colorMapTexSize;
-float texRange = 1.0f - texStep;
-texStep       *= 0.5f;
-    functions << "  scalar = " << texStep << " + scalar * " << texRange << ";" << std::endl;
-    functions << "  return " << colorSrc.sample("scalar") << ";" << std::endl;
-    functions << "}" << std::endl;
-    
-    functionsEmitted = true;
-    return functions.str();
+    colorSrc.reset();
+    scalarSrc->reset();
+    ShaderDataSource::reset();
 }
 
 void ShaderColorMapper::
@@ -94,12 +58,44 @@ initUniforms(GLuint programObj)
     CHECK_GLA
 }
 
-void ShaderColorMapper::
-reset()
+bool ShaderColorMapper::
+update()
 {
-    colorSrc.reset();
-    scalarSrc->reset();
-    ShaderDataSource::reset();
+    return false;
+}
+
+std::string ShaderColorMapper::
+getCode()
+{
+    if (codeEmitted)
+        return "";
+
+    std::ostringstream code;
+    code << colorSrc.getCode();
+    code << scalarSrc->getCode();
+    code << std::endl;
+
+    code << "uniform vec2 " << scalarRangeName << ";" << std::endl;
+    code << std::endl;
+
+    code << "vec4 " << sample("in vec2 coords") <<  " {" << std::endl;
+    code << "  float scalar = " << scalarSrc->sample("coords") << ".x;" << std::endl;
+    code << "  if (scalar == layerfNodata)" << std::endl;
+    code << "    return vec4(0.0);" << std::endl;
+    code << "  scalar = (scalar-" << scalarRangeName << "[0]) * " << scalarRangeName << "[1];" << std::endl;
+    if (clamp)
+        code << "  scalar = clamp(scalar, 0.0, 1.0);" << std::endl;
+///\todo this could probably be folded into the subregion somehow
+float texStep  = 1.0f / SETTINGS->colorMapTexSize;
+float texRange = 1.0f - texStep;
+texStep       *= 0.5f;
+    code << "  scalar = " << texStep << " + scalar * " << texRange << ";" << std::endl;
+    code << "  return " << colorSrc.sample("scalar") << ";" << std::endl;
+    code << "}" << std::endl;
+    code << std::endl;
+
+    codeEmitted = true;
+    return code.str();
 }
 
 

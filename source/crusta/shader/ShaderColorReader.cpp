@@ -15,36 +15,12 @@ ShaderColorReader(ShaderDataSource* colorSource) :
 {
 }
 
-std::string ShaderColorReader::
-getUniforms()
+void ShaderColorReader::
+reset()
 {
-    if (uniformsEmitted)
-        return "";
-    
-    std::ostringstream uniforms;
-    uniforms << colorSrc->getUniforms();
-    
-    uniformsEmitted = true;
-    return uniforms.str();
+    ShaderDataSource::reset();
+    colorSrc->reset();
 }
-
-std::string ShaderColorReader::
-getFunctions()
-{
-    if (functionsEmitted)
-        return "";
-    
-    std::ostringstream functions;
-    functions << colorSrc->getFunctions();
-    
-    functions << "vec4 " << sample("in vec2 coords") << " {" << std::endl;
-    functions << "  vec3 color = " << colorSrc->sample("coords") << ".rgb;" << std::endl;
-    functions << "  return color==colorNodata ? vec4(0.0) : vec4(color,1.0);" << std::endl;
-    functions << "}" << std::endl;
-    
-    functionsEmitted = true;
-    return functions.str();
-}    
 
 void ShaderColorReader::
 initUniforms(GLuint programObj)
@@ -53,11 +29,30 @@ initUniforms(GLuint programObj)
     CHECK_GLA
 }
 
-void ShaderColorReader::
-reset()
+bool ShaderColorReader::
+update()
 {
-    ShaderDataSource::reset();
-    colorSrc->reset();
+    return false;
+}
+
+std::string ShaderColorReader::
+getCode()
+{
+    if (codeEmitted)
+        return "";
+
+    std::ostringstream code;
+    code << colorSrc->getCode();
+    code << std::endl;
+
+    code << "vec4 " << sample("in vec2 coords") << " {" << std::endl;
+    code << "  vec3 color = " << colorSrc->sample("coords") << ".rgb;" << std::endl;
+    code << "  return color==colorNodata ? vec4(0.0) : vec4(color,1.0);" << std::endl;
+    code << "}" << std::endl;
+    code << std::endl;
+
+    codeEmitted = true;
+    return code.str();
 }
 
 

@@ -13,7 +13,7 @@ class ShaderColorMixer : public ShaderMultiDataSource
 {
 //- inherited from ShaderFragment
 public:
-    virtual std::string getFunctions();
+    virtual std::string getCode();
 };
 
 

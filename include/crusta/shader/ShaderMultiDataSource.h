@@ -13,16 +13,16 @@ class ShaderMultiDataSource : public ShaderDataSource
 public:
     void clear();
     void addSource(ShaderDataSource* src);
-    
+
 protected:
     std::vector<ShaderDataSource*> sources;
-    
+
 //- inherited from ShaderFragment
 public:
-    virtual std::string getUniforms();
-    virtual std::string getFunctions();
-    virtual void initUniforms(GLuint programObj);
     virtual void reset();
+    virtual void initUniforms(GLuint programObj);
+    virtual bool update();
+    virtual std::string getCode();
 };
 
 
