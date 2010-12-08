@@ -62,14 +62,16 @@ PaletteEditor() :
 
     RowColumn* lastRow = new RowColumn("LastRow", colorMapDialog, false);
     lastRow->setOrientation(RowColumn::HORIZONTAL);
-    lastRow->setAlignment(Alignment::HCENTER);
+    lastRow->setNumMinorWidgets(1);
 
     //create the info and quick maps
     RowColumn* infoQuick = new RowColumn("InfoQuick", lastRow, false);
+    infoQuick->setOrientation(RowColumn::VERTICAL);
+    infoQuick->setNumMinorWidgets(1);
 
     RowColumn* info = new RowColumn("Info", infoQuick, false);
-    info->setOrientation(RowColumn::VERTICAL);
-    info->setNumMinorWidgets(2);
+    info->setOrientation(RowColumn::HORIZONTAL);
+    info->setNumMinorWidgets(1);
 
     new Label("ControlPointValueLabel", info, "Control Point Value");
 
@@ -82,11 +84,11 @@ PaletteEditor() :
 
     RowColumn* quickRoot = new RowColumn("QuickRoot", infoQuick, false);
     quickRoot->setOrientation(RowColumn::VERTICAL);
-    quickRoot->setAlignment(Alignment::HCENTER);
-    quickRoot->setPacking(RowColumn::PACK_TIGHT);
     quickRoot->setNumMinorWidgets(1);
 
-    new Label("ColorInOutLabel", quickRoot, "Quick Color Maps");
+    Label* quickLabel = new Label("ColorInOutLabel", quickRoot,
+                                  "Quick Color Maps");
+    quickLabel->setHAlignment(GLFont::Center);
 
     RowColumn* colorInOuts = new RowColumn("ColorInOuts", quickRoot,
                                            false);
@@ -110,15 +112,9 @@ PaletteEditor() :
     infoQuick->manageChild();
 
     //create the RGB color editor
-    RowColumn* pickerBox = new RowColumn("ColorPickerBox", lastRow, false);
-
-    colorPicker = new ColorPicker("ColorPicker", pickerBox, true);
+    colorPicker = new ColorPicker("ColorPicker", lastRow);
     colorPicker->getColorChangedCallbacks().add(this,
         &PaletteEditor::colorPickerValueChangedCallback);
-
-    pickerBox->setOrientation(RowColumn::HORIZONTAL);
-
-    pickerBox->manageChild();
 
     lastRow->manageChild();
 
@@ -126,7 +122,7 @@ PaletteEditor() :
     RowColumn* buttonBox = new RowColumn("ButtonBox", colorMapDialog, false);
     buttonBox->setOrientation(RowColumn::HORIZONTAL);
     buttonBox->setPacking(RowColumn::PACK_GRID);
-    buttonBox->setAlignment(Alignment::RIGHT);
+    buttonBox->setAlignment(Alignment::HCENTER);
 
     Button* removeControlPointButton = new Button(
         "RemoveControlPointButton", buttonBox, "Remove Control Point");
