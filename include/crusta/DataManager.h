@@ -48,6 +48,8 @@ public:
 
         Shader2dAtlasDataSource geometry;
         Shader2dAtlasDataSource height;
+        Shader2dAtlasDataSource coverage;
+        Shader1dAtlasDataSource lineData;
 
 ///\todo this higher-level source should probably not be here
         ShaderTopographySource topography;

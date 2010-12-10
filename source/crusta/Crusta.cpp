@@ -37,8 +37,8 @@ bool PROJECTION_FAILED = false;
 
 
 #if CRUSTA_ENABLE_DEBUG
-int CRUSTA_DEBUG_LEVEL_MIN = 100;
-int CRUSTA_DEBUG_LEVEL_MAX = 100;
+int CRUSTA_DEBUG_LEVEL_MIN = CRUSTA_DEBUG_LEVEL_MIN_VALUE;
+int CRUSTA_DEBUG_LEVEL_MAX = CRUSTA_DEBUG_LEVEL_MAX_VALUE;
 #endif //CRUSTA_ENABLE_DEBUG
 
 #if DEBUG_INTERSECT_CRAP
@@ -784,15 +784,6 @@ CRUSTA_DEBUG(50, CRUSTA_DEBUG_OUT <<
     }
 
 //- draw the current terrain and map data
-///\todo integrate properly (VIS 2010)
-//bind the texture that contains the symbol images
-if (SETTINGS->decorateVectorArt)
-{
-    glActiveTexture(GL_TEXTURE5);
-    glBindTexture(GL_TEXTURE_2D, glData->symbolTex);
-    CHECK_GLA
-}
-
     //bind the colormap texture
     glActiveTexture(GL_TEXTURE6);
     COLORMAPPER->bindColorMaps(contextData);
@@ -817,9 +808,11 @@ if (SETTINGS->decorateVectorArt)
     if (SETTINGS->decorateVectorArt)
     {
         float scaleFac = Vrui::getNavigationTransformation().getScaling();
-        glData->terrainShader.setLineCoordScale(scaleFac);
+        ShaderDecoratedLineRenderer& decorated =
+            glData->terrainShader.getDecoratedLineRenderer();
+        decorated.setLineCoordScale(scaleFac);
         float lineWidth = 0.1f / scaleFac;
-        glData->terrainShader.setLineWidth(lineWidth);
+        decorated.setLineWidth(lineWidth);
     }
     CHECK_GLA
 

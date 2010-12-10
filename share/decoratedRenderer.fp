@@ -1,6 +1,10 @@
 #extension GL_EXT_gpu_shader4   : enable
 #extension GL_EXT_texture_array : enable
 
+uniform sampler2D      symbolTex;
+uniform sampler2D      lineDataTex;
+uniform sampler2DArray lineCoverageTex;
+
 uniform float lineStartCoord;
 uniform float lineCoordStep;
 
@@ -9,15 +13,6 @@ uniform float lineCoordScale;
 uniform float lineWidth;
 
 uniform vec3 center;
-
-uniform vec2 lineDataTexOffset;
-uniform vec2 lineDataTexScale;
-uniform vec3 coverageTexOffset;
-uniform vec2 coverageTexScale;
-
-uniform sampler2D      symbolTex;
-uniform sampler2D      lineDataTex;
-uniform sampler2DArray lineCoverageTex;
 
 varying vec3 position;
 varying vec3 normal;
@@ -34,6 +29,12 @@ const float EPSILON = 0.00001;
 #define U_SCALE 0.15
 #define V_SCALE 3.0
 
+
+
+##DataSourceCode##
+
+
+
 struct Segment
 {
     vec4 symbol;
@@ -42,25 +43,9 @@ struct Segment
     vec3 normal;
 };
 
-vec4 sampleLineData(in float tc)
-{
-    /* make sure the texture coordinate is texel centered. tc already is because
-       it depends on lineStartCoord. We have a 1D strip so shift half a texel
-       in s*/
-    vec2 tc2 = vec2(tc, 0.5);
-    tc2 = lineDataTexOffset + tc2*lineDataTexScale;
-    return texture2D(lineDataTex, tc2);
-}
-
-vec2 sampleCoverage(in vec2 tc)
-{
-    vec3 tc2 = coverageTexOffset + vec3((tc * coverageTexScale), 0.0);
-    return texture2DArray(lineCoverageTex, tc2).rg;
-}
-
 vec4 read(inout float coord)
 {
-    vec4 r = sampleLineData(coord);
+    vec4 r = ##sampleLineData#coord##;
     coord += lineCoordStep;
     return r;
 }
@@ -133,27 +118,25 @@ void computeSegment(in Segment segment, inout vec4 color)
     }
 }
 
-void main()
-{
-    //setup the default color to whatever the vertex program computed
-    gl_FragColor = gl_Color;
 
+void render(inout vec4 fragColor)
+{
     //does this node contain any lines?
     if (lineNumSegments == 0)
         return;
 
-    vec2 coverage = sampleCoverage(texCoord);
+    vec2 coverage = ##sampleCoverage#texCoord##.rg;
 #if COVERAGE
     if (coverage.g < 0.5)
     {
         if (coverage.g > 0.0)
-            gl_FragColor.rgb = vec3(0.2, 0.8, 0.4);
+            fragColor.rgb = vec3(0.2, 0.8, 0.4);
         else
-            gl_FragColor.rgb = vec3(0.0);
+            fragColor.rgb = vec3(0.0);
     }
     else
-        gl_FragColor.rgb = vec3(0.8, 0.4, 0.2);
-    gl_FragColor.a   = 1.0;
+        fragColor.rgb = vec3(0.8, 0.4, 0.2);
+    fragColor.a   = 1.0;
     return;
 #endif
 
@@ -197,5 +180,5 @@ void main()
         }
     }
 
-    gl_FragColor = mix(gl_FragColor, color, color.w);
+    fragColor = mix(fragColor, color, color.w);
 }

@@ -31,7 +31,9 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <GL/VruiGlew.h>
 
 #include <crusta/basics.h>
+#include <crusta/checkGl.h>
 #include <crusta/QuadNodeData.h>
+#include <crusta/shader/ShaderDecoratedLineRenderer.h>
 
 
 BEGIN_CRUSTA
@@ -72,13 +74,10 @@ class LightingShader
     GLhandleARB vertexShader,fragmentShader; // Handle for the vertex and fragment shaders
     GLhandleARB programObject; // Handle for the linked program object
 
+    ShaderDecoratedLineRenderer decoratedLineRenderer;
+
     GLint textureStepUniform;
     GLint verticalScaleUniform;
-    GLint centroidUniform;
-
-    GLint lineNumSegmentsUniform;
-    GLint lineCoordScaleUniform;
-    GLint lineWidthUniform;
 
     GLint colorNodataUniform;
     GLint layerfNodataUniform;
@@ -111,44 +110,46 @@ class LightingShader
             mustRecompile  = true;
         }
     }
+    ShaderDecoratedLineRenderer& getDecoratedLineRenderer()
+    {
+        return decoratedLineRenderer;
+    }
+
+    void clearUniforms()
+    {
+        textureStepUniform   = -2;
+        verticalScaleUniform = -2;
+
+        colorNodataUniform  = -2;
+        layerfNodataUniform = -2;
+        demDefaultUniform   = -2;
+    }
 
     void setTextureStep(float ts)
     {
         glUniform1f(textureStepUniform, ts);
+        CHECK_GLA
     }
     void setVerticalScale(float vs)
     {
         glUniform1f(verticalScaleUniform, vs);
-    }
-    void setCentroid(const Point3f& c)
-    {
-        glUniform3f(centroidUniform, c[0], c[1], c[2]);
-    }
-
-    void setLineNumSegments(int ns)
-    {
-        glUniform1i(lineNumSegmentsUniform, ns);
-    }
-    void setLineCoordScale(float lcs)
-    {
-        glUniform1f(lineCoordScaleUniform, lcs);
-    }
-    void setLineWidth(float lw)
-    {
-        glUniform1f(lineWidthUniform, lw);
+        CHECK_GLA
     }
 
     void setColorNodata(const TextureColor::Type& tc)
     {
         glUniform3f(colorNodataUniform, tc[0]/255.0f,tc[1]/255.0f,tc[2]/255.0f);
+        CHECK_GLA
     }
     void setLayerfNodata(float ln)
     {
         glUniform1f(layerfNodataUniform, ln);
+        CHECK_GLA
     }
     void setDemDefault(float dn)
     {
         glUniform1f(demDefaultUniform, dn);
+        CHECK_GLA
     }
 };
 

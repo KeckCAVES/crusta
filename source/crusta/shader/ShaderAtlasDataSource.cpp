@@ -25,7 +25,7 @@ initUniforms(GLuint programObj)
 {
     texOffsetUniform = glGetUniformLocation(programObj, texOffsetName.c_str());
     texScaleUniform  = glGetUniformLocation(programObj,  texScaleName.c_str());
-    assert(texOffsetUniform>=0 && texScaleUniform>=0);
+CRUSTA_DEBUG(80, assert(texOffsetUniform>=0 && texScaleUniform>=0);)
     CHECK_GLA
 }
 
@@ -48,7 +48,7 @@ Shader1dAtlasDataSource(const std::string& samplerName) :
 void Shader1dAtlasDataSource::
 setSubRegion(const SubRegion& s)
 {
-    assert(texOffsetUniform>=0 && texScaleUniform>=0);
+CRUSTA_DEBUG(80, assert(texOffsetUniform>=0 && texScaleUniform>=0);)
     glUniform2fv(texOffsetUniform, 1, s.offset.getComponents());
     glUniform2fv( texScaleUniform, 1,   s.size.getComponents());
     CHECK_GLA
@@ -110,7 +110,7 @@ Shader2dAtlasDataSource(const std::string& samplerName) :
 void Shader2dAtlasDataSource::
 setSubRegion(const SubRegion& s)
 {
-    assert(texOffsetUniform>=0 && texScaleUniform>=0);
+CRUSTA_DEBUG(80, assert(texOffsetUniform>=0 && texScaleUniform>=0);)
     glUniform3fv(texOffsetUniform, 1, s.offset.getComponents());
     glUniform2fv( texScaleUniform, 1,   s.size.getComponents());
     CHECK_GLA

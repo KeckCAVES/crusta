@@ -69,6 +69,7 @@ protected:
     int         tileSize[2];
 
 #if CONSTRUO_BUILD
+///\todo when moving to Vrui 2.0 can use a value instead of a pointer again
     Misc::ConfigurationFile* cfg;
 #endif //CONSTRUO_BUILD
 };

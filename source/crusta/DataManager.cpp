@@ -19,6 +19,7 @@ BEGIN_CRUSTA
 DataManager::SourceShaders::
 SourceShaders(int numColorLayers, int numLayerfLayers) :
     geometry("geometryTex"), height("layerfTex"),
+    coverage("lineCoverageTex"), lineData("lineDataTex"),
     topography(&geometry, &height)
 {
     assert(colors.empty());

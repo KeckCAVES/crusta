@@ -452,8 +452,6 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
     glEnable(GL_CULL_FACE);
 
     //setup the texturing
-    glEnable(GL_TEXTURE_2D);
-
     glActiveTexture(GL_TEXTURE0);
     gpuCache.geometry.bind();
     glActiveTexture(GL_TEXTURE1);
@@ -464,8 +462,8 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
 
     if (SETTINGS->decorateVectorArt)
     {
-        glEnable(GL_TEXTURE_1D);
-
+        glActiveTexture(GL_TEXTURE5);
+        glBindTexture(GL_TEXTURE_2D, crustaGl->symbolTex);
         glActiveTexture(GL_TEXTURE3);
         gpuCache.lineData.bind();
         glActiveTexture(GL_TEXTURE4);
@@ -1512,14 +1510,13 @@ drawNode(GLContextData& contextData, CrustaGlData* crustaGl,
     if (SETTINGS->decorateVectorArt)
     {
         //setup the shader for decorated line drawing
-        crustaGl->terrainShader.setLineNumSegments(main.lineNumSegments);
+        ShaderDecoratedLineRenderer& decorated =
+            crustaGl->terrainShader.getDecoratedLineRenderer();
+        decorated.setLineNumSegments(main.lineNumSegments);
         if (main.lineNumSegments > 0)
         {
-#if 0
-            crustaGl->terrainShader.setCoverageSubRegion(*gpuData.coverage);
-            crustaGl->terrainShader.setLineDataSubRegion(
-                (SubRegion)(*gpuData.lineData));
-#endif
+            dataSources.coverage.setSubRegion(*gpuData.coverage);
+            dataSources.lineData.setSubRegion((SubRegion)(*gpuData.lineData));
         }
         CHECK_GLA
     }

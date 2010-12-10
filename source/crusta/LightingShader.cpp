@@ -294,6 +294,8 @@ LightingShader::LightingShader() :
     lightStates(0),
     vertexShader(0),fragmentShader(0),
     programObject(0),
+    decoratedLineRenderer(std::string(CRUSTA_SHARE_PATH) +
+                          "/decoratedRenderer.fp"),
     colorMapperConfigurationStamp(0)
 {
     /* Determine the maximum number of light sources supported by the local OpenGL: */
@@ -311,6 +313,8 @@ LightingShader::LightingShader() :
     programObject=glCreateProgramObjectARB();
     glAttachObjectARB(programObject,vertexShader);
     glAttachObjectARB(programObject,fragmentShader);
+
+    clearUniforms();
 }
 
 LightingShader::~LightingShader()
@@ -322,43 +326,14 @@ LightingShader::~LightingShader()
 }
 
 
-///\todo remove once code is baked in
-static time_t lastFPTime;
-static bool
-checkFileForChanges(const char* fileName)
-{
-    struct stat statRes;
-    if (stat(fileName, &statRes) == 0)
-    {
-        if (statRes.st_mtime != lastFPTime)
-        {
-            lastFPTime      = statRes.st_mtime;
-            return true;
-        }
-        else
-            return false;
-    }
-    else
-    {
-        Misc::throwStdErr("LightingShader: can't find FP to check (%s)",
-                          fileName);
-        return false;
-    }
-}
-
 void LightingShader::
 update(GLContextData& contextData)
 {
     /* Update light states and recompile the shader if necessary: */
     updateLightingState();
 
-///\todo bake this into the code
-std::string progFile(CRUSTA_SHARE_PATH);
-if (linesDecorated)
-    progFile += "/decoratedRenderer.fp";
-else
-    progFile += "/plainRenderer.fp";
-mustRecompile |= checkFileForChanges(progFile.c_str());
+    if (linesDecorated)
+        mustRecompile |= decoratedLineRenderer.update();
 
     //check that the color mapper hasn't changed
     if (colorMapperConfigurationStamp <
@@ -438,15 +413,11 @@ updateLightingState()
     }
 }
 
-///\todo remove once code is baked in
-void readFileToString(const char* fileName, std::string& content)
+void LightingShader::
+initUniforms(GLContextData& contextData)
 {
-    std::ifstream ifs(fileName);
-    content.assign((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-}
+    clearUniforms();
 
-void LightingShader::initUniforms(GLContextData& contextData)
-{
     //setup "constant uniforms"
     GLint uniform;
     uniform = glGetUniformLocation(programObject, "geometryTex");
@@ -461,7 +432,6 @@ void LightingShader::initUniforms(GLContextData& contextData)
 
     textureStepUniform  =glGetUniformLocation(programObject,"texStep");
     verticalScaleUniform=glGetUniformLocation(programObject,"verticalScale");
-    centroidUniform     =glGetUniformLocation(programObject,"center");
 
     colorNodataUniform  = glGetUniformLocation(programObject, "colorNodata");
     layerfNodataUniform = glGetUniformLocation(programObject, "layerfNodata");
@@ -480,29 +450,15 @@ void LightingShader::initUniforms(GLContextData& contextData)
 
     if (linesDecorated)
     {
-        uniform = glGetUniformLocation(programObject, "lineDataTex");
-        glUniform1i(uniform, 3);
-        uniform = glGetUniformLocation(programObject, "lineCoverageTex");
-        glUniform1i(uniform, 4);
-        uniform = glGetUniformLocation(programObject, "symbolTex");
-        glUniform1i(uniform, 5);
-
-        uniform = glGetUniformLocation(programObject, "lineStartCoord");
-        glUniform1f(uniform, crusta::SETTINGS->lineDataStartCoord);
-        uniform = glGetUniformLocation(programObject, "lineCoordStep");
-        glUniform1f(uniform, crusta::SETTINGS->lineDataCoordStep);
-
-        lineNumSegmentsUniform =
-            glGetUniformLocation(programObject, "lineNumSegments");
-        lineCoordScaleUniform =
-            glGetUniformLocation(programObject, "lineCoordScale");
-        lineWidthUniform = glGetUniformLocation(programObject, "lineWidth");
+        decoratedLineRenderer.setSources(&dataSources.coverage,
+                                         &dataSources.lineData);
+        decoratedLineRenderer.initUniforms(programObject);
     }
-
 }
 
-void LightingShader::compileShader(GLContextData& contextData)
-    {
+void LightingShader::
+compileShader(GLContextData& contextData)
+{
     std::string vertexShaderUniforms;
     std::string vertexShaderFunctions;
     std::string vertexShaderMain;
@@ -512,6 +468,11 @@ void LightingShader::compileShader(GLContextData& contextData)
         DATAMANAGER->getSourceShaders(contextData);
     ShaderDataSource& colorSource = *COLORMAPPER->getColorSource(contextData);
     dataSources.topography.reset();
+    if (linesDecorated)
+    {
+        dataSources.coverage.reset();
+        dataSources.lineData.reset();
+    }
     colorSource.reset();
 
     vertexShaderUniforms +=
@@ -675,25 +636,52 @@ void LightingShader::compileShader(GLContextData& contextData)
     std::string vertexShaderSource = vertexShaderUniforms  +
                                      vertexShaderFunctions +
                                      vertexShaderMain;
-std::cerr << vertexShaderSource << std::endl;
+
+CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << vertexShaderSource << std::endl;)
+
     compileShaderFromString(vertexShader,vertexShaderSource.c_str());
+
+
+//------------------------------------------------------------------------------
+
 
     /* Compile the standard fragment shader: */
     std::string fragmentShaderSource;
-    std::string progFile(CRUSTA_SHARE_PATH);
-    if (linesDecorated)
-        progFile += "/decoratedRenderer.fp";
-    else
-        progFile += "/plainRenderer.fp";
-    readFileToString(progFile.c_str(), fragmentShaderSource);
 
-try{
-    compileShaderFromString(fragmentShader,fragmentShaderSource.c_str());
-}
-catch (std::exception& e){
-    std::cerr << e.what() << std::endl;
-    compileShaderFromString(fragmentShader, "void main(){gl_FragColor=vec4(1.0);}");
-}
+    if (linesDecorated)
+    {
+        decoratedLineRenderer.setSources(&dataSources.coverage,
+                                         &dataSources.lineData);
+        decoratedLineRenderer.reset();
+        fragmentShaderSource += decoratedLineRenderer.getCode() + "\n\n";
+    }
+    else
+    {
+        fragmentShaderSource += "void render(inout vec4 fragColor) {}\n\n";
+    }
+
+    fragmentShaderSource += "\
+void main()\n\
+{\n\
+  /* setup the default color to whatever the vertex program computed */\n\
+  gl_FragColor = gl_Color;\n\
+  /** render the fragment */\n\
+  render(gl_FragColor);\n\
+}\n\
+";
+
+CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
+
+    try
+    {
+        compileShaderFromString(fragmentShader,fragmentShaderSource.c_str());
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+        compileShaderFromString(fragmentShader,
+                                "void main() { gl_FragColor=vec4(1.0); }");
+    }
 
     /* Link the program object: */
     glLinkProgramARB(programObject);
@@ -715,7 +703,8 @@ catch (std::exception& e){
     }
 }
 
-void LightingShader::compileShaderFromString(GLhandleARB shaderObject,const char* shaderSource)
+void LightingShader::
+compileShaderFromString(GLhandleARB shaderObject,const char* shaderSource)
 {
     /* Determine the length of the source string: */
     GLint shaderSourceLength=GLint(strlen(shaderSource));

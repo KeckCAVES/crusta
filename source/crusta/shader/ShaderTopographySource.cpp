@@ -14,7 +14,8 @@ ShaderTopographySource(ShaderDataSource* _geometrySrc,
                        ShaderDataSource* _heightSrc) :
     geometrySrc(_geometrySrc), heightSrc(_heightSrc), centroidUniform(-2)
 {
-    centroidName = makeUniqueName("center");
+///\todo this is dangerous. Other shaders assume the existance of this uniform
+    centroidName = "center";
 }
 
 void ShaderTopographySource::
