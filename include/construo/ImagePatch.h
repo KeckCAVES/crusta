@@ -31,7 +31,8 @@ public:
     SphereCoverage* sphereCoverage;
 
     ImagePatch();
-    ImagePatch(const std::string patchName, double pixelScale,
+    ImagePatch(const std::string patchName,
+               double pixelOffset, double pixelScale,
                const std::string& nodata, bool pointSampled);
     ~ImagePatch();
 };

@@ -15,12 +15,14 @@ ImagePatch() :
 
 template <typename PixelType>
 ImagePatch<PixelType>::
-ImagePatch(const std::string patchName, double pixelScale,
+ImagePatch(const std::string patchName,
+           double pixelOffset, double pixelScale,
            const std::string& nodataString, bool pointSampled) :
     image(NULL), transform(NULL), imageCoverage(NULL), sphereCoverage(NULL)
 {
     //load the image file
     image = ImageFileLoader<PixelType>::loadImageFile(patchName.c_str());
+    image->setPixelOffset(pixelOffset);
     image->setPixelScale(pixelScale);
     if (!nodataString.empty())
     {

@@ -14,6 +14,17 @@ typedef Geometry::Vector<uint8, 3> Vector3ui8;
 
 
 inline
+Vector3ui8 operator+(const Vector3ui8& tc, double d)
+{
+    return Vector3ui8(tc[0]+d, tc[1]+d, tc[2]+d);
+}
+inline
+Vector3ui8 operator+(double d, const Vector3ui8& tc)
+{
+    return tc + d;
+}
+
+inline
 Vector3ui8 operator*(const Vector3ui8& tc, double d)
 {
     return Vector3ui8(tc[0]*d, tc[1]*d, tc[2]*d);

@@ -35,11 +35,6 @@ using namespace crusta;
 
 int main(int argc, char* argv[])
 {
-    typedef std::vector<const char*> Names;
-    typedef std::vector<std::string> NodataStrings;
-    typedef std::vector<double>      Scales;
-    typedef std::vector<bool>        GridSamplingFlags;
-
     enum BuildType
     {
         UNDEFINED_BUILD,
@@ -52,6 +47,10 @@ int main(int argc, char* argv[])
 
     //flag whether to create color or DEM mosaics
     BuildType buildType = UNDEFINED_BUILD;
+    /* the current offset value to be applied to values of the input data.
+       This value can be changed on the command line during parsing by using
+       the -offset flag */
+    double offset = 0.0;
     /* the current scaling factor to be applied to values of the input data.
        This value can be changed on the command line during parsing by using
        the -scale flag */
@@ -122,6 +121,20 @@ int main(int argc, char* argv[])
                 return 1;
             }
         }
+        else if (strcasecmp(argv[i], "-offset") == 0)
+        {
+            //read the offset for the following input data
+            ++i;
+            if (i<argc)
+            {
+                offset = atof(argv[i]);
+            }
+            else
+            {
+                std::cerr << "Dangling offset argument" << std::endl;
+                return 1;
+            }
+        }
         else if (strcasecmp(argv[i], "-scale") == 0)
         {
             //read the scale for the following input data
@@ -177,16 +190,17 @@ int main(int argc, char* argv[])
         {
             //gather the image patch name and scale factor for the values
             imageSources.push_back(BuilderBase::ImagePatchSource(
-                argv[i], scale, nodata, pointSampled));
+                argv[i], offset, scale, nodata, pointSampled));
         }
     }
 
     if (buildType == UNDEFINED_BUILD)
     {
-        std::cerr << "Usage:" << std::endl << "construo -dem | -color | -layerf"
-                     " <globe file name> [-scale <scalar>] [-nodata " <<
-                     "<value>] [-pointsampling] [-areasampling] " <<
-                     "[-settings <settings file>] <input files>" << std::endl;
+        std::cerr << "Usage:" << std::endl << "construo -dem | -color | " <<
+                     "-layerf <globe file name> [-offset <scalar>] [-scale " <<
+                     "<scalar>] [-nodata <value>] [-pointsampling] " <<
+                     "[-areasampling] [-settings <settings file>] <input " <<
+                     "files>" << std::endl;
         return 1;
     }
 

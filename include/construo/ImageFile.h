@@ -1,4 +1,4 @@
-///\todo fix GPL
+/** \todo fix GPL */
 
 /***********************************************************************
 ImageFile - Base class to represent image files for simple reading of
@@ -40,27 +40,32 @@ public:
     ImageFile();
     virtual ~ImageFile();
 
-    ///set the uniform scale of the pixel values
+    /** set the uniform offset of the pixel values */
+    void setPixelOffset(double offset);
+    /** retrieve the uniform offset of the pixel values */
+    double getPixelOffset() const;
+    /** set the uniform scale of the pixel values */
     void setPixelScale(double scale);
-    ///retrieve the uniform scale fo the pixel values
+    /** retrieve the uniform scale of the pixel values */
     double getPixelScale() const;
-    ///retrieve the nodata value
+    /** retrieve the nodata value */
     const PixelType& getNodata() const;
-    ///set the nodata value
+    /** set the nodata value */
     void setNodata(const PixelType& nodataValue);
-    ///returns image size
+    /** returns image size */
     const int* getSize() const;
-    ///reads a rectangle of pixel data into the given buffer
+    /** reads a rectangle of pixel data into the given buffer */
     virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
                                PixelType* rectBuffer) const = 0;
 
 protected:
-    /** the uniform scale of the values of the image (in particular for DEMs
-        that would be the elevation resolution in meters) */
+    /** the uniform offset of the values of the image */
+    double pixelOffset;
+    /** the uniform scale of the values of the image */
     double pixelScale;
-    ///the value corresponding to "no data"
+    /** the value corresponding to "no data" */
     PixelType nodata;
-    ///size of the image in pixels (width x height)
+    /** size of the image in pixels (width x height) */
     int size[2];
 };
 

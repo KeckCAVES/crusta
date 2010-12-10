@@ -279,9 +279,10 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
         typedef SubsampleFilter<PixelType, DYNAMIC_FILTER_TYPE> Filter;
         for (int i=0; i<static_cast<int>(ib.indices.size()); ++i)
         {
-            const int& idx = ib.indices[i];
-            double at[2]   = { sampleBuf[idx][0], sampleBuf[idx][1] };
+            const int& idx          = ib.indices[i];
+            double at[2]            = { sampleBuf[idx][0], sampleBuf[idx][1] };
             PixelType& defaultValue = node->data[idx];
+
             node->data[idx] = Filter::sample(rectBuffer, rectOrigin, at,
                 rectSize, imgNodata, defaultValue, globeNodata);
 
@@ -396,7 +397,8 @@ updateFinestLevels(const ImagePatchSource& patchSource)
     int depth = 0;
 
     //create a new image patch
-    Patch patch(patchSource.path,   patchSource.pixelScale,
+    Patch patch(patchSource.path,
+                patchSource.pixelOffset, patchSource.pixelScale,
                 patchSource.nodata, patchSource.pointSampled);
 
 ///\todo remove

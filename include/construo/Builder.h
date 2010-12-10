@@ -16,13 +16,14 @@ class BuilderBase
 public:
     struct ImagePatchSource
     {
-        ImagePatchSource(const std::string& name, double scale,
+        ImagePatchSource(const std::string& name, double offset, double scale,
                          const std::string& data, bool sample) :
             path(name), pixelScale(scale), nodata(data), pointSampled(sample)
         {
         }
 
         std::string path;
+        double      pixelOffset;
         double      pixelScale;
         std::string nodata;
         bool        pointSampled;

@@ -181,12 +181,13 @@ assert(rectOrigin[i]+rectSize[i]-1 < size[i]);
                        sizeof(float), rowWidth);
 
         //scale the pixel values
-        if (pixelScale != 1.0)
+        if (pixelOffset!=0.0 || pixelScale!=1.0)
         {
             for (float* p=rectBuffer; p < rectBuffer + rectSize[0]*rectSize[1];
                  ++p)
             {
-                *p = pixelScale * (*p);
+                if (*p != nodata)
+                    *p = pixelOffset + pixelScale * (*p);
             }
         }
     }
@@ -276,12 +277,13 @@ assert(rectOrigin[i]+rectSize[i]-1 < size[i]);
         }
 
         //scale the pixel values
-        if (pixelScale != 1.0)
+        if (pixelOffset!=0.0 || pixelScale!=1.0)
         {
             for (Vector3ui8* p=rectBuffer;
                  p < (rectBuffer + rectSize[0]*rectSize[1]); ++p)
             {
-                *p = pixelScale * (*p);
+                if (*p != nodata)
+                    *p = pixelOffset + pixelScale * (*p);
             }
         }
     }

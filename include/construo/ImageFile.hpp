@@ -29,7 +29,7 @@ template <class PixelType>
 inline
 ImageFile<PixelType>::
 ImageFile() :
-    pixelScale(1.0)
+    pixelOffset(0.0), pixelScale(1.0)
 {
     size[0] = size[1] = 0;
 }
@@ -39,6 +39,22 @@ inline
 ImageFile<PixelType>::
 ~ImageFile()
 {
+}
+
+template <class PixelType>
+inline void
+ImageFile<PixelType>::
+setPixelOffset(double offset)
+{
+    pixelOffset = offset;
+}
+
+template <class PixelType>
+inline double
+ImageFile<PixelType>::
+getPixelOffset() const
+{
+    return pixelOffset;
 }
 
 template <class PixelType>
