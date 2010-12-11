@@ -18,7 +18,8 @@ public:
     {
         ImagePatchSource(const std::string& name, double offset, double scale,
                          const std::string& data, bool sample) :
-            path(name), pixelScale(scale), nodata(data), pointSampled(sample)
+            path(name), pixelOffset(offset), pixelScale(scale),
+            nodata(data), pointSampled(sample)
         {
         }
 

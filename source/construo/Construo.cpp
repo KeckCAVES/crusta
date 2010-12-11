@@ -135,6 +135,10 @@ int main(int argc, char* argv[])
                 return 1;
             }
         }
+        else if (strcasecmp(argv[i], "-noOffset") == 0)
+        {
+            offset = 0.0;
+        }
         else if (strcasecmp(argv[i], "-scale") == 0)
         {
             //read the scale for the following input data
@@ -149,6 +153,10 @@ int main(int argc, char* argv[])
                 return 1;
             }
         }
+        else if (strcasecmp(argv[i], "-noScale") == 0)
+        {
+            scale = 1.0;
+        }
         else if (strcasecmp(argv[i], "-nodata") == 0)
         {
             //read the nodata value string for the following input data
@@ -162,6 +170,10 @@ int main(int argc, char* argv[])
                 std::cerr << "Dangling 'nodata' argument" << std::endl;
                 return 1;
             }
+        }
+        else if (strcasecmp(argv[i], "-defaultNodata") == 0)
+        {
+            nodata = "";
         }
         else if (strcasecmp(argv[i], "-pointsampling") == 0)
         {
@@ -196,11 +208,11 @@ int main(int argc, char* argv[])
 
     if (buildType == UNDEFINED_BUILD)
     {
-        std::cerr << "Usage:" << std::endl << "construo -dem | -color | " <<
-                     "-layerf <globe file name> [-offset <scalar>] [-scale " <<
-                     "<scalar>] [-nodata <value>] [-pointsampling] " <<
-                     "[-areasampling] [-settings <settings file>] <input " <<
-                     "files>" << std::endl;
+        std::cerr << "Usage:\nconstruo -dem | -color | -layerf <globe file "
+                     "name> [-offset <scalar> | -noOffset] [-scale <scalar> | "
+                     "-noScale] [-nodata <value> | -defaultNodata] "
+                     "[-pointsampling] [-areasampling] [-settings <settings "
+                     "file>] <input files>\n";
         return 1;
     }
 
