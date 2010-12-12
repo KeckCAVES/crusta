@@ -45,7 +45,9 @@ CrustaSettings::CrustaSettings() :
     lineDataTexSize(8192),
     lineDataCoordStep(1.0f / lineDataTexSize),
     lineDataStartCoord(0.5f * lineDataCoordStep),
-    lineCoverageTexSize(TILE_RESOLUTION>>1)
+    lineCoverageTexSize(TILE_RESOLUTION>>1),
+
+    surfaceProjectorRayIntersect(true)
 {
 }
 
@@ -99,67 +101,72 @@ loadFromFiles(const Strings& cfgNames)
 
     //try to extract the globe specifications
     cfgFile.setCurrentSection("/Crusta/Globe");
-    globeName   = cfgFile.retrieveString("./name", globeName);
-    globeRadius = cfgFile.retrieveValue<double>("./radius", globeRadius);
+    globeName   = cfgFile.retrieveString("name", globeName);
+    globeRadius = cfgFile.retrieveValue<double>("radius", globeRadius);
 
     //try to extract the terrain properties
     cfgFile.setCurrentSection("/Crusta/Terrain");
     terrainDefaultHeight = cfgFile.retrieveValue<float>(
-        "./defaultHeight", terrainDefaultHeight);
+        "defaultHeight", terrainDefaultHeight);
     terrainDefaultColor = cfgFile.retrieveValue<Color>(
-        "./defaultColor", terrainDefaultColor);
+        "defaultColor", terrainDefaultColor);
     terrainDefaultLayerfData = cfgFile.retrieveValue<float>(
-        "./defaultLayerfData", terrainDefaultLayerfData);
+        "defaultLayerfData", terrainDefaultLayerfData);
 
     terrainAmbientColor = cfgFile.retrieveValue<Color>(
-        "./ambientColor", terrainAmbientColor);
+        "ambientColor", terrainAmbientColor);
     terrainDiffuseColor = cfgFile.retrieveValue<Color>(
-        "./diffuseColor", terrainDiffuseColor);
+        "diffuseColor", terrainDiffuseColor);
     terrainEmissiveColor = cfgFile.retrieveValue<Color>(
-        "./emissiveColor", terrainEmissiveColor);
+        "emissiveColor", terrainEmissiveColor);
     terrainSpecularColor = cfgFile.retrieveValue<Color>(
-        "./specularColor", terrainSpecularColor);
+        "specularColor", terrainSpecularColor);
     terrainShininess = cfgFile.retrieveValue<double>(
-        "./shininess", terrainShininess);
+        "shininess", terrainShininess);
 
     //try to extract the cache settings
     cfgFile.setCurrentSection("/Crusta/Cache");
     cacheMainNodeSize = cfgFile.retrieveValue<int>(
-        "./mainNodeSize", cacheMainNodeSize);
+        "mainNodeSize", cacheMainNodeSize);
     cacheMainGeometrySize = cfgFile.retrieveValue<int>(
-        "./mainGeometrySize", cacheMainGeometrySize);
+        "mainGeometrySize", cacheMainGeometrySize);
     cacheMainColorSize = cfgFile.retrieveValue<int>(
-        "./mainColorSize", cacheMainColorSize);
+        "mainColorSize", cacheMainColorSize);
     cacheMainLayerfSize = cfgFile.retrieveValue<int>(
-        "./mainLayerfSize", cacheMainLayerfSize);
+        "mainLayerfSize", cacheMainLayerfSize);
     cacheGpuGeometrySize = cfgFile.retrieveValue<int>(
-        "./gpuGeometrySize", cacheGpuGeometrySize);
+        "gpuGeometrySize", cacheGpuGeometrySize);
     cacheGpuColorSize = cfgFile.retrieveValue<int>(
-        "./gpuColorSize", cacheGpuColorSize);
+        "gpuColorSize", cacheGpuColorSize);
     cacheGpuLayerfSize = cfgFile.retrieveValue<int>(
-        "./gpuLayerfSize", cacheGpuLayerfSize);
+        "gpuLayerfSize", cacheGpuLayerfSize);
     cacheGpuCoverageSize = cfgFile.retrieveValue<int>(
-        "./gpuCoverageSize", cacheGpuCoverageSize);
+        "gpuCoverageSize", cacheGpuCoverageSize);
     cacheGpuLineDataSize = cfgFile.retrieveValue<int>(
-        "./gpuLineDataSize", cacheGpuLineDataSize);
+        "gpuLineDataSize", cacheGpuLineDataSize);
 
     //try to extract the data manager settings
     cfgFile.setCurrentSection("/Crusta/DataManager");
     dataManMaxFetchRequests = cfgFile.retrieveValue<int>(
-        "./maxFetchRequests", dataManMaxFetchRequests);
+        "maxFetchRequests", dataManMaxFetchRequests);
 
     //try to extract the color mapper settings
     cfgFile.setCurrentSection("/Crusta/ColorMapper");
-    colorMapTexSize = cfgFile.retrieveValue<int>("./texSize", colorMapTexSize);
+    colorMapTexSize = cfgFile.retrieveValue<int>("texSize", colorMapTexSize);
 
     //try to extract the line decoration settings
     cfgFile.setCurrentSection("/Crusta/DecoratedArt");
     decorateVectorArt = cfgFile.retrieveValue<bool>(
-        "./decorateVectorArt", decorateVectorArt);
+        "decorateVectorArt", decorateVectorArt);
     lineDataTexSize = cfgFile.retrieveValue<int>(
-        "./dataTexSize", lineDataTexSize);
+        "dataTexSize", lineDataTexSize);
     lineDataCoordStep  = 1.0f / lineDataTexSize;
     lineDataStartCoord = 0.5f * lineDataCoordStep;
+
+    //try to extract the surface projector settings
+    cfgFile.setCurrentSection("/Crusta/SurfaceProjector");
+    surfaceProjectorRayIntersect = cfgFile.retrieveValue<bool>(
+        "rayIntersect", surfaceProjectorRayIntersect);
 }
 
 

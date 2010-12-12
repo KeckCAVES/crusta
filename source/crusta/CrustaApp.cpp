@@ -704,11 +704,11 @@ alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
     if (origin == Point3::origin)
         origin = Point3(0.0, 1.0, 0.0);
 
-    origin = crusta->snapToSurface(origin);
+    SurfacePoint surfacePoint = crusta->snapToSurface(origin);
 
     //misuse the Geoid just to build a surface tangent frame
     Geometry::Geoid<double> geoid(SETTINGS->globeRadius, 0.0);
-    Point3 lonLatEle = geoid.cartesianToGeodetic(origin);
+    Point3 lonLatEle = geoid.cartesianToGeodetic(surfacePoint.position);
     Geometry::Geoid<double>::Frame frame =
         geoid.geodeticToCartesianFrame(lonLatEle);
     surfaceFrame = Vrui::NavTransform(

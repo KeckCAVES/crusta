@@ -74,6 +74,10 @@ public:
     float lineDataStartCoord;
     int   lineCoverageTexSize;
     ///\}
+
+    ///\{ surface projector settings
+    bool surfaceProjectorRayIntersect;
+    ///\}
 };
 
 

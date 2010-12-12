@@ -14,6 +14,7 @@
 #include <crusta/ColorMapper.h>
 #include <crusta/DataManager.h>
 #include <crusta/ElevationRangeTool.h>
+#include <crusta/Homography.h>
 #include <crusta/map/MapManager.h>
 #include <crusta/QuadCache.h>
 #include <crusta/QuadTerrain.h>
@@ -273,11 +274,12 @@ unload()
 }
 
 
-Point3 Crusta::
+SurfacePoint Crusta::
 snapToSurface(const Point3& pos, Scalar elevationOffset)
 {
+    SurfacePoint surfacePoint;
     if (renderPatches.empty())
-        return pos;
+        return surfacePoint;
 
     typedef NodeMainBuffer MainBuffer;
     typedef NodeMainData   MainData;
@@ -342,6 +344,150 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
         }
     }
 
+    //record the final node encountered
+    surfacePoint.nodeIndex = node->index;
+
+#if 1
+    Point3 centroid = node->scope.getCentroid(node->scope.getRadius());
+    Vector3 ups[4];
+    for (int i=0; i<4; ++i)
+    {
+        ups[i] = Vector3(node->scope.corners[i]);
+        ups[i].normalize();
+    }
+    Point3 relativeCorners[4];
+    for (int i=0; i<4; ++i)
+    {
+        for (int j=0; j<3; ++j)
+            relativeCorners[i][j] = node->scope.corners[i][j] - centroid[j];
+    }
+
+//- compute projection matrix
+    static const int tileRes = TILE_RESOLUTION;
+    Homography toNormalized;
+    //destinations are fll, flr, ful, bll, bur
+    toNormalized.setDestination(Point3(        0,         0, -1),
+                                Point3(tileRes-1,         0, -1),
+                                Point3(        0, tileRes-1, -1),
+                                Point3(        0,         0,  1),
+                                Point3(tileRes-1, tileRes-1,  1));
+    //compute corresponding sources
+    toNormalized.setSource(relativeCorners[0] - ups[0],
+                           relativeCorners[1] - ups[1],
+                           relativeCorners[2] - ups[2],
+                           relativeCorners[0] + ups[0],
+                           relativeCorners[3] + ups[3]);
+    //compute the projective transformation
+    toNormalized.computeProjective();
+
+//- transform the test point
+    Point3 relativePos(pos[0]-centroid[0],
+                       pos[1]-centroid[1],
+                       pos[2]-centroid[2]);
+
+    typedef Geometry::HVector<Point3::Scalar,Point3::dimension> HPoint;
+
+    const Homography::Projective& p = toNormalized.getProjective();
+
+    Point3 projectedPos = p.transform(HPoint(relativePos)).toPoint();
+
+//- determine the containing cell and the position within it
+    Point2i& cellIndex    = surfacePoint.cellIndex;
+    Point2&  cellPosition = surfacePoint.cellPosition;
+    cellIndex = Point2i(projectedPos[0], projectedPos[1]);
+    for (int i=0; i<2; ++i)
+    {
+///\todo negative or greater than TILE_RESOLUTION-1 shouldn't happen
+        if (cellIndex[i] < 0)
+        {
+            cellIndex[i]    = 0;
+            cellPosition[i] = 0.0;
+        }
+        else if (cellIndex[i] >= tileRes-1)
+        {
+            cellIndex[i]    = tileRes-2;
+            cellPosition[i] = 1.0;
+        }
+        else
+        {
+            cellPosition[i] = projectedPos[i] - cellIndex[i];
+        }
+    }
+
+//- sample the cell
+    int              linearOffset = cellIndex[1]*tileRes + cellIndex[0];
+    Vertex*          cellV        = nodeData.geometry + linearOffset;
+    DemHeight::Type* cellH        = nodeData.height   + linearOffset;
+
+    const Vertex::Position* positions[4] = {
+        &(cellV->position), &((cellV+1)->position),
+        &((cellV+tileRes)->position), &((cellV+tileRes+1)->position) };
+
+    DemHeight::Type heights[4] = {
+        node->getHeight(*cellH),           node->getHeight(*(cellH+1)),
+        node->getHeight(*(cellH+tileRes)), node->getHeight(*(cellH+tileRes+1))
+    };
+    //construct the properly extruded corners of the current cell
+    Vector3 cellCorners[4];
+    for (int i=0; i<4; ++i)
+    {
+        for (int j=0; j<3; ++j)
+            cellCorners[i][j] = (*(positions[i]))[j] + node->centroid[j];
+        Vector3 extrude(cellCorners[i]);
+        extrude.normalize();
+        extrude *= (heights[i] + elevationOffset) * getVerticalScale();
+        cellCorners[i] += extrude;
+    }
+    //interpolate the corners
+#if 1
+///\todo get rid of all the renaming of the same things c0, v0...
+//barycentric per triangle
+    Vector2 v[3];
+    Vector3 c[3];
+    v[0] = Vector2(0.0, 0.0);
+    c[0] = cellCorners[0];
+    if (cellPosition[0]>cellPosition[1])
+    {
+        v[1] = Vector2(1.0, 0.0);
+        c[1] = cellCorners[1];
+        v[2] = Vector2(1.0, 1.0);
+        c[2] = cellCorners[3];
+    }
+    else
+    {
+        v[1] = Vector2(1.0, 1.0);
+        c[1] = cellCorners[3];
+        v[2] = Vector2(0.0, 1.0);
+        c[2] = cellCorners[2];
+    }
+    //see http://en.wikipedia.org/wiki/Barycentric_coordinates_(mathematics)
+    //compute the determinant
+    static const double EPSILON = 0.000001;
+    double det = (v[1][0]-v[0][0])*(v[2][1]-v[0][1]) - (v[2][0]-v[0][0])*(v[1][1]-v[0][1]);
+    assert(Math::abs(det) > EPSILON);
+    det = 1.0 / det;
+
+    //compute weights
+    double w[3];
+    w[0] =(v[1][0]-cellPosition[0])*(v[2][1]-cellPosition[1])-(v[2][0]-cellPosition[0])*(v[1][1]-cellPosition[1]);
+    w[0]*= det;
+    assert(w[0]>=0.0 || w[0]<=1.0);
+    w[1] =(v[2][0]-cellPosition[0])*(v[0][1]-cellPosition[1])-(v[0][0]-cellPosition[0])*(v[2][1]-cellPosition[1]);
+    w[1]*= det;
+    assert(w[1]>=0.0 || w[1]<=1.0);
+    w[2] = 1.0 - w[0] - w[1];
+    assert(w[2]>=0.0);
+
+    surfacePoint.position = Point3(w[0]*c[0] + w[1]*c[1] + w[2]*c[2]);
+#else
+//bi-linear
+    Vector3 lower = cellCorners[0] +
+                    cellPosition[0]*(cellCorners[1]-cellCorners[0]);
+    Vector3 upper = cellCorners[2] +
+                    cellPosition[0]*(cellCorners[3]-cellCorners[2]);
+    surfacePoint.position = Point3(lower + cellPosition[1]*(upper-lower));
+#endif
+#else
 //- locate the cell of the refinement containing the point
     int numLevels = 1;
     int res = TILE_RESOLUTION-1;
@@ -352,9 +498,9 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     }
 
 ///\todo optimize the containement checks as above by using vert/horiz split
-    Scope scope   = node->scope;
-    int offset[2] = { 0, 0 };
-    int shift     = (TILE_RESOLUTION-1) >> 1;
+    Point2i offset(0.0, 0.0);
+    Scope scope = node->scope;
+    int shift   = (TILE_RESOLUTION-1) >> 1;
     for (int level=1; level<numLevels; ++level)
     {
         //compute the coverage for the children
@@ -375,6 +521,12 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
             }
         }
     }
+
+    //record the cell offset
+    surfacePoint.cellIndex = offset;
+
+///\todo record the proper cell position
+    surfacePoint.cellPosition = Point2(0.0, 0.0);
 
 //- sample the cell
     static const int tileRes = TILE_RESOLUTION;
@@ -425,14 +577,28 @@ CRUSTA_DEBUG(70, CRUSTA_DEBUG_OUT <<
             Vector3 toPos = Vector3(pos);
             toPos.normalize();
             toPos *= height;
-            return Point3(toPos[0], toPos[1], toPos[2]);
+            surfacePoint.position = Point3(toPos[0], toPos[1], toPos[2]);
         }
+        else
+            surfacePoint.position = ray(hit.getParameter());
     }
+    else
+        surfacePoint.position = ray(hit.getParameter());
+#endif
 
-    return ray(hit.getParameter());
+#if 0
+std::cerr << "\n" << std::setprecision(std::numeric_limits<double>::digits10) <<
+        "pos: " << pos[0] << " " << pos[1] << " " << pos[2] << "\n" <<
+        "proj: " << projectedPos[0] << " " << projectedPos[1] << "\n" <<
+        "sp.pos: " << surfacePoint.position[0] << " " << surfacePoint.position[1] << " " << surfacePoint.position[2] << "\n" <<
+        "sp.node: " << surfacePoint.nodeIndex.med_str() << "\n" <<
+        "sp.cellI: " << surfacePoint.cellIndex[0] << " " << surfacePoint.cellIndex[1] << "\n" <<
+        "sp.cellP: " << surfacePoint.cellPosition[0] << " " << surfacePoint.cellPosition[1] << "\n";
+#endif
+    return surfacePoint;
 }
 
-HitResult Crusta::
+SurfacePoint Crusta::
 intersect(const Ray& ray) const
 {
 #if DEBUG_INTERSECT_CRAP
@@ -447,7 +613,7 @@ CrustaVisualizer::peek();
 #endif //DEBUG_INTERSECT_CRAP
 
     if (renderPatches.empty())
-        return HitResult();
+        return SurfacePoint();
 
     const Scalar& verticalScale = getVerticalScale();
 
@@ -459,7 +625,7 @@ CrustaVisualizer::peek();
     gin = std::max(gin, 0.0);
 
     if (!intersects)
-        return HitResult();
+        return SurfacePoint();
 
     shell.setRadius(SETTINGS->globeRadius +
                     verticalScale*globalElevationRange[0]);
@@ -511,6 +677,7 @@ CrustaVisualizer::peek();
 #endif //DEBUG_INTERSECT_CRAP
 
     //traverse terrain patches until intersection or ray exit
+    SurfacePoint surfacePoint;
     Scalar tin           = gin;
     Scalar tout          = 0;
     int    sideIn        = -1;
@@ -521,8 +688,8 @@ int patchesVisited = 0;
 #endif //DEBUG_INTERSECT_CRAP
     while (true)
     {
-        hit = patch->intersect(ray, tin, sideIn, tout, sideOut, gout);
-        if (hit.isValid())
+        surfacePoint = patch->intersect(ray, tin, sideIn, tout, sideOut, gout);
+        if (surfacePoint.isValid())
             break;
 
         //move to the patch on the exit side
@@ -552,7 +719,7 @@ std::cerr << "visited: " << ++patchesVisited << std::endl;
 #endif //DEBUG_INTERSECT_CRAP
     }
 
-    return hit;
+    return surfacePoint;
 }
 
 

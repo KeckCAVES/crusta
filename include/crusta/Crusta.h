@@ -11,8 +11,9 @@
 #include <crusta/basics.h>
 #include <crusta/CrustaSettings.h>
 #include <crusta/LightingShader.h>
-#include <crusta/QuadCache.h>
 #include <crusta/map/Shape.h>
+#include <crusta/QuadCache.h>
+#include <crusta/SurfacePoint.h>
 
 #if CRUSTA_ENABLE_DEBUG
 #include <crusta/DebugTool.h>
@@ -68,9 +69,9 @@ public:
 ///\todo potentially deprecate
     /** snap the given cartesian point to the surface of the terrain (at an
         optional offset) */
-    Point3 snapToSurface(const Point3& pos, Scalar offset=Scalar(0));
+    SurfacePoint snapToSurface(const Point3& pos, Scalar offset=Scalar(0));
     /** intersect a ray with the crusta globe */
-    HitResult intersect(const Ray& ray) const;
+    SurfacePoint intersect(const Ray& ray) const;
 
     /** intersect a single segment with the global hierarchy */
     void intersect(Shape::ControlPointHandle start,

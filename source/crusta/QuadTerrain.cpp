@@ -76,7 +76,7 @@ getRootNode() const
     return DATAMANAGER->getData(getRootBuffer());
 }
 
-HitResult QuadTerrain::
+SurfacePoint QuadTerrain::
 intersect(const Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout,
           const Scalar gout) const
 {
@@ -686,7 +686,7 @@ generateIndexTemplate(GLuint& indexTemplate)
 }
 
 
-HitResult QuadTerrain::
+SurfacePoint QuadTerrain::
 intersectNode(const MainBuffer& nodeBuf, const Ray& ray,
               Scalar tin, int sin, Scalar& tout, int& sout,
               const Scalar gout) const
@@ -801,7 +801,7 @@ CrustaVisualizer::clear(5);
 
     //does it intersect
     if (!intersects || t0>tout || t1<tin)
-        return HitResult();
+        return SurfacePoint();
 
 //- perform leaf intersection?
     //is it even possible to retrieve higher res data?
@@ -891,15 +891,15 @@ int childrenVisited = 0;
         if (childExists)
         {
             //recurse
-            HitResult hit = intersectNode(childBuf, ray, ctin, csin,
-                                          ctout, csout, gout);
-            if (hit.isValid())
-                return hit;
+            SurfacePoint surfacePoint = intersectNode(childBuf, ray, ctin, csin,
+                                                      ctout, csout, gout);
+            if (surfacePoint.isValid())
+                return surfacePoint;
             else
             {
                 ctin = ctout;
                 if (ctin > gout)
-                    return HitResult();
+                    return SurfacePoint();
 
 #if DEBUG_INTERSECT_CRAP
 int oldChildId = childId;
@@ -915,7 +915,7 @@ int oldCsin    = csin;
                 csin    = next[childId][csout][1];
                 childId = next[childId][csout][0];
                 if (childId == -1)
-                    return HitResult();
+                    return SurfacePoint();
 
 #if DEBUG_INTERSECT_CRAP
 MainCacheBuffer* oldBuf = childBuf;
@@ -949,14 +949,18 @@ if (childExists)
 
     //execution should never reach this point
     assert(false);
-    return HitResult();
+    return SurfacePoint();
 }
 
-HitResult QuadTerrain::
+SurfacePoint QuadTerrain::
 intersectLeaf(const MainData& leafData, const Ray& ray,
               Scalar param, int side, const Scalar gout) const
 {
     NodeData& leaf = *leafData.node;
+
+    SurfacePoint surfacePoint;
+    surfacePoint.nodeIndex = leaf.index;
+    
 CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT <<
 "* " << leaf.index.med_str() << "\n";)
 
@@ -1109,7 +1113,7 @@ CrustaVisualizer::show("Busted Entry");
 if (!alongEdge.isValid() ||
     alongEdge.getParameter()<0 || alongEdge.getParameter()>1.0)
 {
-    return HitResult();
+    return SurfacePoint();
 }
 #else
         assert(alongEdge.isValid() &&
@@ -1211,6 +1215,12 @@ if (badEntry || newParam == Math::Constants<Scalar>::max)
 #endif //DEBUG_INTERSECT_CRAP
     }
 
+    //record the cell index
+    surfacePoint.cellIndex = Point2i(cellX, cellY);
+    
+///\todo compute the proper cell position
+    surfacePoint.cellPosition = Point2(0.0, 0.0);
+    
 //- traverse cells
 #if DEBUG_INTERSECT_CRAP
 int traversedCells = 0;
@@ -1273,7 +1283,8 @@ CrustaVisualizer::clear(2);
 }
 } //DEBUG_INTERSECT
 #endif //DEBUG_INTERSECT_CRAP
-            return hit;
+            surfacePoint.position = ray(hit.getParameter());
+            return surfacePoint;
         }
         hit = t1.intersectRay(ray);
         if (hit.isValid())
@@ -1292,7 +1303,8 @@ CrustaVisualizer::clear(2);
 }
 } //DEBUG_INTERSECT
 #endif //DEBUG_INTERSECT_CRAP
-            return hit;
+            surfacePoint.position = ray(hit.getParameter());
+            return surfacePoint;
         }
 
         //determine the exit point and side
@@ -1350,19 +1362,19 @@ std::cerr << "traversedCells: " << traversedCells << std::endl;
 } //DEBUG_INTERSECT
 #endif //DEBUG_INTERSECT_CRAP
 
-            return HitResult();
+            return SurfacePoint();
         }
 
         //move to the next cell
         if (param > gout)
-            return HitResult();
+            return SurfacePoint();
 
         static const int next[4][3] = { {0,1,2}, {-1,0,3}, {0,-1,0}, {1,0,1} };
 
         cellX += next[side][0];
         cellY += next[side][1];
         if (cellX<0 || cellX>tileRes-2 || cellY<0 || cellY>tileRes-2)
-            return HitResult();
+            return SurfacePoint();
 
         offset = cellY*tileRes + cellX;
         cellV  = leafData.geometry + offset;
@@ -1374,7 +1386,7 @@ std::cerr << "traversedCells: " << traversedCells << std::endl;
 #endif //DEBUG_INTERSECT_CRAP
     }
 
-    return HitResult();
+    return SurfacePoint();
 }
 
 

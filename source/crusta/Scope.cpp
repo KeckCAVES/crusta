@@ -19,7 +19,7 @@ getRadius() const
     //compute the radius of the sphere the scope lies on
     return Math::sqrt(corners[0][0]*corners[0][0] +
                       corners[0][1]*corners[0][1] +
-                      corners[0][2]*corners[0][2]);    
+                      corners[0][2]*corners[0][2]);
 }
 
 Scope::Vertex Scope::
@@ -103,23 +103,27 @@ split(Scope scopes[4]) const
 }
 
 bool Scope::
-contains(const Scope::Vertex& p) const
+contains(const Scope::Vertex& point) const
 {
-    typedef Geometry::Vector<Scalar, 3> Vec;
+    Vector3 p(point);
 
     //compute face normals
     static const int remap[5] = {0, 1, 3, 2, 0};
     for (int i=0; i<4; ++i)
     {
-        Vec one(corners[remap[i]]);
-        Vec two(corners[remap[i+1]]);
-        Vec normal = Geometry::cross(one, two);
+        Vector3 one(corners[remap[i]]);
+        Vector3 toP = p - one;
+        Vector3 two(corners[remap[i+1]]);
+        two -= one;
+        one.normalize();
+        two.normalize();
+        Vector3 normal = Geometry::cross(one, two);
         normal.normalize();
 
-        if (p*normal < 0)
+        if (toP*normal < 0)
             return false;
     }
-    
+
     return true;
 }
 

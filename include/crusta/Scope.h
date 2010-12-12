@@ -1,15 +1,21 @@
 #ifndef _Scope_H_
 #define _Scope_H_
 
+
 #include <vector>
 
 #include <Geometry/Point.h>
 #include <crusta/basics.h>
 
+
 BEGIN_CRUSTA
 
+
+/**\todo hide corners behind getters, setters to add an explicitely stored
+    centroid and relative to centroid corner positions, make API explicit
+    about specifying an optional radius*/
 /**
-    A scope is used to define an area on the surface of the earth at a 
+    A scope is used to define an area on the surface of the earth at a
     particular resolution.
 */
 class Scope
@@ -22,6 +28,7 @@ public:
         UPPER_RIGHT
     };
 
+///\todo deprecate the Vertex name
     typedef Geometry::Point<double, 3> Vertex;
     typedef std::vector<Vertex>        Vertices;
     typedef Vertex::Scalar             Scalar;
@@ -50,7 +57,7 @@ public:
     template <typename ScalarParam>
     void getCentroidRefinement(ScalarParam radius, uint resolution,
                                ScalarParam* vertices) const;
-    
+
     /** generate the next refinement of the scope */
     void split(Scope scopes[4]) const;
 
@@ -71,8 +78,11 @@ protected:
              ScalarParam* vertices, ScalarParam radius) const;
 };
 
+
 END_CRUSTA
 
+
 #include <crusta/Scope.hpp>
+
 
 #endif //_Scope_H_

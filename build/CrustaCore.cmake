@@ -76,6 +76,9 @@ add_library(CrustaCore SHARED
     ../include/crusta/Sphere.h
     ../include/crusta/StatsManager.h
     ../include/crusta/SurfaceApproximation.h
+    ../include/crusta/SurfacePoint.h
+    ../include/crusta/SurfaceProbeTool.h
+    ../include/crusta/SurfaceProjector.h
     ../include/crusta/SurfaceTool.h
     ../include/crusta/TextureColor.h
     ../include/crusta/TextureColorGlobeData.h
@@ -145,6 +148,9 @@ add_library(CrustaCore SHARED
     ../source/crusta/Sphere.cpp
     ../source/crusta/StatsManager.cpp
     ../source/crusta/SurfaceApproximation.cpp
+    ../source/crusta/SurfacePoint.cpp
+    ../source/crusta/SurfaceProbeTool.cpp
+    ../source/crusta/SurfaceProjector.cpp
     ../source/crusta/SurfaceTool.cpp
     ../source/crusta/Tool.cpp
     ../source/crusta/TreeIndex.cpp

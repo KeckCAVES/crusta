@@ -173,8 +173,6 @@ template <typename PixelParam>
 void GlobeFile<PixelParam>::
 loadConfiguration(const std::string& cfgName)
 {
-    typedef Geometry::Point<int, 2> Point2i;
-
 #if !CONSTRUO_BUILD
     Misc::ConfigurationFile* cfg = NULL;
 #endif //!CONSTRUO_BUILD

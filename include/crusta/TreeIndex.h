@@ -15,6 +15,7 @@ struct TreeIndex
 
     TreeIndex& operator=(const TreeIndex& other);
     bool operator==(const TreeIndex& other) const;
+    bool operator!=(const TreeIndex& other) const;
     
     TreeIndex up() const;
     TreeIndex down(uint8 which) const;

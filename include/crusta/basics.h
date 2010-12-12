@@ -68,13 +68,17 @@ typedef uint        error;
 typedef double                  FrameStamp;
 typedef std::vector<FrameStamp> FrameStamps;
 
+///\todo deprecate Scalar
 typedef double Scalar;
 
+typedef Geometry::Point<int, 2>     Point2i;
+typedef Geometry::Point<Scalar, 2>  Point2;
 typedef Geometry::Point<Scalar, 3>  Point3;
 typedef Geometry::Point<float, 3>   Point3f;
 typedef std::vector<Point3>         Point3s;
 typedef std::vector<Point3f>        Point3fs;
 typedef Geometry::Vector<float, 2>  Vector2f;
+typedef Geometry::Vector<double, 2> Vector2;
 typedef Geometry::Vector<Scalar, 3> Vector3;
 typedef Geometry::Vector<float, 3>  Vector3f;
 typedef std::vector<Vector2f>       Vector2fs;

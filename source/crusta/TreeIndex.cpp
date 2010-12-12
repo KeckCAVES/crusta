@@ -41,6 +41,13 @@ operator==(const TreeIndex& other) const
            *(reinterpret_cast<const uint64*>(&other));
 }
 
+bool TreeIndex::
+operator!=(const TreeIndex& other) const
+{
+    return !(*this == other);
+}
+
+
 
 TreeIndex TreeIndex::
 up() const

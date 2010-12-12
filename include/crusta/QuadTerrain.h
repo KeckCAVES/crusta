@@ -17,6 +17,7 @@
 #include <crusta/map/Shape.h>
 #include <crusta/QuadCache.h>
 #include <crusta/SurfaceApproximation.h>
+#include <crusta/SurfacePoint.h>
 
 BEGIN_CRUSTA
 
@@ -49,7 +50,7 @@ public:
     const MainData getRootNode() const;
 
     /** ray patch intersection */
-    HitResult intersect(const Ray& ray, Scalar tin, int sin,
+    SurfacePoint intersect(const Ray& ray, Scalar tin, int sin,
                         Scalar& tout, int& sout, const Scalar gout) const;
 
     /** traverse the leaf nodes of the current approximation of the patch */
@@ -134,11 +135,11 @@ protected:
     static void generateIndexTemplate(GLuint& indexTemplate);
 
     /** ray patch traversal function for inner nodes of the quadtree */
-    HitResult intersectNode(const MainBuffer& nodeBuf, const Ray& ray,
+    SurfacePoint intersectNode(const MainBuffer& nodeBuf, const Ray& ray,
                             Scalar tin, int sin, Scalar& tout, int& sout,
                             const Scalar gout) const;
     /** ray patch traversal function for leaf nodes of the quadtree */
-    HitResult intersectLeaf(const MainData& leaf, const Ray& ray,
+    SurfacePoint intersectLeaf(const MainData& leaf, const Ray& ray,
                             Scalar param, int side, const Scalar gout) const;
 
     void intersectNode(Shape::IntersectionFunctor& callback,
