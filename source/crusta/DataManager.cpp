@@ -656,6 +656,12 @@ nextGpuBatch(GLContextData& contextData, const SurfaceApproximation& surface,
 
 
 bool DataManager::
+isCurrent(const NodeMainBuffer& mainBuf) const
+{
+    return mainBuf.node->getFrameStamp() == CURRENT_FRAME;
+}
+
+bool DataManager::
 isComplete(const NodeMainBuffer& mainBuf) const
 {
     if (mainBuf.node==NULL || mainBuf.geometry==NULL || mainBuf.height==NULL)
@@ -851,8 +857,9 @@ streamGpuData(GLContextData& contextData, BatchElement& batchel)
             gpu.lineData->age < main.node->lineCoverageAge)
         {
             //stream the line data from the main representation
-            cache.lineData.stream((SubRegion)(*gpu.lineData), GL_RGBA,
-                                  GL_FLOAT, &main.node->lineData.front());
+            cache.lineData.subStream(
+                (SubRegion)(*gpu.lineData), 0, main.node->lineData.size(),
+                GL_RGBA, GL_FLOAT, &main.node->lineData.front());
             CHECK_GLA;
             //stamp the age of the new data
             gpu.lineData->age = CURRENT_FRAME;

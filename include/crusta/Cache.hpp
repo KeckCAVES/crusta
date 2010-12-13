@@ -23,6 +23,13 @@ CacheBuffer() :
 }
 
 template <typename DataParam>
+const FrameStamp& CacheBuffer<DataParam>::
+getFrameStamp() const
+{
+    return frameStamp;
+}
+
+template <typename DataParam>
 DataParam& CacheBuffer<DataParam>::
 getData()
 {

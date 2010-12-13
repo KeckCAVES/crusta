@@ -330,7 +330,7 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
         TreeIndex childIndex = node->index.down(childId);
         MainBuffer childBuf;
         bool childExists = DATAMANAGER->find(childIndex, childBuf);
-        if (!childExists)
+        if (!childExists || !DATAMANAGER->isCurrent(childBuf))
         {
 ///\todo Vis2010 simplify. Don't allow loads of nodes from here
 //            mainCache.request(MainCache::Request(0.0, nodeBuf, childId));

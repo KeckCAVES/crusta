@@ -154,6 +154,8 @@ public:
     void nextGpuBatch(GLContextData& contextData,
                       const SurfaceApproximation& surface, Batch& batch);
 
+    /** check if the node node is part of the current hierarchy */
+    bool isCurrent(const NodeMainBuffer& mainBuf) const;
     /** check if all main buffers were acquired */
     bool isComplete(const NodeMainBuffer& mainBuf) const;
     /** touch the main buffers */

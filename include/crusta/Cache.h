@@ -49,6 +49,8 @@ public:
 
     CacheBuffer();
 
+    /** retrieve the frame stamp of the buffer */
+    const FrameStamp& getFrameStamp() const;
     /** retrieve the data from the buffer */
     DataParam& getData();
     const DataParam& getData() const;

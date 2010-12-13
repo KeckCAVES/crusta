@@ -133,18 +133,33 @@ void Gpu2dAtlasCache<BufferParam>::
 stream(const SubRegion& sub, GLenum dataFormat, GLenum dataType,
        const void* data)
 {
-    glPushAttrib(GL_TEXTURE_BIT);
-
-    glBindTexture(GL_TEXTURE_2D_ARRAY_EXT, texture);
-    glTexSubImage3D(GL_TEXTURE_2D_ARRAY_EXT, 0, GLint(sub.offset[0]*texSize),
-                    GLint(sub.offset[1]*texSize), GLint(sub.offset[2]),
-                    GLsizei(sub.size[0]*texSize), GLsizei(sub.size[1]*texSize),
-                    1, dataFormat, dataType, data);
-    glPopAttrib();
-
-    CHECK_GLA;
+    subStream(sub, 0, 0,
+              GLsizei(sub.size[0]*texSize), GLsizei(sub.size[1]*texSize),
+              dataFormat, dataType, data);
 }
 
+template <typename BufferParam>
+void Gpu2dAtlasCache<BufferParam>::
+subStream(const SubRegion& sub, GLint xoff, GLint yoff,
+          GLsizei width, GLsizei height,
+          GLenum dataFormat, GLenum dataType, const void* data)
+{
+    CHECK_GL_CLEAR_ERROR;
+    
+    xoff         += GLint(sub.offset[0]*texSize);
+    yoff         += GLint(sub.offset[1]*texSize);
+    GLint zoff    = GLint(sub.offset[2]);
+    GLsizei depth = 1;
+    
+    glPushAttrib(GL_TEXTURE_BIT);
+    
+    glBindTexture(GL_TEXTURE_2D_ARRAY_EXT, texture);
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY_EXT, 0, xoff, yoff, zoff,
+                    width, height, depth, dataFormat, dataType, data);
+    glPopAttrib();
+    
+    CHECK_GLA;
+}
 
 
 template <typename BufferParam>
@@ -310,19 +325,29 @@ void Gpu1dAtlasCache<BufferParam>::
 stream(const SubRegion& sub, GLenum dataFormat, GLenum dataType,
        const void* data)
 {
+    subStream(sub, 0, GLsizei(sub.size[0]*texWidth),
+              dataFormat, dataType, data);
+}
+
+template <typename BufferParam>
+void Gpu1dAtlasCache<BufferParam>::
+subStream(const SubRegion& sub, GLint xoff, GLsizei width,
+          GLenum dataFormat, GLenum dataType, const void* data)
+{
     CHECK_GL_CLEAR_ERROR;
 
+    xoff          += GLint(sub.offset[0]*texWidth);
+    GLint yoff     = GLint(sub.offset[1]*texHeight);
+    GLsizei height = 1;
+    
     glPushAttrib(GL_TEXTURE_BIT);
-
+    
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexSubImage2D(
-        GL_TEXTURE_2D, 0,
-        GLint(sub.offset[0]*texWidth), GLint(sub.offset[1]*texHeight),
-        GLsizei(sub.size[0]*texWidth), 1,
-        dataFormat, dataType, data);
-
+    glTexSubImage2D(GL_TEXTURE_2D, 0, xoff, yoff, width, height,
+                    dataFormat, dataType, data);
+    
     glPopAttrib();
-
+    
     CHECK_GL;
 }
 

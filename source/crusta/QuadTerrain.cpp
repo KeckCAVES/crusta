@@ -38,7 +38,7 @@
 
 ///\todo debug remove
 #include <Geometry/ProjectiveTransformation.h>
-#define COVERAGE_PROJECTION_IN_GL 0
+#define COVERAGE_PROJECTION_IN_GL 1
 
 BEGIN_CRUSTA
 
@@ -294,6 +294,22 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
     srcs[3] = node.scope.corners[0];
     srcs[4] = node.scope.corners[3];
 
+#if 0
+    for (int i=0; i<3; ++i)
+    {
+        Vector3 extrude(srcs[i]);
+        extrude.normalize();
+        extrude *= SETTINGS->globeRadius + elevationRange[0];
+        srcs[i]  = Point3(extrude);
+    }
+    for (int i=3; i<5; ++i)
+    {
+        Vector3 extrude(srcs[i]);
+        extrude.normalize();
+        extrude *= SETTINGS->globeRadius + elevationRange[1];
+        srcs[i]  = Point3(extrude);
+    }
+#else
     //map the source points to planes
     Vector3 normal(node.centroid);
     normal.normalize();
@@ -318,6 +334,7 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
         assert(hit.isValid());
         srcs[i] = ray(hit.getParameter());
     }
+#endif
 
     toNormalized.setSource(srcs[0], srcs[1], srcs[2], srcs[3], srcs[4]);
 
@@ -335,18 +352,16 @@ simply float processing the transformation */
     for (int j=0; j<4; ++j)
     {
         for (int i=0; i<4; ++i)
-        {
-#if 0
-            projMat[j*4+i] = i==j ? 1.0 : 0.0;
-#else
             projMat[j*4+i] = toNormalized.getProjective().getMatrix()(i,j);
-#endif
-        }
     }
-    glUniformMatrix4fv(glItem->lineCoverageTransformUniform, 1, true, projMat);
+    glUniformMatrix4fv(glItem->lineCoverageTransformUniform, 1, false, projMat);
 #endif //COVERAGE_PROJECTION_IN_GL
 
     //setup openGL for rendering the texture
+    GLdouble depthRange[2];
+    glGetDoublev(GL_DEPTH_RANGE, depthRange);
+    glDepthRange(0.0, 0.0);
+
     glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_COLOR_BUFFER_BIT);
 
     //clear the old coverage map
@@ -362,6 +377,8 @@ simply float processing the transformation */
 
     glLineWidth(15.0f);
 
+///\todo remove debug with glsl-devil
+//glIsTexture(33);
     glBegin(GL_LINES);
 
     //as the coverage is traversed also traverse the offsets
@@ -386,7 +403,11 @@ simply float processing the transformation */
             Handle cur  = *hit;
             Handle next = cur; ++next;
 
-#if 1
+#if COVERAGE_PROJECTION_IN_GL
+            //let the GL transform the points
+            glVertex3dv(cur->pos.getComponents());
+            glVertex3dv(next->pos.getComponents());
+#else
             //manually transform the points before passing to the GL
             typedef Geometry::HVector<double,3> HPoint;
 
@@ -400,11 +421,7 @@ simply float processing the transformation */
 
             glVertex3fv(curPosf.getComponents());
             glVertex3fv(nextPosf.getComponents());
-#else
-            //let the GL transform the points
-            glVertex3dv(cur->pos.getComponents());
-            glVertex3dv(next->pos.getComponents());
-#endif
+#endif //COVERAGE_PROJECTION_IN_GL
         }
     }
 
@@ -412,6 +429,7 @@ simply float processing the transformation */
 
     //clean up all the state changes
     glPopAttrib();
+    glDepthRange(depthRange[0], depthRange[1]);
     glItem->lineCoverageShader.pop();
 }
 
@@ -610,6 +628,7 @@ Item()
     vp += "void main()\n{\n";
 #if COVERAGE_PROJECTION_IN_GL
     vp += "gl_Position = transform * gl_Vertex;\n";
+    vp += "gl_Position /= gl_Position.w;\n";
 #else
     vp += "gl_Position = gl_Vertex;\n";
 #endif //COVERAGE_PROJECTION_IN_GL
@@ -824,7 +843,7 @@ CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT <<
 
     while (true)
     {
-        if (childExists)
+        if (childExists && DATAMANAGER->isCurrent(childBuf))
         {
             //recurse
             SurfacePoint surfacePoint = intersectNode(childBuf, ray, ctin, csin,

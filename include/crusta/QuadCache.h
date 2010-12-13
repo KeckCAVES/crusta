@@ -34,7 +34,10 @@ public:
     void bind() const;
     void stream(const SubRegion& sub, GLenum dataFormat, GLenum dataType,
                 const void* data);
-
+    void subStream(const SubRegion& sub, GLint xoff, GLint yoff,
+                   GLsizei width, GLsizei height,
+                   GLenum dataFormat, GLenum dataType, const void* data);
+    
 protected:
     GLuint texture;
     int texSize;
@@ -77,6 +80,8 @@ public:
     void bind() const;
     void stream(const SubRegion& sub, GLenum dataFormat, GLenum dataType,
                 const void* data);
+    void subStream(const SubRegion& sub, GLint xoff, GLsizei width,
+                   GLenum dataFormat, GLenum dataType, const void* data);
 
 protected:
     GLuint texture;
