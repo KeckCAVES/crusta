@@ -16,6 +16,9 @@ struct SurfaceApproximation
     typedef int                    Neighbors[4];
     typedef std::vector<Neighbors> NeighborIndices;
 
+    /** clear the surface approximation */
+    void clear();
+
     /** add a node to the representation as contributing to the display or
         not */
     void add(const NodeMainData& node, bool isVisible);

@@ -347,7 +347,7 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     //record the final node encountered
     surfacePoint.nodeIndex = node->index;
 
-#if 1
+#if 0
     Point3 centroid = node->scope.getCentroid(node->scope.getRadius());
     Vector3 ups[4];
     for (int i=0; i<4; ++i)
@@ -601,46 +601,26 @@ std::cerr << "\n" << std::setprecision(std::numeric_limits<double>::digits10) <<
 SurfacePoint Crusta::
 intersect(const Ray& ray) const
 {
-#if DEBUG_INTERSECT_CRAP
-if (DEBUG_INTERSECT) {
-CrustaVisualizer::clearAll();
-CrustaVisualizer::addRay(ray, 0);
-#if DEBUG_INTERSECT_PEEK
-CrustaVisualizer::peek();
-#endif //DEBUG_INTERSECT_PEEK
-//CrustaVisualizer::show("Ray");
-} //DEBUG_INTERSECT
-#endif //DEBUG_INTERSECT_CRAP
-
     if (renderPatches.empty())
         return SurfacePoint();
 
     const Scalar& verticalScale = getVerticalScale();
 
-    //intersect the ray with the global outer shells to determine starting point
+    Scalar gin, gout;
+    //make sure the ray even intersects the outer shell of the globe
     Sphere shell(Point3(0), SETTINGS->globeRadius +
                  verticalScale*globalElevationRange[1]);
-    Scalar gin, gout;
-    bool intersects = shell.intersectRay(ray, gin, gout);
+    if (!shell.intersectRay(ray, gin, gout))
+        return SurfacePoint();
+    //don't use a starting point that is behind the origin
     gin = std::max(gin, 0.0);
 
-    if (!intersects)
-        return SurfacePoint();
-
+    //try to constrain the exit point no further than the min-elevation shell
+    double minShellIn, minShellOut;
     shell.setRadius(SETTINGS->globeRadius +
                     verticalScale*globalElevationRange[0]);
-    HitResult hit = shell.intersectRay(ray);
-    if (hit.isValid())
-        gout = hit.getParameter();
-
-#if DEBUG_INTERSECT_CRAP
-if (DEBUG_INTERSECT) {
-CrustaVisualizer::addHit(ray, HitResult(gin), 8);
-#if DEBUG_INTERSECT_PEEK
-CrustaVisualizer::peek();
-#endif //DEBUG_INTERSECT_PEEK
-} //DEBUG_INTERSECT
-#endif //DEBUG_INTERSECT_CRAP
+    if (shell.intersectRay(ray, minShellIn, minShellOut) && minShellIn>0.0)
+        gout = minShellIn;
 
     //find the patch containing the entry point
     Point3 entry = ray(gin);
@@ -661,21 +641,6 @@ CrustaVisualizer::peek();
 
     assert(patch!=NULL && node!=NULL);
 
-#if DEBUG_INTERSECT_CRAP
-if (DEBUG_INTERSECT) {
-{
-Point3s verts;
-verts.resize(2);
-verts[0] = ray(gin);
-verts[1] = ray(gout);
-CrustaVisualizer::addPrimitive(GL_POINTS, verts, 9, Color(0.2, 0.1, 0.9, 1.0));
-#if DEBUG_INTERSECT_PEEK
-CrustaVisualizer::peek();
-#endif //DEBUG_INTERSECT_PEEK
-}
-} //DEBUG_INTERSECT
-#endif //DEBUG_INTERSECT_CRAP
-
     //traverse terrain patches until intersection or ray exit
     SurfacePoint surfacePoint;
     Scalar tin           = gin;
@@ -683,23 +648,20 @@ CrustaVisualizer::peek();
     int    sideIn        = -1;
     int    sideOut       = -1;
     int    mapSide[4][4] = {{2,3,0,1}, {1,2,3,0}, {0,1,2,3}, {3,0,1,2}};
-#if DEBUG_INTERSECT_CRAP
-int patchesVisited = 0;
-#endif //DEBUG_INTERSECT_CRAP
     while (true)
     {
         surfacePoint = patch->intersect(ray, tin, sideIn, tout, sideOut, gout);
         if (surfacePoint.isValid())
             break;
 
+/**\todo this is problematic because there are valence 5 vertices on the base
+polyhedron (triacontahedron). The neighbor is not necessarily unique. This is
+unlikely to be an issue because we are likely to intersect within the root.
+Still this should be handled more robustly */
         //move to the patch on the exit side
         tin = tout;
         if (tin > gout)
             break;
-
-#if DEBUG_INTERSECT_CRAP
-const QuadTerrain* oldPatch = patch;
-#endif //DEBUG_INTERSECT_CRAP
 
         const Polyhedron* const polyhedron = DATAMANAGER->getPolyhedron();
         Polyhedron::Connectivity neighbors[4];
@@ -707,16 +669,6 @@ const QuadTerrain* oldPatch = patch;
                                     neighbors);
         patch  = renderPatches[neighbors[sideOut][0]];
         sideIn = mapSide[neighbors[sideOut][1]][sideOut];
-
-#if DEBUG_INTERSECT_CRAP
-Scalar E = 0.00001;
-int sides[4][2] = {{3,2}, {2,0}, {0,1}, {1,3}};
-const Scope& oldS = oldPatch->getRootNode().scope;
-const Scope& newS = patch->getRootNode().scope;
-assert(Geometry::dist(oldS.corners[sides[sideOut][0]], newS.corners[sides[sideIn][1]])<E);
-assert(Geometry::dist(oldS.corners[sides[sideOut][1]], newS.corners[sides[sideIn][0]])<E);
-std::cerr << "visited: " << ++patchesVisited << std::endl;
-#endif //DEBUG_INTERSECT_CRAP
     }
 
     return surfacePoint;

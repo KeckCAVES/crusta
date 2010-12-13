@@ -1,6 +1,11 @@
 #include <crusta/Scope.h>
 
+
+#include <crusta/Section.h>
+
+
 BEGIN_CRUSTA
+
 
 Scope::
 Scope()
@@ -108,12 +113,12 @@ contains(const Scope::Vertex& point) const
     Vector3 p(point);
 
     //compute face normals
-    static const int remap[5] = {0, 1, 3, 2, 0};
+    static const int remap[4][2] = {{3,2}, {2,0}, {0,1}, {1,3}};
     for (int i=0; i<4; ++i)
     {
-        Vector3 one(corners[remap[i]]);
+        Vector3 one(corners[remap[i][0]]);
         Vector3 toP = p - one;
-        Vector3 two(corners[remap[i+1]]);
+        Vector3 two(corners[remap[i][1]]);
         two -= one;
         one.normalize();
         two.normalize();
@@ -126,5 +131,32 @@ contains(const Scope::Vertex& point) const
 
     return true;
 }
+
+bool Scope::
+intersects(const Point3& start, const Point3& end)
+{
+    Ray ray(start, end);
+
+    static const int remap[4][2] = {{3,2}, {2,0}, {0,1}, {1,3}};
+    //check all the edge sections
+    double entry =  Math::Constants<double>::max;
+    double exit  = -Math::Constants<double>::max;
+    for (int i=0; i<4; ++i)
+    {
+        Section section(corners[remap[i][0]], corners[remap[i][1]]);
+        HitResult hit   = section.intersect(ray, false);
+        double hitParam = hit.getParameter();
+        if (hit.isValid())
+        {
+            entry = std::min(entry, hitParam);
+            exit  = std::max( exit, hitParam);
+        }
+    }
+    if (exit<0.0 || entry>1.0)
+        return false;
+    else
+        return true;
+}
+
 
 END_CRUSTA

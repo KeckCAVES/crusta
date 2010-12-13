@@ -64,6 +64,9 @@ public:
     /** check if a point is contained in the solid angle subtended by the
         scope */
     bool contains(const Scope::Vertex& p) const;
+    /** check if a line segment intersects the solid angle subtended by the
+        scope */
+    bool intersects(const Point3& start, const Point3& end);
 
     /** corner points of the scope in cartesian space in order lower-left,
         lower-right, upper-left, upper-right*/

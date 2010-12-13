@@ -35,6 +35,7 @@ project(Vrui::InputDevice* device)
             Vrui::Vector rayDir = device->getRayDirection();
             rayDir = Vrui::getInverseNavigationTransformation().transform(
                 rayDir);
+            rayDir.normalize();
 
             Ray ray(modelFrame.getOrigin(), rayDir);
             surfacePoint = crusta->intersect(ray);

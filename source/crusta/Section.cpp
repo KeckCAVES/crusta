@@ -3,18 +3,21 @@
 
 BEGIN_CRUSTA
 
-#define EPSILON (Scalar(0.000001))
+#define EPSILON (0.000000000001)
 
 
 Section::
 Section(const Point3& iStart, const Point3& iEnd) :
     start(iStart[0], iStart[1], iStart[2]), end(iEnd[0], iEnd[1], iEnd[2])
-{}
+{
+    computeNormal();
+}
 
 Section::
 Section(const Vector3& iStart, const Vector3& iEnd) :
     start(iStart), end(iEnd)
 {
+    computeNormal();
 }
 
 Point3 Section::
@@ -27,6 +30,12 @@ Point3 Section::
 getEnd() const
 {
     return Point3(end[0], end[1], end[2]);
+}
+
+const Vector3& Section::
+getNormal() const
+{
+    return normal;
 }
 
 Point3 Section::
@@ -91,5 +100,86 @@ intersectWithSegment(const Point3& point) const
         return HitResult((b*e - c*d) / denom);
 }
 
+
+HitResult Section::
+intersectPlane(const Ray& ray, bool cullBackFace) const
+{
+    Vector3 rayOrig(ray.getOrigin()[0],ray.getOrigin()[1],ray.getOrigin()[2]);
+    const Vector3& rayDir = ray.getDirection();
+
+    /* the ray intersects the plane at poing t for which (ray(t)-PlaneOrigin) is
+       orthogonal to the normal. See http://softsurfer.com/Archive/algorithm_0104/algorithm_0104B.htm#Line-Plane Intersection
+       for nice description */
+    double nDotDir = normal * rayDir;
+
+    //exit on back-facing planes if so desired
+    if (cullBackFace && nDotDir>0.0)
+        return HitResult();
+
+    //handle the parallel case
+    if (nDotDir>-EPSILON && nDotDir<EPSILON)
+    {
+        Vector3 toOrig    = rayOrig - start;
+        double nDotToOrig = normal * toOrig;
+        //coincident
+        if (nDotToOrig>-EPSILON && nDotToOrig<EPSILON)
+            return HitResult(0.0);
+        //disjoint
+        else
+            return HitResult();
+    }
+
+    //compute the intersection parameter
+    return HitResult((normal * (start - rayOrig)) / nDotDir);
+}
+
+HitResult Section::
+intersect(const Ray& ray, bool cullBackFace) const
+{
+    //find the plane intersection
+    HitResult hit = intersectPlane(ray, cullBackFace);
+    if (!hit.isValid())
+        return HitResult();
+
+    Vector3 hitPoint   = Vector3(ray(hit.getParameter()));
+
+    Vector3 startUp = start;
+    startUp.normalize();
+    Vector3 startToEnd   = end - start;
+    Vector3 startTan     = startToEnd - (startToEnd*startUp)*startUp;
+    Vector3 startToPoint = hitPoint - start;
+    if (startTan*startToPoint < 0.0)
+        return HitResult();
+
+    Vector3 endUp = end;
+    endUp.normalize();
+    Vector3 endToStart = -startToEnd;
+    Vector3 endTan     = endToStart - (endToStart*endUp)*endUp;
+    Vector3 endToPoint = hitPoint - end;
+    if (endTan*endToPoint < 0.0)
+        return HitResult();
+
+    return hit;
+}
+
+bool Section::
+isContained(const Point3& point) const
+{
+    return (point-start)*normal >= 0.0;
+}
+
+
+void Section::
+computeNormal()
+{
+    Vector3 up = start;
+    up.normalize();
+
+    Vector3 right = end - start;
+    right.normalize();
+
+    normal = Geometry::cross(up, right);
+    normal.normalize();
+}
 
 END_CRUSTA

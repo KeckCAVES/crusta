@@ -5,6 +5,14 @@ BEGIN_CRUSTA
 
 
 void SurfaceApproximation::
+clear()
+{
+    nodes.clear();;
+    visibles.clear();;
+    neighbors.clear();
+}
+
+void SurfaceApproximation::
 add(const NodeMainData& node, bool isVisible)
 {
     nodes.push_back(node);
