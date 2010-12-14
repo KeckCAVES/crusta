@@ -258,6 +258,8 @@ intersectNodeSides(const Scope& scope, const Ray& ray,
 }
 
 
+#define PROJECT_WITH_CENTER 0
+
 void QuadTerrain::
 renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
 {
@@ -269,6 +271,26 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
 
     //compute projection matrix
     Homography toNormalized;
+#if PROJECT_WITH_CENTER
+    //destinations are lower-left, lower-right, upper-left, upper-right, center
+    toNormalized.setDestination(Point3(-1,-1,0), Point3(1,-1,0),
+        Point3(-1,1,0), Point3(1,1,0), Point3(1,1,1));
+
+    for (int i=0; i<3; ++i)
+    {
+        Vector3 extrude(srcs[i]);
+        extrude.normalize();
+        extrude *= SETTINGS->globeRadius + elevationRange[0];
+        srcs[i]  = Point3(extrude);
+    }
+    for (int i=3; i<5; ++i)
+    {
+        Vector3 extrude(srcs[i]);
+        extrude.normalize();
+        extrude *= SETTINGS->globeRadius + elevationRange[1];
+        srcs[i]  = Point3(extrude);
+    }
+#else
     //destinations are fll, flr, ful, bll, bur
     toNormalized.setDestination(Point3(-1,-1,-1), Point3(1,-1,-1),
         Point3(-1,1,-1), Point3(-1,-1,1), Point3(1,1,1));
@@ -294,22 +316,6 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
     srcs[3] = node.scope.corners[0];
     srcs[4] = node.scope.corners[3];
 
-#if 0
-    for (int i=0; i<3; ++i)
-    {
-        Vector3 extrude(srcs[i]);
-        extrude.normalize();
-        extrude *= SETTINGS->globeRadius + elevationRange[0];
-        srcs[i]  = Point3(extrude);
-    }
-    for (int i=3; i<5; ++i)
-    {
-        Vector3 extrude(srcs[i]);
-        extrude.normalize();
-        extrude *= SETTINGS->globeRadius + elevationRange[1];
-        srcs[i]  = Point3(extrude);
-    }
-#else
     //map the source points to planes
     Vector3 normal(node.centroid);
     normal.normalize();
@@ -334,7 +340,7 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
         assert(hit.isValid());
         srcs[i] = ray(hit.getParameter());
     }
-#endif
+#endif //PROJECT_WITH_CENTER
 
     toNormalized.setSource(srcs[0], srcs[1], srcs[2], srcs[3], srcs[4]);
 

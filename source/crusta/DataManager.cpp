@@ -259,6 +259,46 @@ getNumLayerfLayers() const
     return static_cast<int>(layerfFiles.size());
 }
 
+LayerDataf::Type DataManager::
+sampleLayerf(int which, const SurfacePoint& point)
+{
+    DataIndex index(which, point.nodeIndex);
+
+    MainCache& mc = CACHE->getMainCache();
+    LayerfCache::BufferType* buf = mc.layerf.find(index);
+    assert(buf != NULL);
+
+    //sample the data cell
+    int linearOffset = point.cellIndex[1]*TILE_RESOLUTION + point.cellIndex[0];
+    LayerDataf::Type* cell = buf->getData() + linearOffset;
+
+///\todo use the Filter classes for this (see SubsampleFilter)
+    const LayerDataf::Type corners[4] = {
+        cell[0], cell[1], cell[TILE_RESOLUTION], cell[TILE_RESOLUTION+1]
+    };
+    double weights[4] = {
+    (1-point.cellPosition[1]) * (1-point.cellPosition[0]),
+    (1-point.cellPosition[1]) * point.cellPosition[0],
+        point.cellPosition[1] * (1-point.cellPosition[0]),
+        point.cellPosition[1] * point.cellPosition[0] };
+
+    double sum        = 0.0;
+    double sumWeights = 0.0;
+    for (int i=0; i<4; ++i)
+    {
+        if (corners[i] != layerfNodata)
+        {
+            sum        += corners[i] * weights[i];
+            sumWeights += weights[i];
+        }
+    }
+
+    if (sumWeights == 0.0)
+        return layerfNodata;
+
+    return LayerDataf::Type(sum / sumWeights);
+}
+
 DataManager::SourceShaders& DataManager::
 getSourceShaders(GLContextData& contextData)
 {
@@ -967,7 +1007,7 @@ loadChild(Crusta* crusta, NodeMainData& parent,
             tile.children[c] = INVALID_TILEINDEX;
 
         //read in the layer
-        sourceLayerf(&parentNode,           parent.layers[l],
+        sourceLayerf(&parentNode,    parent.layers[l],
                       &childNode, l,  child.layers[l]);
     }
 

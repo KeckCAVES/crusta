@@ -20,6 +20,7 @@
 #include <crusta/QuadTerrain.h>
 #include <crusta/Section.h>
 #include <crusta/Sphere.h>
+#include <crusta/SurfaceProbeTool.h>
 #include <crusta/SurfaceTool.h>
 #include <crusta/Tool.h>
 #include <crusta/Triangle.h>
@@ -152,10 +153,12 @@ init(const std::vector<std::string>& settingsFiles)
     SETTINGS = new CrustaSettings;
     SETTINGS->loadFromFiles(settingsFiles);
 
-    //initialize the surface transformation tool
-    SurfaceTool::init();
     //initialize the abstract crusta tool (adds an entry to the VRUI menu)
     Vrui::ToolFactory* crustaTool = Tool::init(NULL);
+    //initialize the surface transformation tool
+    SurfaceTool::init();
+    //initialize the surface probing tool
+    SurfaceProbeTool::init();
 
     /* start the frame counting at 2 because initialization code uses unsigneds
     that are initialized with 0. Thus if crustaFrameNumber starts at 0, the

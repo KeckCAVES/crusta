@@ -15,7 +15,7 @@
 
 #include <crusta/basics.h>
 #include <crusta/CrustaComponent.h>
-#include <crusta/ElevationRangeTool.h>
+#include <crusta/SurfaceProbeTool.h>
 
 
 class GLContextData;
@@ -154,6 +154,9 @@ private:
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     void debugSpheresCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
+
+    void surfaceSamplePickedCallback(
+        SurfaceProbeTool::SampleCallbackData* cbData);
 
     void resetNavigationCallback(Misc::CallbackData* cbData);
 

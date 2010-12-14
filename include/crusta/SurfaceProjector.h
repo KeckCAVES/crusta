@@ -17,7 +17,7 @@ class SurfaceProjector : public CrustaComponent
 public:
     SurfaceProjector();
 
-    SurfacePoint project(Vrui::InputDevice* device);
+    SurfacePoint project(Vrui::InputDevice* device, bool mapBackToDevice=true);
 
     void display(GLContextData& contextData,
                  const Vrui::NavTransform& original,

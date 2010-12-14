@@ -116,6 +116,25 @@ RangeEditor::
 
 
 void RangeEditor::
+shift(double newMin, bool propagate)
+{
+    double trans = newMin - min;
+    setRange(newMin, max+trans, propagate);
+}
+
+void RangeEditor::
+setMin(double newMin, bool propagate)
+{
+    setRange(newMin, max, propagate);
+}
+
+void RangeEditor::
+setMax(double newMax, bool propagate)
+{
+    setRange(min, newMax, propagate);
+}
+
+void RangeEditor::
 setRange(double newMin, double newMax, bool propagate)
 {
     min = newMin;

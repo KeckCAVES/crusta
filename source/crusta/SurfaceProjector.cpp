@@ -19,7 +19,7 @@ SurfaceProjector() :
 }
 
 SurfacePoint SurfaceProjector::
-project(Vrui::InputDevice* device)
+project(Vrui::InputDevice* device, bool mapBackToDevice)
 {
     //transform the physical frame to navigation space
     Vrui::NavTransform physicalFrame = device->getTransformation();
@@ -44,9 +44,6 @@ project(Vrui::InputDevice* device)
         {
             //snapping is done radially, no need to map to the unscaled globe
             surfacePoint = crusta->snapToSurface(modelFrame.getOrigin());
-            //the returned point is relative to the unscaled globe
-            surfacePoint.position =
-                crusta->mapToScaledGlobe(surfacePoint.position);
         }
 
         if (Vrui::getMainPipe() != NULL)
@@ -59,16 +56,18 @@ project(Vrui::InputDevice* device)
     {
         projectionFailed = true;
 PROJECTION_FAILED = true;
+        return SurfacePoint();
     }
-    else
+
+    if (mapBackToDevice)
     {
         //transform the position back to physical space
         surfacePoint.position = Vrui::getNavigationTransformation().transform(
                                 surfacePoint.position);
-        projectionFailed = false;
-PROJECTION_FAILED = false;
     }
 
+    projectionFailed = false;
+PROJECTION_FAILED = false;
     return surfacePoint;
 }
 

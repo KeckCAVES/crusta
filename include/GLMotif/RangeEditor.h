@@ -39,8 +39,12 @@ public:
     RangeEditor(const char* name, Container* parent, bool manageChild=true);
     virtual ~RangeEditor();
 
-    /** set the current range of the editor */
+    /**\{ set the current range of the editor */
+    void  shift(double min, bool propagate=true);
+    void setMin(double min, bool propagate=true);
+    void setMax(double max, bool propagate=true);
     void setRange(double min, double max, bool propagate=true);
+    /**\}*/
 
     /** retrieve the list of registered range change callbacks */
     Misc::CallbackList& getRangeChangedCallbacks();

@@ -14,6 +14,7 @@
 #include <crusta/shader/ShaderAtlasDataSource.h>
 #include <crusta/shader/ShaderTopographySource.h>
 #include <crusta/SurfaceApproximation.h>
+#include <crusta/SurfacePoint.h>
 
 
 class GLContextData;
@@ -120,6 +121,10 @@ public:
     const int getNumColorLayers() const;
     /** query the number of layerf data layers managed */
     const int getNumLayerfLayers() const;
+
+    /** retrieve the value of the layerf data for a given surface point */
+    LayerDataf::Type sampleLayerf(int which, const SurfacePoint& point);
+
     /** retrieve the data source shaders */
     SourceShaders& getSourceShaders(GLContextData& contextData);
 

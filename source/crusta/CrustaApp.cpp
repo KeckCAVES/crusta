@@ -40,6 +40,8 @@
 #include <crusta/Crusta.h>
 #include <crusta/map/MapManager.h>
 #include <crusta/QuadTerrain.h>
+#include <crusta/SurfaceProbeTool.h>
+#include <crusta/SurfaceTool.h>
 
 
 #include <Geometry/Geoid.h>
@@ -51,8 +53,6 @@
 #include <crusta/DebugTool.h>
 #endif //CRUSTA_ENABLE_DEBUG
 
-///\todo debug remove
-#include <crusta/SurfaceTool.h>
 
 BEGIN_CRUSTA
 
@@ -69,7 +69,7 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
         this, &CrustaApp::changeColorMapCallback);
     paletteEditor->getRangeEditor()->getRangeChangedCallbacks().add(
         this, &CrustaApp::changeColorMapRangeCallback);
-    
+
     typedef std::vector<std::string> Strings;
 
     Strings dataNames;
@@ -915,6 +915,27 @@ debugSpheresCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 }
 
 void CrustaApp::
+surfaceSamplePickedCallback(SurfaceProbeTool::SampleCallbackData* cbData)
+{
+    int activeMap = COLORMAPPER->getActiveMap();
+    if (activeMap == -1)
+        return;
+
+///\todo make this more generic not just for layerf
+    LayerDataf::Type sample =
+        DATAMANAGER->sampleLayerf(activeMap, cbData->surfacePoint);
+    if (sample == DATAMANAGER->getLayerfNodata())
+        return;
+
+    if (cbData->numSamples == 1)
+        paletteEditor->getRangeEditor()->shift(sample);
+    else if (cbData->sampleId == 1)
+        paletteEditor->getRangeEditor()->setMin(sample);
+    else
+        paletteEditor->getRangeEditor()->setMax(sample);
+}
+
+void CrustaApp::
 resetNavigationCallback(Misc::CallbackData* cbData)
 {
     /* Reset the Vrui navigation transformation: */
@@ -960,6 +981,14 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
     if (component != NULL)
         component->setupComponent(crusta);
 
+    //connect probe tools
+    SurfaceProbeTool* probe = dynamic_cast<SurfaceProbeTool*>(cbData->tool);
+    if (probe != NULL)
+    {
+        probe->getSampleCallbacks().add(
+            this, &CrustaApp::surfaceSamplePickedCallback);
+    }
+
 #if CRUSTA_ENABLE_DEBUG
     //check for the creation of the debug tool
     DebugTool* dbgTool = dynamic_cast<DebugTool*>(cbData->tool);
@@ -974,7 +1003,7 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
 void CrustaApp::
 toolDestructionCallback(Vrui::ToolManager::ToolDestructionCallbackData* cbData)
 {
-    SurfaceTool* surface = dynamic_cast<SurfaceTool*>(cbData->tool);
+    SurfaceProjector* surface = dynamic_cast<SurfaceProjector*>(cbData->tool);
     if (surface != NULL)
         PROJECTION_FAILED = false;
 
