@@ -115,6 +115,11 @@ deleteSelectedControlPoint()
     if (selected!=-1 && selected!=0 &&
         selected!=static_cast<int>(controlPoints.size()))
     {
+        //delete the entry
+        Misc::ColorMap::Points& points = colorMap.getPoints();
+        points.erase(points.begin()+selected);
+
+        //unselect the control point
         SelectedControlPointChangedCallbackData selectCbData(this,selected,-1);
         selected = -1;
         selectedControlPointChangedCallbacks.call(&selectCbData);
