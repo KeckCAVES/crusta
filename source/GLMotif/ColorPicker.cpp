@@ -32,6 +32,9 @@ ColorPicker(const char* iName, Container* iParent, bool iManageChild) :
     RowColumn(iName, iParent, false),
     color(1.0, 1.0, 1.0, 1.0), value(1.0)
 {
+///\todo allow changing the preferred size through API
+const Vector preferredSize(6.0f, 6.0f, 0.0f);
+
     const GLMotif::StyleSheet* style =
         Vrui::getWidgetManager()->getStyleSheet();
 
@@ -41,12 +44,14 @@ ColorPicker(const char* iName, Container* iParent, bool iManageChild) :
     hexaRoot->setNumMinorWidgets(1);
     hexagon = new ColorHexagon("pickerHexagon", hexaRoot, true);
     hexagon->setValue(1.0);
-    hexagon->setPreferredSize(GLMotif::Vector(style->fontHeight*10.0,
-                                              style->fontHeight*10.0, 0.0f));
+    hexagon->setPreferredSize(Vector(style->fontHeight*preferredSize[0],
+                                     style->fontHeight*preferredSize[1],
+                                     0.0f));
     hexagon->getColorChangedCallbacks().add(this,
                                             &ColorPicker::colorpickCallback);
     valueSlider = new Slider("pickerHexaSlider", hexaRoot,
-                             Slider::HORIZONTAL, 10.0*style->fontHeight);
+                             Slider::HORIZONTAL,
+                             preferredSize[0]*style->fontHeight);
     valueSlider->setValue(1.0);
     valueSlider->setValueRange(COLORPICKER_MIN_VALUE, 1.0, 0.01);
     valueSlider->getValueChangedCallbacks().add(this,
@@ -56,7 +61,7 @@ ColorPicker(const char* iName, Container* iParent, bool iManageChild) :
 
     RowColumn* rgbaRoot = new RowColumn("pickerRgbaRoot", this, false);
     rgbaRoot->setNumMinorWidgets(2);
-    rgbaRoot->setOrientation(GLMotif::RowColumn::HORIZONTAL);
+    rgbaRoot->setOrientation(RowColumn::HORIZONTAL);
 
     static const char* names[4][2] = { {"pickerALabel", "pickerA"},
                                        {"pickerRLabel", "pickerR"},
@@ -69,7 +74,7 @@ ColorPicker(const char* iName, Container* iParent, bool iManageChild) :
     {
         rgbaLabels[i]  = new Label(names[i][0], rgbaRoot, "-");
         rgbaSliders[i] = new Slider(names[i][1], rgbaRoot, Slider::VERTICAL,
-                                   5.0f*style->fontHeight);
+                                    0.5f*preferredSize[0]*style->fontHeight);
         if (i==0)
         {
             rgbaSliders[i]->setValueRange(0.0, 1.0, 0.001);

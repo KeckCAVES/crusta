@@ -34,6 +34,9 @@ PaletteEditor() :
     inColorMapEditorCallback(false), inColorPickerCallback(false),
     inRangeEditorCallback(false)
 {
+///\todo allow changing the preferred size through API
+const Vector preferredSize(10.0f, 5.0f, 0.0f);
+
     const StyleSheet& ss = *Vrui::getWidgetManager()->getStyleSheet();
 
     //create the palette editor GUI
@@ -44,8 +47,8 @@ PaletteEditor() :
     colorMapEditor->setBorderType(Widget::LOWERED);
     colorMapEditor->setForegroundColor(Color(0.0f, 1.0f, 0.0f));
     colorMapEditor->setMarginWidth(ss.size);
-    colorMapEditor->setPreferredSize(Vector(ss.fontHeight*20.0,
-                                            ss.fontHeight*10.0,
+    colorMapEditor->setPreferredSize(Vector(ss.fontHeight*preferredSize[0],
+                                            ss.fontHeight*preferredSize[1],
                                             0.0f));
     colorMapEditor->setControlPointSize(ss.size);
     colorMapEditor->setSelectedControlPointColor(Color(1.0f, 0.0f, 0.0f));
@@ -73,7 +76,7 @@ PaletteEditor() :
     info->setOrientation(RowColumn::HORIZONTAL);
     info->setNumMinorWidgets(1);
 
-    new Label("ControlPointValueLabel", info, "Control Point Value");
+    new Label("ControlPointValueLabel", info, "CP Value");
 
     controlPointValue = new TextField("ControlPointValue", info, 12);
     controlPointValue->setPrecision(6);
@@ -95,7 +98,7 @@ PaletteEditor() :
     colorInOuts->setOrientation(RowColumn::VERTICAL);
     colorInOuts->setPacking(RowColumn::PACK_GRID);
     colorInOuts->setNumMinorWidgets(2);
-    for (int i=0; i<8; ++i)
+    for (int i=0; i<4; ++i)
     {
         std::ostringstream index;
         index << i;
@@ -125,17 +128,17 @@ PaletteEditor() :
     buttonBox->setAlignment(Alignment::HCENTER);
 
     Button* removeControlPointButton = new Button(
-        "RemoveControlPointButton", buttonBox, "Remove Control Point");
+        "RemoveControlPointButton", buttonBox, "Remove CP");
     removeControlPointButton->getSelectCallbacks().add(
         this, &PaletteEditor::removeControlPointCallback);
 
     Button* loadPaletteButton = new Button(
-        "LoadPaletteButton", buttonBox, "Load Palette");
+        "LoadPaletteButton", buttonBox, "Load");
     loadPaletteButton->getSelectCallbacks().add(
         this, &PaletteEditor::loadPaletteCallback);
 
     Button* savePaletteButton = new Button(
-        "SavePaletteButton", buttonBox, "Save Palette");
+        "SavePaletteButton", buttonBox, "Save");
     savePaletteButton->getSelectCallbacks().add(
         this, &PaletteEditor::savePaletteCallback);
 

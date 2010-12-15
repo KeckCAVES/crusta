@@ -3,8 +3,8 @@
 
 #include <string>
 
-#include <GLMotif/Blind.h>
 #include <GLMotif/Label.h>
+#include <GLMotif/Margin.h>
 #include <GLMotif/RowColumn.h>
 #include <GLMotif/StyleSheet.h>
 #include <GLMotif/TextField.h>
@@ -31,15 +31,19 @@ RangeEditor::
 RangeEditor(const char* name, Container* parent, bool childManaged) :
     RowColumn(name, parent, false)
 {
+///\todo allow changing the preferred size through API
+const Vector preferredSize(4.0f, 0.0f, 0.0f);
+
     const StyleSheet* style = getManager()->getStyleSheet();
 
     setNumMinorWidgets(1);
 
 
+///\todo fix the layout. Want filler spaces in between the range labels
 //- create the min max labels group
     RowColumn* labels = new RowColumn("Rlabels", this, false);
-    labels->setNumMinorWidgets(7);
-    labels->setPacking(RowColumn::PACK_GRID);
+    labels->setNumMinorWidgets(5);
+    labels->setColumnWeight(2, 1.0f);
 
     new Label("RminLabelName", labels, "Min:");
 
@@ -48,16 +52,16 @@ RangeEditor(const char* name, Container* parent, bool childManaged) :
     rangeLabels[0]->setFieldWidth(9);
     rangeLabels[0]->setPrecision(2);
 
-    new Blind("RminBlind", labels);
-
-    rangeLabels[1] = new TextField("RcenterLabel", labels, 9);
+    Margin* centerMargin = new Margin("RcenterMargin", labels, false);
+    centerMargin->setAlignment(Alignment::HCENTER);
+    rangeLabels[1] = new TextField("RcenterLabel", centerMargin, 9);
     rangeLabels[1]->setFloatFormat(TextField::FIXED);
     rangeLabels[1]->setFieldWidth(9);
     rangeLabels[1]->setPrecision(2);
-
-    new Blind("RmaxBlind", labels);
+    centerMargin->manageChild();
 
     rangeLabels[2] = new TextField("RmaxLabel", labels, 9);
+    rangeLabels[2]->setHAlignment(GLFont::Left);
     rangeLabels[2]->setFloatFormat(TextField::FIXED);
     rangeLabels[2]->setFieldWidth(9);
     rangeLabels[2]->setPrecision(2);
@@ -75,14 +79,14 @@ RangeEditor(const char* name, Container* parent, bool childManaged) :
     RelativeSlider* slider;
     slider = new RelativeSlider("RminSlider", minmax,
                                 RelativeSlider::HORIZONTAL,
-                                8.0 * style->fontHeight);
+                                style->fontHeight*preferredSize[0]);
     slider->setValue(0.0);
     slider->setValueRange(-2.0, 2.0, 1.0);
     slider->getValueCallbacks().add(this, &RangeEditor::sliderCallback);
 
     slider = new RelativeSlider("RmaxSlider", minmax,
                                 RelativeSlider::HORIZONTAL,
-                                8.0 * style->fontHeight);
+                                style->fontHeight*preferredSize[0]);
     slider->setValue(0.0);
     slider->setValueRange(-2.0, 2.0, 1.0);
     slider->getValueCallbacks().add(this, &RangeEditor::sliderCallback);
@@ -96,13 +100,12 @@ RangeEditor(const char* name, Container* parent, bool childManaged) :
 
     slider = new RelativeSlider("RshiftSlider", shift,
                                 RelativeSlider::HORIZONTAL,
-                                8.0 * style->fontHeight);
+                                style->fontHeight*2.0f*preferredSize[0]);
     slider->setValue(0.0);
     slider->setValueRange(-2.0, 2.0, 1.0);
     slider->getValueCallbacks().add(this, &RangeEditor::sliderCallback);
 
     shift->manageChild();
-
 
 //- finalize
     if(childManaged)
