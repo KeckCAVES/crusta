@@ -54,16 +54,22 @@
 #endif //CRUSTA_ENABLE_DEBUG
 
 
+static const crusta::Point2i DATALISTBOX_SIZE(30, 8);
+
+using namespace GLMotif;
+
+
 BEGIN_CRUSTA
+
 
 CrustaApp::
 CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     Vrui::Application(argc, argv, appDefaults),
-    newVerticalScale(1.0), dataDialog(NULL), dataDemFile(NULL),
-    dataColorFile(NULL), enableSun(false),
+    newVerticalScale(1.0), dataDialog(NULL),
+    enableSun(false),
     viewerHeadlightStates(new bool[Vrui::getNumViewers()]),
     sun(0), sunAzimuth(180.0), sunElevation(45.0),
-    paletteEditor(new GLMotif::PaletteEditor), colorMapSettings(paletteEditor)
+    paletteEditor(new PaletteEditor), colorMapSettings(paletteEditor)
 {
     paletteEditor->getColorMapEditor()->getColorMapChangedCallbacks().add(
         this, &CrustaApp::changeColorMapCallback);
@@ -108,11 +114,6 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
 
     resetNavigationCallback(NULL);
 
-///\todo fix the loading UI
-//LoadDataWidget.setFileNames(dataNames)
-    dataDemFile->setLabel("");
-    dataColorFile->setLabel("");
-
 #if CRUSTA_ENABLE_DEBUG
     DebugTool::init();
 #endif //CRUSTA_ENABLE_DEBUG
@@ -131,13 +132,13 @@ CrustaApp::
 
 
 void CrustaApp::Dialog::
-createMenuEntry(GLMotif::Container* menu)
+createMenuEntry(Container* menu)
 {
     init();
 
     parentMenu = menu;
 
-    GLMotif::ToggleButton* toggle = new GLMotif::ToggleButton(
+    ToggleButton* toggle = new ToggleButton(
         (name+"Toggle").c_str(), parentMenu, label.c_str());
     toggle->setToggle(false);
     toggle->getValueChangedCallbacks().add(
@@ -147,12 +148,12 @@ createMenuEntry(GLMotif::Container* menu)
 void CrustaApp::Dialog::
 init()
 {
-    dialog = new GLMotif::PopupWindow(
+    dialog = new PopupWindow(
         (name+"Dialog").c_str(), Vrui::getWidgetManager(), label.c_str());
 }
 
 void CrustaApp::Dialog::
-showCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+showCallback(ToggleButton::ValueChangedCallbackData* cbData)
 {
     if(cbData->set)
     {
@@ -183,42 +184,40 @@ init()
 {
     Dialog::init();
 
-    const GLMotif::StyleSheet* style =
-        Vrui::getWidgetManager()->getStyleSheet();
+    const StyleSheet* style = Vrui::getWidgetManager()->getStyleSheet();
 
     colorPicker.getColorPicker()->getColorChangedCallbacks().add(
             this, &CrustaApp::SpecularSettingsDialog::colorChangedCallback);
 
 
-    GLMotif::RowColumn* root = new GLMotif::RowColumn(
-        "Root", dialog, false);
+    RowColumn* root = new RowColumn("Root", dialog, false);
 
-    GLMotif::RowColumn* colorRoot = new GLMotif::RowColumn(
+    RowColumn* colorRoot = new RowColumn(
         "ColorRoot", root, false);
 
     Color sc = SETTINGS->terrainSpecularColor;
-    new GLMotif::Label("SSColor", colorRoot, "Color: ");
-    colorButton = new GLMotif::Button("SSColorButton", colorRoot, "");
-    colorButton->setBackgroundColor(GLMotif::Color(sc[0], sc[1], sc[2], sc[3]));
+    new Label("SSColor", colorRoot, "Color: ");
+    colorButton = new Button("SSColorButton", colorRoot, "");
+    colorButton->setBackgroundColor(Color(sc[0], sc[1], sc[2], sc[3]));
     colorButton->getSelectCallbacks().add(
         this, &CrustaApp::SpecularSettingsDialog::colorButtonCallback);
 
     colorRoot->setNumMinorWidgets(2);
     colorRoot->manageChild();
 
-    GLMotif::RowColumn* shininessRoot = new GLMotif::RowColumn(
+    RowColumn* shininessRoot = new RowColumn(
         "ShininessRoot", root, false);
 
     float shininess = SETTINGS->terrainShininess;
-    new GLMotif::Label("SSShininess", shininessRoot, "Shininess: ");
-    GLMotif::Slider* slider = new GLMotif::Slider(
-        "SSShininessSlider", shininessRoot, GLMotif::Slider::HORIZONTAL,
+    new Label("SSShininess", shininessRoot, "Shininess: ");
+    Slider* slider = new Slider(
+        "SSShininessSlider", shininessRoot, Slider::HORIZONTAL,
         10.0 * style->fontHeight);
     slider->setValue(log(shininess)/log(2));
     slider->setValueRange(0.00f, 7.0f, 0.00001f);
     slider->getValueChangedCallbacks().add(
         this, &CrustaApp::SpecularSettingsDialog::shininessChangedCallback);
-    shininessField = new GLMotif::TextField(
+    shininessField = new TextField(
         "SSShininessField", shininessRoot, 7);
     shininessField->setPrecision(4);
     shininessField->setValue(shininess);
@@ -233,9 +232,9 @@ init()
 
 void CrustaApp::SpecularSettingsDialog::
 colorButtonCallback(
-    GLMotif::Button::SelectCallbackData* cbData)
+    Button::SelectCallbackData* cbData)
 {
-    GLMotif::WidgetManager* manager = Vrui::getWidgetManager();
+    WidgetManager* manager = Vrui::getWidgetManager();
     if (!manager->isVisible(&colorPicker))
     {
         //bring up the color picker
@@ -253,15 +252,15 @@ colorButtonCallback(
 
 void CrustaApp::SpecularSettingsDialog::
 colorChangedCallback(
-        GLMotif::ColorPicker::ColorChangedCallbackData* cbData)
+        ColorPicker::ColorChangedCallbackData* cbData)
 {
-    const GLMotif::Color& c = cbData->newColor;
+    const Color& c = cbData->newColor;
     colorButton->setBackgroundColor(c);
     crusta->setTerrainSpecularColor(Color(c[0], c[1], c[2], c[3]));
 }
 
 void CrustaApp::SpecularSettingsDialog::
-shininessChangedCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
+shininessChangedCallback(Slider::ValueChangedCallbackData* cbData)
 {
     float shininess = pow(2, cbData->value) - 1.0f;
     crusta->setTerrainShininess(shininess);
@@ -269,7 +268,7 @@ shininessChangedCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 }
 
 CrustaApp::ColorMapSettingsDialog::
-ColorMapSettingsDialog(GLMotif::PaletteEditor* editor) :
+ColorMapSettingsDialog(PaletteEditor* editor) :
     listBox(NULL), paletteEditor(editor)
 {
     name  = "ColorMapSettings";
@@ -281,15 +280,16 @@ init()
 {
     Dialog::init();
 
-    GLMotif::RowColumn* root = new GLMotif::RowColumn("Root", dialog, false);
+    RowColumn* root = new RowColumn("Root", dialog, false);
 
-    GLMotif::ScrolledListBox* box = new GLMotif::ScrolledListBox(
-        "ColorMapListBox", root, GLMotif::ListBox::ALWAYS_ONE, 30, 8);
+    ScrolledListBox* box = new ScrolledListBox(
+        "ColorMapListBox", root, ListBox::ALWAYS_ONE,
+        DATALISTBOX_SIZE[0], DATALISTBOX_SIZE[1]);
     listBox = box->getListBox();
     listBox->getValueChangedCallbacks().add(
         this, &ColorMapSettingsDialog::layerChangedCallback);
 
-    GLMotif::ToggleButton* clampButton = new GLMotif::ToggleButton(
+    ToggleButton* clampButton = new ToggleButton(
         "ColoMapClampButton", root, "Clamp");
     clampButton->getValueChangedCallbacks().add(
         this, &ColorMapSettingsDialog::clampCallback);
@@ -318,18 +318,21 @@ updateLayerList()
 }
 
 void CrustaApp::ColorMapSettingsDialog::
-layerChangedCallback(GLMotif::ListBox::ValueChangedCallbackData* cbData)
+layerChangedCallback(ListBox::ValueChangedCallbackData* cbData)
 {
     COLORMAPPER->setActiveMap(cbData->newSelectedItem);
-    Misc::ColorMap& colorMap =
-        COLORMAPPER->getColorMap(cbData->newSelectedItem);
+    if (cbData->newSelectedItem != -1)
+    {
+        Misc::ColorMap& colorMap =
+            COLORMAPPER->getColorMap(cbData->newSelectedItem);
 
-    paletteEditor->getColorMapEditor()->getColorMap() = colorMap;
-    paletteEditor->getColorMapEditor()->touch();
+        paletteEditor->getColorMapEditor()->getColorMap() = colorMap;
+        paletteEditor->getColorMapEditor()->touch();
+    }
 }
 
 void CrustaApp::ColorMapSettingsDialog::
-clampCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+clampCallback(ToggleButton::ValueChangedCallbackData* cbData)
 {
     COLORMAPPER->setClamping(cbData->set);
 }
@@ -340,16 +343,16 @@ void CrustaApp::
 produceMainMenu()
 {
     /* Create a popup shell to hold the main menu: */
-    popMenu = new GLMotif::PopupMenu("MainMenuPopup",Vrui::getWidgetManager());
+    popMenu = new PopupMenu("MainMenuPopup",Vrui::getWidgetManager());
     popMenu->setTitle("Crusta");
 
     /* Create the main menu itself: */
-    GLMotif::Menu* mainMenu =
-    new GLMotif::Menu("MainMenu",popMenu,false);
+    Menu* mainMenu =
+    new Menu("MainMenu",popMenu,false);
 
     /* Data Loading menu entry */
     produceDataDialog();
-    GLMotif::Button* dataLoadButton = new GLMotif::Button(
+    Button* dataLoadButton = new Button(
         "DataLoadButton", mainMenu, "Load Data");
     dataLoadButton->getSelectCallbacks().add(
         this, &CrustaApp::showDataDialogCallback);
@@ -358,14 +361,14 @@ produceMainMenu()
     produceTexturingSubmenu(mainMenu);
 
     /* Create a button to open or hide the vertical scale adjustment dialog: */
-    GLMotif::ToggleButton* showVerticalScaleToggle = new GLMotif::ToggleButton(
+    ToggleButton* showVerticalScaleToggle = new ToggleButton(
         "ShowVerticalScaleToggle", mainMenu, "Vertical Scale");
     showVerticalScaleToggle->setToggle(false);
     showVerticalScaleToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::showVerticalScaleCallback);
 
     /* Create a button to toogle display of the lighting dialog: */
-    GLMotif::ToggleButton* lightingToggle = new GLMotif::ToggleButton(
+    ToggleButton* lightingToggle = new ToggleButton(
         "LightingToggle", mainMenu, "Light Settings");
     lightingToggle->setToggle(false);
     lightingToggle->getValueChangedCallbacks().add(
@@ -378,20 +381,20 @@ produceMainMenu()
     colorMapSettings.createMenuEntry(mainMenu);
 
     /* Create a button to open or hide the palette editor dialog: */
-    GLMotif::ToggleButton* showPaletteEditorToggle = new GLMotif::ToggleButton(
+    ToggleButton* showPaletteEditorToggle = new ToggleButton(
         "ShowPaletteEditorToggle", mainMenu, "Palette Editor");
     showPaletteEditorToggle->setToggle(false);
     showPaletteEditorToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::showPaletteEditorCallback);
 
     /* Create settings submenu */
-    GLMotif::Popup* settingsMenuPopup =
-        new GLMotif::Popup("SettingsMenuPopup", Vrui::getWidgetManager());
-    GLMotif::SubMenu* settingsMenu =
-        new GLMotif::SubMenu("Settings", settingsMenuPopup, false);
+    Popup* settingsMenuPopup =
+        new Popup("SettingsMenuPopup", Vrui::getWidgetManager());
+    SubMenu* settingsMenu =
+        new SubMenu("Settings", settingsMenuPopup, false);
 
     //line decoration toggle
-    GLMotif::ToggleButton* decorateLinesToggle = new GLMotif::ToggleButton(
+    ToggleButton* decorateLinesToggle = new ToggleButton(
         "DecorateLinesToggle", settingsMenu, "Decorate Lines");
     decorateLinesToggle->setToggle(SETTINGS->decorateVectorArt);
     decorateLinesToggle->getValueChangedCallbacks().add(
@@ -401,38 +404,38 @@ produceMainMenu()
     specularSettings.createMenuEntry(settingsMenu);
 
     /* Create the advanced submenu */
-    GLMotif::Popup* advancedMenuPopup =
-        new GLMotif::Popup("AdvancedMenuPopup", Vrui::getWidgetManager());
-    GLMotif::SubMenu* advancedMenu =
-        new GLMotif::SubMenu("Advanced", advancedMenuPopup, false);
+    Popup* advancedMenuPopup =
+        new Popup("AdvancedMenuPopup", Vrui::getWidgetManager());
+    SubMenu* advancedMenu =
+        new SubMenu("Advanced", advancedMenuPopup, false);
 
     //toogle display of the debugging grid
-    GLMotif::ToggleButton* debugGridToggle = new GLMotif::ToggleButton(
+    ToggleButton* debugGridToggle = new ToggleButton(
         "DebugGridToggle", advancedMenu, "Debug Grid");
     debugGridToggle->setToggle(false);
     debugGridToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::debugGridCallback);
 
     //toogle display of the debugging sphere
-    GLMotif::ToggleButton* debugSpheresToggle = new GLMotif::ToggleButton(
+    ToggleButton* debugSpheresToggle = new ToggleButton(
         "DebugSpheresToggle", advancedMenu, "Debug Spheres");
     debugSpheresToggle->setToggle(false);
     debugSpheresToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::debugSpheresCallback);
 
     advancedMenu->manageChild();
-    GLMotif::CascadeButton* advancedMenuCascade = new GLMotif::CascadeButton(
+    CascadeButton* advancedMenuCascade = new CascadeButton(
         "AdvancedMenuCascade", settingsMenu, "Advanced");
     advancedMenuCascade->setPopup(advancedMenuPopup);
 
     settingsMenu->manageChild();
-    GLMotif::CascadeButton* settingsMenuCascade = new GLMotif::CascadeButton(
+    CascadeButton* settingsMenuCascade = new CascadeButton(
         "SettingsMenuCascade", mainMenu, "Settings");
     settingsMenuCascade->setPopup(settingsMenuPopup);
 
 
     /* Navigation reset: */
-    GLMotif::Button* resetNavigationButton = new GLMotif::Button(
+    Button* resetNavigationButton = new Button(
         "ResetNavigationButton",mainMenu,"Reset Navigation");
     resetNavigationButton->getSelectCallbacks().add(
         this, &CrustaApp::resetNavigationCallback);
@@ -447,129 +450,130 @@ produceMainMenu()
 void CrustaApp::
 produceDataDialog()
 {
-    dataDialog = new GLMotif::PopupWindow(
+    dataDialog = new PopupWindow(
         "DataDialog", Vrui::getWidgetManager(), "Load Crusta Data");
-    GLMotif::RowColumn* root = new GLMotif::RowColumn(
-        "DataRoot", dataDialog, false);
+    RowColumn* root = new RowColumn("DataRoot", dataDialog, false);
 
-    GLMotif::RowColumn* demRoot = new GLMotif::RowColumn(
-        "DataDemRoot", root, false);
-    demRoot->setNumMinorWidgets(2);
-    dataDemFile = new GLMotif::Label("DataDemLabel", demRoot, "");
-    GLMotif::Button* demFileButton = new GLMotif::Button(
-        "DataDemFileButton", demRoot, "Elevation");
-    demFileButton->getSelectCallbacks().add(
-        this, &CrustaApp::loadDemCallback);
-    demRoot->manageChild();
+    RowColumn* top = new RowColumn("DataTop", root, false);
+    top->setOrientation(RowColumn::HORIZONTAL);
+    ScrolledListBox* box = new ScrolledListBox("DataListBox", top,
+        ListBox::MULTIPLE, DATALISTBOX_SIZE[0], DATALISTBOX_SIZE[1]);
+    dataListBox = box->getListBox();
 
-    GLMotif::RowColumn* colorRoot = new GLMotif::RowColumn(
-        "DataColorRoot", root, false);
-    colorRoot->setNumMinorWidgets(2);
-    dataColorFile = new GLMotif::Label("DataColorLabel", colorRoot, "");
-    GLMotif::Button* colorFileButton = new GLMotif::Button(
-        "DataColorFileButton", colorRoot, "Color");
-    colorFileButton->getSelectCallbacks().add(
-        this, &CrustaApp::loadColorCallback);
-    colorRoot->manageChild();
+    Margin* addRemoveMargin = new Margin("DataAddRemoveMargin", top, false);
+    addRemoveMargin->setAlignment(Alignment::VCENTER);
+    RowColumn* addRemoveRoot = new RowColumn("DataAddRemoveRoot",
+                                             addRemoveMargin, false);
 
-    GLMotif::RowColumn* actionRoot = new GLMotif::RowColumn(
-        "DataActionRoot", root, false);
-    actionRoot->setNumMinorWidgets(2);
-    GLMotif::Button* cancelButton = new GLMotif::Button(
-        "DataCancelButton", actionRoot, "Cancel");
-    cancelButton->getSelectCallbacks().add(
-        this, &CrustaApp::loadDataCancelCallback);
-    GLMotif::Button* okButton = new GLMotif::Button(
-        "DataOkButton", actionRoot, "Load");
-    okButton->getSelectCallbacks().add(
-        this, &CrustaApp::loadDataOkCallback);
+    Button* button = new Button("DataAddButton", addRemoveRoot, "Add");
+    button->getSelectCallbacks().add(this, &CrustaApp::addDataCallback);
+
+    button = new Button("DataRemoveButton", addRemoveRoot, "Remove");
+    button->getSelectCallbacks().add(this, &CrustaApp::removeDataCallback);
+
+    button = new Button("DataClearButton", addRemoveRoot, "Clear");
+    button->getSelectCallbacks().add(this, &CrustaApp::clearDataCallback);
+
+    addRemoveRoot->manageChild();
+    addRemoveMargin->manageChild();
+    top->manageChild();
+
+    Margin* actionMargin = new Margin("DataActionMargin", root, false);
+    actionMargin->setAlignment(Alignment::RIGHT);
+    RowColumn* actionRoot = new RowColumn("DataActionRoot",actionMargin,false);
+    actionRoot->setOrientation(RowColumn::HORIZONTAL);
+
+    button = new Button("DataCancelButton", actionRoot, "Cancel");
+    button->getSelectCallbacks().add(this, &CrustaApp::loadDataCancelCallback);
+    button = new Button("DataOkButton", actionRoot, "Load");
+    button->getSelectCallbacks().add(this, &CrustaApp::loadDataOkCallback);
+
     actionRoot->manageChild();
-
-    root->setNumMinorWidgets(1);
+    actionMargin->manageChild();
     root->manageChild();
 }
 
 void CrustaApp::
-showDataDialogCallback(GLMotif::Button::SelectCallbackData*)
+showDataDialogCallback(Button::SelectCallbackData*)
 {
+    //grab the current data paths from the data manager
+    dataPaths.clear();
+    if (DATAMANAGER->hasDem())
+        dataPaths.push_back(DATAMANAGER->getDemFilePath());
+    const DataManager::Strings& colorPaths = DATAMANAGER->getColorFilePaths();
+    for (size_t i=0; i<colorPaths.size(); ++i)
+        dataPaths.push_back(colorPaths[i]);
+    const DataManager::Strings& layerfPaths = DATAMANAGER->getLayerfFilePaths();
+    for (size_t i=0; i<layerfPaths.size(); ++i)
+        dataPaths.push_back(layerfPaths[i]);
+
+    //populate the list box with the current paths
+    dataListBox->clear();
+    for (size_t i=0; i<dataPaths.size(); ++i)
+        dataListBox->addItem(dataPaths[i].c_str());
+
     //open the dialog at the same position as the main menu:
     Vrui::getWidgetManager()->popupPrimaryWidget(dataDialog,
         Vrui::getWidgetManager()->calcWidgetTransformation(popMenu));
 }
 
 void CrustaApp::
-loadDemCallback(GLMotif::Button::SelectCallbackData* cbData)
+addDataCallback(Button::SelectCallbackData*)
 {
-    GLMotif::FileAndFolderSelectionDialog* fileDialog =
-        new GLMotif::FileAndFolderSelectionDialog(Vrui::getWidgetManager(),
-            "Load Crusta Elevation", 0, NULL);
+    FileAndFolderSelectionDialog* fileDialog =
+        new FileAndFolderSelectionDialog(Vrui::getWidgetManager(),
+            "Load Crusta Globe File", 0, NULL);
     fileDialog->getOKCallbacks().add(this,
-        &CrustaApp::loadDemFileOkCallback);
+        &CrustaApp::addDataFileOkCallback);
     fileDialog->getCancelCallbacks().add(this,
-        &CrustaApp::loadDemFileCancelCallback);
+        &CrustaApp::addDataFileCancelCallback);
     Vrui::getWidgetManager()->popupPrimaryWidget(fileDialog,
         Vrui::getWidgetManager()->calcWidgetTransformation(dataDialog));
 }
 
 void CrustaApp::
-loadDemFileOkCallback(
-    GLMotif::FileAndFolderSelectionDialog::OKCallbackData* cbData)
+addDataFileOkCallback(FileAndFolderSelectionDialog::OKCallbackData* cbData)
 {
-    //save the selected file in the corresponding label
-    dataDemFile->setLabel(cbData->selectedFileName.c_str());
+    //record the selected file
+    dataPaths.push_back(cbData->selectedFileName);
+    dataListBox->addItem(cbData->selectedFileName.c_str());
     //destroy the file selection dialog
     Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
 }
 
 void CrustaApp::
-loadDemFileCancelCallback(
-    GLMotif::FileAndFolderSelectionDialog::CancelCallbackData* cbData)
-{
-    //destroy the file selection dialog
-    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
-}
-
-void CrustaApp::
-loadColorCallback(GLMotif::Button::SelectCallbackData*)
-{
-    GLMotif::FileAndFolderSelectionDialog* fileDialog =
-        new GLMotif::FileAndFolderSelectionDialog(Vrui::getWidgetManager(),
-            "Load Crusta Color", 0, NULL);
-    fileDialog->getOKCallbacks().add(this,
-        &CrustaApp::loadColorFileOkCallback);
-    fileDialog->getCancelCallbacks().add(this,
-        &CrustaApp::loadColorFileCancelCallback);
-    Vrui::getWidgetManager()->popupPrimaryWidget(fileDialog,
-        Vrui::getWidgetManager()->calcWidgetTransformation(dataDialog));
-}
-
-void CrustaApp::
-loadColorFileOkCallback(
-    GLMotif::FileAndFolderSelectionDialog::OKCallbackData* cbData)
-{
-    //save the selected file in the corresponding label
-    dataColorFile->setLabel(cbData->selectedFileName.c_str());
-    //destroy the file selection dialog
-    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
-}
-
-void CrustaApp::
-loadColorFileCancelCallback(
-    GLMotif::FileAndFolderSelectionDialog::CancelCallbackData* cbData)
+addDataFileCancelCallback(
+    FileAndFolderSelectionDialog::CancelCallbackData* cbData)
 {
     //destroy the file selection dialog
     Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
 }
 
 void CrustaApp::
-loadDataOkCallback(GLMotif::Button::SelectCallbackData*)
+removeDataCallback(Button::SelectCallbackData*)
+{
+    //remove all the selected paths
+    std::vector<int> selected = dataListBox->getSelectedItems();
+    std::sort(selected.begin(), selected.end(), std::greater<int>());
+    for (size_t i=0; i<selected.size(); ++i)
+    {
+        dataPaths.erase(dataPaths.begin()+selected[i]);
+        dataListBox->removeItem(selected[i]);
+    }
+}
+
+void CrustaApp::
+clearDataCallback(GLMotif::Button::SelectCallbackData*)
+{
+    dataPaths.clear();
+    dataListBox->clear();
+}
+
+void CrustaApp::
+loadDataOkCallback(Button::SelectCallbackData*)
 {
     //load the current data selection
-    std::vector<std::string> dataFiles;
-    dataFiles.push_back(dataDemFile->getLabel());
-    dataFiles.push_back(dataColorFile->getLabel());
-
-    crusta->load(dataFiles);
+    crusta->load(dataPaths);
 
     colorMapSettings.updateLayerList();
 
@@ -578,7 +582,7 @@ loadDataOkCallback(GLMotif::Button::SelectCallbackData*)
 }
 
 void CrustaApp::
-loadDataCancelCallback(GLMotif::Button::SelectCallbackData* cbData)
+loadDataCancelCallback(Button::SelectCallbackData*)
 {
     //close the dialog
     Vrui::popdownPrimaryWidget(dataDialog);
@@ -586,27 +590,27 @@ loadDataCancelCallback(GLMotif::Button::SelectCallbackData* cbData)
 
 
 void CrustaApp::
-produceTexturingSubmenu(GLMotif::Menu* mainMenu)
+produceTexturingSubmenu(Menu* mainMenu)
 {
-    GLMotif::Popup* texturingMenuPopup =
-        new GLMotif::Popup("TexturingMenuPopup", Vrui::getWidgetManager());
+    Popup* texturingMenuPopup =
+        new Popup("TexturingMenuPopup", Vrui::getWidgetManager());
 
-    GLMotif::SubMenu* texturingMenu =
-        new GLMotif::SubMenu("Texturing", texturingMenuPopup, false);
+    SubMenu* texturingMenu =
+        new SubMenu("Texturing", texturingMenuPopup, false);
 
-    GLMotif::RadioBox* texturingBox =
-        new GLMotif::RadioBox("TexturingBox", texturingMenu, false);
+    RadioBox* texturingBox =
+        new RadioBox("TexturingBox", texturingMenu, false);
 
-    GLMotif::ToggleButton* modeButton;
-    modeButton = new GLMotif::ToggleButton(
+    ToggleButton* modeButton;
+    modeButton = new ToggleButton(
         "Untextured", texturingBox, "Untextured");
     modeButton->getSelectCallbacks().add(
         this, &CrustaApp::changeTexturingModeCallback);
-    modeButton = new GLMotif::ToggleButton(
+    modeButton = new ToggleButton(
         "ColorMap", texturingBox, "Color Map");
     modeButton->getSelectCallbacks().add(
         this, &CrustaApp::changeTexturingModeCallback);
-    modeButton = new GLMotif::ToggleButton(
+    modeButton = new ToggleButton(
         "Image", texturingBox, "Image");
     modeButton->getSelectCallbacks().add(
         this, &CrustaApp::changeTexturingModeCallback);
@@ -616,8 +620,8 @@ produceTexturingSubmenu(GLMotif::Menu* mainMenu)
 
     texturingMenu->manageChild();
 
-    GLMotif::CascadeButton* texturingMenuCascade =
-        new GLMotif::CascadeButton("TexturingMenuCascade", mainMenu,
+    CascadeButton* texturingMenuCascade =
+        new CascadeButton("TexturingMenuCascade", mainMenu,
                                    "Texturing Modes");
     texturingMenuCascade->setPopup(texturingMenuPopup);
 }
@@ -625,17 +629,17 @@ produceTexturingSubmenu(GLMotif::Menu* mainMenu)
 void CrustaApp::
 produceVerticalScaleDialog()
 {
-    const GLMotif::StyleSheet* style =
+    const StyleSheet* style =
         Vrui::getWidgetManager()->getStyleSheet();
 
-    verticalScaleDialog = new GLMotif::PopupWindow(
+    verticalScaleDialog = new PopupWindow(
         "ScaleDialog", Vrui::getWidgetManager(), "Vertical Scale");
-    GLMotif::RowColumn* root = new GLMotif::RowColumn(
+    RowColumn* root = new RowColumn(
         "ScaleRoot", verticalScaleDialog, false);
-    GLMotif::Slider* slider = new GLMotif::Slider(
-        "ScaleSlider", root, GLMotif::Slider::HORIZONTAL,
+    Slider* slider = new Slider(
+        "ScaleSlider", root, Slider::HORIZONTAL,
         10.0 * style->fontHeight);
-    verticalScaleLabel = new GLMotif::Label("ScaleLabel", root, "1.0x");
+    verticalScaleLabel = new Label("ScaleLabel", root, "1.0x");
 
     slider->setValue(0.0);
     slider->setValueRange(-0.5, 2.5, 0.00001);
@@ -649,45 +653,45 @@ produceVerticalScaleDialog()
 void CrustaApp::
 produceLightingDialog()
 {
-    const GLMotif::StyleSheet* style =
+    const StyleSheet* style =
         Vrui::getWidgetManager()->getStyleSheet();
-    lightingDialog=new GLMotif::PopupWindow("LightingDialog",
+    lightingDialog=new PopupWindow("LightingDialog",
         Vrui::getWidgetManager(), "Light Settings");
-    GLMotif::RowColumn* lightSettings=new GLMotif::RowColumn("LightSettings",
+    RowColumn* lightSettings=new RowColumn("LightSettings",
         lightingDialog, false);
     lightSettings->setNumMinorWidgets(2);
 
     /* Create a toggle button and two sliders to manipulate the sun light source: */
-    GLMotif::Margin* enableSunToggleMargin=new GLMotif::Margin("SunToggleMargin",lightSettings,false);
-    enableSunToggleMargin->setAlignment(GLMotif::Alignment(GLMotif::Alignment::HFILL,GLMotif::Alignment::VCENTER));
-    GLMotif::ToggleButton* enableSunToggle=new GLMotif::ToggleButton("SunToggle",enableSunToggleMargin,"Sun Light Source");
+    Margin* enableSunToggleMargin=new Margin("SunToggleMargin",lightSettings,false);
+    enableSunToggleMargin->setAlignment(Alignment(Alignment::HFILL,Alignment::VCENTER));
+    ToggleButton* enableSunToggle=new ToggleButton("SunToggle",enableSunToggleMargin,"Sun Light Source");
     enableSunToggle->setToggle(enableSun);
     enableSunToggle->getValueChangedCallbacks().add(this,&CrustaApp::enableSunToggleCallback);
     enableSunToggleMargin->manageChild();
 
-    GLMotif::RowColumn* sunBox=new GLMotif::RowColumn("SunBox",lightSettings,false);
-    sunBox->setOrientation(GLMotif::RowColumn::VERTICAL);
+    RowColumn* sunBox=new RowColumn("SunBox",lightSettings,false);
+    sunBox->setOrientation(RowColumn::VERTICAL);
     sunBox->setNumMinorWidgets(2);
-    sunBox->setPacking(GLMotif::RowColumn::PACK_TIGHT);
+    sunBox->setPacking(RowColumn::PACK_TIGHT);
 
-    sunAzimuthTextField=new GLMotif::TextField("SunAzimuthTextField",sunBox,5);
-    sunAzimuthTextField->setFloatFormat(GLMotif::TextField::FIXED);
+    sunAzimuthTextField=new TextField("SunAzimuthTextField",sunBox,5);
+    sunAzimuthTextField->setFloatFormat(TextField::FIXED);
     sunAzimuthTextField->setFieldWidth(3);
     sunAzimuthTextField->setPrecision(0);
     sunAzimuthTextField->setValue(double(sunAzimuth));
 
-    sunAzimuthSlider=new GLMotif::Slider("SunAzimuthSlider",sunBox,GLMotif::Slider::HORIZONTAL,style->fontHeight*10.0f);
+    sunAzimuthSlider=new Slider("SunAzimuthSlider",sunBox,Slider::HORIZONTAL,style->fontHeight*10.0f);
     sunAzimuthSlider->setValueRange(0.0,360.0,1.0);
     sunAzimuthSlider->setValue(double(sunAzimuth));
     sunAzimuthSlider->getValueChangedCallbacks().add(this,&CrustaApp::sunAzimuthSliderCallback);
 
-    sunElevationTextField=new GLMotif::TextField("SunElevationTextField",sunBox,5);
-    sunElevationTextField->setFloatFormat(GLMotif::TextField::FIXED);
+    sunElevationTextField=new TextField("SunElevationTextField",sunBox,5);
+    sunElevationTextField->setFloatFormat(TextField::FIXED);
     sunElevationTextField->setFieldWidth(2);
     sunElevationTextField->setPrecision(0);
     sunElevationTextField->setValue(double(sunElevation));
 
-    sunElevationSlider=new GLMotif::Slider("SunElevationSlider",sunBox,GLMotif::Slider::HORIZONTAL,style->fontHeight*10.0f);
+    sunElevationSlider=new Slider("SunElevationSlider",sunBox,Slider::HORIZONTAL,style->fontHeight*10.0f);
     sunElevationSlider->setValueRange(-90.0,90.0,1.0);
     sunElevationSlider->setValue(double(sunElevation));
     sunElevationSlider->getValueChangedCallbacks().add(this,&CrustaApp::sunElevationSliderCallback);
@@ -718,7 +722,7 @@ alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
 
 void CrustaApp::
 changeTexturingModeCallback(
-    GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+    ToggleButton::ValueChangedCallbackData* cbData)
 {
     if (cbData->set)
     {
@@ -734,7 +738,7 @@ changeTexturingModeCallback(
 
 void CrustaApp::
 changeColorMapCallback(
-    GLMotif::ColorMapEditor::ColorMapChangedCallbackData* cbData)
+    ColorMapEditor::ColorMapChangedCallbackData* cbData)
 {
     int mapIndex = COLORMAPPER->getActiveMap();
     if (mapIndex < 0)
@@ -747,7 +751,7 @@ changeColorMapCallback(
 
 void CrustaApp::
 changeColorMapRangeCallback(
-    GLMotif::RangeEditor::RangeChangedCallbackData* cbData)
+    RangeEditor::RangeChangedCallbackData* cbData)
 {
     int mapIndex = COLORMAPPER->getActiveMap();
     if (mapIndex < 0)
@@ -761,7 +765,7 @@ changeColorMapRangeCallback(
 
 void CrustaApp::
 showVerticalScaleCallback(
-    GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+    ToggleButton::ValueChangedCallbackData* cbData)
 {
     if (cbData->set)
     {
@@ -777,7 +781,7 @@ showVerticalScaleCallback(
 }
 
 void CrustaApp::
-changeScaleCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
+changeScaleCallback(Slider::ValueChangedCallbackData* cbData)
 {
     double newVerticalScale = pow(10, cbData->value);
     crusta->setVerticalScale(newVerticalScale);
@@ -790,7 +794,7 @@ changeScaleCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 
 
 void CrustaApp::
-showLightingDialogCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+showLightingDialogCallback(ToggleButton::ValueChangedCallbackData* cbData)
 {
     if(cbData->set)
     {
@@ -823,7 +827,7 @@ updateSun()
 }
 
 void CrustaApp::
-enableSunToggleCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+enableSunToggleCallback(ToggleButton::ValueChangedCallbackData* cbData)
 {
     /* Set the sun enable flag: */
     enableSun=cbData->set;
@@ -847,7 +851,7 @@ enableSunToggleCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 }
 
 void CrustaApp::
-sunAzimuthSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
+sunAzimuthSliderCallback(Slider::ValueChangedCallbackData* cbData)
 {
     /* Update the sun azimuth angle: */
     sunAzimuth=Vrui::Scalar(cbData->value);
@@ -862,7 +866,7 @@ sunAzimuthSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 }
 
 void CrustaApp::
-sunElevationSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
+sunElevationSliderCallback(Slider::ValueChangedCallbackData* cbData)
 {
     /* Update the sun elevation angle: */
     sunElevation=Vrui::Scalar(cbData->value);
@@ -880,7 +884,7 @@ sunElevationSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 
 void CrustaApp::
 showPaletteEditorCallback(
-    GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+    ToggleButton::ValueChangedCallbackData* cbData)
 {
     if(cbData->set)
     {
@@ -897,19 +901,19 @@ showPaletteEditorCallback(
 
 
 void CrustaApp::
-decorateLinesCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+decorateLinesCallback(ToggleButton::ValueChangedCallbackData* cbData)
 {
     crusta->setDecoratedVectorArt(cbData->set);
 }
 
 void CrustaApp::
-debugGridCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+debugGridCallback(ToggleButton::ValueChangedCallbackData* cbData)
 {
     QuadTerrain::displayDebuggingGrid = cbData->set;
 }
 
 void CrustaApp::
-debugSpheresCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
+debugSpheresCallback(ToggleButton::ValueChangedCallbackData* cbData)
 {
     QuadTerrain::displayDebuggingBoundingSpheres = cbData->set;
 }

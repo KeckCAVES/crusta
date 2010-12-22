@@ -117,6 +117,12 @@ public:
     /** get the value used to indicate the abscence of layerf data */
     const LayerDataf::Type& getLayerfNodata();
 
+    /**\{ retrieve the path to the loaded files */
+    const std::string& getDemFilePath() const;
+    const Strings& getColorFilePaths() const;
+    const Strings& getLayerfFilePaths() const;
+    /**\}*/
+     
     /** query the number of color data layers managed */
     const int getNumColorLayers() const;
     /** query the number of layerf data layers managed */
@@ -230,10 +236,16 @@ protected:
     /** fetch thread function: process the generation/reading of the data */
     void* fetchThreadFunc();
 
+    /** path to the loaded dem file */
+    std::string demFilePath;
     /** globe file from which to source data for the elevation */
     DemFile* demFile;
+    /** paths to the loaded color files */
+    Strings colorFilePaths;
     /** globe files from which to source 3-channel color data */
     ColorFiles colorFiles;
+    /** paths to the loaded layerf files */
+    Strings layerfFilePaths;
     /** globe files from which to source 1-channel float data */
     LayerfFiles layerfFiles;
 

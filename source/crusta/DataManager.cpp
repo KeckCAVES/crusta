@@ -104,6 +104,7 @@ for now just use the default polyhedron and no-data irrespective of sources */
                 try
                 {
                     demFile->open(*it);
+                    demFilePath = *it;
                     ++it;
                 }
                 catch (std::runtime_error e)
@@ -124,6 +125,7 @@ for now just use the default polyhedron and no-data irrespective of sources */
             {
                 file->open(*it);
                 colorFiles.push_back(file);
+                colorFilePaths.push_back(*it);
                 ++it;
             }
             catch (std::runtime_error e)
@@ -142,6 +144,7 @@ for now just use the default polyhedron and no-data irrespective of sources */
             {
                 file->open(*it);
                 layerfFiles.push_back(file);
+                layerfFilePaths.push_back(*it);
                 ++it;
             }
             catch (std::runtime_error e)
@@ -192,6 +195,7 @@ unload()
     {
         delete demFile;
         demFile = NULL;
+        demFilePath.clear();
     }
 
     for (ColorFiles::iterator it=colorFiles.begin(); it!=colorFiles.end(); ++it)
@@ -199,6 +203,7 @@ unload()
         delete *it;
     }
     colorFiles.clear();
+    colorFilePaths.clear();
 
     for (LayerfFiles::iterator it=layerfFiles.begin(); it!=layerfFiles.end();
          ++it)
@@ -206,6 +211,7 @@ unload()
         delete *it;
     }
     layerfFiles.clear();
+    layerfFilePaths.clear();
 
     //get rid of the polyhedron
     if (polyhedron)
@@ -246,6 +252,24 @@ getLayerfNodata()
     return layerfNodata;
 }
 
+
+const std::string& DataManager::
+getDemFilePath() const
+{
+    return demFilePath;
+}
+
+const DataManager::Strings& DataManager::
+getColorFilePaths() const
+{
+    return colorFilePaths;
+}
+
+const DataManager::Strings& DataManager::
+getLayerfFilePaths() const
+{
+    return layerfFilePaths;
+}
 
 const int DataManager::
 getNumColorLayers() const

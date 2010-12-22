@@ -23,6 +23,7 @@ class GLContextData;
 namespace GLMotif {
     class DropdownBox;
     class Label;
+    class ListBox;
     class Menu;
     class PaletteEditor;
     class PopupMenu;
@@ -104,16 +105,13 @@ private:
 
     void produceDataDialog();
     void showDataDialogCallback(GLMotif::Button::SelectCallbackData* cbData);
-    void loadDemCallback(GLMotif::Button::SelectCallbackData* cbData);
-    void loadDemFileOkCallback(
+    void addDataCallback(GLMotif::Button::SelectCallbackData* cbData);
+    void addDataFileOkCallback(
         GLMotif::FileAndFolderSelectionDialog::OKCallbackData* cbData);
-    void loadDemFileCancelCallback(
+    void addDataFileCancelCallback(
         GLMotif::FileAndFolderSelectionDialog::CancelCallbackData* cbData);
-    void loadColorCallback(GLMotif::Button::SelectCallbackData* cbData);
-    void loadColorFileOkCallback(
-        GLMotif::FileAndFolderSelectionDialog::OKCallbackData* cbData);
-    void loadColorFileCancelCallback(
-        GLMotif::FileAndFolderSelectionDialog::CancelCallbackData* cbData);
+    void removeDataCallback(GLMotif::Button::SelectCallbackData* cbData);
+    void clearDataCallback(GLMotif::Button::SelectCallbackData* cbData);
     void loadDataOkCallback(GLMotif::Button::SelectCallbackData* cbData);
     void loadDataCancelCallback(GLMotif::Button::SelectCallbackData* cbData);
 
@@ -165,9 +163,9 @@ private:
     GLMotif::PopupMenu*   popMenu;
     GLMotif::RadioBox*    curTool;
 
-    GLMotif::PopupWindow* dataDialog;
-    GLMotif::Label*       dataDemFile;
-    GLMotif::Label*       dataColorFile;
+    GLMotif::PopupWindow*    dataDialog;
+    GLMotif::ListBox*        dataListBox;
+    std::vector<std::string> dataPaths;
 
     GLMotif::PopupWindow* verticalScaleDialog;
     GLMotif::Label*       verticalScaleLabel;

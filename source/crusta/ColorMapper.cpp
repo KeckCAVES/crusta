@@ -106,7 +106,8 @@ getActiveMap() const
 void ColorMapper::
 setActiveMap(int mapIndex)
 {
-    assert(mapIndex>=0 && mapIndex<static_cast<int>(mainLayers.size()));
+    assert(mapIndex==-1 ||
+           (mapIndex>=0 && mapIndex<static_cast<int>(mainLayers.size())));
     activeMapIndex = mapIndex;
 }
 
