@@ -277,8 +277,12 @@ loadConfiguration(const std::string& cfgName)
 
 template <typename PixelParam>
 void GlobeFile<PixelParam>::
-createBaseFolder(const std::string& path, bool parent)
+createBaseFolder(std::string path, bool parent)
 {
+    //remove trailing slashes
+    while (path[path.size()-1] == '/')
+        path.resize(path.size()-1);
+    
     //check if a file or directory of the given name already exists
     struct stat statBuffer;
     if (stat(path.c_str(), &statBuffer) == 0)
@@ -307,7 +311,13 @@ createBaseFolder(const std::string& path, bool parent)
     {
         //create the parent path
         size_t delim = path.find_last_of("/\\");
-        createBaseFolder(path.substr(0, delim), true);
+        if (delim != std::string::npos)
+        {
+            //generate the substring omitting the current path leaf
+            std::string parentPath = path.substr(0, delim);
+            //recursively generate parent paths
+            createBaseFolder(parentPath, true);
+        }
 
         //create the base folder
         if(mkdir(path.c_str(), 0777) < 0)

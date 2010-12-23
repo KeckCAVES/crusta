@@ -56,7 +56,7 @@ protected:
     typedef std::vector<File*> PatchFiles;
 
     void loadConfiguration(const std::string& cfgName);
-    void createBaseFolder(const std::string& path, bool parent=false);
+    void createBaseFolder(std::string path, bool parent=false);
 
     std::vector<PixelType> blank;
     PatchFiles patches;

@@ -221,8 +221,12 @@ int main(int argc, char* argv[])
         std::cerr << "No globe file name provided" << std::endl;
         return 1;
     }
-    else if (globeFileName[globeFileName.size()-1] == '/')
-        globeFileName.resize(globeFileName.size()-1);
+    else
+    {
+        //remove trailing slashes
+        while (globeFileName[globeFileName.size()-1] == '/')
+            globeFileName.resize(globeFileName.size()-1);
+    }
 
     if (imageSources.empty())
     {
