@@ -898,13 +898,13 @@ debugSpheresCallback(ToggleButton::ValueChangedCallbackData* cbData)
 void CrustaApp::
 surfaceSamplePickedCallback(SurfaceProbeTool::SampleCallbackData* cbData)
 {
-    int activeMap = COLORMAPPER->getActiveLayer();
-    if (!COLORMAPPER->isFloatLayer(activeMap))
+    int layerIndex = COLORMAPPER->getActiveLayer();
+    if (!COLORMAPPER->isFloatLayer(layerIndex))
         return;
 
 ///\todo make this more generic not just for layerf
     LayerDataf::Type sample =
-        DATAMANAGER->sampleLayerf(activeMap, cbData->surfacePoint);
+        DATAMANAGER->sampleLayerf(layerIndex, cbData->surfacePoint);
     if (sample == DATAMANAGER->getLayerfNodata())
         return;
 

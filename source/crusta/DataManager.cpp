@@ -308,9 +308,10 @@ getNumLayerfLayers() const
 }
 
 LayerDataf::Type DataManager::
-sampleLayerf(int which, const SurfacePoint& point)
+sampleLayerf(int layerIndex, const SurfacePoint& point)
 {
-    DataIndex index(which, point.nodeIndex);
+    layerIndex -= getNumColorLayers();
+    DataIndex index(layerIndex, point.nodeIndex);
 
     MainCache& mc = CACHE->getMainCache();
     LayerfCache::BufferType* buf = mc.layerf.find(index);
