@@ -46,6 +46,7 @@ public:
     {
     public:
         SourceShaders(int numColorLayers, int numLayerfLayers);
+        void reset();
 
         Shader2dAtlasDataSource geometry;
         Shader2dAtlasDataSource height;
@@ -122,7 +123,7 @@ public:
     const Strings& getColorFilePaths() const;
     const Strings& getLayerfFilePaths() const;
     /**\}*/
-     
+
     /** query the number of color data layers managed */
     const int getNumColorLayers() const;
     /** query the number of layerf data layers managed */

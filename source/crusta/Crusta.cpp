@@ -13,7 +13,6 @@
 #include <crusta/checkGl.h>
 #include <crusta/ColorMapper.h>
 #include <crusta/DataManager.h>
-#include <crusta/ElevationRangeTool.h>
 #include <crusta/Homography.h>
 #include <crusta/map/MapManager.h>
 #include <crusta/QuadCache.h>
@@ -165,7 +164,6 @@ init(const std::vector<std::string>& settingsFiles)
     init code wouldn't be able to retrieve any cache buffers since all the
     buffers of the current and previous frame are locked */
     lastScaleStamp       = Math::Constants<double>::max;
-    texturingMode        = 2;
     verticalScale        = 0.99999999999999;
     newVerticalScale     = 1.0;
     changedVerticalScale = 0.99999999999999;
@@ -178,8 +176,6 @@ init(const std::vector<std::string>& settingsFiles)
     QuadTerrain::initGlData();
 
     mapMan = new MapManager(crustaTool, this);
-
-    ElevationRangeTool::init(crustaTool);
 }
 
 void Crusta::
@@ -733,12 +729,6 @@ const FrameStamp& Crusta::
 getLastScaleStamp() const
 {
     return lastScaleStamp;
-}
-
-void Crusta::
-setTexturingMode(int mode)
-{
-    texturingMode = mode;
 }
 
 void Crusta::

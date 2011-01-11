@@ -69,7 +69,7 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     enableSun(false),
     viewerHeadlightStates(new bool[Vrui::getNumViewers()]),
     sun(0), sunAzimuth(180.0), sunElevation(45.0),
-    paletteEditor(new PaletteEditor), colorMapSettings(paletteEditor)
+    paletteEditor(new PaletteEditor), layerSettings(paletteEditor)
 {
     paletteEditor->getColorMapEditor()->getColorMapChangedCallbacks().add(
         this, &CrustaApp::changeColorMapCallback);
@@ -267,62 +267,84 @@ shininessChangedCallback(Slider::ValueChangedCallbackData* cbData)
     shininessField->setValue(shininess);
 }
 
-CrustaApp::ColorMapSettingsDialog::
-ColorMapSettingsDialog(PaletteEditor* editor) :
-    listBox(NULL), paletteEditor(editor)
+CrustaApp::LayerSettingsDialog::
+LayerSettingsDialog(PaletteEditor* editor) :
+    listBox(NULL), paletteEditor(editor),
+    buttonRoot(NULL)
 {
-    name  = "ColorMapSettings";
-    label = "Color Map Settings";
+    name  = "LayerSettings";
+    label = "Layer Settings";
 }
 
-void CrustaApp::ColorMapSettingsDialog::
+void CrustaApp::LayerSettingsDialog::
 init()
 {
     Dialog::init();
 
-    RowColumn* root = new RowColumn("Root", dialog, false);
+    RowColumn* root = new RowColumn("LayerRoot", dialog, false);
 
     ScrolledListBox* box = new ScrolledListBox(
-        "ColorMapListBox", root, ListBox::ALWAYS_ONE,
+        "LayerListBox", root, ListBox::ALWAYS_ONE,
         DATALISTBOX_SIZE[0], DATALISTBOX_SIZE[1]);
     listBox = box->getListBox();
+    listBox->setAutoResize(true);
     listBox->getValueChangedCallbacks().add(
-        this, &ColorMapSettingsDialog::layerChangedCallback);
+        this, &LayerSettingsDialog::layerChangedCallback);
 
-    ToggleButton* clampButton = new ToggleButton(
-        "ColoMapClampButton", root, "Clamp");
-    clampButton->getValueChangedCallbacks().add(
-        this, &ColorMapSettingsDialog::clampCallback);
+    buttonRoot = new RowColumn("LayerButtonRoot", root);
+    buttonRoot->setNumMinorWidgets(2);
+    buttonRoot->setPacking(RowColumn::PACK_GRID);
 
     updateLayerList();
 
-    root->setNumMinorWidgets(2);
     root->manageChild();
 }
 
 
-void CrustaApp::ColorMapSettingsDialog::
+void CrustaApp::LayerSettingsDialog::
 updateLayerList()
 {
     listBox->clear();
 
-    int numLayers = COLORMAPPER->getNumColorMaps();
-    for (int i=0; i<numLayers; ++i)
+    ColorMapper::Strings layerNames = COLORMAPPER->getLayerNames();
+    for (ColorMapper::Strings::iterator it=layerNames.begin();
+         it!=layerNames.end(); ++it)
     {
-        std::ostringstream oss;
-        oss << "Layer " << i;
-        listBox->addItem(oss.str().c_str());
+        listBox->addItem(it->c_str());
     }
-    if (numLayers>0)
+
+    if (COLORMAPPER->getHeightColorMapIndex() != -1)
+        listBox->selectItem(COLORMAPPER->getHeightColorMapIndex());
+    else if (!layerNames.empty())
         listBox->selectItem(0);
 }
 
-void CrustaApp::ColorMapSettingsDialog::
+void CrustaApp::LayerSettingsDialog::
 layerChangedCallback(ListBox::ValueChangedCallbackData* cbData)
 {
-    COLORMAPPER->setActiveMap(cbData->newSelectedItem);
-    if (cbData->newSelectedItem != -1)
+    //remove all the buttons
+    buttonRoot->removeWidgets(0);
+
+    COLORMAPPER->setActiveLayer(cbData->newSelectedItem);
+    if (cbData->newSelectedItem >= 0)
     {
+        ToggleButton* visibleButton = new ToggleButton(
+            "LayerVisibleButton", buttonRoot, "Visible");
+        bool visible = COLORMAPPER->isVisible(cbData->newSelectedItem);
+        visibleButton->setToggle(visible);
+        visibleButton->getValueChangedCallbacks().add(
+            this, &LayerSettingsDialog::visibleCallback);
+    }
+
+    if (COLORMAPPER->isFloatLayer(cbData->newSelectedItem))
+    {
+        ToggleButton* clampButton = new ToggleButton(
+            "LayerClampButton", buttonRoot, "Clamp");
+        bool clamped = COLORMAPPER->isClamped(cbData->newSelectedItem);
+        clampButton->setToggle(clamped);
+        clampButton->getValueChangedCallbacks().add(
+            this, &LayerSettingsDialog::clampCallback);
+
         Misc::ColorMap& colorMap =
             COLORMAPPER->getColorMap(cbData->newSelectedItem);
 
@@ -331,10 +353,18 @@ layerChangedCallback(ListBox::ValueChangedCallbackData* cbData)
     }
 }
 
-void CrustaApp::ColorMapSettingsDialog::
+void CrustaApp::LayerSettingsDialog::
+visibleCallback(ToggleButton::ValueChangedCallbackData* cbData)
+{
+    int activeLayer = COLORMAPPER->getActiveLayer();
+    COLORMAPPER->setVisible(activeLayer, cbData->set);
+}
+
+void CrustaApp::LayerSettingsDialog::
 clampCallback(ToggleButton::ValueChangedCallbackData* cbData)
 {
-    COLORMAPPER->setClamping(cbData->set);
+    int activeLayer = COLORMAPPER->getActiveLayer();
+    COLORMAPPER->setClamping(activeLayer, cbData->set);
 }
 
 
@@ -357,9 +387,6 @@ produceMainMenu()
     dataLoadButton->getSelectCallbacks().add(
         this, &CrustaApp::showDataDialogCallback);
 
-    /* Create a submenu to toggle texturing the terrain: */
-    produceTexturingSubmenu(mainMenu);
-
     /* Create a button to open or hide the vertical scale adjustment dialog: */
     ToggleButton* showVerticalScaleToggle = new ToggleButton(
         "ShowVerticalScaleToggle", mainMenu, "Vertical Scale");
@@ -378,7 +405,7 @@ produceMainMenu()
     crusta->getMapManager()->addMenuEntry(mainMenu);
 
     //color map settings dialog toggle
-    colorMapSettings.createMenuEntry(mainMenu);
+    layerSettings.createMenuEntry(mainMenu);
 
     /* Create a button to open or hide the palette editor dialog: */
     ToggleButton* showPaletteEditorToggle = new ToggleButton(
@@ -456,9 +483,12 @@ produceDataDialog()
 
     RowColumn* top = new RowColumn("DataTop", root, false);
     top->setOrientation(RowColumn::HORIZONTAL);
+    top->setColumnWeight(0, 1.0f);
+
     ScrolledListBox* box = new ScrolledListBox("DataListBox", top,
         ListBox::MULTIPLE, DATALISTBOX_SIZE[0], DATALISTBOX_SIZE[1]);
     dataListBox = box->getListBox();
+    dataListBox->setAutoResize(true);
 
     Margin* addRemoveMargin = new Margin("DataAddRemoveMargin", top, false);
     addRemoveMargin->setAlignment(Alignment::VCENTER);
@@ -575,7 +605,7 @@ loadDataOkCallback(Button::SelectCallbackData*)
     //load the current data selection
     crusta->load(dataPaths);
 
-    colorMapSettings.updateLayerList();
+    layerSettings.updateLayerList();
 
     //close the dialog
     Vrui::popdownPrimaryWidget(dataDialog);
@@ -588,43 +618,6 @@ loadDataCancelCallback(Button::SelectCallbackData*)
     Vrui::popdownPrimaryWidget(dataDialog);
 }
 
-
-void CrustaApp::
-produceTexturingSubmenu(Menu* mainMenu)
-{
-    Popup* texturingMenuPopup =
-        new Popup("TexturingMenuPopup", Vrui::getWidgetManager());
-
-    SubMenu* texturingMenu =
-        new SubMenu("Texturing", texturingMenuPopup, false);
-
-    RadioBox* texturingBox =
-        new RadioBox("TexturingBox", texturingMenu, false);
-
-    ToggleButton* modeButton;
-    modeButton = new ToggleButton(
-        "Untextured", texturingBox, "Untextured");
-    modeButton->getSelectCallbacks().add(
-        this, &CrustaApp::changeTexturingModeCallback);
-    modeButton = new ToggleButton(
-        "ColorMap", texturingBox, "Color Map");
-    modeButton->getSelectCallbacks().add(
-        this, &CrustaApp::changeTexturingModeCallback);
-    modeButton = new ToggleButton(
-        "Image", texturingBox, "Image");
-    modeButton->getSelectCallbacks().add(
-        this, &CrustaApp::changeTexturingModeCallback);
-
-    texturingBox->setSelectedToggle(modeButton);
-    texturingBox->manageChild();
-
-    texturingMenu->manageChild();
-
-    CascadeButton* texturingMenuCascade =
-        new CascadeButton("TexturingMenuCascade", mainMenu,
-                                   "Texturing Modes");
-    texturingMenuCascade->setPopup(texturingMenuPopup);
-}
 
 void CrustaApp::
 produceVerticalScaleDialog()
@@ -721,45 +714,29 @@ alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
 
 
 void CrustaApp::
-changeTexturingModeCallback(
-    ToggleButton::ValueChangedCallbackData* cbData)
-{
-    if (cbData->set)
-    {
-        const char* button = cbData->toggle->getName();
-        if (strcmp(button, "Untextured") == 0)
-            crusta->setTexturingMode(0);
-        else if (strcmp(button, "ColorMap") == 0)
-            crusta->setTexturingMode(1);
-        else
-            crusta->setTexturingMode(2);
-    }
-}
-
-void CrustaApp::
 changeColorMapCallback(
     ColorMapEditor::ColorMapChangedCallbackData* cbData)
 {
-    int mapIndex = COLORMAPPER->getActiveMap();
-    if (mapIndex < 0)
+    int layerIndex = COLORMAPPER->getActiveLayer();
+    if (!COLORMAPPER->isFloatLayer(layerIndex))
         return;
 
-    Misc::ColorMap& colorMap = COLORMAPPER->getColorMap(mapIndex);
+    Misc::ColorMap& colorMap = COLORMAPPER->getColorMap(layerIndex);
     colorMap = cbData->editor->getColorMap();
-    COLORMAPPER->touchColor(mapIndex);
+    COLORMAPPER->touchColor(layerIndex);
 }
 
 void CrustaApp::
 changeColorMapRangeCallback(
     RangeEditor::RangeChangedCallbackData* cbData)
 {
-    int mapIndex = COLORMAPPER->getActiveMap();
-    if (mapIndex < 0)
+    int layerIndex = COLORMAPPER->getActiveLayer();
+    if (!COLORMAPPER->isFloatLayer(layerIndex))
         return;
 
-    Misc::ColorMap& colorMap = COLORMAPPER->getColorMap(mapIndex);
+    Misc::ColorMap& colorMap = COLORMAPPER->getColorMap(layerIndex);
     colorMap.setValueRange(Misc::ColorMap::ValueRange(cbData->min,cbData->max));
-    COLORMAPPER->touchRange(mapIndex);
+    COLORMAPPER->touchRange(layerIndex);
 }
 
 
@@ -921,8 +898,8 @@ debugSpheresCallback(ToggleButton::ValueChangedCallbackData* cbData)
 void CrustaApp::
 surfaceSamplePickedCallback(SurfaceProbeTool::SampleCallbackData* cbData)
 {
-    int activeMap = COLORMAPPER->getActiveMap();
-    if (activeMap == -1)
+    int activeMap = COLORMAPPER->getActiveLayer();
+    if (!COLORMAPPER->isFloatLayer(activeMap))
         return;
 
 ///\todo make this more generic not just for layerf

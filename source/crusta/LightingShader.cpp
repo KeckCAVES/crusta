@@ -466,13 +466,8 @@ compileShader(GLContextData& contextData)
     //import the shaders from the data manager and color mapper
     DataManager::SourceShaders& dataSources =
         DATAMANAGER->getSourceShaders(contextData);
+    dataSources.reset();
     ShaderDataSource& colorSource = *COLORMAPPER->getColorSource(contextData);
-    dataSources.topography.reset();
-    if (linesDecorated)
-    {
-        dataSources.coverage.reset();
-        dataSources.lineData.reset();
-    }
     colorSource.reset();
 
     vertexShaderUniforms +=

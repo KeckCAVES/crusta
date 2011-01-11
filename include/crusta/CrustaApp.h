@@ -29,6 +29,7 @@ namespace GLMotif {
     class PopupMenu;
     class PopupWindow;
     class RadioBox;
+    class RowColumn;
     class TextField;
 }
 namespace Vrui {
@@ -84,21 +85,24 @@ private:
         GLMotif::TextField*        shininessField;
     };
 
-    class ColorMapSettingsDialog : public Dialog
+    class LayerSettingsDialog : public Dialog
     {
     public:
-        ColorMapSettingsDialog(GLMotif::PaletteEditor* editor);
+        LayerSettingsDialog(GLMotif::PaletteEditor* editor);
         void updateLayerList();
     protected:
         void init();
     private:
         void layerChangedCallback(
             GLMotif::ListBox::ValueChangedCallbackData* cbData);
+        void visibleCallback(
+            GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
         void clampCallback(
             GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
 
         GLMotif::ListBox*       listBox;
         GLMotif::PaletteEditor* paletteEditor;
+        GLMotif::RowColumn*     buttonRoot;
     };
 
     void produceMainMenu();
@@ -115,14 +119,11 @@ private:
     void loadDataOkCallback(GLMotif::Button::SelectCallbackData* cbData);
     void loadDataCancelCallback(GLMotif::Button::SelectCallbackData* cbData);
 
-    void produceTexturingSubmenu(GLMotif::Menu* mainMenu);
     void produceVerticalScaleDialog();
     void produceLightingDialog();
 
     void alignSurfaceFrame(Vrui::NavTransform& surfaceFrame);
 
-    void changeTexturingModeCallback(
-        GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     void changeColorMapCallback(
         GLMotif::ColorMapEditor::ColorMapChangedCallbackData* cbData);
     void changeColorMapRangeCallback(
@@ -184,7 +185,7 @@ private:
     GLMotif::PaletteEditor* paletteEditor;
 
     SpecularSettingsDialog specularSettings;
-    ColorMapSettingsDialog colorMapSettings;
+    LayerSettingsDialog layerSettings;
 
     /** the crusta instance */
     Crusta* crusta;

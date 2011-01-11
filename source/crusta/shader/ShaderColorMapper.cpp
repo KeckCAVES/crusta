@@ -30,8 +30,9 @@ getColorMapRegion() const
 void ShaderColorMapper::
 setScalarRange(float scalarMin, float scalarMax)
 {
-    assert(scalarRangeUniform>=0);
-    glUniform2f(scalarRangeUniform, scalarMin, 1.0f / (scalarMax-scalarMin));
+CRUSTA_DEBUG(80, assert(scalarRangeUniform >= 0);)
+    if (scalarRangeUniform >= 0)
+        glUniform2f(scalarRangeUniform, scalarMin, 1.0f/(scalarMax-scalarMin));
     CHECK_GLA
 }
 
@@ -42,6 +43,7 @@ reset()
     colorSrc.reset();
     scalarSrc->reset();
     ShaderDataSource::reset();
+    scalarRangeUniform = -2;
 }
 
 void ShaderColorMapper::
@@ -54,7 +56,7 @@ initUniforms(GLuint programObj)
 
     scalarRangeUniform = glGetUniformLocation(programObj,
                                               scalarRangeName.c_str());
-    assert (scalarRangeUniform>=0);
+CRUSTA_DEBUG(80, assert(scalarRangeUniform>=0);)
     CHECK_GLA
 }
 

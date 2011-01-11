@@ -28,7 +28,6 @@ add_library(CrustaCore SHARED
     ../include/crusta/DemHeight.h
     ../include/crusta/DemHeightGlobeData.h
     ../include/crusta/DebugTool.h
-    ../include/crusta/ElevationRangeTool.h
     ../include/crusta/FocusViewEvaluator.h
     ../include/crusta/FrustumVisibility.h
     ../include/crusta/GlobeData.h
@@ -115,7 +114,6 @@ add_library(CrustaCore SHARED
     ../source/crusta/DataIndex.cpp
     ../source/crusta/DataManager.cpp
     ../source/crusta/DebugTool.cpp
-    ../source/crusta/ElevationRangeTool.cpp
     ../source/crusta/FocusViewEvaluator.cpp
     ../source/crusta/FrustumVisibility.cpp
     ../source/crusta/Homography.cpp

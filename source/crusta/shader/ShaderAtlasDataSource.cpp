@@ -49,8 +49,10 @@ void Shader1dAtlasDataSource::
 setSubRegion(const SubRegion& s)
 {
 CRUSTA_DEBUG(80, assert(texOffsetUniform>=0 && texScaleUniform>=0);)
-    glUniform2fv(texOffsetUniform, 1, s.offset.getComponents());
-    glUniform2fv( texScaleUniform, 1,   s.size.getComponents());
+    if (texOffsetUniform >= 0)
+        glUniform2fv(texOffsetUniform, 1, s.offset.getComponents());
+    if (texScaleUniform >= 0)
+        glUniform2fv(texScaleUniform, 1, s.size.getComponents());
     CHECK_GLA
 }
 
@@ -67,6 +69,8 @@ void Shader1dAtlasDataSource::
 reset()
 {
     ShaderDataSource::reset();
+    texOffsetUniform = -2;
+    texScaleUniform  = -2;
     samplingFunctionEmitted = false;
 }
 
@@ -110,9 +114,13 @@ Shader2dAtlasDataSource(const std::string& samplerName) :
 void Shader2dAtlasDataSource::
 setSubRegion(const SubRegion& s)
 {
+CHECK_GLA
 CRUSTA_DEBUG(80, assert(texOffsetUniform>=0 && texScaleUniform>=0);)
-    glUniform3fv(texOffsetUniform, 1, s.offset.getComponents());
-    glUniform2fv( texScaleUniform, 1,   s.size.getComponents());
+    if (texOffsetUniform >= 0)
+        glUniform3fv(texOffsetUniform, 1, s.offset.getComponents());
+CHECK_GLA
+    if (texScaleUniform >= 0)
+        glUniform2fv(texScaleUniform, 1, s.size.getComponents());
     CHECK_GLA
 }
 
@@ -129,6 +137,8 @@ void Shader2dAtlasDataSource::
 reset()
 {
     ShaderDataSource::reset();
+    texOffsetUniform = -2;
+    texScaleUniform  = -2;
     samplingFunctionEmitted = false;
 }
 

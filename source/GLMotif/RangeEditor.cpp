@@ -38,8 +38,6 @@ const Vector preferredSize(4.0f, 0.0f, 0.0f);
 
     setNumMinorWidgets(1);
 
-
-///\todo fix the layout. Want filler spaces in between the range labels
 //- create the min max labels group
     RowColumn* labels = new RowColumn("Rlabels", this, false);
     labels->setNumMinorWidgets(5);

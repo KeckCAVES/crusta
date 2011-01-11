@@ -30,22 +30,28 @@ setSources(ShaderDataSource* coverage, ShaderDataSource* lineData)
 void ShaderDecoratedLineRenderer::
 setLineNumSegments(int numSegments)
 {
-    glUniform1i(lineNumSegmentsUniform, numSegments);
-CRUSTA_DEBUG(70, assert(lineNumSegmentsUniform>=0); CHECK_GLA)
+CRUSTA_DEBUG(80, assert(lineNumSegmentsUniform>=0);)
+    if (lineNumSegmentsUniform >= 0)
+        glUniform1i(lineNumSegmentsUniform, numSegments);
+    CHECK_GLA
 }
 
 void ShaderDecoratedLineRenderer::
 setLineCoordScale(float coordScale)
 {
-    glUniform1f(lineCoordScaleUniform, coordScale);
-CRUSTA_DEBUG(70, assert(lineCoordScaleUniform>=0); CHECK_GLA)
+CRUSTA_DEBUG(80, assert(lineCoordScaleUniform>=0);)
+    if (lineCoordScaleUniform >= 0)
+        glUniform1f(lineCoordScaleUniform, coordScale);
+    CHECK_GLA
 }
 
 void ShaderDecoratedLineRenderer::
 setLineWidth(float width)
 {
-    glUniform1f(lineWidthUniform, width);
-CRUSTA_DEBUG(70, assert(lineWidthUniform>=0); CHECK_GLA)
+CRUSTA_DEBUG(80, assert(lineWidthUniform>=0);)
+    if (lineWidthUniform >= 0)
+        glUniform1f(lineWidthUniform, width);
+    CHECK_GLA
 }
 
 
@@ -81,8 +87,12 @@ reset()
     assert(coverageSrc!=NULL && lineDataSrc!=NULL);
     coverageSrc->reset();
     lineDataSrc->reset();
-    
+
     ShaderFileFragment::reset();
+
+    lineNumSegmentsUniform = -2;
+    lineCoordScaleUniform  = -2;
+    lineWidthUniform       = -2;
 }
 
 void ShaderDecoratedLineRenderer::

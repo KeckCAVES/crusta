@@ -33,6 +33,22 @@ SourceShaders(int numColorLayers, int numLayerfLayers) :
         layers.push_back(Shader2dAtlasDataSource("layerfTex"));
 }
 
+void DataManager::SourceShaders::
+reset()
+{
+    geometry.reset();
+    height.reset();
+    coverage.reset();
+    lineData.reset();
+    topography.reset();
+
+    typedef Shader2dAtlasDataSources::iterator Iterator;
+    for (Iterator it=colors.begin(); it!=colors.end(); ++it)
+        it->reset();
+    for (Iterator it=layers.begin(); it!=layers.end(); ++it)
+        it->reset();
+}
+
 DataManager::Request::
 Request() :
     crusta(NULL), lod(0), child(~0)
@@ -105,6 +121,8 @@ for now just use the default polyhedron and no-data irrespective of sources */
                 {
                     demFile->open(*it);
                     demFilePath = *it;
+                    while (demFilePath[demFilePath.size()-1]=='/')
+                        demFilePath.resize(demFilePath.size()-1);
                     ++it;
                 }
                 catch (std::runtime_error e)
@@ -126,6 +144,9 @@ for now just use the default polyhedron and no-data irrespective of sources */
                 file->open(*it);
                 colorFiles.push_back(file);
                 colorFilePaths.push_back(*it);
+                std::string& path = colorFilePaths.back();
+                while (path[path.size()-1]=='/')
+                    path.resize(path.size()-1);
                 ++it;
             }
             catch (std::runtime_error e)
@@ -145,6 +166,9 @@ for now just use the default polyhedron and no-data irrespective of sources */
                 file->open(*it);
                 layerfFiles.push_back(file);
                 layerfFilePaths.push_back(*it);
+                std::string& path = layerfFilePaths.back();
+                while (path[path.size()-1]=='/')
+                    path.resize(path.size()-1);
                 ++it;
             }
             catch (std::runtime_error e)

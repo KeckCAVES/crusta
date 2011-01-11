@@ -21,8 +21,9 @@ ShaderTopographySource(ShaderDataSource* _geometrySrc,
 void ShaderTopographySource::
 setCentroid(const Point3f& c)
 {
-    assert(centroidUniform>=0);
-    glUniform3fv(centroidUniform, 1, c.getComponents());
+CRUSTA_DEBUG(80, assert(centroidUniform>=0);)
+    if (centroidUniform >= 0)
+        glUniform3fv(centroidUniform, 1, c.getComponents());
     CHECK_GLA
 }
 
@@ -32,6 +33,7 @@ reset()
     geometrySrc->reset();
     heightSrc->reset();
     ShaderDataSource::reset();
+    centroidUniform = -2;
 }
 
 void ShaderTopographySource::
@@ -41,7 +43,7 @@ initUniforms(GLuint programObj)
     heightSrc->initUniforms(programObj);
 
     centroidUniform = glGetUniformLocation(programObj, centroidName.c_str());
-    assert(centroidUniform>=0);
+CRUSTA_DEBUG(80, assert(centroidUniform>=0);)
     CHECK_GLA
 }
 

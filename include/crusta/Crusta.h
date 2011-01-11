@@ -79,8 +79,6 @@ public:
 
     const FrameStamp& getLastScaleStamp() const;
 
-    /** configure the display of the terrain to use a texture or not */
-    void setTexturingMode(int mode);
     /** set the vertical exaggeration. Make sure to set this value within a
         frame callback so that it doesn't change during a rendering phase */
     void setVerticalScale(double newVerticalScale);
@@ -125,8 +123,6 @@ protected:
         semi-static data can be verified by comparison with this number */
     FrameStamp lastScaleStamp;
 
-    /** texturing mode to use for terrain rendering */
-    int texturingMode;
     /** the vertical scale to be applied to all surface elevations */
     Scalar verticalScale;
     /** the vertical scale that has been externally set */

@@ -9,7 +9,14 @@ BEGIN_CRUSTA
 
 
 ColorMapper::MainLayer::
-MainLayer(FrameStamp initialStamp) :
+MainLayer() :
+    isVisible(true)
+{
+}
+
+ColorMapper::MainFloatLayer::
+MainFloatLayer(FrameStamp initialStamp) :
+    isClamped(false),
     mapColorStamp(initialStamp), mapRangeStamp(initialStamp)
 {
 }
@@ -17,8 +24,7 @@ MainLayer(FrameStamp initialStamp) :
 
 ColorMapper::
 ColorMapper() :
-    mapperConfigurationStamp(0), gpuLayersStamp(0), clampMap(false),
-    activeMapIndex(-1)
+    mapperConfigurationStamp(0), gpuLayersStamp(0), activeLayerIndex(-1)
 {
 }
 
@@ -39,7 +45,8 @@ void ColorMapper::
 unload()
 {
     //get rid of the old representation
-    mainLayers.clear();
+    mainColorLayers.clear();
+    mainFloatLayers.clear();
 
     //flag the gpu representation for update
     gpuLayersStamp = CURRENT_FRAME;
@@ -48,19 +55,91 @@ unload()
 }
 
 void ColorMapper::
-touchColor(int mapIndex)
+touchColor(int layerIndex)
 {
-    assert(mapIndex>=0 && mapIndex<static_cast<int>(mainLayers.size()));
-    mainLayers[mapIndex].mapColorStamp = CURRENT_FRAME;
+    assert(layerIndex>=static_cast<int>(mainColorLayers.size()) &&
+           layerIndex<static_cast<int>(mainColorLayers.size() +
+                                     mainFloatLayers.size()));
+    layerIndex -= mainColorLayers.size();
+    mainFloatLayers[layerIndex].mapColorStamp = CURRENT_FRAME;
 }
 
 void ColorMapper::
-touchRange(int mapIndex)
+touchRange(int layerIndex)
 {
-    assert(mapIndex>=0 && mapIndex<static_cast<int>(mainLayers.size()));
-    mainLayers[mapIndex].mapRangeStamp = CURRENT_FRAME;
+    assert(layerIndex>=static_cast<int>(mainColorLayers.size()) &&
+           layerIndex<static_cast<int>(mainColorLayers.size() +
+                                     mainFloatLayers.size()));
+    layerIndex -= mainColorLayers.size();
+    mainFloatLayers[layerIndex].mapRangeStamp = CURRENT_FRAME;
 }
 
+
+void ColorMapper::
+setVisible(int layerIndex, bool visible)
+{
+    int numLayers = static_cast<int>(mainColorLayers.size() +
+                                     mainFloatLayers.size());
+    if (layerIndex<0 || layerIndex>=numLayers)
+        return;
+
+    if (layerIndex < static_cast<int>(mainColorLayers.size()))
+        mainColorLayers[layerIndex].isVisible = visible;
+    else
+        mainFloatLayers[layerIndex-mainColorLayers.size()].isVisible = visible;
+
+    //flag the gpu representation for update
+    gpuLayersStamp = CURRENT_FRAME;
+    //flag the update of the configuration to external modules
+    mapperConfigurationStamp = CURRENT_FRAME;
+}
+
+bool ColorMapper::
+isVisible(int layerIndex) const
+{
+    int numLayers = static_cast<int>(mainColorLayers.size() +
+                                     mainFloatLayers.size());
+    if (layerIndex<0 || layerIndex>=numLayers)
+        return false;
+
+    if (layerIndex < static_cast<int>(mainColorLayers.size()))
+        return mainColorLayers[layerIndex].isVisible;
+    else
+        return mainFloatLayers[layerIndex-mainColorLayers.size()].isVisible;
+}
+
+void ColorMapper::
+setClamping(int layerIndex, bool clamp)
+{
+    if (layerIndex<static_cast<int>(mainColorLayers.size()) ||
+        layerIndex>=static_cast<int>(mainColorLayers.size() +
+                                     mainFloatLayers.size()))
+    {
+        return;
+    }
+    layerIndex -= mainColorLayers.size();
+
+    mainFloatLayers[layerIndex].isClamped = clamp;
+
+    //flag the gpu representation for update
+    gpuLayersStamp = CURRENT_FRAME;
+    //flag the update of the configuration to external modules
+    mapperConfigurationStamp = CURRENT_FRAME;
+}
+
+bool ColorMapper::
+isClamped(int layerIndex) const
+{
+    if (layerIndex<static_cast<int>(mainColorLayers.size()) ||
+        layerIndex>=static_cast<int>(mainColorLayers.size() +
+                                     mainFloatLayers.size()))
+    {
+        return false;
+    }
+    layerIndex -= mainColorLayers.size();
+
+    return mainFloatLayers[layerIndex].isClamped;
+}
 
 FrameStamp ColorMapper::
 getMapperConfigurationStamp() const
@@ -68,60 +147,99 @@ getMapperConfigurationStamp() const
     return mapperConfigurationStamp;
 }
 
+static std::string
+getFileName(const std::string& path)
+{
+    std::string name;
+    //remove the parent path
+    size_t delim = path.find_last_of("/\\");
+    if (delim != std::string::npos)
+        name = path.substr(delim+1);
+    else
+        name = path;
+
+    return name;
+}
+
+ColorMapper::Strings ColorMapper::
+getLayerNames() const
+{
+    Strings names;
+
+    const Strings& colorNames = DATAMANAGER->getColorFilePaths();
+    for (size_t i=0; i<colorNames.size(); ++i)
+        names.push_back(getFileName(colorNames[i]));
+
+    if (DATAMANAGER->hasDem())
+        names.push_back(getFileName(DATAMANAGER->getDemFilePath()));
+
+    const Strings& floatNames = DATAMANAGER->getLayerfFilePaths();
+    for (size_t i=0; i<floatNames.size(); ++i)
+        names.push_back(getFileName(floatNames[i]));
+
+    return names;
+}
+
 int ColorMapper::
 getNumColorMaps() const
 {
-    return static_cast<int>(mainLayers.size());
+    return static_cast<int>(mainFloatLayers.size());
 }
 
 int ColorMapper::
 getHeightColorMapIndex() const
 {
     if (DATAMANAGER->hasDem())
-        return 0;
+        return mainColorLayers.size();
     else
         return -1;
 }
 
 Misc::ColorMap& ColorMapper::
-getColorMap(int mapIndex)
+getColorMap(int layerIndex)
 {
-    assert(mapIndex>=0 && mapIndex<static_cast<int>(mainLayers.size()));
-    return mainLayers[mapIndex].mapColor;
+    assert(layerIndex>=static_cast<int>(mainColorLayers.size()) &&
+           layerIndex<static_cast<int>(mainColorLayers.size() +
+                                     mainFloatLayers.size()));
+    layerIndex -= mainColorLayers.size();
+    return mainFloatLayers[layerIndex].mapColor;
 }
 
 const Misc::ColorMap& ColorMapper::
-getColorMap(int mapIndex) const
+getColorMap(int layerIndex) const
 {
-    assert(mapIndex>=0 && mapIndex<static_cast<int>(mainLayers.size()));
-    return mainLayers[mapIndex].mapColor;
+    assert(layerIndex>=static_cast<int>(mainColorLayers.size()) &&
+           layerIndex<static_cast<int>(mainFloatLayers.size()));
+    layerIndex -= mainColorLayers.size();
+    return mainFloatLayers[layerIndex].mapColor;
 }
+
+bool ColorMapper::
+isColorLayer(int layerIndex) const
+{
+    return layerIndex>=0 && layerIndex<static_cast<int>(mainColorLayers.size());
+}
+
+bool ColorMapper::
+isFloatLayer(int layerIndex) const
+{
+    return layerIndex>=static_cast<int>(mainColorLayers.size()) &&
+           layerIndex<static_cast<int>(mainColorLayers.size() +
+                                       mainFloatLayers.size());
+}
+
 
 int ColorMapper::
-getActiveMap() const
+getActiveLayer() const
 {
-    return activeMapIndex;
+    return activeLayerIndex;
 }
 
 void ColorMapper::
-setActiveMap(int mapIndex)
+setActiveLayer(int layerIndex)
 {
-    assert(mapIndex==-1 ||
-           (mapIndex>=0 && mapIndex<static_cast<int>(mainLayers.size())));
-    activeMapIndex = mapIndex;
+    activeLayerIndex = layerIndex;
 }
-
-void ColorMapper::
-setClamping(bool clamp)
-{
-    clampMap = clamp;
-
-    //flag the gpu representation for update
-    gpuLayersStamp = CURRENT_FRAME;
-    //flag the update of the configuration to external modules
-    mapperConfigurationStamp = CURRENT_FRAME;
-}
-
 
 ShaderDataSource*  ColorMapper::
 getColorSource(GLContextData& contextData)
@@ -159,7 +277,7 @@ configureShaders(GLContextData& contextData)
 //- clear the old storage
     gl.mapCache.clear();
     gl.colors.clear();
-    gl.layers.clear();
+    gl.floatLayers.clear();
 
 //- regenerate the layer regions and shaders
     int mapId = 0;
@@ -171,7 +289,8 @@ configureShaders(GLContextData& contextData)
     {
         DataIndex index(mapId, TreeIndex(0));
         GRAB_BUFFER(GpuColorMapCache, dem, gl.mapCache, index)
-        gl.layers.push_back(GpuLayer(demData, &sources.height, clampMap));
+        gl.floatLayers.push_back(GpuFloatLayer(
+            demData, &sources.height, mainFloatLayers[mapId].isClamped));
         RELEASE_PIN_BUFFER(gl.mapCache, index, demBuf)
         ++mapId;
     }
@@ -182,7 +301,8 @@ configureShaders(GLContextData& contextData)
     {
         DataIndex index(mapId, TreeIndex(0));
         GRAB_BUFFER(GpuColorMapCache, layerf, gl.mapCache, index)
-        gl.layers.push_back(GpuLayer(layerfData, &(*it), clampMap));
+        gl.floatLayers.push_back(GpuFloatLayer(
+            layerfData, &(*it), mainFloatLayers[mapId].isClamped));
         RELEASE_PIN_BUFFER(gl.mapCache, index, layerfBuf);
     }
     //process all the color layers
@@ -195,21 +315,27 @@ configureShaders(GLContextData& contextData)
     gl.multiplier.clear();
 
     int demOffset       = DATAMANAGER->hasDem() ? 1 : 0;
-    int numLayerfLayers = static_cast<int>(gl.layers.size());
+    int numLayerfLayers = static_cast<int>(gl.floatLayers.size());
     for (int i=demOffset; i<numLayerfLayers; ++i)
-        gl.multiplier.addSource(&gl.layers[i].mapShader);
+    {
+        if (mainFloatLayers[i].isVisible)
+            gl.multiplier.addSource(&gl.floatLayers[i].mapShader);
+    }
 
 
 //- reconnect the mixer
     gl.mixer.clear();
-    for (ShaderColorReaders::iterator it=gl.colors.begin(); it!=gl.colors.end();
-         ++it)
+    for (size_t i=0; i<gl.colors.size(); ++i)
     {
-        gl.mixer.addSource(&(*it));
+        if (mainColorLayers[i].isVisible)
+            gl.mixer.addSource(&gl.colors[i]);
     }
 
     if (DATAMANAGER->hasDem())
-        gl.mixer.addSource(&gl.layers[0].mapShader);
+    {
+        if (mainFloatLayers[0].isVisible)
+            gl.mixer.addSource(&gl.floatLayers[0].mapShader);
+    }
 
     int numAuxiliaryLayerfs = numLayerfLayers - demOffset;
     if (numAuxiliaryLayerfs>0)
@@ -222,7 +348,7 @@ configureShaders(GLContextData& contextData)
     {
         gl.mixer.addSource(&(*it));
     }
-    for (GpuLayers::iterator it=gl.layers.begin(); it!=gl.layers.end(); ++it)
+    for (GpuFloatLayers::iterator it=gl.layers.begin(); it!=gl.layers.end(); ++it)
     {
         gl.mixer.addSource(&(it->mapShader));
     }
@@ -239,12 +365,12 @@ updateShaders(GLContextData& contextData)
 {
     GlItem& gl = *contextData.retrieveDataItem<GlItem>(this);
 
-    int numLayers = static_cast<int>(mainLayers.size());
+    int numLayers = static_cast<int>(mainFloatLayers.size());
     for (int l=0; l<numLayers; ++l)
     {
         //get the main and gpu layer
-        MainLayer& mainLayer = mainLayers[l];
-        GpuLayer&  gpuLayer  = gl.layers[l];
+        MainFloatLayer& mainLayer = mainFloatLayers[l];
+        GpuFloatLayer&  gpuLayer  = gl.floatLayers[l];
         //stream the color data to the GPU if needed
         if (gpuLayer.mapColorStamp < mainLayer.mapColorStamp)
         {
@@ -277,8 +403,8 @@ bindColorMaps(GLContextData& contextData)
 
 
 
-ColorMapper::GpuLayer::
-GpuLayer(const SubRegion& region, ShaderDataSource* source, bool clamp) :
+ColorMapper::GpuFloatLayer::
+GpuFloatLayer(const SubRegion& region, ShaderDataSource* source, bool clamp) :
     mapShader("colorMapTex", region, source, clamp),
     mapColorStamp(0), mapRangeStamp(0)
 {
@@ -293,15 +419,17 @@ GlItem() :
 void ColorMapper::
 configureMainLayers()
 {
+    mainColorLayers.resize(DATAMANAGER->getNumColorLayers());
+
     //create the new colorMaps with the current stamp to trigger their upload
     int demOffset = DATAMANAGER->hasDem() ? 1 : 0;
     int numLayers = DATAMANAGER->getNumLayerfLayers();
     numLayers    += demOffset;
-    mainLayers.resize(numLayers, MainLayer(CURRENT_FRAME));
+    mainFloatLayers.resize(numLayers, MainFloatLayer(CURRENT_FRAME));
 
     //initialize all additional layers as transparent
     for (int l=0; l<numLayers; ++l)
-        mainLayers[l].mapColor = Misc::ColorMap::black;
+        mainFloatLayers[l].mapColor = Misc::ColorMap::black;
 }
 
 
