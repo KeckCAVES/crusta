@@ -137,6 +137,8 @@ include(CrustaCore)
 
 include(CrustaApp)
 
+include(CrustaDesktop)
+
 include(CrustaVislet)
 
 include(Construo)
