@@ -1,5 +1,7 @@
 #include <crusta/Section.h>
 
+#include <iostream>
+
 
 BEGIN_CRUSTA
 
@@ -111,6 +113,14 @@ intersectPlane(const Ray& ray, bool cullBackFace) const
        orthogonal to the normal. See http://softsurfer.com/Archive/algorithm_0104/algorithm_0104B.htm#Line-Plane Intersection
        for nice description */
     double nDotDir = normal * rayDir;
+
+CRUSTA_DEBUG(91, CRUSTA_DEBUG_OUT <<
+"Section: s(" << start[0] << "," << start[1] << "," << start[2] << ")  e(" <<
+end[0] << "," << end[1] << "," << end[2] << ") n(" <<
+normal[0] << "," << normal[1] << "," << normal[2] << ")\n" <<
+"Ray: o(" << rayOrig[0] << "," << rayOrig[1] << "," << rayOrig[2] << ") d(" <<
+rayDir[0] << "," << rayDir[1] << "," << rayDir[2] << ")\n" <<
+"nDotDir: " << nDotDir << "\n\n";)
 
     //exit on back-facing planes if so desired
     if (cullBackFace && nDotDir>0.0)

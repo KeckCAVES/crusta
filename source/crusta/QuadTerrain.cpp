@@ -83,7 +83,7 @@ computeExit(const Ray& ray, const double oldParam, const Scope& scope,
     for (int i=0; i<4; ++i)
     {
         Section section(*(edgeCorners[i][0]), *(edgeCorners[i][1]));
-CRUSTA_DEBUG(46,
+CRUSTA_DEBUG(96,
 CrustaVisualizer::addSection(section, 5);
 CrustaVisualizer::show("Exit Side Search");)
         HitResult hit   = section.intersectPlane(ray);
@@ -92,14 +92,14 @@ CrustaVisualizer::show("Exit Side Search");)
         {
             param = hitParam;
             side  = i;
-CRUSTA_DEBUG(46,
+CRUSTA_DEBUG(96,
 CrustaVisualizer::addHit(ray, hit, 7);
 CrustaVisualizer::show("Hit Side");
 CrustaVisualizer::clear(7);
 CrustaVisualizer::peek();)
         }
     }
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT <<
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 "Scope exit param: " << param << " side: " << side << "\n";)
 }
 
@@ -141,7 +141,7 @@ SurfacePoint QuadTerrain::
 intersect(const Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout,
           const Scalar gout) const
 {
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "\n\nIntersecting Ray with Globe:\n\n";)
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "\n\nIntersecting Ray with Globe:\n\n";)
     return intersectNode(getRootBuffer(), ray, tin, sin, tout, sout, gout);
 }
 
@@ -266,6 +266,7 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
     typedef NodeData::ShapeCoverage        Coverage;
     typedef Shape::ControlPointHandleList  HandleList;
     typedef Shape::ControlPointConstHandle Handle;
+    typedef Homography::HVector            HVector;
 
     NodeData& node = *nodeData.node;
 
@@ -292,8 +293,8 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
     }
 #else
     //destinations are fll, flr, ful, bll, bur
-    toNormalized.setDestination(Point3(-1,-1,-1), Point3(1,-1,-1),
-        Point3(-1,1,-1), Point3(-1,-1,1), Point3(1,1,1));
+    toNormalized.setDestination(HVector(-1,-1,-1), HVector(1,-1,-1),
+        HVector(-1,1,-1), HVector(-1,-1,1), HVector(1,1,1));
 
     //the elevation range might be flat. Make sure to give the frustum depth
     DemHeight::Type elevationRange[2];
@@ -342,7 +343,8 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
     }
 #endif //PROJECT_WITH_CENTER
 
-    toNormalized.setSource(srcs[0], srcs[1], srcs[2], srcs[3], srcs[4]);
+    toNormalized.setSource(HVector(srcs[0]), HVector(srcs[1]), HVector(srcs[2]),
+                           HVector(srcs[3]), HVector(srcs[4]));
 
     toNormalized.computeProjective();
 
@@ -415,12 +417,10 @@ simply float processing the transformation */
             glVertex3dv(next->pos.getComponents());
 #else
             //manually transform the points before passing to the GL
-            typedef Geometry::HVector<double,3> HPoint;
-
             const Homography::Projective& p = toNormalized.getProjective();
 
-            Point3 curPos  = p.transform(HPoint(cur->pos)).toPoint();
-            Point3 nextPos = p.transform(HPoint(next->pos)).toPoint();
+            Point3 curPos  = p.transform(cur->pos);
+            Point3 nextPos = p.transform(next->pos);
 
             Point3f curPosf (curPos[0],  curPos[1],  0.0f);
             Point3f nextPosf(nextPos[0], nextPos[1], 0.0f);
@@ -783,11 +783,11 @@ intersectNode(const MainBuffer& nodeBuf, const Ray& ray,
     MainData mainData = DATAMANAGER->getData(nodeBuf);
     const NodeData& node = *mainData.node;
 
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT <<
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 "++++++++++++++++++++++++ " << node.index.med_str() << "\n";)
-CRUSTA_DEBUG(44, CrustaVisualizer::addScope(node.scope);)
-CRUSTA_DEBUG(44, CrustaVisualizer::addScope(node.scope, 3, Color(1,0,0,1));)
-CRUSTA_DEBUG(45,
+CRUSTA_DEBUG(94, CrustaVisualizer::addScope(node.scope);)
+CRUSTA_DEBUG(94, CrustaVisualizer::addScope(node.scope, 3, Color(1,0,0,1));)
+CRUSTA_DEBUG(95,
 Ray blarg(ray.getOrigin(), ray(300000000.0));
 CrustaVisualizer::addRay(blarg,3);
 CrustaVisualizer::addHit(ray, tin, 4);)
@@ -796,7 +796,7 @@ CrustaVisualizer::addHit(ray, tin, 4);)
     computeExit(ray, tin, node.scope, tout, sout);
     if (tout==Math::Constants<double>::max)
     {
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "------------------------\n";)
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "------------------------\n";)
         return SurfacePoint();
     }
 
@@ -809,14 +809,14 @@ CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "------------------------\n";)
     double t0, t1;
     bool intersects = shell.intersectRay(ray, t0, t1);
 
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT <<
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 "Shell: " << intersects << " " << t0 << " " << t1 << "\n";)
 
     /* does it intersect: not hit the shell at all OR after exited scope
        OR exited shell before current point */
     if (!intersects || t0>tout || t1<tin)
     {
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "------------------------\n";)
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "------------------------\n";)
         return SurfacePoint();
     }
 
@@ -825,16 +825,16 @@ CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "------------------------\n";)
 //- perform leaf intersection?
     if (!DATAMANAGER->existsChildData(mainData))
     {
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT <<
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 "No children exist, considering leaf.\n";)
         SurfacePoint sp = intersectLeaf(mainData, ray, tin, sin, gout);
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "------------------------\n";)
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "------------------------\n";)
         return sp;
     }
 
 //- determine starting child
     int childId = computeContainingChild(ray(tin), node.scope);
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT <<
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 "Next child: " << childId << "\n";)
 
 //- continue traversal
@@ -856,7 +856,7 @@ CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT <<
                                                       ctout, csout, gout);
             if (surfacePoint.isValid())
             {
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "------------------------\n";)
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "------------------------\n";)
                 return surfacePoint;
             }
             else
@@ -864,8 +864,8 @@ CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "------------------------\n";)
                 ctin = ctout;
                 if (ctin > gout)
                 {
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "Reached global exit point\n";)
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "------------------------\n";)
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "Reached global exit point\n";)
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "------------------------\n";)
                     return SurfacePoint();
                 }
 
@@ -877,11 +877,11 @@ CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "------------------------\n";)
                     { {-1,-1}, { 2, 3}, { 1, 0}, {-1,-1} } };
                 csin    = next[childId][csout][1];
                 childId = next[childId][csout][0];
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT <<
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 "Next child: " << childId << "\n";)
                 if (childId == -1)
                 {
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "------------------------\n";)
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "------------------------\n";)
                     return SurfacePoint();
                 }
 
@@ -893,10 +893,10 @@ CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "------------------------\n";)
         {
 ///\todo Vis2010 simplify. Don't allow loads of nodes from here
 //            mainCache.request(MainCache::Request(0.0, nodeBuf, childId));
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT <<
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 "Child does not exist, considering leaf.\n";)
             SurfacePoint sp = intersectLeaf(mainData, ray, tin, sin, gout);
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "------------------------\n";)
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "------------------------\n";)
             return sp;
         }
     }
@@ -915,11 +915,11 @@ intersectLeaf(const MainData& leafData, const Ray& ray,
     SurfacePoint surfacePoint;
     surfacePoint.nodeIndex = leaf.index;
 
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT <<
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 "*** " << leaf.index.med_str() << "\n";)
 
 //- locate the starting cell
-CRUSTA_DEBUG(46, CrustaVisualizer::addHit(ray, param, 7);)
+CRUSTA_DEBUG(96, CrustaVisualizer::addHit(ray, param, 7);)
 
     int tileRes = TILE_RESOLUTION;
     int cellX   = 0;
@@ -939,7 +939,7 @@ CRUSTA_DEBUG(46, CrustaVisualizer::addHit(ray, param, 7);)
     int shift     = (tileRes-1) >> 1;
     for (int level=1; level<numLevels; ++level)
     {
-CRUSTA_DEBUG(46,
+CRUSTA_DEBUG(96,
 CrustaVisualizer::addScope(scope);
 CrustaVisualizer::show("Cell Search");)
         //compute the child containing the current position
@@ -956,7 +956,7 @@ CrustaVisualizer::show("Cell Search");)
         scope = childScopes[childIndex];
     }
 
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT <<
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 "Cell: " << cellX << " " << cellY << "\n";)
 
 //- traverse cells
@@ -966,7 +966,7 @@ CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT <<
 #else
     Ray relativeRay(ray);
 #endif //DO_RELATIVE_LEAF_TRIANGLE_INTERSECTIONS
-CRUSTA_DEBUG(46,
+CRUSTA_DEBUG(96,
 Ray blarg(relativeRay.getOrigin(), relativeRay(300000000.0));
 CrustaVisualizer::addRay(blarg, 1);
 CrustaVisualizer::peek();)
@@ -1011,7 +1011,7 @@ CrustaVisualizer::peek();)
                     relativeCellCorners[1],
                     relativeCellCorners[3]);
 
-CRUSTA_DEBUG(46,
+CRUSTA_DEBUG(96,
 CrustaVisualizer::addTriangle(t0, -1, Color(0.9, 0.6, 0.7, 1.0));
 CrustaVisualizer::addTriangle(t1, -1, Color(0.7, 0.6, 0.9, 1.0));
 //CrustaVisualizer::peek();
@@ -1024,7 +1024,7 @@ CrustaVisualizer::show("Intersecting triangles");)
 ///\todo compute the proper cell position
             surfacePoint.cellPosition = Point2(0.0, 0.0);
             surfacePoint.position = ray(hit.getParameter());
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "HIT! t0 \n";)
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "HIT! t0 \n";)
 
             return surfacePoint;
         }
@@ -1035,7 +1035,7 @@ CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "HIT! t0 \n";)
 ///\todo compute the proper cell position
             surfacePoint.cellPosition = Point2(0.0, 0.0);
             surfacePoint.position = ray(hit.getParameter());
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "HIT! t0 \n";)
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "HIT! t0 \n";)
 
             return surfacePoint;
         }
@@ -1049,7 +1049,7 @@ CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "HIT! t0 \n";)
         //end traversal if we did not find an exit point from the current cell
         if (param == Math::Constants<double>::max)
         {
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "No side intersection!\n";)
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "No side intersection!\n";)
             return SurfacePoint();
         }
 
@@ -1069,7 +1069,7 @@ CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT << "No side intersection!\n";)
         cellH  = leafData.height   + offset;
 
         side = next[side][2];
-CRUSTA_DEBUG(40, CRUSTA_DEBUG_OUT <<
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 "Cell: " << cellX << " " << cellY << "side: " << side << "\n";)
     }
 

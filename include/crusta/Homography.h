@@ -12,20 +12,21 @@ BEGIN_CRUSTA
 class Homography
 {
 public:
-    typedef Geometry::ProjectiveTransformation<Scalar,3> Projective;
+    typedef Geometry::ProjectiveTransformation<double,3> Projective;
+    typedef Projective::HVector                          HVector;
 
-    void setSource(const Point3& p0, const Point3& p1, const Point3& p2,
-                   const Point3& p3, const Point3& p4);
-    void setDestination(const Point3& p0, const Point3& p1, const Point3& p2,
-                   const Point3& p3, const Point3& p4);
+    void setSource(const HVector& p0, const HVector& p1, const HVector& p2,
+                   const HVector& p3, const HVector& p4);
+    void setDestination(const HVector& p0, const HVector& p1, const HVector& p2,
+                   const HVector& p3, const HVector& p4);
 
     void computeProjective();
 
     const Projective& getProjective() const;
 
 protected:
-    Point3 sources[5];
-    Point3 destinations[5];
+    HVector sources[5];
+    HVector destinations[5];
 
     Projective projective;
 };
