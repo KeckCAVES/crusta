@@ -121,8 +121,8 @@ calcNullSpace(
 
 
 void Homography::
-setSource(const Point3& p0, const Point3& p1, const Point3& p2,
-          const Point3& p3, const Point3& p4)
+setSource(const HVector& p0, const HVector& p1, const HVector& p2,
+          const HVector& p3, const HVector& p4)
 {
     sources[0] = p0;
     sources[1] = p1;
@@ -132,8 +132,8 @@ setSource(const Point3& p0, const Point3& p1, const Point3& p2,
 }
 
 void Homography::
-setDestination(const Point3& p0, const Point3& p1, const Point3& p2,
-               const Point3& p3, const Point3& p4)
+setDestination(const HVector& p0, const HVector& p1, const HVector& p2,
+               const HVector& p3, const HVector& p4)
 {
     destinations[0] = p0;
     destinations[1] = p1;
@@ -148,22 +148,21 @@ computeProjective()
 {
     /* Create the linear equation system: */
     Geometry::Matrix<Scalar,16,16> a;
-    for(int i=0;i<16;++i)
+    for (int i=0; i<16; ++i)
     {
-        for(int j=0;j<16;++j)
-            a(i,j)=0.0;
+        for (int j=0; j<16; ++j)
+            a(i,j) = 0.0;
     }
-    for(int i=0;i<5;++i)
+    for (int i=0; i<5; ++i)
     {
-        for(int j=0;j<3;++j)
+        for (int j=0; j<3; ++j)
         {
-            for(int k=0;k<3;++k)
+            double w = -destinations[i][j]/destinations[i][3];
+            for (int k=0; k<4; ++k)
             {
-                a(i*3+j,j*4+k)=sources[i][k];
-                a(i*3+j,3*4+k)=-destinations[i][j]*sources[i][k];
+                a(i*3+j, j*4+k) = sources[i][k];
+                a(i*3+j, 3*4+k) = w*sources[i][k];
             }
-            a(i*3+j,j*4+3)=1.0;
-            a(i*3+j,3*4+3)=-destinations[i][j];
         }
     }
 
