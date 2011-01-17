@@ -1,5 +1,7 @@
 #include <crusta/Section.h>
 
+#include <iostream>
+
 
 BEGIN_CRUSTA
 
@@ -118,7 +120,7 @@ end[0] << "," << end[1] << "," << end[2] << ") n(" <<
 normal[0] << "," << normal[1] << "," << normal[2] << ")\n" <<
 "Ray: o(" << rayOrig[0] << "," << rayOrig[1] << "," << rayOrig[2] << ") d(" <<
 rayDir[0] << "," << rayDir[1] << "," << rayDir[2] << ")\n" <<
-"nDotDir: " << nDotDir << "\n\n";
+"nDotDir: " << nDotDir << "\n\n";)
 
     //exit on back-facing planes if so desired
     if (cullBackFace && nDotDir>0.0)
