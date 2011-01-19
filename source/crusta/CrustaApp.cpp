@@ -317,6 +317,9 @@ updateLayerList()
         listBox->selectItem(COLORMAPPER->getHeightColorMapIndex());
     else if (!layerNames.empty())
         listBox->selectItem(0);
+    //make sure the buttonRoot doesn't remain empty
+    else
+         new Margin("LayerEmptyMargin", buttonRoot);
 }
 
 void CrustaApp::LayerSettingsDialog::
