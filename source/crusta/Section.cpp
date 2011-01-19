@@ -1,6 +1,11 @@
 #include <crusta/Section.h>
 
+#if CRUSTA_ENABLE_DEBUG
+#include <iomanip>
 #include <iostream>
+#include <limits>
+#endif //CRUSTA_ENABLE_DEBUG
+
 
 
 BEGIN_CRUSTA
@@ -115,11 +120,12 @@ intersectPlane(const Ray& ray, bool cullBackFace) const
     double nDotDir = normal * rayDir;
 
 CRUSTA_DEBUG(91, CRUSTA_DEBUG_OUT <<
-"Section: s(" << start[0] << "," << start[1] << "," << start[2] << ")  e(" <<
-end[0] << "," << end[1] << "," << end[2] << ") n(" <<
-normal[0] << "," << normal[1] << "," << normal[2] << ")\n" <<
-"Ray: o(" << rayOrig[0] << "," << rayOrig[1] << "," << rayOrig[2] << ") d(" <<
-rayDir[0] << "," << rayDir[1] << "," << rayDir[2] << ")\n" <<
+std::setprecision(std::numeric_limits<double>::digits10) <<
+"Section: s(" << start[0] << ", " << start[1] << ", " << start[2] << ")  e(" <<
+end[0] << ", " << end[1] << ", " << end[2] << ") n(" <<
+normal[0] << ", " << normal[1] << ", " << normal[2] << ")\n" <<
+"Ray: o(" << rayOrig[0] << ", " << rayOrig[1] << ", " << rayOrig[2] << ") d(" <<
+rayDir[0] << ", " << rayDir[1] << ", " << rayDir[2] << ")\n" <<
 "nDotDir: " << nDotDir << "\n\n";)
 
     //exit on back-facing planes if so desired
@@ -182,14 +188,38 @@ isContained(const Point3& point) const
 void Section::
 computeNormal()
 {
+CRUSTA_DEBUG(92, CRUSTA_DEBUG_OUT <<
+"^ New Section:" <<
+std::setprecision(std::numeric_limits<double>::digits10) <<
+"start(" << start[0] << ", " << start[1] << ", " << start[2] << ")  " <<
+"end(" << end[0] << ", " << end[1] << ", " << end[2] << ")\n";)
+
     Vector3 up = start;
+CRUSTA_DEBUG(92, CRUSTA_DEBUG_OUT <<
+std::setprecision(std::numeric_limits<double>::digits10) <<
+"up(" << up[0] << ", " << up[1] << ", " << up[2] << ")  ";)
     up.normalize();
+CRUSTA_DEBUG(92, CRUSTA_DEBUG_OUT <<
+std::setprecision(std::numeric_limits<double>::digits10) <<
+"nup(" << up[0] << ", " << up[1] << ", " << up[2] << ")\n";)
 
     Vector3 right = end - start;
+CRUSTA_DEBUG(92, CRUSTA_DEBUG_OUT <<
+std::setprecision(std::numeric_limits<double>::digits10) <<
+"right(" << right[0] << ", " << right[1] << ", " << right[2] << ")  ";)
     right.normalize();
+CRUSTA_DEBUG(92, CRUSTA_DEBUG_OUT <<
+std::setprecision(std::numeric_limits<double>::digits10) <<
+"nright(" << right[0] << ", " << right[1] << ", " << right[2] << ")\n";)
 
     normal = Geometry::cross(up, right);
+CRUSTA_DEBUG(92, CRUSTA_DEBUG_OUT <<
+std::setprecision(std::numeric_limits<double>::digits10) <<
+"normal(" << normal[0] << ", " << normal[1] << ", " << normal[2] << ") ";)
     normal.normalize();
+CRUSTA_DEBUG(92, CRUSTA_DEBUG_OUT <<
+std::setprecision(std::numeric_limits<double>::digits10) <<
+"nnormal(" << normal[0] << ", " << normal[1] << ", " << normal[2] << ")\n";)
 }
 
 END_CRUSTA

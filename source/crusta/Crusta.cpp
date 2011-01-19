@@ -36,6 +36,7 @@ BEGIN_CRUSTA
 ///\todo debug remove
 bool PROJECTION_FAILED = false;
 
+//lvl 90 - 100: debug ray intersection
 
 #if CRUSTA_ENABLE_DEBUG
 int CRUSTA_DEBUG_LEVEL_MIN = CRUSTA_DEBUG_LEVEL_MIN_VALUE;
