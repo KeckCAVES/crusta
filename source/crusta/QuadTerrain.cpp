@@ -293,8 +293,8 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
     }
 #else
     //destinations are fll, flr, ful, bll, bur
-    toNormalized.setDestination(HVector(-1,-1,-1), HVector(1,-1,-1),
-        HVector(-1,1,-1), HVector(-1,-1,1), HVector(1,1,1));
+    toNormalized.setDestination(HVector(-1,-1,-1,1), HVector(1,-1,-1,1),
+        HVector(-1,1,-1,1), HVector(-1,-1,1,1), HVector(1,1,1,1));
 
     //the elevation range might be flat. Make sure to give the frustum depth
     DemHeight::Type elevationRange[2];
@@ -330,7 +330,7 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
         Ray ray(Point3(0), srcs[i]);
         HitResult hit = plane.intersectRay(ray);
         assert(hit.isValid());
-        srcs[i] = ray(hit.getParameter());
+        srcs[i]    = ray(hit.getParameter());
     }
     plane.setPoint(Point3(normal*(SETTINGS->globeRadius +
                                   elevationRange[1])));
@@ -343,8 +343,11 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
     }
 #endif //PROJECT_WITH_CENTER
 
-    toNormalized.setSource(HVector(srcs[0]), HVector(srcs[1]), HVector(srcs[2]),
-                           HVector(srcs[3]), HVector(srcs[4]));
+    toNormalized.setSource(HVector(srcs[0][0], srcs[0][1], srcs[0][2], 1),
+                           HVector(srcs[1][0], srcs[1][1], srcs[1][2], 1),
+                           HVector(srcs[2][0], srcs[2][1], srcs[2][2], 1),
+                           HVector(srcs[3][0], srcs[3][1], srcs[3][2], 1),
+                           HVector(srcs[4][0], srcs[4][1], srcs[4][2], 1));
 
     toNormalized.computeProjective();
 
