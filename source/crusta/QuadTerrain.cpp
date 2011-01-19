@@ -985,23 +985,6 @@ CrustaVisualizer::peek();)
             leaf.getHeight(*(cellH+tileRes)), leaf.getHeight(*(cellH+tileRes+1))
         };
 
-CRUSTA_DEBUG(92, CRUSTA_DEBUG_OUT <<
-std::setprecision(std::numeric_limits<double>::digits10);
-for (int i=0; i<4; ++i)
-{
-    CRUSTA_DEBUG_OUT << "position" << i << "(" << (*positions[i])[0] << "\n" <<
-                        "          " << (*positions[i])[1] << "\n" <<
-                        "          " << (*positions[i])[2] << ")\n";
-}
-for (int i=0; i<4; ++i)
-{
-    CRUSTA_DEBUG_OUT << "heights" << i << "(" << heights[i] << ")\n";
-}
-CRUSTA_DEBUG_OUT << "centroid" << "(" << leaf.centroid[0] << "\n" <<
-                    "         " << leaf.centroid[1] << "\n" <<
-                    "         " << leaf.centroid[2] << ")\n";
-)
-
         //construct the corners of the current cell
         Vector3 cellCorners[4];
         Vector3 relativeCellCorners[4];
@@ -1012,51 +995,16 @@ CRUSTA_DEBUG_OUT << "centroid" << "(" << leaf.centroid[0] << "\n" <<
                 cellCorners[i][j] = double((*(positions[i]))[j]) +
                                     double(leaf.centroid[j]);
             }
-CRUSTA_DEBUG(92, CRUSTA_DEBUG_OUT <<
-std::setprecision(std::numeric_limits<double>::digits10);
-CRUSTA_DEBUG_OUT << "cellCorners" << i << "(" << cellCorners[i][0] << "\n" <<
-                    "             " << cellCorners[i][1] << "\n" <<
-                    "             " << cellCorners[i][2] << ")\n";
-)
             Vector3 extrude(cellCorners[i]);
-CRUSTA_DEBUG(92, CRUSTA_DEBUG_OUT <<
-std::setprecision(std::numeric_limits<double>::digits10);
-CRUSTA_DEBUG_OUT << "extrude" << i << "(" << extrude[0] << "\n" <<
-                    "         " << extrude[1] << "\n" <<
-                    "         " << extrude[2] << ")\n";
-)
             extrude.normalize();
-CRUSTA_DEBUG(92, CRUSTA_DEBUG_OUT <<
-std::setprecision(std::numeric_limits<double>::digits10);
-CRUSTA_DEBUG_OUT << "nextrude" << i << "(" << extrude[0] << "\n" <<
-                    "          " << extrude[1] << "\n" <<
-                    "          " << extrude[2] << ")\n";
-)
             extrude        *= double(heights[i]) * verticalScale;
-CRUSTA_DEBUG(92, CRUSTA_DEBUG_OUT <<
-std::setprecision(std::numeric_limits<double>::digits10);
-CRUSTA_DEBUG_OUT << "fextrude" << i << "(" << extrude[0] << "\n" <<
-                    "          " << extrude[1] << "\n" <<
-                    "          " << extrude[2] << ")\n";
-)
             cellCorners[i] += extrude;
-CRUSTA_DEBUG(92, CRUSTA_DEBUG_OUT <<
-std::setprecision(std::numeric_limits<double>::digits10);
-CRUSTA_DEBUG_OUT << "fcellCorners" << i << "(" << cellCorners[i][0] << "\n" <<
-                    "              " << cellCorners[i][1] << "\n" <<
-                    "              " << cellCorners[i][2] << ")\n";
-)
 
             relativeCellCorners[i] = cellCorners[i];
 #if DO_RELATIVE_LEAF_TRIANGLE_INTERSECTIONS
             relativeCellCorners[i]-= Vector3(leaf.centroid);
 #endif //DO_RELATIVE_LEAF_TRIANGLE_INTERSECTIONS
         }
-
-CRUSTA_DEBUG(92, CRUSTA_DEBUG_OUT <<
-std::setprecision(std::numeric_limits<double>::digits10);
-for (int i=0; i<4; ++i)
-    CRUSTA_DEBUG_OUT << "cellCorner" << i << "(" << cellCorners[i][0] << ", " << cellCorners[i][1] << ", " << cellCorners[i][2] << ")\n";)
 
         //intersect triangles of current cell
         Triangle t0(relativeCellCorners[0],
