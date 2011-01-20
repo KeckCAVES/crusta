@@ -547,7 +547,10 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     for (int i=0; i<4; ++i)
     {
         for (int j=0; j<3; ++j)
-            cellCorners[i][j] = (*(positions[i]))[j] + node->centroid[j];
+        {
+            cellCorners[i][j] = double((*(positions[i]))[j]) +
+                                double(node->centroid[j]);
+        }
         Vector3 extrude(cellCorners[i]);
         extrude.normalize();
         extrude *= (heights[i] + elevationOffset) * getVerticalScale();
