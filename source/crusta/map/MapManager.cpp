@@ -675,7 +675,7 @@ frame()
 void MapManager::
 display(GLContextData& contextData, const SurfaceApproximation& surface) const
 {
-    if (!SETTINGS->decorateVectorArt)
+    if (!SETTINGS->lineDecorated)
         polylineRenderer.display(contextData, surface);
 }
 

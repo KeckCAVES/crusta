@@ -426,7 +426,7 @@ produceMainMenu()
     //line decoration toggle
     ToggleButton* decorateLinesToggle = new ToggleButton(
         "DecorateLinesToggle", settingsMenu, "Decorate Lines");
-    decorateLinesToggle->setToggle(SETTINGS->decorateVectorArt);
+    decorateLinesToggle->setToggle(SETTINGS->lineDecorated);
     decorateLinesToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::decorateLinesCallback);
 

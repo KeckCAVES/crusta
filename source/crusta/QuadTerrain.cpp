@@ -38,7 +38,7 @@
 
 ///\todo debug remove
 #include <Geometry/ProjectiveTransformation.h>
-#define COVERAGE_PROJECTION_IN_GL 1
+#define COVERAGE_PROJECTION_IN_GL 0
 
 BEGIN_CRUSTA
 
@@ -386,10 +386,25 @@ simply float processing the transformation */
     const Coverage&  coverage = node.lineCoverage;
     const Vector2fs& offsets  = node.lineCoverageOffsets;
 
-    glLineWidth(15.0f);
+#if 0
+    Point3 geo0(nodeData.geometry[0].position[0],
+                nodeData.geometry[0].position[1],
+                nodeData.geometry[0].position[2]);
+    Point3 geo1(nodeData.geometry[1].position[0],
+                nodeData.geometry[1].position[1],
+                nodeData.geometry[1].position[2]);
+    double cellSize = Geometry::dist(geo0, geo1);
+    cellSize       *= TILE_RESOLUTION / SETTINGS->lineCoverageTexSize;
+///\todo have to find the scaleFac that corresponds to the coarsening transition of the node
+    float scaleFac  = Vrui::getNavigationTransformation().getScaling();
+    float lineWidth = SETTINGS->lineSymbolWidth / scaleFac;
+    lineWidth       = Math::ceil(lineWidth/cellSize);
+#else
+    float lineWidth       = 15.0f;
+#endif
 
-///\todo remove debug with glsl-devil
-//glIsTexture(33);
+    glLineWidth(lineWidth);
+
     glBegin(GL_LINES);
 
     //as the coverage is traversed also traverse the offsets
@@ -424,6 +439,13 @@ simply float processing the transformation */
 
             Point3 curPos  = p.transform(cur->pos);
             Point3 nextPos = p.transform(next->pos);
+
+#if 0
+Vector3 dir(nextPos - curPos);
+dir.normalize();
+curPos  = Point3(Vector3(curPos)  - cellSize*dir);
+nextPos = Point3(Vector3(nextPos) + cellSize*dir);
+#endif
 
             Point3f curPosf (curPos[0],  curPos[1],  0.0f);
             Point3f nextPosf(nextPos[0], nextPos[1], 0.0f);
@@ -549,7 +571,7 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
     gpuCache.layerf.bind();
     CHECK_GLA
 
-    if (SETTINGS->decorateVectorArt)
+    if (SETTINGS->lineDecorated)
     {
         glActiveTexture(GL_TEXTURE5);
         glBindTexture(GL_TEXTURE_2D, crustaGl->symbolTex);
@@ -1213,12 +1235,12 @@ drawNode(GLContextData& contextData, CrustaGlData* crustaGl,
     for (int i=0; i<numFloatLayers; ++i)
         dataSources.layers[i].setSubRegion(*gpuData.layers[i]);
 
-    if (SETTINGS->decorateVectorArt)
+    if (SETTINGS->lineDecorated)
     {
         //setup the shader for decorated line drawing
         ShaderDecoratedLineRenderer& decorated =
             crustaGl->terrainShader.getDecoratedLineRenderer();
-        decorated.setLineNumSegments(main.lineNumSegments);
+        decorated.setNumSegments(main.lineNumSegments);
         if (main.lineNumSegments > 0)
         {
             dataSources.coverage.setSubRegion(*gpuData.coverage);

@@ -17,9 +17,9 @@ public:
     void setSources(ShaderDataSource* coverage, ShaderDataSource* lineData);
 
     /**\{ uniform setters */
-    void setLineNumSegments(int numSegments);
-    void setLineCoordScale(float coordScale);
-    void setLineWidth(float width);
+    void setNumSegments(int numSegments);
+    void setSymbolLength(float length);
+    void setSymbolWidth(float width);
     /**\}*/
 
 protected:
@@ -27,9 +27,9 @@ protected:
     ShaderDataSource* lineDataSrc;
 
 ///\todo comment the various uniforms
-    GLint lineNumSegmentsUniform;
-    GLint lineCoordScaleUniform;
-    GLint lineWidthUniform;
+    GLint numSegmentsUniform;
+    GLint symbolLengthUniform;
+    GLint symbolWidthUniform;
 
 //- inherited from ShaderFileFragment
 protected:

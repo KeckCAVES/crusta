@@ -25,9 +25,6 @@ public:
     /** radius of the sphere onto which data is mapped */
     double globeRadius;
 
-    /** flags if line mapping should be rendered decorated or not */
-    bool decorateVectorArt;
-
     ///\{ material properties of the terrain surface
     float terrainDefaultHeight;
     Color terrainDefaultColor;
@@ -68,6 +65,10 @@ public:
     ///\}
 
     ///\{ decorated line settings
+    /** flags if line mapping should be rendered decorated or not */
+    bool  lineDecorated;
+    float lineSymbolWidth;
+    float lineSymbolLength;
 ///\todo these depend on GL capabilities and should be wrapped in GLObjects
     int   lineDataTexSize;
     float lineDataCoordStep;

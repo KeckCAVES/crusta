@@ -812,7 +812,7 @@ if (debugTool!=NULL)
     if (b1 && b1!=bl1)
     {
         bl1 = b1;
-        SETTINGS->decorateVectorArt = true;
+        SETTINGS->lineDecorated = true;
     }
 }
 #endif //CRUSTA_ENABLE_DEBUG
@@ -893,7 +893,7 @@ CRUSTA_DEBUG(50, CRUSTA_DEBUG_OUT <<
 
     //update the map data
 ///\todo integrate properly (VIS 2010)
-    if (SETTINGS->decorateVectorArt)
+    if (SETTINGS->lineDecorated)
     {
         mapMan->updateLineData(surface);
         CHECK_GLA
@@ -908,7 +908,7 @@ CRUSTA_DEBUG(50, CRUSTA_DEBUG_OUT <<
     CHECK_GLA
 
     //draw the terrain
-    glData->terrainShader.setLinesDecorated(SETTINGS->decorateVectorArt);
+    glData->terrainShader.setLinesDecorated(SETTINGS->lineDecorated);
     glData->terrainShader.update(contextData);
     glData->terrainShader.enable();
 
@@ -921,14 +921,13 @@ CRUSTA_DEBUG(50, CRUSTA_DEBUG_OUT <<
     glData->terrainShader.setDemDefault(SETTINGS->terrainDefaultHeight);
 
 ///\todo this needs to be tweakable
-    if (SETTINGS->decorateVectorArt)
+    if (SETTINGS->lineDecorated)
     {
         float scaleFac = Vrui::getNavigationTransformation().getScaling();
         ShaderDecoratedLineRenderer& decorated =
             glData->terrainShader.getDecoratedLineRenderer();
-        decorated.setLineCoordScale(scaleFac);
-        float lineWidth = 0.1f / scaleFac;
-        decorated.setLineWidth(lineWidth);
+        decorated.setSymbolLength(SETTINGS->lineSymbolLength * scaleFac);
+        decorated.setSymbolWidth(SETTINGS->lineSymbolWidth / scaleFac);
     }
     CHECK_GLA
 
@@ -950,7 +949,7 @@ CRUSTA_DEBUG(50, CRUSTA_DEBUG_OUT <<
 void Crusta::
 setDecoratedVectorArt(bool flag)
 {
-    SETTINGS->decorateVectorArt = flag;
+    SETTINGS->lineDecorated = flag;
 }
 
 void Crusta::

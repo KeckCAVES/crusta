@@ -15,8 +15,6 @@ BEGIN_CRUSTA
 CrustaSettings::CrustaSettings() :
     globeName("Sphere_Earth"), globeRadius(6371000.0),
 
-    decorateVectorArt(false),
-
     terrainDefaultHeight(0.0f),
     terrainDefaultColor(0.5f, 0.5f, 0.5f, 1.0f),
     terrainDefaultLayerfData(0.0f),
@@ -42,6 +40,9 @@ CrustaSettings::CrustaSettings() :
 
     colorMapTexSize(1024),
 
+    lineDecorated(true),
+    lineSymbolWidth(0.3f),
+    lineSymbolLength(0.15f),
     lineDataTexSize(8192),
     lineDataCoordStep(1.0f / lineDataTexSize),
     lineDataStartCoord(0.5f * lineDataCoordStep),
@@ -156,8 +157,12 @@ loadFromFiles(const Strings& cfgNames)
 
     //try to extract the line decoration settings
     cfgFile.setCurrentSection("/Crusta/DecoratedArt");
-    decorateVectorArt = cfgFile.retrieveValue<bool>(
-        "decorateVectorArt", decorateVectorArt);
+    lineDecorated = cfgFile.retrieveValue<bool>(
+        "decorated", lineDecorated);
+    lineSymbolWidth = cfgFile.retrieveValue<float>(
+        "symbolWidth", lineSymbolWidth);
+    lineSymbolLength = cfgFile.retrieveValue<float>(
+        "symbolLength", lineSymbolLength);
     lineDataTexSize = cfgFile.retrieveValue<int>(
         "dataTexSize", lineDataTexSize);
     lineDataCoordStep  = 1.0f / lineDataTexSize;

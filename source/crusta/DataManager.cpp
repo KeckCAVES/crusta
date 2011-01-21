@@ -926,7 +926,7 @@ streamGpuData(GLContextData& contextData, BatchElement& batchel)
     }
 
     //decorated vector art requires up-to-date line data and coverage textures
-    if (SETTINGS->decorateVectorArt && main.node->lineNumSegments!=0)
+    if (SETTINGS->lineDecorated && main.node->lineNumSegments!=0)
     {
     //- handle the line data
         //acquire buffer

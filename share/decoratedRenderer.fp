@@ -9,8 +9,8 @@ uniform float lineStartCoord;
 uniform float lineCoordStep;
 
 uniform int lineNumSegments;
-uniform float lineCoordScale;
-uniform float lineWidth;
+uniform float lineSymbolLength;
+uniform float lineSymbolWidth;
 
 uniform vec3 center;
 
@@ -20,14 +20,15 @@ varying vec2 texCoord;
 
 const float EPSILON = 0.00001;
 
+#define USE_COVERAGE 0
 #define NORMAL   1
 #define TWIST    1
 #define COVERAGE 0
 #define COLORIZE_COVERAGE 0
 
 ///\todo move to uniform specification
-#define U_SCALE 0.15
-#define V_SCALE 3.0
+#define U_SCALE 1.0
+#define V_SCALE 1.0
 
 
 
@@ -74,7 +75,7 @@ void computeSegment(in Segment segment, inout vec4 color)
 #endif //TWIST
 
     // Scale v to normalize to the segment width
-    v /= V_SCALE*lineWidth;
+    v /= V_SCALE*lineSymbolWidth;
 
     //- Reject if v<-1 or v>1:
     if(abs(v) <= 1.0)
@@ -103,7 +104,7 @@ void computeSegment(in Segment segment, inout vec4 color)
 
             //compute the u coordinate wrt the length of the segment
             u  = mix(segment.start.w, segment.end.w, u);
-            u *= U_SCALE*lineCoordScale;
+            u *= U_SCALE*lineSymbolLength;
             u  = fract(u / segment.symbol.b);
 
             //fetch the color contribution from the texture atlas
@@ -140,12 +141,15 @@ void render(inout vec4 fragColor)
     return;
 #endif
 
+#if USE_COVERAGE
     //do lines overlap this fragment?
     if (coverage == vec2(0.0))
         return;
+#endif //USE_COVERAGE
 
     vec4 color = vec4(0.0);
 
+#if USE_COVERAGE
     //optimize for single coverage
     if (coverage.g < 0.5)
     {
@@ -166,6 +170,7 @@ void render(inout vec4 fragColor)
         computeSegment(segment, color);
     }
     else
+#endif //USE_COVERAGE
     {
 #if COLORIZE_COVERAGE
         color = vec4(0.8, 0.4, 0.2, 0.2);

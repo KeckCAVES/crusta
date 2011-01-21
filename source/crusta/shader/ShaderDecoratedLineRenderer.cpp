@@ -13,8 +13,7 @@ BEGIN_CRUSTA
 ShaderDecoratedLineRenderer::
 ShaderDecoratedLineRenderer(const std::string& shaderFileName_) :
     ShaderFileFragment(shaderFileName_), coverageSrc(NULL), lineDataSrc(NULL),
-    lineNumSegmentsUniform(-2), lineCoordScaleUniform(-2),
-    lineWidthUniform(-2)
+    numSegmentsUniform(-2), symbolLengthUniform(-2), symbolWidthUniform(-2)
 {
 }
 
@@ -28,29 +27,29 @@ setSources(ShaderDataSource* coverage, ShaderDataSource* lineData)
 
 
 void ShaderDecoratedLineRenderer::
-setLineNumSegments(int numSegments)
+setNumSegments(int numSegments)
 {
-CRUSTA_DEBUG(80, assert(lineNumSegmentsUniform>=0);)
-    if (lineNumSegmentsUniform >= 0)
-        glUniform1i(lineNumSegmentsUniform, numSegments);
+CRUSTA_DEBUG(80, assert(numSegmentsUniform>=0);)
+    if (numSegmentsUniform >= 0)
+        glUniform1i(numSegmentsUniform, numSegments);
     CHECK_GLA
 }
 
 void ShaderDecoratedLineRenderer::
-setLineCoordScale(float coordScale)
+setSymbolLength(float length)
 {
-CRUSTA_DEBUG(80, assert(lineCoordScaleUniform>=0);)
-    if (lineCoordScaleUniform >= 0)
-        glUniform1f(lineCoordScaleUniform, coordScale);
+CRUSTA_DEBUG(80, assert(symbolLengthUniform>=0);)
+    if (symbolLengthUniform >= 0)
+        glUniform1f(symbolLengthUniform, length);
     CHECK_GLA
 }
 
 void ShaderDecoratedLineRenderer::
-setLineWidth(float width)
+setSymbolWidth(float width)
 {
-CRUSTA_DEBUG(80, assert(lineWidthUniform>=0);)
-    if (lineWidthUniform >= 0)
-        glUniform1f(lineWidthUniform, width);
+CRUSTA_DEBUG(80, assert(symbolWidthUniform>=0);)
+    if (symbolWidthUniform >= 0)
+        glUniform1f(symbolWidthUniform, width);
     CHECK_GLA
 }
 
@@ -90,9 +89,9 @@ reset()
 
     ShaderFileFragment::reset();
 
-    lineNumSegmentsUniform = -2;
-    lineCoordScaleUniform  = -2;
-    lineWidthUniform       = -2;
+    numSegmentsUniform  = -2;
+    symbolLengthUniform = -2;
+    symbolWidthUniform  = -2;
 }
 
 void ShaderDecoratedLineRenderer::
@@ -116,9 +115,9 @@ initUniforms(GLuint programObj)
     uniform = glGetUniformLocation(programObj, "lineCoordStep");
     glUniform1f(uniform, crusta::SETTINGS->lineDataCoordStep);
 
-    lineNumSegmentsUniform = glGetUniformLocation(programObj,"lineNumSegments");
-    lineCoordScaleUniform  = glGetUniformLocation(programObj, "lineCoordScale");
-    lineWidthUniform       = glGetUniformLocation(programObj,      "lineWidth");
+    numSegmentsUniform  = glGetUniformLocation(programObj,  "lineNumSegments");
+    symbolLengthUniform = glGetUniformLocation(programObj, "lineSymbolLength");
+    symbolWidthUniform  = glGetUniformLocation(programObj,  "lineSymbolWidth");
 }
 
 END_CRUSTA

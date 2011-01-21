@@ -8,7 +8,10 @@ set(CPACK_PACKAGE_VERSION ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION
 
 set(CPACK_PACKAGE_VENDOR "keckcaves.org")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
-    "A geologist's virtual globe to support remote virtual studies")
+    "A geologist's virtual globe to support remote virtual studies.")
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../share/readme.txt")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/../share/license.txt")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/../share/readme.txt")
 
 
 # Setup the system name
