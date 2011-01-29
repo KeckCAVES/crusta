@@ -38,9 +38,10 @@
 
 ///\todo debug remove
 #include <Geometry/ProjectiveTransformation.h>
-#define COVERAGE_PROJECTION_IN_GL 0
+
 
 BEGIN_CRUSTA
+
 
 static const uint NUM_GEOMETRY_INDICES =
     (TILE_RESOLUTION-1)*(TILE_RESOLUTION*2 + 2) - 2;
@@ -107,17 +108,6 @@ QuadTerrain::
 QuadTerrain(uint8 patch, const Scope& scope, Crusta* iCrusta) :
     CrustaComponent(iCrusta), rootIndex(patch)
 {
-#if 0
-    Scope s(Point3(-1,-1,1), Point3(1,-1,1), Point3(-1,1,1), Point3(1,1,1));
-    int child = computeContainingChild(Point3(0.5,-0.5,1), s);
-#endif
-#if 0
-    Section s(Point3(1,0,0), Point3(0,1,0));
-    Ray r(Point3(0,0,1), Vector3(0,0,-1));
-    HitResult h = s.intersectPlane(r);
-    assert(false);
-#endif
-
     DATAMANAGER->loadRoot(crusta, rootIndex, scope);
 }
 
@@ -146,152 +136,24 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "\n\nIntersecting Ray with Globe:\n\n";)
 }
 
 
-///\todo deprecate this
-static int
-computeContainingChild(const Point3& p, int sideIn, const Scope& scope)
-{
-    const Point3* corners[4][2] = {
-        {&scope.corners[3], &scope.corners[2]},
-        {&scope.corners[2], &scope.corners[0]},
-        {&scope.corners[0], &scope.corners[1]},
-        {&scope.corners[1], &scope.corners[3]}};
-
-    const Vector3 vp(p[0], p[1], p[2]);
-    int childId   = ~0;
-    int leftRight = ~0;
-    int upDown    = ~0;
-    switch (sideIn)
-    {
-        case -1:
-        {
-            Point3 mids    = Geometry::mid(*(corners[2][0]), *(corners[2][1]));
-            Point3 mide    = Geometry::mid(*(corners[0][0]), *(corners[0][1]));
-            Vector3 normal = Geometry::cross(Vector3(mids[0],mids[1],mids[2]),
-                                             Vector3(mide[0],mide[1],mide[2]));
-
-            leftRight = vp*normal>Scalar(0) ? 0 : 1;
-
-            mids   = Geometry::mid(*(corners[3][0]), *(corners[3][1]));
-            mide   = Geometry::mid(*(corners[1][0]), *(corners[1][1]));
-            normal = Geometry::cross(Vector3(mids[0],mids[1],mids[2]),
-                                             Vector3(mide[0],mide[1],mide[2]));
-
-            upDown = vp*normal>Scalar(0) ? 0 : 2;
-            break;
-        }
-
-        case 0:
-        case 2:
-        {
-            Point3 mids    = Geometry::mid(*(corners[2][0]), *(corners[2][1]));
-            Point3 mide    = Geometry::mid(*(corners[0][0]), *(corners[0][1]));
-            Vector3 normal = Geometry::cross(Vector3(mids[0],mids[1],mids[2]),
-                                             Vector3(mide[0],mide[1],mide[2]));
-
-            leftRight = vp*normal>Scalar(0) ? 0 : 1;
-
-            upDown = sideIn==2 ? 0 : 2;
-            break;
-        }
-
-        case 1:
-        case 3:
-        {
-            leftRight = sideIn==1 ? 0 : 1;
-
-            Point3 mids    = Geometry::mid(*(corners[3][0]), *(corners[3][1]));
-            Point3 mide    = Geometry::mid(*(corners[1][0]), *(corners[1][1]));
-            Vector3 normal = Geometry::cross(Vector3(mids[0],mids[1],mids[2]),
-                                             Vector3(mide[0],mide[1],mide[2]));
-
-            upDown = vp*normal>Scalar(0) ? 0 : 2;
-            break;
-        }
-
-        default:
-            assert(false);
-    }
-
-    childId = leftRight | upDown;
-    return childId;
-}
-
-
 void QuadTerrain::
-intersect(Shape::IntersectionFunctor& callback, Ray& ray, Scalar tin, int sin,
-          Scalar& tout, int& sout) const
+segmentCoverage(const Point3& start, const Point3& end,
+                Shape::IntersectionFunctor& callback) const
 {
-    intersectNode(callback, getRootBuffer(), ray, tin, sin, tout, sout);
+    segmentCoverage(getRootBuffer(), start, end, callback);
 }
 
-
-void QuadTerrain::
-intersectNodeSides(const Scope& scope, const Ray& ray,
-                   Scalar& tin, int& sin, Scalar& tout, int& sout)
-{
-    Section sections[4] = { Section(scope.corners[3], scope.corners[2]),
-                            Section(scope.corners[2], scope.corners[0]),
-                            Section(scope.corners[0], scope.corners[1]),
-                            Section(scope.corners[1], scope.corners[3]) };
-
-    sin  =  sout = -1;
-    tin  =  Math::Constants<Scalar>::max;
-    tout = -Math::Constants<Scalar>::max;
-    for (int i=0; i<4; ++i)
-    {
-        HitResult hit   = sections[i].intersectRay(ray);
-        Scalar hitParam = hit.getParameter();
-        if (hit.isValid())
-        {
-            if (hitParam < tin)
-            {
-                tin = hitParam;
-                sin = i;
-            }
-            if (hitParam > tout)
-            {
-                tout = hitParam;
-                sout = i;
-            }
-        }
-    }
-}
-
-
-#define PROJECT_WITH_CENTER 0
 
 void QuadTerrain::
 renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
 {
-    typedef NodeData::ShapeCoverage        Coverage;
-    typedef Shape::ControlPointHandleList  HandleList;
-    typedef Shape::ControlPointConstHandle Handle;
-    typedef Homography::HVector            HVector;
+    typedef Homography::HVector HVector;
 
     NodeData& node = *nodeData.node;
 
     //compute projection matrix
     Homography toNormalized;
-#if PROJECT_WITH_CENTER
-    //destinations are lower-left, lower-right, upper-left, upper-right, center
-    toNormalized.setDestination(Point3(-1,-1,0), Point3(1,-1,0),
-        Point3(-1,1,0), Point3(1,1,0), Point3(1,1,1));
 
-    for (int i=0; i<3; ++i)
-    {
-        Vector3 extrude(srcs[i]);
-        extrude.normalize();
-        extrude *= SETTINGS->globeRadius + elevationRange[0];
-        srcs[i]  = Point3(extrude);
-    }
-    for (int i=3; i<5; ++i)
-    {
-        Vector3 extrude(srcs[i]);
-        extrude.normalize();
-        extrude *= SETTINGS->globeRadius + elevationRange[1];
-        srcs[i]  = Point3(extrude);
-    }
-#else
     //destinations are fll, flr, ful, bll, bur
     toNormalized.setDestination(HVector(-1,-1,-1,1), HVector(1,-1,-1,1),
         HVector(-1,1,-1,1), HVector(-1,-1,1,1), HVector(1,1,1,1));
@@ -341,8 +203,13 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
         assert(hit.isValid());
         srcs[i] = ray(hit.getParameter());
     }
-#endif //PROJECT_WITH_CENTER
 
+    //make the source points relative to the node's centroid
+    for (int i=0; i<5; ++i)
+    {
+        for (int j=0; j<3; ++j)
+            srcs[i][j] -= node.centroid[j];
+    }
     toNormalized.setSource(HVector(srcs[0][0], srcs[0][1], srcs[0][2], 1),
                            HVector(srcs[1][0], srcs[1][1], srcs[1][2], 1),
                            HVector(srcs[2][0], srcs[2][1], srcs[2][2], 1),
@@ -355,9 +222,7 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
 ///\todo this is bad. Just to test GlewObject
     GlData::Item* glItem = contextData.retrieveDataItem<GlData::Item>(glData);
     glItem->lineCoverageShader.push();
-/**\todo it seems there might be an issue in converting the matrix to float or
-simply float processing the transformation */
-#if COVERAGE_PROJECTION_IN_GL
+
     //convert the projection matrix to floating point and assign to the shader
     GLfloat projMat[16];
     for (int j=0; j<4; ++j)
@@ -366,7 +231,6 @@ simply float processing the transformation */
             projMat[j*4+i] = toNormalized.getProjective().getMatrix()(i,j);
     }
     glUniformMatrix4fv(glItem->lineCoverageTransformUniform, 1, false, projMat);
-#endif //COVERAGE_PROJECTION_IN_GL
 
     //setup openGL for rendering the texture
     GLdouble depthRange[2];
@@ -376,15 +240,13 @@ simply float processing the transformation */
     glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_COLOR_BUFFER_BIT);
 
     //clear the old coverage map
+    glEnable(GL_SCISSOR_TEST);
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE);
     glEnable(GL_BLEND);
-
-    const Coverage&  coverage = node.lineCoverage;
-    const Vector2fs& offsets  = node.lineCoverageOffsets;
 
 #if 0
     Point3 geo0(nodeData.geometry[0].position[0],
@@ -407,53 +269,27 @@ simply float processing the transformation */
 
     glBegin(GL_LINES);
 
-    //as the coverage is traversed also traverse the offsets
-    Vector2fs::const_iterator oit = offsets.begin();
-    //traverse all the line in the coverage
-    for (Coverage::const_iterator lit=coverage.begin(); lit!=coverage.end();
-         ++lit)
+    typedef std::vector<int> Ints;
+
+    const Colors& data    = node.lineData;
+    const Ints&   offsets = node.lineCoverageOffsets;
+
+    for (Ints::const_iterator oit=offsets.begin(); oit!=offsets.end(); ++oit)
     {
-#if DEBUG
-        const Polyline* line = dynamic_cast<const Polyline*>(lit->first);
-        assert(line != NULL);
-#endif //DEBUG
-        const HandleList& handles = lit->second;
+        const int offset = *oit;
 
-        for (HandleList::const_iterator hit=handles.begin(); hit!=handles.end();
-             ++hit, ++oit)
-        {
-            //pass the offset along
-            Color color((*oit)[0], (*oit)[1], (*oit)[0], (*oit)[1]);
-            glColor(color);
+        //pass the offset as an appropriate color
+        const float c[2]  = {              (offset&0xFF) / 255.0f,
+                             (((offset>>8) & 0xFF) + 64) / 255.0f };
+        glColor4f(c[0], c[1], c[0], c[1]);
 
-            Handle cur  = *hit;
-            Handle next = cur; ++next;
+        //grab the segment end points from the line data
+        const Color& start = data[offset+1];
+        const Color&   end = data[offset+2];
 
-#if COVERAGE_PROJECTION_IN_GL
-            //let the GL transform the points
-            glVertex3dv(cur->pos.getComponents());
-            glVertex3dv(next->pos.getComponents());
-#else
-            //manually transform the points before passing to the GL
-            const Homography::Projective& p = toNormalized.getProjective();
-
-            Point3 curPos  = p.transform(cur->pos);
-            Point3 nextPos = p.transform(next->pos);
-
-#if 0
-Vector3 dir(nextPos - curPos);
-dir.normalize();
-curPos  = Point3(Vector3(curPos)  - cellSize*dir);
-nextPos = Point3(Vector3(nextPos) + cellSize*dir);
-#endif
-
-            Point3f curPosf (curPos[0],  curPos[1],  0.0f);
-            Point3f nextPosf(nextPos[0], nextPos[1], 0.0f);
-
-            glVertex3fv(curPosf.getComponents());
-            glVertex3fv(nextPosf.getComponents());
-#endif //COVERAGE_PROJECTION_IN_GL
-        }
+        //draw the
+        glVertex3f(start[0], start[1], start[2]);
+        glVertex3f(  end[0],   end[1],   end[2]);
     }
 
     glEnd();
@@ -653,16 +489,10 @@ Item()
 
     //create the shader to process the line coverages into the corresponding map
     std::string vp;
-#if COVERAGE_PROJECTION_IN_GL
     vp += "uniform mat4 transform;\n";
-#endif //COVERAGE_PROJECTION_IN_GL
     vp += "void main()\n{\n";
-#if COVERAGE_PROJECTION_IN_GL
     vp += "gl_Position = transform * gl_Vertex;\n";
     vp += "gl_Position /= gl_Position.w;\n";
-#else
-    vp += "gl_Position = gl_Vertex;\n";
-#endif //COVERAGE_PROJECTION_IN_GL
     vp += "gl_FrontColor = gl_Color;\n}\n";
 
     std::string fp = "void main()\n{\ngl_FragColor = gl_Color;\n}\n";
@@ -671,12 +501,10 @@ Item()
     lineCoverageShader.addString(GL_FRAGMENT_SHADER, fp);
     lineCoverageShader.link();
 
-#if COVERAGE_PROJECTION_IN_GL
     lineCoverageShader.push();
     lineCoverageTransformUniform = lineCoverageShader.getUniformLocation(
         "transform");
     lineCoverageShader.pop();
-#endif //COVERAGE_PROJECTION_IN_GL
 }
 
 QuadTerrain::GlData::Item::
@@ -1107,83 +935,39 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 
 
 void QuadTerrain::
-intersectNode(Shape::IntersectionFunctor& callback, const MainBuffer& nodeBuf,
-              Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout) const
+segmentCoverage(const MainBuffer& nodeBuf,
+                const Point3& start, const Point3& end,
+                Shape::IntersectionFunctor& callback) const
 {
     MainData  nodeData = DATAMANAGER->getData(nodeBuf);
     NodeData& node     = *nodeData.node;
 
-//- continue traversal
-    Point3 entry         = ray(tin);
-    int childId          = computeContainingChild(entry, sin, node.scope);
-    TreeIndex childIndex = node.index.down(childId);
+    //end traversal if the segment does not overlap the current node
+    if (!node.scope.intersects(start, end))
+        return;
+
+    //grab the first child to attempt recursion
     MainBuffer childBuf;
-    bool childExists = DATAMANAGER->find(childIndex, childBuf);
+    bool childExists = DATAMANAGER->find(node.index.down(0), childBuf);
 
     if (!childExists)
     {
-        //callback for the current node
+        //traverse this node as a leaf node
         callback(node, true);
-        intersectLeaf(node, ray, tin, sin, tout, sout);
         return;
     }
     else
     {
-        //callback for the current node
+        //traverse this node as an interior node
         callback(node, false);
-
-        //recurse
-        while (true)
+        //recurse to the first child
+        segmentCoverage(childBuf, start, end, callback);
+        //recurse through the remaining children
+        for (int i=1; i<4; ++i)
         {
-            intersectNode(callback, childBuf, ray, tin, sin, tout, sout);
-            if (tout >= 1.0)
-                return;
-            tin = tout;
-
-            //move to the next child
-            static const int next[4][4][2] = {
-                { { 2, 2}, {-1,-1}, {-1,-1}, { 1, 1} },
-                { { 3, 2}, { 0, 3}, {-1,-1}, {-1,-1} },
-                { {-1,-1}, {-1,-1}, { 0, 0}, { 3, 1} },
-                { {-1,-1}, { 2, 3}, { 1, 0}, {-1,-1} } };
-            sin     = next[childId][sout][1];
-            childId = next[childId][sout][0];
-            if (childId == -1)
-                return;
-
-            childIndex  = node.index.down(childId);
-            childExists = DATAMANAGER->find(childIndex, childBuf);
+            childExists = DATAMANAGER->find(node.index.down(i), childBuf);
             assert(childExists);
-        }
-    }
-
-    //execution should never reach this point
-    assert(false);
-}
-
-void QuadTerrain::
-intersectLeaf(NodeData& leaf, Ray& ray, Scalar tin, int sin,
-              Scalar& tout, int& sout) const
-{
-    const Scope& scope  = leaf.scope;
-    Section sections[4] = { Section(scope.corners[3], scope.corners[2]),
-                            Section(scope.corners[2], scope.corners[0]),
-                            Section(scope.corners[0], scope.corners[1]),
-                            Section(scope.corners[1], scope.corners[3]) };
-
-    //compute exit for current segment
-    tout = Math::Constants<Scalar>::max;
-    for (int i=0; i<4; ++i)
-    {
-        if (sin==-1 || i!=sin)
-        {
-            HitResult hit   = sections[i].intersectRay(ray);
-            Scalar hitParam = hit.getParameter();
-            if (hit.isValid() && hitParam>tin && hitParam<=tout)
-            {
-                tout = hitParam;
-                sout = i;
-            }
+            segmentCoverage(childBuf, start, end, callback);
         }
     }
 }
@@ -1372,17 +1156,19 @@ prepareDisplay(FrustumVisibility& visibility, FocusViewEvaluator& lod,
 
 /**\todo horrible Vis2010 HACK: integrate this in the proper way? I.e. don't
 stall here, but defer the update. */
-if (allgood && data.node->lineCoverageDirty)
+if (allgood)
 {
     for (int i=0; i<4; ++i)
     {
         NodeMainData child = DATAMANAGER->getData(children[i]);
+        if (child.node->lineCoverageStamp < data.node->lineCoverageStamp)
+        {
 CRUSTA_DEBUG(60, std::cerr << "***COVDOWN parent(" << data.node->index <<
 ")    " << "n(" << data.node->index << ")\n\n";)
-        mapMan->inheritShapeCoverage(*data.node, *child.node);
+            mapMan->inheritShapeCoverage(*data.node, *child.node);
+            child.node->lineCoverageStamp = data.node->lineCoverageStamp;
+        }
     }
-    //reset the dirty flag
-    data.node->lineCoverageDirty = false;
 }
 
             //still all good then recurse to the children
@@ -1498,11 +1284,12 @@ validateLineCoverage(const MainData& nodeData)
 
             //check overlap
             Handle end = *hit; ++end;
-            Ray ray((*hit)->pos, end->pos);
-            Scalar tin, tout;
-            int sin, sout;
-            intersectNodeSides(node.scope, ray, tin, sin, tout, sout);
-            assert(tin<1.0 && tout>0.0);
+            assert(node.scope.intersects((*hit)->pos, end->pos));
+
+            //check duplicates
+            HandleList::const_iterator nhit = hit;
+            for (++nhit; nhit!=handles.end(); ++nhit)
+                assert(*hit != *nhit);
         }
     }
 

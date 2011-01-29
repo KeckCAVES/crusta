@@ -64,9 +64,9 @@ public:
     Scalar getSelectDistance() const;
     Scalar getPointSelectionBias() const;
 
-    void addPolyline(Polyline* line);
+    Polyline* createPolyline();
     PolylinePtrs& getPolylines();
-    void removePolyline(Polyline* line);
+    void deletePolyline(Polyline* line);
 
 ///\todo Vis2010 testing: update line coverage for given line sections
     void addShapeCoverage(Shape* shape,

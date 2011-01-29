@@ -53,13 +53,9 @@ public:
     SurfacePoint intersect(const Ray& ray, Scalar tin, int sin,
                         Scalar& tout, int& sout, const Scalar gout) const;
 
-    /** traverse the leaf nodes of the current approximation of the patch */
-    void intersect(Shape::IntersectionFunctor& callback, Ray& ray,
-                   Scalar tin, int sin, Scalar& tout, int& sout) const;
-
-    /** intersect the ray agains the sections of the node */
-    static void intersectNodeSides(const Scope& scope, const Ray& ray,
-                            Scalar& tin, int& sin, Scalar& tout, int& sout);
+    /** traverse the cached representation for nodes that overlap a segment */
+    void segmentCoverage(const Point3& start, const Point3& end,
+                         Shape::IntersectionFunctor& callback) const;
 
     /** render the coverage map for the given node */
     static void renderLineCoverageMap(GLContextData& contextData,
@@ -142,11 +138,11 @@ protected:
     SurfacePoint intersectLeaf(const MainData& leaf, const Ray& ray,
                             Scalar param, int side, const Scalar gout) const;
 
-    void intersectNode(Shape::IntersectionFunctor& callback,
-                       const MainBuffer& nodeBuf, Ray& ray, Scalar tin, int sin,
-                       Scalar& tout, int& sout) const;
-    void intersectLeaf(NodeData& leaf, Ray& ray, Scalar tin, int sin,
-                       Scalar& tout, int& sout) const;
+    /** traverse the cached representation starting at the given node for nodes
+        that overlap a segment */
+    void segmentCoverage(const MainBuffer& nodeBuf,
+                         const Point3& start, const Point3& end,
+                         Shape::IntersectionFunctor& callback) const;
 
     /** issue the drawing commands for displaying a node. The video cache
         operations to stream data from the main cache are performed at this

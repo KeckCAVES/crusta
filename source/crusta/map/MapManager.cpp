@@ -48,7 +48,6 @@
 
 #include <crusta/StatsManager.h>
 
-#define CHECK_CONVERAGE_VALIDITY 0
 
 BEGIN_CRUSTA
 
@@ -155,11 +154,7 @@ int numFeature = 0;
             if (!cps.empty())
             {
                 //create new polyline and assign the control points
-                Polyline* out = new Polyline(crusta);
-                //add the polyline to the managed set (this gives it its id)
-                addPolyline(out);
-
-                //configure the polyline
+                Polyline* out = createPolyline();
                 out->setControlPoints(cps);
 
                 //read in the symbol field and assign it
@@ -169,7 +164,6 @@ int numFeature = 0;
                     out->setSymbol(symbol->second);
                 else
                     out->setSymbol(Shape::DEFAULT_SYMBOL);
-
             }
         }
 
@@ -182,7 +176,7 @@ int numFeature = 0;
 int numSegments = 0;
 for (PolylinePtrs::iterator pit=polylines.begin(); pit!=polylines.end(); ++pit)
     numSegments += (*pit)->getControlPoints().size()-1;
-std::cerr << "num segs: " << numSegments << std::endl;
+std::cerr << "Crusta: imported " << numSegments << " polyline segments\n";
 
     OGRDataSource::DestroyDataSource(source);
 }
@@ -341,11 +335,13 @@ getPointSelectionBias() const
     return pointSelectionBias;
 }
 
-void MapManager::
-addPolyline(Polyline* line)
+Polyline* MapManager::
+createPolyline()
 {
+    Polyline* line = new Polyline(crusta);
     line->setId(polylineIds.grab());
     polylines.push_back(line);
+    return line;
 }
 
 MapManager::PolylinePtrs& MapManager::
@@ -355,7 +351,7 @@ getPolylines()
 }
 
 void MapManager::
-removePolyline(Polyline* line)
+deletePolyline(Polyline* line)
 {
     PolylinePtrs::iterator it =
         std::find(polylines.begin(), polylines.end(), line);
@@ -386,20 +382,21 @@ std::cerr << " )\n\n";
     Shape::ControlPointHandle end = startCP;
     if (end != endCP) ++end;
 
+    //setup the segment invariant part of the adder
     ShapeCoverageAdder adder;
     adder.setShape(shape);
 
+    //traverse all the segments of the specified range
     for (Shape::ControlPointHandle start=startCP; end!=endCP; ++start, ++end)
     {
 CRUSTA_DEBUG(42, std::cerr << "adding segment " << start << "\n";)
+        //setup the current segment and traverse
         adder.setSegment(start);
-        crusta->intersect(start, adder);
+        crusta->segmentCoverage(start->pos, end->pos, adder);
 CRUSTA_DEBUG(42, std::cerr << "\n";)
     }
 
-#if CHECK_CONVERAGE_VALIDITY
-CRUSTA_DEBUG(110, crusta->validateLineCoverage();)
-#endif //CHECK_CONVERAGE_VALIDITY
+CRUSTA_DEBUG(49, crusta->validateLineCoverage();)
 CRUSTA_DEBUG(41, std::cerr << "--ADD\n\n";)
 }
 
@@ -421,23 +418,22 @@ std::cerr << " )\n";
     Shape::ControlPointHandle end = startCP;
     if (end != endCP) ++end;
 
+    //setup the segment invariant part the remover
     ShapeCoverageRemover remover;
     remover.setShape(shape);
 
+    //traverse all the segments of the specified range
     for (Shape::ControlPointHandle start=startCP; end!=endCP; ++start, ++end)
     {
 CRUSTA_DEBUG(42, std::cerr << "removing segment " << start << "\n";)
+        //setup the current segment and traverse
         remover.setSegment(start);
-        crusta->intersect(start, remover);
-#if CHECK_CONVERAGE_VALIDITY
-CRUSTA_DEBUG(110, crusta->confirmLineCoverageRemoval(shape, start);)
-#endif //CHECK_CONVERAGE_VALIDITY
+        crusta->segmentCoverage(start->pos, end->pos, remover);
+CRUSTA_DEBUG(49, crusta->confirmLineCoverageRemoval(shape, start);)
 CRUSTA_DEBUG(42, std::cerr << "\n";)
     }
 
-#if CHECK_CONVERAGE_VALIDITY
-CRUSTA_DEBUG(110, crusta->validateLineCoverage();)
-#endif //CHECK_CONVERAGE_VALIDITY
+CRUSTA_DEBUG(49, crusta->validateLineCoverage();)
 CRUSTA_DEBUG(41, std::cerr << "--REM\n\n";)
 }
 
@@ -464,8 +460,6 @@ statsMan.start(StatsManager::INHERITSHAPECOVERAGE);
         assert(srcHandles.size()>0);
 
         //intersect all the segments
-        Scalar tin= 0, tout= 0;
-        int    sin=-1, sout=-1;
         for (HandleList::const_iterator hit=srcHandles.begin();
              hit!=srcHandles.end(); ++hit)
         {
@@ -474,11 +468,8 @@ statsMan.start(StatsManager::INHERITSHAPECOVERAGE);
             assert(start!=shape->getControlPoints().end() &&
                    end  !=shape->getControlPoints().end());
 
-            //intersect ray and check for overlap
-            Ray ray(start->pos, end->pos);
-            QuadTerrain::intersectNodeSides(child.scope, ray,
-                                            tin, sin, tout, sout);
-            if (tin>=1.0 || tout<=0.0)
+            //check for segment overlap
+            if (!child.scope.intersects(start->pos, end->pos))
                 continue;
 
             //insert segment into child coverage
@@ -486,17 +477,17 @@ statsMan.start(StatsManager::INHERITSHAPECOVERAGE);
                 dstHandles = &child.lineCoverage[shape];
 
             dstHandles->push_back(*hit);
-            child.lineCoverageDirty |= true;
         }
     }
+
+    //validate the child's coverage
+    child.lineCoverageStamp = parent.lineCoverageStamp;
 
     //invalidate the child's line data
     child.lineNumSegments = 0;
     child.lineData.clear();
 
-#if CHECK_CONVERAGE_VALIDITY
-CRUSTA_DEBUG(110, crusta->validateLineCoverage();)
-#endif //CHECK_CONVERAGE_VALIDITY
+CRUSTA_DEBUG(49, crusta->validateLineCoverage();)
 
 statsMan.stop(StatsManager::INHERITSHAPECOVERAGE);
 }
@@ -511,91 +502,63 @@ statsMan.start(StatsManager::UPDATELINEDATA);
     typedef Shape::ControlPointHandleList HandleList;
     typedef Shape::ControlPointHandle     Handle;
 
-    const uint32 lineTexSize = static_cast<uint32>(SETTINGS->lineDataTexSize);
+    const int lineTexSize = SETTINGS->lineDataTexSize;
 
     //go through all the nodes provided
     size_t numNodes = surface.visibles.size();
     for (size_t i=0; i<numNodes; ++i)
     {
-        NodeData&   node        = *surface.visible(i).node;
-        Coverage&   coverage    = node.lineCoverage;
-        FrameStamp& dataAge     = node.lineCoverageAge;
-        Vector2fs&  offsets     = node.lineCoverageOffsets;
-        int&        numSegments = node.lineNumSegments;
-        Colors&     data        = node.lineData;
+        NodeData&         node          = *surface.visible(i).node;
+        Coverage&         coverage      = node.lineCoverage;
+        FrameStamp&       coverageStamp = node.lineCoverageStamp;
+        std::vector<int>& offsets       = node.lineCoverageOffsets;
+        Colors&           data          = node.lineData;
+        FrameStamp&       dataStamp     = node.lineDataStamp;
 
-///\todo is this the right location to be doing this check?
-        //verify that edits to lines have not deprecated the cached data
-        if (!data.empty())
+        /* 1 trigger: there is coverage and it has changed (current tool
+           stamps are a frame behind, hence <=) */
+        bool needToUpdate = !coverage.empty() && dataStamp<=coverageStamp;
+        //2 trigger: properties of specific segments have changed
+        if (!needToUpdate)
         {
-            /* keep track of the offset in the texture. We don't want segments
-               that are not going to be added to the line data texture to
-               prompt its refresh */
-            uint32 offset = 0;
             for (Coverage::iterator lit=coverage.begin();
-                 lit!=coverage.end() && !data.empty() && offset<lineTexSize;
-                 ++lit)
+                 lit!=coverage.end() && !needToUpdate; ++lit)
             {
                 HandleList& handles = lit->second;
 
                 for (HandleList::iterator hit=handles.begin();
-                     hit!=handles.end() && offset<lineTexSize; ++hit, offset+=4)
+                     hit!=handles.end(); ++hit)
                 {
-                    if (dataAge < (*hit)->age)
+                    //current tool stamps are a frame behind, hence <=
+                    if (dataStamp <= (*hit)->stamp)
                     {
 CRUSTA_DEBUG(51, std::cerr << "~~~INV n(" << node.index << ") has old " <<
-"segment from line " << lit->first->getId() << " (ages " << dataAge <<
-" vs " << (*hit)->age << ")\n\n";)
-                        data.clear();
+"segment from line " << lit->first->getId() << " (stamps " << dataStamp <<
+" vs " << (*hit)->stamp << ")\n\n";)
+                        needToUpdate = true;
                         break;
                     }
                 }
             }
         }
 
-        //does not require update if 1. has data or 2. is not overlapped
-        if (!data.empty() || coverage.empty())
+        //we're done here if none of the triggers fired
+        if (!needToUpdate)
             continue;
 
-///\todo debug: check for duplicates in the line coverage
-static bool checkForDuplicates = true;
-if (checkForDuplicates) {
-    for (Coverage::iterator lit=coverage.begin(); lit!=coverage.end(); ++lit)
-    {
-    #if DEBUG
-        const Shape* const shape = lit->first;
-        assert(dynamic_cast<const Polyline*>(shape) != NULL);
-    #endif //DEBUG
-        HandleList& handles = lit->second;
-        assert(handles.size() > 0);
-
-        for (HandleList::iterator hit=handles.begin();hit!=handles.end();++hit)
-        {
-            HandleList::iterator nhit = hit;
-            for (++nhit; nhit!=handles.end(); ++nhit)
-                assert(*hit != *nhit);
-        }
-    }
-}
+CRUSTA_DEBUG(49, crusta->validateLineCoverage();)
 
 //record the update to this node
 statsMan.incrementDataUpdated();
-
-        //determine the number of segments covered by the tile
-        numSegments = 0;
-        for (Coverage::iterator lit=coverage.begin();lit!=coverage.end();++lit)
-            numSegments += static_cast<int>(lit->second.size());
 
 CRUSTA_DEBUG(50, std::cerr << "###REGEN n(" << node.index << ") :\n" <<
 coverage << "\n\n";)
 
     //- reset the offsets
         offsets.clear();
-        uint32 curOff = 0.0;
+        int curOff = 0;
 
     //- go through all the lines for that node and dump the data
-        const Point3& centroid = node.centroid;
-
         for (Coverage::iterator lit=coverage.begin();
              lit!=coverage.end() && curOff<lineTexSize; ++lit)
         {
@@ -604,7 +567,7 @@ coverage << "\n\n";)
             HandleList& handles = lit->second;
             const Shape::Symbol& symbol = line->getSymbol();
 
-        //- age stamp and dump all the segments for the current line
+        //- dump all the segments for the current line
             for (HandleList::iterator hit=handles.begin();
                  hit!=handles.end() && curOff<lineTexSize; ++hit)
             {
@@ -614,20 +577,18 @@ coverage << "\n\n";)
 
                 Point3 curP  = crusta->mapToScaledGlobe(cur->pos);
                 Point3 nextP = crusta->mapToScaledGlobe(next->pos);
-                Point3f curPf(curP[0]-centroid[0],
-                              curP[1]-centroid[1],
-                              curP[2]-centroid[2]);
-                Point3f nextPf(nextP[0]-centroid[0],
-                               nextP[1]-centroid[1],
-                               nextP[2]-centroid[2]);
+                Point3f curPf(curP[0] - node.centroid[0],
+                              curP[1] - node.centroid[1],
+                              curP[2] - node.centroid[2]);
+                Point3f nextPf(nextP[0] - node.centroid[0],
+                               nextP[1] - node.centroid[1],
+                               nextP[2] - node.centroid[2]);
 
                 const Scalar& curC  = cur->coord;
                 const Scalar& nextC = next->coord;
 
                 //save the offset to the data
-                Vector2f coff((curOff&0xFF)           / 255.0f,
-                              (((curOff>>8) & 0xFF) + 64) / 255.0f);
-                offsets.push_back(coff);
+                offsets.push_back(curOff);
 
                 //the atlas information for this segment
                 data.push_back(symbol.originSize);
@@ -647,8 +608,9 @@ coverage << "\n\n";)
             }
         }
 
-        //update the age of the line data
-        dataAge = CURRENT_FRAME;
+        //update the stamp of the line data and the segment count
+        node.lineNumSegments = static_cast<int>(offsets.size());
+        dataStamp            = CURRENT_FRAME;
     }
 
 statsMan.stop(StatsManager::UPDATELINEDATA);
@@ -736,7 +698,7 @@ setSegment(const Shape::ControlPointHandle& nSegment)
 
 
 void MapManager::ShapeCoverageAdder::
-operator()(NodeData& node, bool isLeaf)
+operator()(NodeData& node, bool)
 {
     typedef NodeData::ShapeCoverage       Coverage;
     typedef Shape::ControlPointHandleList HandleList;
@@ -745,7 +707,7 @@ operator()(NodeData& node, bool isLeaf)
 
 CRUSTA_DEBUG(43, std::cerr << "+" << node.index;)
 
-CRUSTA_DEBUG(110,
+CRUSTA_DEBUG(49,
     HandleList::const_iterator fit;
     for (fit=handles.begin(); fit!=handles.end() && *fit!=segment; ++fit);
     if (fit != handles.end())
@@ -754,31 +716,26 @@ CRUSTA_DEBUG(110,
             "contains:\n" << node.lineCoverage << "Offending segment is "
             "fit." << *fit << " segment." << segment << "\n";
     }
-);
+)
 
+    //add the segment to the coverage
     handles.push_back(segment);
+    //stamp the coverage update
+    node.lineCoverageStamp = CURRENT_FRAME;
 
     //invalidate current line data
     node.lineNumSegments = 0;
     node.lineData.clear();
-    //record the change for the culled tree if this is a leaf node
-    if (isLeaf)
-    {
-CRUSTA_DEBUG(44, std::cerr << "~\n";)
-        node.lineCoverageDirty |= true;
-    }
-    else
-    {
 CRUSTA_DEBUG(44, std::cerr << "\n";)
-    }
 }
 
 void MapManager::ShapeCoverageRemover::
-operator()(NodeData& node, bool isLeaf)
+operator()(NodeData& node, bool)
 {
     typedef NodeData::ShapeCoverage       Coverage;
     typedef Shape::ControlPointHandleList HandleList;
 
+    //find the shape in the coverage
     Coverage::iterator lit = node.lineCoverage.find(shape);
     assert(lit != node.lineCoverage.end());
     HandleList& handles = lit->second;
@@ -786,29 +743,25 @@ operator()(NodeData& node, bool isLeaf)
 
 CRUSTA_DEBUG(43, std::cerr << "-" << node.index;)
 
+    //find the specific segment
     HandleList::iterator fit;
     for (fit=handles.begin(); fit!=handles.end() && *fit!=segment; ++fit);
     assert(fit != handles.end());
 
+    //remove the segment from the coverage
     handles.erase(fit);
 
     //clean up emptied coverages
     if (handles.empty())
         node.lineCoverage.erase(lit);
 
+    //stamp the coverage update
+    node.lineCoverageStamp = CURRENT_FRAME;
+
     //invalidate current line data
     node.lineNumSegments = 0;
     node.lineData.clear();
-    //record the change for the culled tree if this is a leaf node
-    if (isLeaf)
-    {
-CRUSTA_DEBUG(44, std::cerr << "~\n";)
-        node.lineCoverageDirty |= true;
-    }
-    else
-    {
 CRUSTA_DEBUG(44, std::cerr << "\n";)
-    }
 }
 
 

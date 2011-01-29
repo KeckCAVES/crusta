@@ -1,7 +1,16 @@
 #include <crusta/DebugTool.h>
 
+
+#include <iostream>
+
+#include <Comm/MulticastPipe.h>
+#include <Geometry/OrthogonalTransformation.h>
 #include <Vrui/ToolManager.h>
 #include <Vrui/Vrui.h>
+
+#include <crusta/Crusta.h>
+#include <crusta/SurfacePoint.h>
+
 
 BEGIN_CRUSTA
 
@@ -68,6 +77,42 @@ const Vrui::ToolFactory* DebugTool::
 getFactory() const
 {
     return factory;
+}
+
+void DebugTool::
+frame()
+{
+    if (!buttons[0])
+        return;
+
+    Vrui::InputDevice* device = input.getDevice(0);
+
+    //transform the physical frame to navigation space
+    Vrui::NavTransform physicalFrame = device->getTransformation();
+    Vrui::NavTransform modelFrame    =
+        Vrui::getInverseNavigationTransformation() * physicalFrame;
+
+    //align the model frame to the surface
+    SurfacePoint surfacePoint;
+    if (Vrui::isMaster())
+    {
+        Vrui::Vector rayDir = device->getRayDirection();
+        rayDir = Vrui::getInverseNavigationTransformation().transform(
+            rayDir);
+        rayDir.normalize();
+
+        Ray ray(modelFrame.getOrigin(), rayDir);
+        surfacePoint = crusta->intersect(ray);
+
+        if (surfacePoint.isValid())
+        {
+            std::cerr << "Node: " << surfacePoint.nodeIndex.med_str() << "   "<<\
+                surfacePoint.cellIndex[0] << "x" << surfacePoint.cellIndex[1] <<
+                "   " << surfacePoint.cellPosition[0] << "|" <<
+                surfacePoint.cellPosition[1] << "   index " <<
+                surfacePoint.nodeIndex.index << "\n";
+        }
+    }
 }
 
 void DebugTool::

@@ -27,9 +27,16 @@ public:
     {
         ControlPoint();
         ControlPoint(const ControlPoint& other);
-        ControlPoint(const FrameStamp& iAge, const Point3& iPos);
+        ControlPoint(const Point3& position);
+        ControlPoint(const FrameStamp& attributeStamp, const Point3& iPos);
 
-        FrameStamp age;
+        /** stamp used to age parts of the line segment. In particular, the line
+            data needs to be regenerated if its stamp is older than this stamp.
+            Such cases occur after moving a control point where all subsequent
+            points need to have their coordinate updated. Changing the symbol
+            of a shape is a case where all the overlaped node's line data must
+            be updated. */
+        FrameStamp stamp;
         Point3     pos;
         Scalar     coord;
     };

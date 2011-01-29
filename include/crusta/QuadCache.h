@@ -37,7 +37,7 @@ public:
     void subStream(const SubRegion& sub, GLint xoff, GLint yoff,
                    GLsizei width, GLsizei height,
                    GLenum dataFormat, GLenum dataType, const void* data);
-    
+
 protected:
     GLuint texture;
     int texSize;
@@ -62,6 +62,7 @@ public:
 protected:
     GLuint renderFbo;
     GLint  oldViewport[4];
+    GLint  oldScissorBox[4];
     GLint  oldFbo;
     GLint  oldDrawBuf;
     GLint  oldReadBuf;

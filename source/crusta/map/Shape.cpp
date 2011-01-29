@@ -15,26 +15,33 @@ BEGIN_CRUSTA
 const Shape::ControlId Shape::BAD_ID(CONTROL_INVALID, ControlPointHandle());
 
 
+/* the default stamp for a control point is one that will never prompt an
+   update */
 Shape::ControlPoint::
 ControlPoint() :
-    age(0), pos(0), coord(0)
+    stamp(Math::Constants<FrameStamp>::max), pos(0), coord(0)
 {}
 
 Shape::ControlPoint::
 ControlPoint(const ControlPoint& other) :
-    age(other.age), pos(other.pos), coord(other.coord)
+    stamp(other.stamp), pos(other.pos), coord(other.coord)
 {}
 
 Shape::ControlPoint::
-ControlPoint(const FrameStamp& iAge, const Point3& iPos) :
-    age(iAge), pos(iPos), coord(0)
+ControlPoint(const Point3& iPos) :
+    stamp(Math::Constants<FrameStamp>::max), pos(iPos), coord(0)
+{}
+
+Shape::ControlPoint::
+ControlPoint(const FrameStamp& iStamp, const Point3& iPos) :
+    stamp(iStamp), pos(iPos), coord(0)
 {}
 
 
 std::ostream&
 operator<<(std::ostream& os, const Shape::ControlPointHandle& cph)
 {
-    os << "cph(" << cph->age << "." << &(*cph) << ")";
+    os << "cph(" << cph->stamp << "." << &(*cph) << ")";
     return os;
 }
 
@@ -240,18 +247,17 @@ selectExtremity(const Point3& pos, double& dist, End& end)
 void Shape::
 setControlPoints(const Point3s& newControlPoints)
 {
-    FrameStamp curStamp = CURRENT_FRAME;
     MapManager* mapMan  = crusta->getMapManager();
 
     //delete the old control points to the coverage hierarchy
     mapMan->removeShapeCoverage(this,controlPoints.begin(),controlPoints.end());
     controlPoints.clear();
 
-    //assign the new control point positions and age
+    //assign the new control point positions
     for (Point3s::const_iterator it=newControlPoints.begin();
          it!=newControlPoints.end(); ++it)
     {
-        controlPoints.push_back(ControlPoint(curStamp, *it));
+        controlPoints.push_back(ControlPoint(*it));
     }
 
     //add the new control points to the coverage hierarchy
@@ -261,13 +267,12 @@ setControlPoints(const Point3s& newControlPoints)
 Shape::ControlId Shape::
 addControlPoint(const Point3& pos, End end)
 {
-    FrameStamp curStamp = CURRENT_FRAME;
     MapManager* mapMan  = crusta->getMapManager();
 
     if (end == END_FRONT)
     {
 CRUSTA_DEBUG(40, std::cerr << "++++AddCP @ FRONT:\n";)
-        controlPoints.push_front(ControlPoint(curStamp, pos));
+        controlPoints.push_front(ControlPoint(pos));
         ControlPointHandle end = ++controlPoints.begin();
         if (end != controlPoints.end())
             ++end;
@@ -280,13 +285,10 @@ CRUSTA_DEBUG(40, std::cerr << "----added\n" <<
     else
     {
 CRUSTA_DEBUG(40, std::cerr << "++++AddCP @ END\n";)
-        controlPoints.push_back(ControlPoint(curStamp, pos));
+        controlPoints.push_back(ControlPoint(pos));
         ControlPointHandle start = --controlPoints.end();
         if (controlPoints.size()>1)
-        {
             --start;
-            start->age = curStamp;
-        }
         mapMan->addShapeCoverage(this, start, controlPoints.end());
 
 CRUSTA_DEBUG(40, std::cerr << "----added " <<
@@ -301,7 +303,6 @@ moveControlPoint(const ControlId& id, const Point3& pos)
 ///\todo only works for single map tool: ids can't be invalidated outside tool
     assert(isValid(id));
 
-    FrameStamp curStamp = CURRENT_FRAME;
     MapManager* mapMan  = crusta->getMapManager();
 
 CRUSTA_DEBUG(40, std::cerr << "++++MoveCP " << id << " \n";)
@@ -316,9 +317,7 @@ CRUSTA_DEBUG(40, std::cerr << "++++MoveCP " << id << " \n";)
     mapMan->removeShapeCoverage(this, start, end);
 
     //move the control point and update its age
-    id.handle->age = curStamp;
-    id.handle->pos = pos;
-    start->age     = curStamp;
+    id.handle->pos   = pos;
 
     //add the new affected segments
     mapMan->addShapeCoverage(this, start, end);
@@ -331,7 +330,6 @@ removeControlPoint(const ControlId& id)
 ///\todo only works for single map tool: ids can't be invalidated outside tool
     assert(isValid(id));
 
-    FrameStamp curStamp = CURRENT_FRAME;
     MapManager* mapMan  = crusta->getMapManager();
 
 CRUSTA_DEBUG(40, std::cerr << "++++DelCP " << id << " \n";)
@@ -351,10 +349,7 @@ CRUSTA_DEBUG(40, std::cerr << "++++DelCP " << id << " \n";)
     //add new shortcut segment
     end = start;
     if (start!=controlPoints.begin())
-    {
         --start;
-        start->age = curStamp;
-    }
     if (end != controlPoints.end())
         ++end;
 
@@ -369,7 +364,6 @@ refine(const ControlId& id, const Point3& pos)
 ///\todo only works for single map tool: ids can't be invalidated outside tool
     assert(isValid(id));
 
-    FrameStamp curStamp = CURRENT_FRAME;
     MapManager* mapMan  = crusta->getMapManager();
 
 CRUSTA_DEBUG(40, std::cerr << "++++RefineSeg " << id << " \n";)
@@ -386,9 +380,7 @@ CRUSTA_DEBUG(40, std::cerr << "++++RefineSeg " << id << " \n";)
 
     //insert new control point
     retControl.handle = controlPoints.insert(retControl.handle,
-                                             ControlPoint(curStamp, pos));
-
-    start->age = curStamp;
+                                             ControlPoint(pos));
 
     //add affected segments
     mapMan->addShapeCoverage(this, start, end);
@@ -468,7 +460,7 @@ setSymbol(const Symbol& nSymbol)
     for (ControlPointList::iterator it=controlPoints.begin();
          it!=controlPoints.end(); ++it)
     {
-        it->age = curStamp;
+        it->stamp = curStamp;
     }
 }
 

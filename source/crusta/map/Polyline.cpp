@@ -20,9 +20,8 @@ Polyline(Crusta* iCrusta) :
 void Polyline::
 recomputeCoords(ControlPointHandle cur)
 {
-    FrameStamp curStamp = CURRENT_FRAME;
-
     assert(cur != controlPoints.end());
+    FrameStamp curStamp = CURRENT_FRAME;
 
     Point3 prevP, curP;
     ControlPointHandle prev = cur;
@@ -30,15 +29,16 @@ recomputeCoords(ControlPointHandle cur)
         --prev;
     else
     {
+        prev->stamp = curStamp;
         prev->coord = 0.0;
         ++cur;
     }
     prevP = crusta->mapToScaledGlobe(prev->pos);
     for (; cur!=controlPoints.end(); ++prev, ++cur, prevP=curP)
     {
+        cur->stamp = curStamp;
         curP = crusta->mapToScaledGlobe(cur->pos);
         cur->coord  = prev->coord + Geometry::dist(prevP, curP);
-        cur->age    = curStamp;
     }
 }
 

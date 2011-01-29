@@ -56,12 +56,12 @@ struct NodeData
     LayerDataf::Type getLayerData(const LayerDataf::Type& test) const;
 
 ///\todo integrate me properly into the caching scheme (VIS 2010)
-bool          lineCoverageDirty;
-FrameStamp    lineCoverageAge;
-Vector2fs     lineCoverageOffsets;
-ShapeCoverage lineCoverage;
-int           lineNumSegments;
-Colors        lineData;
+FrameStamp       lineCoverageStamp;
+std::vector<int> lineCoverageOffsets;
+ShapeCoverage    lineCoverage;
+int              lineNumSegments;
+FrameStamp       lineDataStamp;
+Colors           lineData;
 
     /** uniquely characterize this node's "position" in the tree. The tree
      index must correlate with the global hierarchy of the data
@@ -110,6 +110,7 @@ struct StampedSubRegion : SubRegion
 
 
 ///\todo debug, remove
+std::ostream& operator<<(std::ostream&os, const SubRegion& sub);
 std::ostream& operator<<(std::ostream& os, const NodeData::ShapeCoverage& cov);
 
 

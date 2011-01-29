@@ -29,7 +29,7 @@ public:
 private:
     static Factory* factory;
 
-    static const int numButtons = 4;
+    static const int numButtons = 1;
 
     bool buttons[numButtons];
     bool buttonsLast[numButtons];
@@ -39,6 +39,8 @@ private:
 //- Inherited from Vrui::Tool
 public:
     virtual const Vrui::ToolFactory* getFactory() const;
+
+    virtual void frame();
 
     virtual void buttonCallback(int deviceIndex, int deviceButtonIndex,
                                 Vrui::InputDevice::ButtonCallbackData* cbData);

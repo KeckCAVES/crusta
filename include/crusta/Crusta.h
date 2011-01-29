@@ -73,8 +73,8 @@ public:
     /** intersect a ray with the crusta globe */
     SurfacePoint intersect(const Ray& ray) const;
 
-    /** intersect a single segment with the global hierarchy */
-    void intersect(Shape::ControlPointHandle start,
+    /** determine the coverage of a single segment with the global hierarchy */
+    void segmentCoverage(const Point3& start, const Point3& end,
                    Shape::IntersectionFunctor& callback) const;
 
     const FrameStamp& getLastScaleStamp() const;

@@ -145,19 +145,19 @@ subStream(const SubRegion& sub, GLint xoff, GLint yoff,
           GLenum dataFormat, GLenum dataType, const void* data)
 {
     CHECK_GL_CLEAR_ERROR;
-    
+
     xoff         += GLint(sub.offset[0]*texSize);
     yoff         += GLint(sub.offset[1]*texSize);
     GLint zoff    = GLint(sub.offset[2]);
     GLsizei depth = 1;
-    
+
     glPushAttrib(GL_TEXTURE_BIT);
-    
+
     glBindTexture(GL_TEXTURE_2D_ARRAY_EXT, texture);
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY_EXT, 0, xoff, yoff, zoff,
                     width, height, depth, dataFormat, dataType, data);
     glPopAttrib();
-    
+
     CHECK_GLA;
 }
 
@@ -196,6 +196,13 @@ beginRender(const SubRegion& sub)
                GLint(sub.offset[1]*this->texSize),
                GLsizei(sub.size[0]*this->texSize),
                GLsizei(sub.size[1]*this->texSize));
+    //save the current scissor box
+    glGetIntegerv(GL_SCISSOR_BOX, oldScissorBox);
+    //set the scissor area to match the atlas entry
+    glScissor(GLint(sub.offset[0]*this->texSize),
+             GLint(sub.offset[1]*this->texSize),
+             GLsizei(sub.size[0]*this->texSize),
+             GLsizei(sub.size[1]*this->texSize));
 
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &oldFbo);
     glGetIntegerv(GL_DRAW_BUFFER, &oldDrawBuf);
@@ -222,6 +229,11 @@ endRender()
 
     //restore the viewport
     glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
+    //restore the scissor box
+    glScissor(oldScissorBox[0], oldScissorBox[1],
+              oldScissorBox[2], oldScissorBox[3]);
+
+    CHECK_GLA;
 }
 
 
@@ -339,16 +351,16 @@ subStream(const SubRegion& sub, GLint xoff, GLsizei width,
     xoff          += GLint(sub.offset[0]*texWidth);
     GLint yoff     = GLint(sub.offset[1]*texHeight);
     GLsizei height = 1;
-    
+
     glPushAttrib(GL_TEXTURE_BIT);
-    
+
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexSubImage2D(GL_TEXTURE_2D, 0, xoff, yoff, width, height,
                     dataFormat, dataType, data);
-    
+
     glPopAttrib();
-    
-    CHECK_GL;
+
+    CHECK_GLA;
 }
 
 

@@ -51,9 +51,8 @@ void PolylineTool::
 createShape(Shape*& shape, Shape::ControlId& control, const Point3& pos)
 {
     MapManager* mapMan   = crusta->getMapManager();
-    Polyline*   newLine  = new Polyline(crusta);
+    Polyline*   newLine  = mapMan->createPolyline();
     newLine->setSymbol(mapMan->getActiveSymbol());
-    mapMan->addPolyline(newLine);
 
     shape   = newLine;
     control = shape->addControlPoint(pos);
@@ -64,7 +63,8 @@ deleteShape(Shape*& shape, Shape::ControlId& control)
 {
     Polyline* line = dynamic_cast<Polyline*>(shape);
     assert(line != NULL);
-    crusta->getMapManager()->removePolyline(line);
+    crusta->getMapManager()->deletePolyline(line);
+
     shape   = NULL;
     control = Shape::BAD_ID;
 }

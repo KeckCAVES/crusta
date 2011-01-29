@@ -26,6 +26,11 @@ BEGIN_CRUSTA
 
 #if CRUSTA_ENABLE_DEBUG
 
+/* lvl
+ 40 -  49: debug coverage: 40 manip CP, 41-44 manip cov, 49 validate cov
+ 90 -  99: debug ray intersection
+*/
+
 #ifndef CRUSTA_DEBUG_LEVEL_MIN_VALUE
 #define CRUSTA_DEBUG_LEVEL_MIN_VALUE 100000
 #endif //CRUSTA_DEBUG_LEVEL_MIN_VALUE

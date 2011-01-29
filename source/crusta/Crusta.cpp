@@ -36,8 +36,6 @@ BEGIN_CRUSTA
 ///\todo debug remove
 bool PROJECTION_FAILED = false;
 
-//lvl 90 - 100: debug ray intersection
-
 #if CRUSTA_ENABLE_DEBUG
 int CRUSTA_DEBUG_LEVEL_MIN = CRUSTA_DEBUG_LEVEL_MIN_VALUE;
 int CRUSTA_DEBUG_LEVEL_MAX = CRUSTA_DEBUG_LEVEL_MAX_VALUE;
@@ -679,52 +677,14 @@ Still this should be handled more robustly */
 
 
 void Crusta::
-intersect(Shape::ControlPointHandle start,
-          Shape::IntersectionFunctor& callback) const
+segmentCoverage(const Point3& start, const Point3& end,
+                Shape::IntersectionFunctor& callback) const
 {
-    //find the patch containing the entry point
-    const Point3&      entry = start->pos;
-    const QuadTerrain* patch = NULL;
-    const NodeData*    node  = NULL;
-    NodeMainData nodeData;
-
+    //explicitely check all the base render patches
     for (RenderPatches::const_iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
     {
-        nodeData = (*it)->getRootNode();
-        node     = nodeData.node;
-        if (node->scope.contains(entry))
-        {
-            patch = *it;
-            break;
-        }
-    }
-
-    assert(patch!=NULL && node!=NULL);
-
-    //traverse terrain patches until intersection or ray exit
-    Ray ray(start->pos, (++Shape::ControlPointHandle(start))->pos);
-
-    Scalar tin           = 0;
-    Scalar tout          = 0;
-    int    sideIn        = -1;
-    int    sideOut       = -1;
-    int    mapSide[4][4] = {{2,3,0,1}, {1,2,3,0}, {0,1,2,3}, {3,0,1,2}};
-    while (true)
-    {
-        patch->intersect(callback, ray, tin, sideIn, tout, sideOut);
-        if (tout >= 1.0)
-            break;
-
-        //move to the patch on the exit side
-        tin = tout;
-
-        const Polyhedron* const polyhedron = DATAMANAGER->getPolyhedron();
-        Polyhedron::Connectivity neighbors[4];
-        polyhedron->getConnectivity(patch->getRootNode().node->index.patch,
-                                    neighbors);
-        patch  = renderPatches[neighbors[sideOut][0]];
-        sideIn = mapSide[neighbors[sideOut][1]][sideOut];
+        (*it)->segmentCoverage(start, end, callback);
     }
 }
 
@@ -796,6 +756,7 @@ frame()
 ///\todo hack. start the actual new frame
 statsMan.newFrame();
 
+#if 0
 #if CRUSTA_ENABLE_DEBUG
 if (debugTool!=NULL)
 {
@@ -816,6 +777,7 @@ if (debugTool!=NULL)
     }
 }
 #endif //CRUSTA_ENABLE_DEBUG
+#endif
 
 CRUSTA_DEBUG(8, CRUSTA_DEBUG_OUT <<
 "\n\n\n--------------------------------------\n" << CURRENT_FRAME <<

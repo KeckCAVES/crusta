@@ -21,7 +21,7 @@ Tile() :
 
 NodeData::
 NodeData() :
-    lineCoverageDirty(false), lineCoverageAge(0), lineNumSegments(0),
+    lineCoverageStamp(0), lineNumSegments(0), lineDataStamp(0),
     index(TreeIndex::invalid),
     boundingAge(0), boundingCenter(0,0,0), boundingRadius(0)
 {
@@ -148,6 +148,14 @@ StampedSubRegion(const Point3f& iOffset, const Vector2f& iSize) :
 {
 }
 
+
+std::ostream& operator<<(std::ostream&os, const SubRegion& sub)
+{
+    os << "Sub(" << sub.offset[0] << ", " << sub.offset[1] << ", " <<
+          sub.offset[2] << " | " << sub.size[0] << ", " << sub.size[1] <<
+          ", " << sub.size[2] << ")";
+    return os;
+}
 
 std::ostream& operator<<(std::ostream& os,
                          const NodeData::ShapeCoverage& cov)
