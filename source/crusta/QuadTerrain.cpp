@@ -946,29 +946,24 @@ segmentCoverage(const MainBuffer& nodeBuf,
     if (!node.scope.intersects(start, end))
         return;
 
-    //grab the first child to attempt recursion
-    MainBuffer childBuf;
-    bool childExists = DATAMANAGER->find(node.index.down(0), childBuf);
+    //recursion to the children should only happen if all children are present
+    bool       allChildren = true;
+    MainBuffer childBuf[4];
+    for (int i=0; i<4; ++i)
+        allChildren &= DATAMANAGER->find(node.index.down(i), childBuf[i]);
 
-    if (!childExists)
-    {
-        //traverse this node as a leaf node
-        callback(node, true);
-        return;
-    }
-    else
+    if (allChildren)
     {
         //traverse this node as an interior node
         callback(node, false);
-        //recurse to the first child
-        segmentCoverage(childBuf, start, end, callback);
-        //recurse through the remaining children
-        for (int i=1; i<4; ++i)
-        {
-            childExists = DATAMANAGER->find(node.index.down(i), childBuf);
-            assert(childExists);
-            segmentCoverage(childBuf, start, end, callback);
-        }
+        //recurse through the children
+        for (int i=0; i<4; ++i)
+            segmentCoverage(childBuf[i], start, end, callback);
+    }
+    else
+    {
+        //traverse this node as a leaf node
+        callback(node, true);
     }
 }
 
@@ -1156,19 +1151,18 @@ prepareDisplay(FrustumVisibility& visibility, FocusViewEvaluator& lod,
 
 /**\todo horrible Vis2010 HACK: integrate this in the proper way? I.e. don't
 stall here, but defer the update. */
-if (allgood)
+if (allgood && data.node->lineInheritCoverage)
 {
     for (int i=0; i<4; ++i)
     {
         NodeMainData child = DATAMANAGER->getData(children[i]);
-        if (child.node->lineCoverageStamp < data.node->lineCoverageStamp)
-        {
 CRUSTA_DEBUG(60, std::cerr << "***COVDOWN parent(" << data.node->index <<
 ")    " << "n(" << data.node->index << ")\n\n";)
-            mapMan->inheritShapeCoverage(*data.node, *child.node);
-            child.node->lineCoverageStamp = data.node->lineCoverageStamp;
-        }
+        mapMan->inheritShapeCoverage(*data.node, *child.node);
+        child.node->lineInheritCoverage = true;
     }
+
+    data.node->lineInheritCoverage = false;
 }
 
             //still all good then recurse to the children

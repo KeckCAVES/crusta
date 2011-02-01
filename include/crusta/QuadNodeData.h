@@ -56,9 +56,9 @@ struct NodeData
     LayerDataf::Type getLayerData(const LayerDataf::Type& test) const;
 
 ///\todo integrate me properly into the caching scheme (VIS 2010)
-FrameStamp       lineCoverageStamp;
 std::vector<int> lineCoverageOffsets;
 ShapeCoverage    lineCoverage;
+bool             lineInheritCoverage;
 int              lineNumSegments;
 FrameStamp       lineDataStamp;
 Colors           lineData;

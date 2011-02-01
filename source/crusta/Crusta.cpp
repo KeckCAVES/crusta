@@ -846,7 +846,7 @@ display(GLContextData& contextData)
 
 statsMan.extractTileStats(surface);
 
-CRUSTA_DEBUG(50, CRUSTA_DEBUG_OUT <<
+CRUSTA_DEBUG(9, CRUSTA_DEBUG_OUT <<
 "Number of nodes to render: " << surface.visibles.size() << "\n";)
 
     GLint activeTexture;

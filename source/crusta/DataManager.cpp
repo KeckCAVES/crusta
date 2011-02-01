@@ -945,7 +945,6 @@ streamGpuData(GLContextData& contextData, BatchElement& batchel)
             !cache.lineData.isValid(lineData)  ||
             gpu.lineData->age < main.node->lineDataStamp)
         {
-std::cerr << "Line data stream: " << index.med_str() << " index " << index.index << " " << *gpu.lineData << "\n";
             //stream the line data from the main representation
             cache.lineData.subStream(
                 (SubRegion)(*gpu.lineData), 0, main.node->lineData.size(),
@@ -973,7 +972,6 @@ std::cerr << "Line data stream: " << index.med_str() << " index " << index.index
         if (updatedLine || cache.coverage.isGrabbed(coverage) ||
             !cache.coverage.isValid(coverage))
         {
-std::cerr << "Coverage stream: " << index.med_str() << " index " << index.index << " " << *gpu.coverage << "\n";
             //render the new coverage into the coverage texture
             CHECK_GLA;
             cache.coverage.beginRender(*gpu.coverage);

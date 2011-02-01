@@ -20,7 +20,7 @@ varying vec2 texCoord;
 
 const float EPSILON = 0.00001;
 
-#define USE_COVERAGE 0
+#define USE_COVERAGE 1
 #define NORMAL   1
 #define TWIST    1
 #define COVERAGE 0

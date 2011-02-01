@@ -480,9 +480,6 @@ statsMan.start(StatsManager::INHERITSHAPECOVERAGE);
         }
     }
 
-    //validate the child's coverage
-    child.lineCoverageStamp = parent.lineCoverageStamp;
-
     //invalidate the child's line data
     child.lineNumSegments = 0;
     child.lineData.clear();
@@ -510,14 +507,14 @@ statsMan.start(StatsManager::UPDATELINEDATA);
     {
         NodeData&         node          = *surface.visible(i).node;
         Coverage&         coverage      = node.lineCoverage;
-        FrameStamp&       coverageStamp = node.lineCoverageStamp;
         std::vector<int>& offsets       = node.lineCoverageOffsets;
+        int&              numSegments   = node.lineNumSegments;
         Colors&           data          = node.lineData;
         FrameStamp&       dataStamp     = node.lineDataStamp;
 
-        /* 1 trigger: there is coverage and it has changed (current tool
-           stamps are a frame behind, hence <=) */
-        bool needToUpdate = !coverage.empty() && dataStamp<=coverageStamp;
+        /* 1 trigger: there is coverage but no line data (result of coverage
+           modifications since the mapmanager clears the data) */
+        bool needToUpdate = !coverage.empty() && data.empty();
         //2 trigger: properties of specific segments have changed
         if (!needToUpdate)
         {
@@ -554,7 +551,9 @@ statsMan.incrementDataUpdated();
 CRUSTA_DEBUG(50, std::cerr << "###REGEN n(" << node.index << ") :\n" <<
 coverage << "\n\n";)
 
-    //- reset the offsets
+    //- reset the current data offsets
+        numSegments = 0;
+        data.clear();
         offsets.clear();
         int curOff = 0;
 
@@ -609,8 +608,8 @@ coverage << "\n\n";)
         }
 
         //update the stamp of the line data and the segment count
-        node.lineNumSegments = static_cast<int>(offsets.size());
-        dataStamp            = CURRENT_FRAME;
+        numSegments = static_cast<int>(offsets.size());
+        dataStamp   = CURRENT_FRAME;
     }
 
 statsMan.stop(StatsManager::UPDATELINEDATA);
@@ -698,17 +697,14 @@ setSegment(const Shape::ControlPointHandle& nSegment)
 
 
 void MapManager::ShapeCoverageAdder::
-operator()(NodeData& node, bool)
+operator()(NodeData& node, bool isLeaf)
 {
-    typedef NodeData::ShapeCoverage       Coverage;
-    typedef Shape::ControlPointHandleList HandleList;
-
-    HandleList& handles = node.lineCoverage[shape];
+    Shape::ControlPointHandleList& handles = node.lineCoverage[shape];
 
 CRUSTA_DEBUG(43, std::cerr << "+" << node.index;)
 
 CRUSTA_DEBUG(49,
-    HandleList::const_iterator fit;
+    Shape::ControlPointHandleList::const_iterator fit;
     for (fit=handles.begin(); fit!=handles.end() && *fit!=segment; ++fit);
     if (fit != handles.end())
     {
@@ -720,31 +716,33 @@ CRUSTA_DEBUG(49,
 
     //add the segment to the coverage
     handles.push_back(segment);
-    //stamp the coverage update
-    node.lineCoverageStamp = CURRENT_FRAME;
 
     //invalidate current line data
     node.lineNumSegments = 0;
     node.lineData.clear();
+
+    //make sure that the subtree inherits the proper coverage when refined
+    if (isLeaf)
+    {
+CRUSTA_DEBUG(44, std::cerr << "~";)
+        node.lineInheritCoverage = true;
+    }
 CRUSTA_DEBUG(44, std::cerr << "\n";)
 }
 
 void MapManager::ShapeCoverageRemover::
-operator()(NodeData& node, bool)
+operator()(NodeData& node, bool isLeaf)
 {
-    typedef NodeData::ShapeCoverage       Coverage;
-    typedef Shape::ControlPointHandleList HandleList;
-
     //find the shape in the coverage
-    Coverage::iterator lit = node.lineCoverage.find(shape);
+    NodeData::ShapeCoverage::iterator lit = node.lineCoverage.find(shape);
     assert(lit != node.lineCoverage.end());
-    HandleList& handles = lit->second;
+    Shape::ControlPointHandleList& handles = lit->second;
     assert(handles.size() > 0);
 
 CRUSTA_DEBUG(43, std::cerr << "-" << node.index;)
 
     //find the specific segment
-    HandleList::iterator fit;
+    Shape::ControlPointHandleList::iterator fit;
     for (fit=handles.begin(); fit!=handles.end() && *fit!=segment; ++fit);
     assert(fit != handles.end());
 
@@ -755,12 +753,16 @@ CRUSTA_DEBUG(43, std::cerr << "-" << node.index;)
     if (handles.empty())
         node.lineCoverage.erase(lit);
 
-    //stamp the coverage update
-    node.lineCoverageStamp = CURRENT_FRAME;
-
     //invalidate current line data
     node.lineNumSegments = 0;
     node.lineData.clear();
+
+    //make sure that the subtree inherits the proper coverage when refined
+    if (isLeaf)
+    {
+CRUSTA_DEBUG(44, std::cerr << "~";)
+        node.lineInheritCoverage = true;
+    }
 CRUSTA_DEBUG(44, std::cerr << "\n";)
 }
 

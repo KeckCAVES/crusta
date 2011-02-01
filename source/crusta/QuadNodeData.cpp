@@ -21,7 +21,7 @@ Tile() :
 
 NodeData::
 NodeData() :
-    lineCoverageStamp(0), lineNumSegments(0), lineDataStamp(0),
+    lineInheritCoverage(false), lineNumSegments(0), lineDataStamp(0),
     index(TreeIndex::invalid),
     boundingAge(0), boundingCenter(0,0,0), boundingRadius(0)
 {
