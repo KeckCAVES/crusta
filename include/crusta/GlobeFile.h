@@ -24,6 +24,10 @@ public:
     typedef GlobeData<PixelParam>     gd;
     typedef typename gd::File         File;
 
+#if CONSTRUO_BUILD
+///\todo when moving to Vrui 2.0 no need to initialize the cfg pointer anymore
+	GlobeFile();
+#endif //CONSTRUO_BUILD
     ~GlobeFile();
 
     /** check that the file is a valid wrt PixelParam */

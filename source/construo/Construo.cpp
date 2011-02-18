@@ -198,6 +198,10 @@ int main(int argc, char* argv[])
                 return 1;
             }
         }
+		else if (strcasecmp(argv[i], "-version") == 0)
+		{
+			std::cout << "Construo version: " << CRUSTA_VERSION << std::endl;
+		}
         else
         {
             //gather the image patch name and scale factor for the values
@@ -212,7 +216,7 @@ int main(int argc, char* argv[])
                      "name> [-offset <scalar> | -noOffset] [-scale <scalar> | "
                      "-noScale] [-nodata <value> | -defaultNodata] "
                      "[-pointsampling] [-areasampling] [-settings <settings "
-                     "file>] <input files>\n";
+                     "file>] [-version] <input files>\n";
         return 1;
     }
 

@@ -16,7 +16,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
 project(Crusta)
 set(${PROJECT_NAME}_MAJOR_VERSION 0)
 set(${PROJECT_NAME}_MINOR_VERSION 1)
-set(${PROJECT_NAME}_PATCH_VERSION 1)
+set(${PROJECT_NAME}_PATCH_VERSION 2)
 
 
 ##-- Setup the default build
@@ -68,7 +68,8 @@ endif(NOT DIST_BUILD)
 include_directories(../include)
 
 # Set GLEW to multi-context mode and add the share path
-add_definitions(-DGLEW_MX -DCRUSTA_SHARE_PATH=\"${CRUSTA_SHARE_PATH}\")
+add_definitions(-DGLEW_MX -DCRUSTA_SHARE_PATH=\"${CRUSTA_SHARE_PATH}\"
+                -DCRUSTA_VERSION=\"${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION}\")
 
 # Show all warnings, don't complain about variadic macros
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")

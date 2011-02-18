@@ -85,9 +85,10 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
         std::string token = std::string(argv[i]);
         if (token == std::string("-settings"))
             settingsNames.push_back(argv[++i]);
+		else if (token == std::string("-version"))
+			std::cout << "Crusta version: " << CRUSTA_VERSION << std::endl;
         else
             dataNames.push_back(token);
-
     }
 
     crusta = new Crusta;

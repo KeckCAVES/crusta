@@ -20,6 +20,15 @@
 BEGIN_CRUSTA
 
 
+#if CONSTRUO_BUILD
+template <typename PixelParam>
+GlobeFile<PixelParam>::
+GlobeFile() :
+	cfg(NULL)
+{
+}
+#endif //CONSTRUO_BUILD
+
 template <typename PixelParam>
 GlobeFile<PixelParam>::
 ~GlobeFile()
