@@ -133,9 +133,8 @@ void Gpu2dAtlasCache<BufferParam>::
 stream(const SubRegion& sub, GLenum dataFormat, GLenum dataType,
        const void* data)
 {
-    subStream(sub, 0, 0,
-              GLsizei(sub.size[0]*texSize), GLsizei(sub.size[1]*texSize),
-              dataFormat, dataType, data);
+    subStream(sub, 0, 0, GLsizei(sub.size[0]*texSize+0.5f),
+              GLsizei(sub.size[1]*texSize+0.5f), dataFormat, dataType, data);
 }
 
 template <typename BufferParam>
@@ -146,9 +145,9 @@ subStream(const SubRegion& sub, GLint xoff, GLint yoff,
 {
     CHECK_GL_CLEAR_ERROR;
 
-    xoff         += GLint(sub.offset[0]*texSize);
-    yoff         += GLint(sub.offset[1]*texSize);
-    GLint zoff    = GLint(sub.offset[2]);
+    xoff         += GLint(sub.offset[0]*texSize + 0.5f);
+    yoff         += GLint(sub.offset[1]*texSize + 0.5f);
+    GLint zoff    = GLint(sub.offset[2] + 0.5f);
     GLsizei depth = 1;
 
     glPushAttrib(GL_TEXTURE_BIT);
@@ -192,17 +191,17 @@ beginRender(const SubRegion& sub)
     //save the current viewport specification
     glGetIntegerv(GL_VIEWPORT, oldViewport);
     //set the viewport to match the atlas entry
-    glViewport(GLint(sub.offset[0]*this->texSize),
-               GLint(sub.offset[1]*this->texSize),
-               GLsizei(sub.size[0]*this->texSize),
-               GLsizei(sub.size[1]*this->texSize));
+    glViewport(GLint(sub.offset[0]*this->texSize + 0.5f),
+               GLint(sub.offset[1]*this->texSize + 0.5f),
+               GLsizei(sub.size[0]*this->texSize + 0.5f),
+               GLsizei(sub.size[1]*this->texSize + 0.5f));
     //save the current scissor box
     glGetIntegerv(GL_SCISSOR_BOX, oldScissorBox);
     //set the scissor area to match the atlas entry
-    glScissor(GLint(sub.offset[0]*this->texSize),
-             GLint(sub.offset[1]*this->texSize),
-             GLsizei(sub.size[0]*this->texSize),
-             GLsizei(sub.size[1]*this->texSize));
+    glScissor(GLint(sub.offset[0]*this->texSize + 0.5f),
+             GLint(sub.offset[1]*this->texSize + 0.5f),
+             GLsizei(sub.size[0]*this->texSize + 0.5f),
+             GLsizei(sub.size[1]*this->texSize + 0.5f));
 
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &oldFbo);
     glGetIntegerv(GL_DRAW_BUFFER, &oldDrawBuf);
@@ -212,7 +211,7 @@ beginRender(const SubRegion& sub)
     glBindFramebuffer(GL_FRAMEBUFFER, renderFbo);
     //attach the appropriate coverage map
     glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                              this->texture, 0, GLint(sub.offset[2]));
+                              this->texture, 0, GLint(sub.offset[2] + 0.5f));
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glReadBuffer(GL_NONE);
     CHECK_GLFBA;
@@ -337,7 +336,7 @@ void Gpu1dAtlasCache<BufferParam>::
 stream(const SubRegion& sub, GLenum dataFormat, GLenum dataType,
        const void* data)
 {
-    subStream(sub, 0, GLsizei(sub.size[0]*texWidth),
+    subStream(sub, 0, GLsizei(sub.size[0]*texWidth + 0.5f),
               dataFormat, dataType, data);
 }
 
@@ -348,8 +347,8 @@ subStream(const SubRegion& sub, GLint xoff, GLsizei width,
 {
     CHECK_GL_CLEAR_ERROR;
 
-    xoff          += GLint(sub.offset[0]*texWidth);
-    GLint yoff     = GLint(sub.offset[1]*texHeight);
+    xoff          += GLint(sub.offset[0]*texWidth  + 0.5f);
+    GLint yoff     = GLint(sub.offset[1]*texHeight + 0.5f);
     GLsizei height = 1;
 
     glPushAttrib(GL_TEXTURE_BIT);
