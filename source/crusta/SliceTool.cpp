@@ -122,12 +122,12 @@ SliceTool::
 Vrui::ToolFactory* SliceTool::
 init()
 {
-    _sliceParameters.faultLine[0] = Point3(0,0,0);
-    _sliceParameters.faultLine[1] = Point3(1000000,0,0);
+    _sliceParameters.faultLine[0] = Point3(6371000,0,0);
+    _sliceParameters.faultLine[1] = Point3(0,6371000,0);
 
     _sliceParameters.angle = 0.0;
     _sliceParameters.displacementAmount = 0.0;
-    _sliceParameters.slopeAngleDegrees = 45.0;
+    _sliceParameters.slopeAngleDegrees = 0.0;
     _sliceParameters.falloffFactor = 1.0;
     _sliceParameters.updatePlaneParameters();
 
@@ -312,7 +312,7 @@ display(GLContextData& contextData) const
 
 
 void SliceTool::
-        buttonCallback(int, int, Vrui::InputDevice::ButtonCallbackData* cbData)
+buttonCallback(int, int, Vrui::InputDevice::ButtonCallbackData* cbData)
 {
     //project the device position
     surfacePoint = project(input.getDevice(0), false);

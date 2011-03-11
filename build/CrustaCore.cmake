@@ -72,6 +72,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/shader/ShaderFragment.h
     ../include/crusta/shader/ShaderMultiDataSource.h
     ../include/crusta/shader/ShaderTopographySource.h
+    ../include/crusta/SliceTool.h
     ../include/crusta/Sphere.h
     ../include/crusta/StatsManager.h
     ../include/crusta/SurfaceApproximation.h
@@ -91,7 +92,6 @@ add_library(CrustaCore SHARED
     ../include/crusta/ViewLod.h
     ../include/crusta/VisibilityEvaluator.h
     ../include/crusta/Visualizer.h
-    ../include/crusta/SliceTool.h
 
     ../source/GL/glew.c
     ../source/GL/GlProgram.cpp
@@ -143,6 +143,7 @@ add_library(CrustaCore SHARED
     ../source/crusta/shader/ShaderFragment.cpp
     ../source/crusta/shader/ShaderMultiDataSource.cpp
     ../source/crusta/shader/ShaderTopographySource.cpp
+    ../source/crusta/SliceTool.cpp
     ../source/crusta/Sphere.cpp
     ../source/crusta/StatsManager.cpp
     ../source/crusta/SurfaceApproximation.cpp
@@ -155,7 +156,6 @@ add_library(CrustaCore SHARED
     ../source/crusta/Triacontahedron.cpp
     ../source/crusta/ViewLod.cpp
     ../source/crusta/Visualizer.cpp
-    ../source/crusta/SliceTool.cpp
 )
 
 # Pass Vrui flags and the share path to the sources for compilation

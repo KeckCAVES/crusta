@@ -817,7 +817,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
                 }\n\
         }\n\
     ";
-    // + (b-a) * (abs((slicePlaneMatrix * a) / (slicePlaneMatrix * (b-a))));\n\
+    // + (b-a) * (abs((slicePlaneMatrix * a) / (slicePlaneMatrix * (b-a))));\n
      //a = a + (b-a) * (abs((slicePlaneMatrix * a) / (slicePlaneMatrix * (b-a))));
 /*
 
