@@ -292,7 +292,7 @@ LightingShader::LightingShader() :
     colorMaterial(false),
     linesDecorated(false),
     lightStates(0),
-    vertexShader(0),fragmentShader(0),
+    vertexShader(0),fragmentShader(0), geometryShader(0),
     programObject(0),
     decoratedLineRenderer(std::string(CRUSTA_SHARE_PATH) +
                           "/decoratedRenderer.fp"),
@@ -306,13 +306,18 @@ LightingShader::LightingShader() :
     updateLightingState();
 
     /* Create the vertex and fragment shaders: */
-    vertexShader=glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
-    fragmentShader=glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
+    vertexShader   = glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
+    fragmentShader = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
+    geometryShader = glCreateShaderObjectARB(GL_GEOMETRY_SHADER_ARB);
 
     /* Create the program object: */
     programObject=glCreateProgramObjectARB();
     glAttachObjectARB(programObject,vertexShader);
     glAttachObjectARB(programObject,fragmentShader);
+    glAttachObjectARB(programObject,geometryShader);
+    glProgramParameteriEXT(programObject, GL_GEOMETRY_INPUT_TYPE_EXT, GL_TRIANGLES);
+    glProgramParameteriEXT(programObject, GL_GEOMETRY_OUTPUT_TYPE_EXT, GL_TRIANGLE_STRIP);
+    glProgramParameteriEXT(programObject, GL_GEOMETRY_VERTICES_OUT_EXT, 32); // FIXME
 
     clearUniforms();
 }
@@ -322,6 +327,8 @@ LightingShader::~LightingShader()
     glDeleteObjectARB(programObject);
     glDeleteObjectARB(vertexShader);
     glDeleteObjectARB(fragmentShader);
+    glDeleteObjectARB(geometryShader);
+
     delete[] lightStates;
 }
 
@@ -436,6 +443,12 @@ initUniforms(GLContextData& contextData)
     colorNodataUniform  = glGetUniformLocation(programObject, "colorNodata");
     layerfNodataUniform = glGetUniformLocation(programObject, "layerfNodata");
     demDefaultUniform   = glGetUniformLocation(programObject, "demDefault");
+
+    slicePlaneMatrixUniform = glGetUniformLocation(programObject, "slicePlaneMatrix");
+    sliceShiftVecUniform    = glGetUniformLocation(programObject, "sliceShiftVec");
+    slicePlaneCenterUniform = glGetUniformLocation(programObject, "slicePlaneCenter");
+    sliceFaultCenterUniform = glGetUniformLocation(programObject, "sliceFaultCenter");
+    sliceFalloffUniform     = glGetUniformLocation(programObject, "sliceFalloff");
 
     DataManager::SourceShaders& dataSources =
         DATAMANAGER->getSourceShaders(contextData);
@@ -621,7 +634,9 @@ compileShader(GLContextData& contextData)
             gl_FrontColor = color;\n\
             \n\
             /* Use finalize vertex transformation: */\n\
-            gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 1.0);\n\
+            /* now happens in the geometry shader */\n\
+            //gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 1.0);\n\
+            gl_Position = vec4(position, 1.0);\n\
             \n\
             /* Pass the texture coordinates to the fragment program: */\n\
             texCoord = gl_Vertex.xy;\n\
@@ -677,6 +692,149 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
         compileShaderFromString(fragmentShader,
                                 "void main() { gl_FragColor=vec4(1.0); }");
     }
+
+    /* Compile geometry shader (for slicing planes) */
+    std::string geometryShaderSource;
+
+    geometryShaderSource += "\
+        #version 120\n\
+        #extension GL_EXT_geometry_shader4 : enable\n\
+        \n\
+        uniform mat4 slicePlaneMatrix;\n\
+        uniform vec3 sliceShiftVec;\n\
+        uniform vec3 slicePlaneCenter;\n\
+        uniform vec3 sliceFaultCenter;\n\
+        uniform float sliceFalloff;\n\
+        uniform vec3 center;\n\
+        \n\
+        vec4 isect(vec4 a, vec4 b) {\n\
+            float lambda = -(slicePlaneMatrix * vec4(a.xyz,1)).x / (slicePlaneMatrix * vec4((b-a).xyz, 0)).x;\n\
+            return a + lambda * (b-a);\n\
+        }\n\
+        void tri(vec4 a, vec4 b, vec4 c, vec4 col) {\n\
+            gl_Position = gl_ModelViewProjectionMatrix * a;\n\
+            EmitVertex();\n\
+            gl_Position = gl_ModelViewProjectionMatrix * b;\n\
+            EmitVertex();\n\
+            gl_Position = gl_ModelViewProjectionMatrix * c;\n\
+            EmitVertex();\n\
+            EndPrimitive();\n\
+        }\n\
+        void quad(vec4 a, vec4 b, vec4 col) {\n\
+            tri(b,a, vec4(slicePlaneCenter, 1), col);\n\
+        }\n\
+        vec4 shift(vec4 p) {\n\
+            float d = length(p.xyz - sliceFaultCenter);\n\
+            float lambda = clamp(2 * (sliceFalloff - d) / sliceFalloff, 0.0, 1.0);\n\
+            return p + lambda * vec4(sliceShiftVec, 0.0);\n\
+        }\n\
+        void main(void) {\n\
+            int i;\n\
+            int leftBitmap = 0;\n\
+            for (i=0; i < gl_VerticesIn; i++) {\n\
+                vec4 p = gl_PositionIn[i];\n\
+                float slicePlaneDst = (slicePlaneMatrix * p).x;\n\
+                if (slicePlaneDst < 0.0)\n\
+                    leftBitmap |= 1 << i;\n\
+            }\n\
+            if (length(sliceShiftVec) == 0)\n\
+                leftBitmap = 7;\n\
+            if (leftBitmap == 0 || leftBitmap == 7) {\n\
+                for (i=0; i < gl_VerticesIn; i++) {\n\
+                    gl_FrontColor = gl_FrontColorIn[i];\n\
+                    vec4 p = gl_PositionIn[i];\n\
+                    if (leftBitmap == 0)\n\
+                        p = shift(p);\n\
+                    gl_Position = gl_ModelViewProjectionMatrix * p;\n\
+                    EmitVertex();\n\
+                }\n\
+                EndPrimitive();\n\
+                return;\n\
+            }\n\
+            vec4 a = gl_PositionIn[0];\n\
+            vec4 b = gl_PositionIn[1];\n\
+            vec4 c = gl_PositionIn[2];\n\
+            \n\
+            vec4 ab = isect(a,b);\n\
+            vec4 bc = isect(b,c);\n\
+            vec4 ca = isect(c,a);\n\
+            \n\
+            vec4 red = 0*vec4(1,0,0,0);\n\
+            vec4 blue = 0*vec4(0,0,1,0);\n\
+            vec4 green = 0*vec4(0,1,0,0);\n\
+            vec4 yellow = vec4(1,1,0,0);\n\
+            vec4 planeColor = vec4(0.3,0.3,0.4,0);\n\
+            gl_FrontColor = gl_FrontColorIn[0];\n\
+            switch (leftBitmap) {\n\
+                case 1:\n\
+                    tri(a,ab,ca, red);\n\
+                    tri(shift(ab),shift(b),shift(c), blue);\n\
+                    tri(shift(ab),shift(c),shift(ca), green);\n\
+                    gl_FrontColor = planeColor;\n\
+                    quad(ab,ca, yellow);\n\
+                    quad(shift(ca),shift(ab), yellow);\n\
+                    break;\n\
+                case 2:\n\
+                    tri(b,bc,ab, red);\n\
+                    tri(shift(bc),shift(c),shift(a), blue);\n\
+                    tri(shift(bc),shift(a),shift(ab), green);\n\
+                    gl_FrontColor = planeColor;\n\
+                    quad(bc,ab, yellow);\n\
+                    quad(shift(ab),shift(bc), yellow);\n\
+                    break;\n\
+                case 4:\n\
+                    tri(c,ca,bc, red);\n\
+                    tri(shift(ca),shift(a),shift(b), blue);\n\
+                    tri(shift(ca),shift(b),shift(bc), green);\n\
+                    gl_FrontColor = planeColor;\n\
+                    quad(ca,bc, yellow);\n\
+                    quad(shift(bc),shift(ca), yellow);\n\
+                    break;\n\
+                case 3:\n\
+                    tri(b,bc,ca,blue);\n\
+                    tri(b,ca,a, green);\n\
+                    tri(shift(bc),shift(c),shift(ca), red);\n\
+                    gl_FrontColor = planeColor;\n\
+                    quad(bc,ca, yellow);\n\
+                    quad(shift(ca),shift(bc), yellow);\n\
+                    break;\n\
+                case 5:\n\
+                    tri(a,ab,bc, blue);\n\
+                    tri(a,bc,c, green);\n\
+                    tri(shift(ab),shift(b),shift(bc), red);\n\
+                    gl_FrontColor = planeColor;\n\
+                    quad(ab,bc, yellow);\n\
+                    quad(shift(bc),shift(ab), yellow);\n\
+                    break;\n\
+                case 6:\n\
+                    tri(c,ca,ab, blue);\n\
+                    tri(c,ab,b, green);\n\
+                    tri(shift(ca),shift(a),shift(ab), red);\n\
+                    gl_FrontColor = planeColor;\n\
+                    quad(ca,ab, yellow);\n\
+                    quad(shift(ab),shift(ca), yellow);\n\
+                    break;\n\
+                }\n\
+        }\n\
+    ";
+    // + (b-a) * (abs((slicePlaneMatrix * a) / (slicePlaneMatrix * (b-a))));\n\
+     //a = a + (b-a) * (abs((slicePlaneMatrix * a) / (slicePlaneMatrix * (b-a))));
+/*
+
+                if (slicePlaneDst > 0.0)\n\
+
+                    */
+/*
+    float lambda = -(slicePlaneMatrix * vec4(a.xyz,1)).x / (slicePlaneMatrix * vec4((b-a).xyz, 0)).x;\n\
+    vec4 ab = a + lambda * (b-a);\n\
+*/
+    //code << "  float slicePlaneDst = (" << slicePlaneMatrixName << "* vec4(res + " << centroidName << ", 1.0)).x;" << std::endl;
+    //code << "  if (slicePlaneDst > 0.0)" << std::endl;
+    //code << "    res += " << sliceShiftVecName << ";" << std::endl;
+
+    CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << geometryShaderSource << std::endl;)
+
+    compileShaderFromString(geometryShader, geometryShaderSource.c_str());
 
     /* Link the program object: */
     glLinkProgramARB(programObject);

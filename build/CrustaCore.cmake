@@ -91,7 +91,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/ViewLod.h
     ../include/crusta/VisibilityEvaluator.h
     ../include/crusta/Visualizer.h
-
+    ../include/crusta/SliceTool.h
 
     ../source/GL/glew.c
     ../source/GL/GlProgram.cpp
@@ -155,6 +155,7 @@ add_library(CrustaCore SHARED
     ../source/crusta/Triacontahedron.cpp
     ../source/crusta/ViewLod.cpp
     ../source/crusta/Visualizer.cpp
+    ../source/crusta/SliceTool.cpp
 )
 
 # Pass Vrui flags and the share path to the sources for compilation

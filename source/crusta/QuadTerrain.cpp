@@ -23,6 +23,7 @@
 #include <crusta/Triangle.h>
 #include <crusta/Section.h>
 #include <crusta/Sphere.h>
+#include <crusta/SliceTool.h>
 
 #define DO_RELATIVE_LEAF_TRIANGLE_INTERSECTIONS 1
 
@@ -380,6 +381,79 @@ prepareDisplay(GLContextData& contextData, SurfaceApproximation& surface)
     DATAMANAGER->request(dataRequests);
 }
 
+
+void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* crustaGl, const Vector3 &center) {
+    SliceTool::SliceParameters params = SliceTool::getParameters();
+
+    //Vector3 u(params.planeStrikeDirection);
+   // Vector3 v(params.planeDipDirection);
+    Vector3 n(params.planeNormal);
+
+    double planeD = params.getPlaneDistanceFrom(center); // (pA - center) * n;  // plane distance from origin
+
+    // construct the matrix
+    float M[16] = {
+        n[0], n[1], n[2], -planeD,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0
+    };
+
+    crustaGl->terrainShader.setSlicePlane(M, params.getShiftVector(), params.getPlaneCenter() - center, params.getFaultCenter() - center, params.getFalloff());
+
+    //crustaGl->terrainShader.disable();
+
+    // render slicing plane
+    //glDisableClientState(GL_VERTEX_ARRAY);
+    //glDisable(GL_DEPTH_TEST);
+    //glDisable(GL_LIGHTING);
+
+//    glColor3f(1,0,0);
+//    glLineWidth(3.0);
+//    glDisable(GL_BLEND);
+//
+//    Vrui::NavTransform nav = Vrui::getDisplayState(contextData).modelviewNavigational;
+//
+//
+//    glPushMatrix();
+//    glLoadMatrix(nav);
+
+    /*
+    glBegin(GL_LINES);
+    glVertex3d(pA[0], pA[1], pA[2]);
+    glVertex3d(pB[0], pB[1], pB[2]);
+
+    Vector3f tmp1(mid - v);
+    Vector3f tmp2(mid + v);
+
+    glVertex3f(tmp1[0], tmp1[1], tmp1[2]);
+    glVertex3f(tmp2[0], tmp2[1], tmp2[2]);
+    glEnd();
+*/
+   // glDisable(GL_CULL_FACE);
+
+    /*
+    glBegin(GL_QUADS);
+    Vector3f a(mid - v - u);
+    Vector3f b(mid + v - u);
+    Vector3f c(mid + v + u);
+    Vector3f d(mid - v + u);
+
+    glVertex3d(a[0], a[1], a[2]);
+    glVertex3d(b[0], b[1], b[2]);
+    glVertex3d(c[0], c[1], c[2]);
+    glVertex3d(d[0], d[1], d[2]);
+    glEnd();
+*/
+//    glEnable(GL_CULL_FACE);
+ //   glPopMatrix();
+
+ //   glEnable(GL_DEPTH_TEST);
+  //  glEnable(GL_LIGHTING);
+
+  //  crustaGl->terrainShader.enable();
+}
+
 void QuadTerrain::
 display(GLContextData& contextData, CrustaGlData* crustaGl,
         SurfaceApproximation& surface)
@@ -442,6 +516,9 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
     //render the terrain nodes in batches
     DataManager::Batch batch;
     DATAMANAGER->startGpuBatch(contextData, surface, batch);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glLineWidth(1.0);
+
     while (!batch.empty())
     {
         //draw the nodes of the current batch
@@ -454,6 +531,7 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         //grab the next batch
         DATAMANAGER->nextGpuBatch(contextData, surface, batch);
     }
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     //restore the GL transform as it was before
     glPopMatrix();
@@ -464,7 +542,6 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
 }
-
 
 void QuadTerrain::
 initGlData()
@@ -1029,6 +1106,10 @@ drawNode(GLContextData& contextData, CrustaGlData* crustaGl,
     }
 
 //    glPolygonMode(GL_FRONT, GL_LINE);
+
+
+    // setup uniforms
+    initSlicingPlane(contextData, crustaGl, centroidTranslation);
 
     glDrawRangeElements(GL_TRIANGLE_STRIP, 0,
                         (TILE_RESOLUTION*TILE_RESOLUTION) - 1,

@@ -66,6 +66,10 @@ public:
         2. provide the list of nodes that will be rendered for the frame */
     void prepareDisplay(GLContextData& contextData,
                         SurfaceApproximation& surface);
+
+    /** draw slicing plane and setup corresponding shader uniforms **/
+    static void initSlicingPlane(GLContextData& contextData, CrustaGlData* crustaGl, const Vector3 &center);
+
     /** issues the drawing commands for the render set */
     static void display(GLContextData& contextData, CrustaGlData* crustaGl,
                         SurfaceApproximation& surface);

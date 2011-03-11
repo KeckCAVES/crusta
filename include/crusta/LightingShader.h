@@ -71,7 +71,7 @@ class LightingShader
 
     int maxNumLights; // Maximum number of lights supported by local OpenGL
     LightState* lightStates; // Array of tracking states for each OpenGL light source
-    GLhandleARB vertexShader,fragmentShader; // Handle for the vertex and fragment shaders
+    GLhandleARB vertexShader, fragmentShader, geometryShader; // Handle for the vertex, fragment and geometry shaders
     GLhandleARB programObject; // Handle for the linked program object
 
     ShaderDecoratedLineRenderer decoratedLineRenderer;
@@ -82,6 +82,12 @@ class LightingShader
     GLint colorNodataUniform;
     GLint layerfNodataUniform;
     GLint demDefaultUniform;
+
+    GLint slicePlaneMatrixUniform;
+    GLint sliceShiftVecUniform;
+    GLint slicePlaneCenterUniform;
+    GLint sliceFaultCenterUniform;
+    GLint sliceFalloffUniform;
 
     FrameStamp colorMapperConfigurationStamp;
 
@@ -123,6 +129,8 @@ class LightingShader
         colorNodataUniform  = -2;
         layerfNodataUniform = -2;
         demDefaultUniform   = -2;
+
+        slicePlaneMatrixUniform = sliceShiftVecUniform = slicePlaneCenterUniform = -2;
     }
 
     void setTextureStep(float ts)
@@ -151,6 +159,23 @@ class LightingShader
         glUniform1f(demDefaultUniform, dn);
         CHECK_GLA
     }
+
+    void setSlicePlane(float M[16], Vector3 shiftVec, Vector3 planeCenter, Vector3 faultCenter, double falloff) {
+        glUniformMatrix4fv(slicePlaneMatrixUniform, 1, GL_TRUE, M);
+
+        float shift[3] = { shiftVec[0], shiftVec[1], shiftVec[2] };
+        glUniform3fv(sliceShiftVecUniform, 1, shift);
+
+        float pc[3] = { planeCenter[0], planeCenter[1], planeCenter[2] };
+        glUniform3fv(slicePlaneCenterUniform, 1, pc);
+
+        float fc[3] = { faultCenter[0], faultCenter[1], faultCenter[2] };
+        glUniform3fv(sliceFaultCenterUniform, 1, fc);
+
+        glUniform1f(sliceFalloffUniform, falloff);
+        CHECK_GLA
+    }
+
 };
 
 
