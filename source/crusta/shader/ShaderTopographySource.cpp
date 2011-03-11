@@ -33,7 +33,7 @@ reset()
     geometrySrc->reset();
     heightSrc->reset();
     ShaderDataSource::reset();
-    centroidUniform = -2;
+    centroidUniform  = -2;
 }
 
 void ShaderTopographySource::
@@ -43,7 +43,9 @@ initUniforms(GLuint programObj)
     heightSrc->initUniforms(programObj);
 
     centroidUniform = glGetUniformLocation(programObj, centroidName.c_str());
-CRUSTA_DEBUG(80, assert(centroidUniform>=0);)
+
+    CRUSTA_DEBUG(80, assert(centroidUniform>=0);)
+
     CHECK_GLA
 }
 
@@ -66,6 +68,7 @@ getCode()
     code << std::endl;
 
     code << "uniform vec3 " << centroidName << ";" << std::endl;
+
     code << std::endl;
 
     code << "vec3 " << sample("in vec2 coords") << " {" << std::endl;

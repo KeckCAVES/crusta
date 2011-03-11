@@ -267,6 +267,8 @@ setControlPoints(const Point3s& newControlPoints)
 Shape::ControlId Shape::
 addControlPoint(const Point3& pos, End end)
 {
+    std::cout << "add control point: " << pos[0] << ", " << pos[1] << ", " << pos[2] << std::endl;
+
     MapManager* mapMan  = crusta->getMapManager();
 
     if (end == END_FRONT)
