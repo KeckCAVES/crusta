@@ -9,6 +9,7 @@
 #include <GLMotif/Button.h>
 #include <GLMotif/RadioBox.h>
 #include <GLMotif/Slider.h>
+#include <GLMotif/TextField.h>
 #include <Vrui/Tools/GenericToolFactory.h>
 
 #include <crusta/SurfaceProjector.h>
@@ -89,6 +90,9 @@ protected:
     /** popup window for modifying the modes */
     GLMotif::PopupWindow* dialog;
 
+    GLMotif::TextField* displacementTextField;
+    GLMotif::TextField* angleTextField;
+    GLMotif::TextField* slopeAngleTextField;
 private:
     static Factory* factory;
     void updatePlaneParameters();
@@ -108,6 +112,8 @@ public:
 
     virtual void buttonCallback(int deviceIndex, int deviceButtonIndex,
                                 Vrui::InputDevice::ButtonCallbackData* cbData);
+
+    void updateTextFields();
 
 //- Inherited from CrustaComponent
 public:

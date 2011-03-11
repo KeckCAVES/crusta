@@ -53,40 +53,66 @@ SliceTool(const Vrui::ToolFactory* iFactory,
         Vrui::getWidgetManager(), "Crusta Slice Tool");
 
     GLMotif::RowColumn* top = new GLMotif::RowColumn("SPTtop", dialog, false);
-    top->setNumMinorWidgets(2);
+    top->setNumMinorWidgets(3);
 
     new GLMotif::Label("Angle", top, "Displacement angle");
     GLMotif::Slider *angleSlider = new GLMotif::Slider("DipSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    angleSlider->setValueRange(0, 360.0, 1.0);
-    angleSlider->setValue(0.0);
+    angleSlider->setValueRange(0, 360.0, 2.5);
     angleSlider->getValueChangedCallbacks().add(this, &SliceTool::angleSliderCallback);
+    angleSlider->setValue(0.0);
 
-
+    angleTextField = new GLMotif::TextField("angleextField", top, 5);
+    angleTextField->setFloatFormat(GLMotif::TextField::FIXED);
+    angleTextField->setFieldWidth(2);
+    angleTextField->setPrecision(0);
 
     new GLMotif::Label("DisplacementLabel", top, "Displacement magnitude");
     GLMotif::Slider *displacementSlider = new GLMotif::Slider("displacementSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
     displacementSlider->setValueRange(0, 1.0, 0.01);
-    displacementSlider->setValue(0.0);
     displacementSlider->getValueChangedCallbacks().add(this, &SliceTool::displacementSliderCallback);
+    displacementSlider->setValue(0.0);
+
+    displacementTextField = new GLMotif::TextField("displacemenTextField", top, 5);
+    displacementTextField->setFloatFormat(GLMotif::TextField::FIXED);
+    displacementTextField->setFieldWidth(2);
+    displacementTextField->setPrecision(0);
+
+
 
     new GLMotif::Label("SlopeAngleLabel", top, "Slope angle");
     GLMotif::Slider *slopeAngleSlider = new GLMotif::Slider("slopeAngleSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
     slopeAngleSlider->setValueRange(0.0 + 15.0, 180.0 - 15.0, 1.0);
-    slopeAngleSlider->setValue(45.0);
     slopeAngleSlider->getValueChangedCallbacks().add(this, &SliceTool::slopeAngleSliderCallback);
+    slopeAngleSlider->setValue(90.0);
+
+    slopeAngleTextField = new GLMotif::TextField("displacemenTextField", top, 10);
+    slopeAngleTextField->setFloatFormat(GLMotif::TextField::FIXED);
+    slopeAngleTextField->setFieldWidth(2);
+    slopeAngleTextField->setPrecision(0);
+
 
     new GLMotif::Label("FalloffLabel", top, "Falloff");
     GLMotif::Slider *falloffSlider = new GLMotif::Slider("falloffSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
     falloffSlider->setValueRange(0.0, 5.0, 0.025);
-    falloffSlider->setValue(1.0);
     falloffSlider->getValueChangedCallbacks().add(this, &SliceTool::falloffSliderCallback);
+    falloffSlider->setValue(1.0);
 
     top->manageChild();
+
+    updateTextFields();
 }
+
+void SliceTool::updateTextFields() {
+     displacementTextField->setValue(_sliceParameters.getShiftVector().mag());
+     angleTextField->setValue(_sliceParameters.angle);
+     slopeAngleTextField->setValue(_sliceParameters.slopeAngleDegrees);
+}
+
 void SliceTool::angleSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
     _sliceParameters.angle = Vrui::Scalar(cbData->value);
     _sliceParameters.updatePlaneParameters();
+    updateTextFields();
     Vrui::requestUpdate();
 }
 
@@ -94,12 +120,14 @@ void SliceTool::displacementSliderCallback(GLMotif::Slider::ValueChangedCallback
 {
     _sliceParameters.displacementAmount = Vrui::Scalar(cbData->value);
     _sliceParameters.updatePlaneParameters();
+    updateTextFields();
     Vrui::requestUpdate();
 }
 void SliceTool::slopeAngleSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
     _sliceParameters.slopeAngleDegrees = Vrui::Scalar(cbData->value);
     _sliceParameters.updatePlaneParameters();
+    updateTextFields();
     Vrui::requestUpdate();
 }
 
@@ -107,6 +135,7 @@ void SliceTool::falloffSliderCallback(GLMotif::Slider::ValueChangedCallbackData*
 {
     _sliceParameters.falloffFactor = Vrui::Scalar(cbData->value);
     _sliceParameters.updatePlaneParameters();
+    updateTextFields();
     Vrui::requestUpdate();
 }
 
@@ -127,7 +156,7 @@ init()
 
     _sliceParameters.angle = 0.0;
     _sliceParameters.displacementAmount = 0.0;
-    _sliceParameters.slopeAngleDegrees = 0.0;
+    _sliceParameters.slopeAngleDegrees = 90.0;
     _sliceParameters.falloffFactor = 1.0;
     _sliceParameters.updatePlaneParameters();
 
