@@ -731,11 +731,13 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
         void main(void) {\n\
             int i;\n\
             int leftBitmap = 0;\n\
+            int bitVal = 1;\n\
             for (i=0; i < gl_VerticesIn; i++) {\n\
                 vec4 p = gl_PositionIn[i];\n\
                 float slicePlaneDst = (slicePlaneMatrix * p).x;\n\
                 if (slicePlaneDst < 0.0)\n\
-                    leftBitmap |= 1 << i;\n\
+                    leftBitmap += bitVal;\n\
+                bitVal *= 2;\n\
             }\n\
             if (length(sliceShiftVec) == 0)\n\
                 leftBitmap = 7;\n\
@@ -765,55 +767,48 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
             vec4 yellow = vec4(1,1,0,0);\n\
             vec4 planeColor = vec4(0.3,0.3,0.4,0);\n\
             gl_FrontColor = gl_FrontColorIn[0];\n\
-            switch (leftBitmap) {\n\
-                case 1:\n\
+            if (leftBitmap == 1) {\n\
                     tri(a,ab,ca, red);\n\
                     tri(shift(ab),shift(b),shift(c), blue);\n\
                     tri(shift(ab),shift(c),shift(ca), green);\n\
                     gl_FrontColor = planeColor;\n\
                     quad(ab,ca, yellow);\n\
                     quad(shift(ca),shift(ab), yellow);\n\
-                    break;\n\
-                case 2:\n\
+                } else if (leftBitmap == 2) {\n\
                     tri(b,bc,ab, red);\n\
                     tri(shift(bc),shift(c),shift(a), blue);\n\
                     tri(shift(bc),shift(a),shift(ab), green);\n\
                     gl_FrontColor = planeColor;\n\
                     quad(bc,ab, yellow);\n\
                     quad(shift(ab),shift(bc), yellow);\n\
-                    break;\n\
-                case 4:\n\
+                } else if (leftBitmap == 4) {\n\
                     tri(c,ca,bc, red);\n\
                     tri(shift(ca),shift(a),shift(b), blue);\n\
                     tri(shift(ca),shift(b),shift(bc), green);\n\
                     gl_FrontColor = planeColor;\n\
                     quad(ca,bc, yellow);\n\
                     quad(shift(bc),shift(ca), yellow);\n\
-                    break;\n\
-                case 3:\n\
+                } else if (leftBitmap == 3) {\n\
                     tri(b,bc,ca,blue);\n\
                     tri(b,ca,a, green);\n\
                     tri(shift(bc),shift(c),shift(ca), red);\n\
                     gl_FrontColor = planeColor;\n\
                     quad(bc,ca, yellow);\n\
                     quad(shift(ca),shift(bc), yellow);\n\
-                    break;\n\
-                case 5:\n\
+                } else if (leftBitmap == 5) {\n\
                     tri(a,ab,bc, blue);\n\
                     tri(a,bc,c, green);\n\
                     tri(shift(ab),shift(b),shift(bc), red);\n\
                     gl_FrontColor = planeColor;\n\
                     quad(ab,bc, yellow);\n\
                     quad(shift(bc),shift(ab), yellow);\n\
-                    break;\n\
-                case 6:\n\
+                } else if (leftBitmap == 6) {\n\
                     tri(c,ca,ab, blue);\n\
                     tri(c,ab,b, green);\n\
                     tri(shift(ca),shift(a),shift(ab), red);\n\
                     gl_FrontColor = planeColor;\n\
                     quad(ca,ab, yellow);\n\
                     quad(shift(ab),shift(ca), yellow);\n\
-                    break;\n\
                 }\n\
         }\n\
     ";

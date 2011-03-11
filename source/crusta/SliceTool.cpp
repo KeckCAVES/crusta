@@ -432,7 +432,7 @@ void SliceTool::SliceParameters::updatePlaneParameters() {
     planeDipDirection.normalize();
 
     // scale to same length as strike vector (for starters)
-    planeDipDirection *=2 * planeStrikeDirection.mag();
+    planeDipDirection *= planeStrikeDirection.mag();
     // rotate around strike vector
     planeDipDirection = Vrui::Rotation::rotateAxis(planeStrikeDirection, slopeAngleDegrees / 360.0 * 2 * M_PI).transform(planeDipDirection);
 
