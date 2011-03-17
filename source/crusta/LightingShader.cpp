@@ -445,6 +445,7 @@ initUniforms(GLContextData& contextData)
     demDefaultUniform   = glGetUniformLocation(programObject, "demDefault");
 
     numPlanesUniform =  glGetUniformLocation(programObject, "numPlanes");
+    faultLineControlPointsUniform = glGetUniformLocation(programObject, "faultLineControlPoints");
     slicePlanesUniform = glGetUniformLocation(programObject, "slicePlanes");
     separatingPlanesUniform = glGetUniformLocation(programObject, "separatingPlanes");
     sliceShiftVecsUniform    = glGetUniformLocation(programObject, "sliceShiftVecs");
@@ -704,6 +705,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
         \n\
         uniform int numPlanes;\n\
         uniform vec4 slicePlanes[15];\n\
+        uniform vec3 faultLineControlPoints[16];\n\
         uniform vec4 separatingPlanes[16];\n\
         uniform vec3 sliceShiftVecs[15];\n\
         uniform vec3 slicePlaneCenters[15];\n\
@@ -728,23 +730,35 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
         void quad(vec4 a, vec4 b, vec4 col) {\n\
             tri(b,a, vec4(slicePlaneCenters[0], 1), col);\n\
         }\n\
+        vec3 slerp(vec3 p0, vec3 p1, float t) {\n\
+            float omega = acos(dot(normalize(p0), normalize(p1)));\n\
+            return (1.0 / sin(omega)) * (sin((1-t)*omega) * p0 + sin(t * omega) * p1);\n\
+         }\n\
+        vec3 lerp(vec3 p0, vec3 p1, float t) {\n\
+            return p0 + t * (p1-p0);\n\
+        }\n\
         vec4 shift(vec4 p) {\n\
             float d = length(p.xyz - sliceFaultCenter);\n\
             float lambda = clamp(2 * (sliceFalloff - d) / sliceFalloff, 0.0, 1.0);\n\
             float lambdaRest = 1.0;\n\
             int pIdx = closestPlaneIdx;\n\  
-            vec4 dir;\n\
-            while (lambdaRest > 0.0 && pIdx < numPlanes) {\n\
-                dir = vec4(sliceShiftVecs[pIdx], 0.0);\n\
+            vec4 dir = vec4(sliceShiftVecs[pIdx], 0.0);\n\
+            while (lambdaRest > 0.0 && pIdx < numPlanes-1) {\n\
                 vec4 nextPlane = separatingPlanes[pIdx+1];\n\
                 float lambdaMax = -dot(nextPlane, p) / dot(nextPlane, dir);\n\
                 p = p + min(lambdaMax, lambdaRest) * dir;\n\
                 lambdaRest -= lambdaMax;\n\
                 pIdx++;\n\
+                dir = vec4(sliceShiftVecs[pIdx], 0.0);\n\
             }\n\
             if (lambdaRest > 0.0)\n\
                 p = p + lambdaRest * dir;\n\
             return p;\n\
+            vec3 A = faultLineControlPoints[0];\n\
+            vec3 B = faultLineControlPoints[1];\n\
+            float t = dot(p.xyz - A, B - A);\n\
+            vec3 slerpOffset = slerp(A, B, t) - (A + t * (B-A));\n\
+            return p +  vec4(slerpOffset, 0);\n\
         }\n\
         void main(void) {\n\
             int i;\n\

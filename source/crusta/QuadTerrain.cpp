@@ -386,6 +386,7 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
     SliceTool::SliceParameters params = SliceTool::getParameters();
 
     std::vector<float> slicePlanes;
+    std::vector<float> controlPoints;
     std::vector<float> separatingPlanes;
     std::vector<Vector3> shiftVecs;
     std::vector<Vector3> planeCenters;
@@ -410,6 +411,10 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
     for (size_t i=0; i < params.separatingPlanes.size(); ++i) {
         const SliceTool::Plane &p = params.separatingPlanes[i];
 
+        controlPoints.push_back(params.controlPoints[i][0] - center[0]);
+        controlPoints.push_back(params.controlPoints[i][1] - center[1]);
+        controlPoints.push_back(params.controlPoints[i][2] - center[2]);
+
         double distance = -p.distance - p.normal * center; // translate plane to tile centroid
 
         separatingPlanes.push_back(p.normal[0]);
@@ -418,7 +423,7 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
         separatingPlanes.push_back(-distance);
     }
 
-    crustaGl->terrainShader.setSlicePlanes(params.faultPlanes.size(), &(slicePlanes[0]), &(separatingPlanes[0]), &(shiftVecs[0]),
+    crustaGl->terrainShader.setSlicePlanes(params.faultPlanes.size(), &(controlPoints[0]), &(slicePlanes[0]), &(separatingPlanes[0]), &(shiftVecs[0]),
                                            &(planeCenters[0]), params.faultCenter - center, params.falloffFactor * 1e6);
 
     //crustaGl->terrainShader.disable();

@@ -27,7 +27,6 @@ SliceTool::Factory* SliceTool::factory = NULL;
 const Scalar SliceTool::markerSize            = 0.2;
 const Scalar SliceTool::selectDistance        = 0.5;
 SliceTool::SliceParameters SliceTool::_sliceParameters;
-std::vector<Point3> SliceTool::markers;
 
 SliceTool::CallbackData::
 CallbackData(SliceTool* probe_) :
@@ -103,7 +102,7 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     top->manageChild();
 
     updateTextFields();
-    _sliceParameters.updatePlaneParameters(markers);
+    _sliceParameters.updatePlaneParameters();
 }
 
 void SliceTool::updateTextFields() {
@@ -115,7 +114,7 @@ void SliceTool::updateTextFields() {
 void SliceTool::angleSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
     _sliceParameters.angle = Vrui::Scalar(cbData->value);
-    _sliceParameters.updatePlaneParameters(markers);
+    _sliceParameters.updatePlaneParameters();
     updateTextFields();
     Vrui::requestUpdate();
 }
@@ -123,14 +122,14 @@ void SliceTool::angleSliderCallback(GLMotif::Slider::ValueChangedCallbackData* c
 void SliceTool::displacementSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
     _sliceParameters.displacementAmount = Vrui::Scalar(cbData->value);
-    _sliceParameters.updatePlaneParameters(markers);
+    _sliceParameters.updatePlaneParameters();
     updateTextFields();
     Vrui::requestUpdate();
 }
 void SliceTool::slopeAngleSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
     _sliceParameters.slopeAngleDegrees = Vrui::Scalar(cbData->value);
-    _sliceParameters.updatePlaneParameters(markers);
+    _sliceParameters.updatePlaneParameters();
     updateTextFields();
     Vrui::requestUpdate();
 }
@@ -138,7 +137,7 @@ void SliceTool::slopeAngleSliderCallback(GLMotif::Slider::ValueChangedCallbackDa
 void SliceTool::falloffSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
     _sliceParameters.falloffFactor = Vrui::Scalar(cbData->value);
-    _sliceParameters.updatePlaneParameters(markers);
+    _sliceParameters.updatePlaneParameters();
     updateTextFields();
     Vrui::requestUpdate();
 }
@@ -155,14 +154,14 @@ SliceTool::
 Vrui::ToolFactory* SliceTool::
 init()
 {
-    //markers.push_back(Point3(6371000,0,0));
-    //markers.push_back(Point3(0,6371000,0));
+    //_sliceParameters.controlPoints.push_back(Point3(6371000,0,0));
+    //_sliceParameters.controlPoints.push_back(Point3(0,6371000,0));
 
     _sliceParameters.angle = 0.0;
     _sliceParameters.displacementAmount = 0.0;
     _sliceParameters.slopeAngleDegrees = 90.0;
     _sliceParameters.falloffFactor = 1.0;
-    _sliceParameters.updatePlaneParameters(markers);
+    _sliceParameters.updatePlaneParameters();
 
 
     Vrui::ToolFactory* crustaToolFactory = dynamic_cast<Vrui::ToolFactory*>(
@@ -186,10 +185,10 @@ init()
 void SliceTool::
 resetMarkers()
 {
-    markers.clear();
+    _sliceParameters.controlPoints.clear();
     markersHover       = 0;
     markersSelected    = 0;
-    _sliceParameters.updatePlaneParameters(markers);
+    _sliceParameters.updatePlaneParameters();
 }
 
 void SliceTool::
@@ -224,8 +223,8 @@ frame()
         double minDist = std::numeric_limits<double>::max();
         markersHover = 0;
 
-        for (size_t i=0; i < markers.size(); ++i) {
-            double dist = Geometry::dist(pos, markers[i]);
+        for (size_t i=0; i < _sliceParameters.controlPoints.size(); ++i) {
+            double dist = Geometry::dist(pos, _sliceParameters.controlPoints[i]);
             if (dist < selectDist && dist < minDist) {
                 minDist = dist;
                 markersHover = i+1;
@@ -240,8 +239,8 @@ frame()
 
     if (markersSelected != 0)
     {
-        markers[markersSelected - 1] = pos;
-        _sliceParameters.updatePlaneParameters(markers);
+        _sliceParameters.controlPoints[markersSelected - 1] = pos;
+        _sliceParameters.updatePlaneParameters();
         callback();
     }
 }
@@ -263,7 +262,7 @@ display(GLContextData& contextData) const
 //- render own stuff
     CHECK_GLA
     //don't draw anything if we don't have any control points yet
-    if (markers.empty())
+    if (_sliceParameters.controlPoints.empty())
         return;
 
     //save relevant GL state and set state for marker rendering
@@ -272,13 +271,13 @@ display(GLContextData& contextData) const
 
     //go to navigational coordinates
     std::vector<Point3> markerPos;
-    for (int i=0; i< markers.size(); ++i)
-        markerPos.push_back(crusta->mapToScaledGlobe(markers[i]));
+    for (int i=0; i< _sliceParameters.controlPoints.size(); ++i)
+        markerPos.push_back(crusta->mapToScaledGlobe(_sliceParameters.controlPoints[i]));
 
     Vector3 centroid(0.0, 0.0, 0.0);
-    for (int i=0; i < markers.size(); ++i)
+    for (int i=0; i < _sliceParameters.controlPoints.size(); ++i)
         centroid += Vector3(markerPos[i]);
-    centroid /= markers.size();
+    centroid /= _sliceParameters.controlPoints.size();
 
     //load the centroid relative translated navigation transformation
     glPushMatrix();
@@ -294,7 +293,7 @@ display(GLContextData& contextData) const
 
     CHECK_GLA
     //draw the control points
-    for (int i=0; i < markers.size(); ++i)
+    for (int i=0; i < _sliceParameters.controlPoints.size(); ++i)
     {
         if (markersHover == i+1)
         {
@@ -342,21 +341,21 @@ buttonCallback(int, int, Vrui::InputDevice::ButtonCallbackData* cbData)
     {
         if (markersHover > 0) {
             // cursor hovering above existing marker - drag it
-            markers[markersHover - 1]      = surfacePoint.position;
+            _sliceParameters.controlPoints[markersHover - 1]      = surfacePoint.position;
             markersSelected = markersHover;
-        } else if (markers.size() < 16) {
+        } else if (_sliceParameters.controlPoints.size() < 16) {
             // not all markers used - add new marker
-            markers.push_back(surfacePoint.position);
-            markersHover = markersSelected = markers.size();
+            _sliceParameters.controlPoints.push_back(surfacePoint.position);
+            markersHover = markersSelected = _sliceParameters.controlPoints.size();
         } else {
             // all markers in use - reset markers
-            markers.clear();
-            markers.push_back(surfacePoint.position);
+            _sliceParameters.controlPoints.clear();
+            _sliceParameters.controlPoints.push_back(surfacePoint.position);
             markersHover    = 1;
             markersSelected = 1;
         }
 
-        _sliceParameters.updatePlaneParameters(markers);
+        _sliceParameters.updatePlaneParameters();
         callback();
     }
     else
@@ -413,22 +412,22 @@ const SliceTool::SliceParameters &SliceTool::getParameters() {
     return _sliceParameters;
 }
 
-void SliceTool::SliceParameters::updatePlaneParameters(const std::vector<Point3> &points) {
+void SliceTool::SliceParameters::updatePlaneParameters() {
     faultPlanes.clear();
     separatingPlanes.clear();
 
-    if (points.size() < 2)
+    if (controlPoints.size() < 2)
         return;
 
     std::vector<Vector3> pts;
     // project all points to average sphere
     double radius = 0.0;
-    for (size_t i=0; i < points.size(); ++i)
-        radius += Vector3(points[i]).mag();
+    for (size_t i=0; i < controlPoints.size(); ++i)
+        radius += Vector3(controlPoints[i]).mag();
 
-    radius /= points.size();
-    for (size_t i=0; i < points.size(); ++i) {
-        Vector3 v = Vector3(points[i]);
+    radius /= controlPoints.size();
+    for (size_t i=0; i < controlPoints.size(); ++i) {
+        Vector3 v = Vector3(controlPoints[i]);
         v.normalize();
         pts.push_back(radius * v);
     }

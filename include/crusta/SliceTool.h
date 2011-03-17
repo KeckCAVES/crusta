@@ -74,9 +74,6 @@ protected:
     /** the currently probed surface point */
     SurfacePoint surfacePoint;
 
-    /** the tool's marker locations */
-    static std::vector<Point3> markers;
-
     /** keep track of which markers are being hovered over */
     int markersHover;
     /** keep track of which markers are selected and being dragged */
@@ -142,18 +139,17 @@ public:
         double slopeAngleDegrees;
         double falloffFactor;
 
-        Vector3 faultCenter; // center of mass of control points
+        /** the tool's marker locations (control points of fault line) */
+        std::vector<Point3> controlPoints;
 
-        /** keep track of which markers are set */
-        //int numActivePoints;
-        //FaultPlane planes[15];
+        Vector3 faultCenter; // center of mass of control points
 
         std::vector<Plane> faultPlanes;
         std::vector<Plane> separatingPlanes;
 
         SliceParameters();
         // plane equations parameters (recalculated when values above change)
-        void updatePlaneParameters(const std::vector<Point3> &points);
+        void updatePlaneParameters();
 
         Vector3 getShiftVector(const Plane &p) const;
     };

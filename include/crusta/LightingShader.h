@@ -90,6 +90,7 @@ class LightingShader
     GLint slicePlaneCentersUniform;
     GLint sliceFaultCenterUniform;
     GLint sliceFalloffUniform;
+    GLint faultLineControlPointsUniform;
 
     FrameStamp colorMapperConfigurationStamp;
 
@@ -133,6 +134,7 @@ class LightingShader
         demDefaultUniform   = -2;
 
         slicePlanesUniform = separatingPlanesUniform = sliceShiftVecsUniform = slicePlaneCentersUniform = -2;
+        faultLineControlPointsUniform = -2;
     }
 
     void setTextureStep(float ts)
@@ -164,11 +166,13 @@ class LightingShader
 
     // planes are stored as contiguous 4-tuples of (nx,ny,ny,distance_to_origin)
     // they are assumed to be relative the centroid of this tile
-    void setSlicePlanes(int numPlanes, float planes[4*15], float separatingPlanes[4*16], Vector3 shiftVecs[15], Vector3 planeCenters[15], Vector3 faultCenter, double falloff) {
+    void setSlicePlanes(int numPlanes, float faultLineControlPoints[3*16], float planes[4*15], float separatingPlanes[4*16], Vector3 shiftVecs[15], Vector3 planeCenters[15], Vector3 faultCenter, double falloff) {
         glUniform1i(numPlanesUniform, numPlanes);
 
+        int numPoints = numPlanes ? (numPlanes+1) : 0;
+        glUniform3fv(faultLineControlPointsUniform, numPoints, faultLineControlPoints);
         glUniform4fv(slicePlanesUniform, numPlanes, planes);
-        glUniform4fv(separatingPlanesUniform, numPlanes ? (numPlanes+1) :0, separatingPlanes);
+        glUniform4fv(separatingPlanesUniform, numPoints, separatingPlanes);
 
         float shift[3*15];
         for (int i=0; i < numPlanes; ++i) {
