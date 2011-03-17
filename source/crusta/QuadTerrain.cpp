@@ -385,21 +385,41 @@ prepareDisplay(GLContextData& contextData, SurfaceApproximation& surface)
 void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* crustaGl, const Vector3 &center) {
     SliceTool::SliceParameters params = SliceTool::getParameters();
 
-    //Vector3 u(params.planeStrikeDirection);
-   // Vector3 v(params.planeDipDirection);
-    Vector3 n(params.planeNormal);
+    std::vector<float> slicePlanes;
+    std::vector<float> separatingPlanes;
+    std::vector<Vector3> shiftVecs;
+    std::vector<Vector3> planeCenters;
 
-    double planeD = params.getPlaneDistanceFrom(center); // (pA - center) * n;  // plane distance from origin
+    // assert(params.faultPlanes.size() + 1 == params.separatingPlanes.size());
 
-    // construct the matrix
-    float M[16] = {
-        n[0], n[1], n[2], -planeD,
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        0, 0, 0, 0
-    };
+    for (size_t i=0; i < params.faultPlanes.size(); ++i) {
+        const SliceTool::Plane &p = params.faultPlanes[i];
 
-    crustaGl->terrainShader.setSlicePlane(M, params.getShiftVector(), params.getPlaneCenter() - center, params.getFaultCenter() - center, params.getFalloff());
+        double distance = -p.distance - p.normal * center; // translate plane to tile centroid
+
+        slicePlanes.push_back(p.normal[0]);
+        slicePlanes.push_back(p.normal[1]);
+        slicePlanes.push_back(p.normal[2]);
+        slicePlanes.push_back(-distance);
+
+        shiftVecs.push_back(params.getShiftVector(p));
+
+        planeCenters.push_back(p.getPlaneCenter() - center);
+    }
+
+    for (size_t i=0; i < params.separatingPlanes.size(); ++i) {
+        const SliceTool::Plane &p = params.separatingPlanes[i];
+
+        double distance = -p.distance - p.normal * center; // translate plane to tile centroid
+
+        separatingPlanes.push_back(p.normal[0]);
+        separatingPlanes.push_back(p.normal[1]);
+        separatingPlanes.push_back(p.normal[2]);
+        separatingPlanes.push_back(-distance);
+    }
+
+    crustaGl->terrainShader.setSlicePlanes(params.faultPlanes.size(), &(slicePlanes[0]), &(separatingPlanes[0]), &(shiftVecs[0]),
+                                           &(planeCenters[0]), params.faultCenter - center, params.falloffFactor * 1e6);
 
     //crustaGl->terrainShader.disable();
 
@@ -532,6 +552,63 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         DATAMANAGER->nextGpuBatch(contextData, surface, batch);
     }
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+
+
+    crustaGl->terrainShader.disable();
+
+    SliceTool::SliceParameters params = SliceTool::getParameters();
+
+    std::vector<float> slicePlanes;
+    std::vector<Vector3> shiftVecs;
+    std::vector<Vector3> planeCenters;
+
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_LIGHTING);
+    for (size_t i=0; i < params.faultPlanes.size(); ++i) {
+        const SliceTool::Plane &p = params.faultPlanes[i];
+
+        Vector3 c1(0.5 * (p.startPoint + p.endPoint));
+        Vector3 c2(c1 + 5e4 * p.normal);
+
+
+        glLineWidth(5.0);
+        glBegin(GL_LINES);
+        // line segment
+        glColor3f(0,0,1);
+        glVertex3f(p.startPoint[0], p.startPoint[1], p.startPoint[2]);
+        glVertex3f(p.endPoint[0], p.endPoint[1], p.endPoint[2]);
+        // normal
+        glColor3f(0,1,1);
+        glVertex3f(c1[0], c1[1], c1[2]);
+        glVertex3f(c2[0], c2[1], c2[2]);
+        glEnd();
+    }
+
+    for (size_t i=0; i < params.separatingPlanes.size(); ++i) {
+        const SliceTool::Plane &p = params.separatingPlanes[i];
+
+        Vector3 c1(0.5 * (p.startPoint + p.endPoint));
+        Vector3 c2(c1 + 5e4 * p.normal);
+
+
+        glLineWidth(5.0);
+        glBegin(GL_LINES);
+        // line segment
+        glColor3f(1,1,1);
+        glVertex3f(p.startPoint[0], p.startPoint[1], p.startPoint[2]);
+        glVertex3f(p.endPoint[0], p.endPoint[1], p.endPoint[2]);
+        // normal
+        glColor3f(1,1,0);
+        glVertex3f(c1[0], c1[1], c1[2]);
+        glVertex3f(c2[0], c2[1], c2[2]);
+        glEnd();
+    }
+
+
+    glEnable(GL_LIGHTING);
+    glEnable(GL_DEPTH_TEST);
 
     //restore the GL transform as it was before
     glPopMatrix();

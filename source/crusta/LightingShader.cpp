@@ -444,9 +444,11 @@ initUniforms(GLContextData& contextData)
     layerfNodataUniform = glGetUniformLocation(programObject, "layerfNodata");
     demDefaultUniform   = glGetUniformLocation(programObject, "demDefault");
 
-    slicePlaneMatrixUniform = glGetUniformLocation(programObject, "slicePlaneMatrix");
-    sliceShiftVecUniform    = glGetUniformLocation(programObject, "sliceShiftVec");
-    slicePlaneCenterUniform = glGetUniformLocation(programObject, "slicePlaneCenter");
+    numPlanesUniform =  glGetUniformLocation(programObject, "numPlanes");
+    slicePlanesUniform = glGetUniformLocation(programObject, "slicePlanes");
+    separatingPlanesUniform = glGetUniformLocation(programObject, "separatingPlanes");
+    sliceShiftVecsUniform    = glGetUniformLocation(programObject, "sliceShiftVecs");
+    slicePlaneCentersUniform = glGetUniformLocation(programObject, "slicePlaneCenters");
     sliceFaultCenterUniform = glGetUniformLocation(programObject, "sliceFaultCenter");
     sliceFalloffUniform     = glGetUniformLocation(programObject, "sliceFalloff");
 
@@ -700,15 +702,18 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
         #version 120\n\
         #extension GL_EXT_geometry_shader4 : enable\n\
         \n\
-        uniform mat4 slicePlaneMatrix;\n\
-        uniform vec3 sliceShiftVec;\n\
-        uniform vec3 slicePlaneCenter;\n\
+        uniform int numPlanes;\n\
+        uniform vec4 slicePlanes[15];\n\
+        uniform vec4 separatingPlanes[16];\n\
+        uniform vec3 sliceShiftVecs[15];\n\
+        uniform vec3 slicePlaneCenters[15];\n\
         uniform vec3 sliceFaultCenter;\n\
         uniform float sliceFalloff;\n\
         uniform vec3 center;\n\
+        int closestPlaneIdx;\n\
         \n\
         vec4 isect(vec4 a, vec4 b) {\n\
-            float lambda = -(slicePlaneMatrix * vec4(a.xyz,1)).x / (slicePlaneMatrix * vec4((b-a).xyz, 0)).x;\n\
+            float lambda = -dot(slicePlanes[0], vec4(a.xyz,1)) / dot(slicePlanes[0], vec4((b-a).xyz, 0));\n\
             return a + lambda * (b-a);\n\
         }\n\
         void tri(vec4 a, vec4 b, vec4 c, vec4 col) {\n\
@@ -721,12 +726,22 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
             EndPrimitive();\n\
         }\n\
         void quad(vec4 a, vec4 b, vec4 col) {\n\
-            tri(b,a, vec4(slicePlaneCenter, 1), col);\n\
+            tri(b,a, vec4(slicePlaneCenters[0], 1), col);\n\
         }\n\
         vec4 shift(vec4 p) {\n\
             float d = length(p.xyz - sliceFaultCenter);\n\
             float lambda = clamp(2 * (sliceFalloff - d) / sliceFalloff, 0.0, 1.0);\n\
-            return p + lambda * vec4(sliceShiftVec, 0.0);\n\
+            float lambdaRest = 1.0;\n\
+            int pIdx = closestPlaneIdx;\n\
+            while (lambdaRest > 0.0 && pIdx < numPlanes) {\n\
+                vec4 dir = vec4(sliceShiftVecs[pIdx], 0.0);\n\
+                vec4 nextPlane = separatingPlanes[pIdx+1];\n\
+                float lambdaMax = -dot(nextPlane, p) / dot(nextPlane, dir);\n\
+                p = p + min(lambdaMax, lambdaRest) * dir;\n\
+                lambdaRest -= lambdaMax;\n\
+                pIdx++;\n\
+            }\n\
+            return p;\n\
         }\n\
         void main(void) {\n\
             int i;\n\
@@ -734,16 +749,56 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
             int bitVal = 1;\n\
             for (i=0; i < gl_VerticesIn; i++) {\n\
                 vec4 p = gl_PositionIn[i];\n\
-                float slicePlaneDst = (slicePlaneMatrix * p).x;\n\
+                float slicePlaneDst = dot(slicePlanes[0], p);\n\
                 if (slicePlaneDst < 0.0)\n\
                     leftBitmap += bitVal;\n\
                 bitVal *= 2;\n\
             }\n\
-            if (length(sliceShiftVec) == 0)\n\
+            if (length(sliceShiftVecs[0]) == 0)\n\
                 leftBitmap = 7;\n\
             if (leftBitmap == 0 || leftBitmap == 7) {\n\
+                float minDist = 1e9;\n\
+                closestPlaneIdx = -1;\n\
+                for (int i=0; i < numPlanes; i++) {\n\
+                    float dst = dot(slicePlanes[i], gl_PositionIn[0]);\n\
+                    if (dst > 0.0 && dst < minDist) {\n\
+                        minDist = dst;\n\
+                        closestPlaneIdx = i;\n\
+                    }\n\
+                }\n\
+                closestPlaneIdx = -1;\n\
+                minDist = 1e9;\n\
+                for (int i=0; i < numPlanes; i++) {\n\
+                    float dst = dot(slicePlanes[i], gl_PositionIn[0]);\n\
+                    float dstLeft = dot(separatingPlanes[i], gl_PositionIn[0]);\n\
+                    float dstRight = dot(separatingPlanes[i+1], gl_PositionIn[0]);\n\
+                    if (dst > 0.0 && dst < minDist && dstLeft > 0.0 && dstRight < 0.0) {\n\
+                        closestPlaneIdx = i;\n\
+                        minDist = dst;\n\
+                        break;\n\
+                    }\n\
+                }\n\
+                vec4 dstColor = vec4(0,0,0,0);\n\
+                if (closestPlaneIdx == 0)\n\
+                    dstColor = vec4(1,0,0,0);\n\
+                else if (closestPlaneIdx == 1)\n\
+                    dstColor = vec4(0,1,0,0);\n\
+                else if (closestPlaneIdx == 2)\n\
+                    dstColor = vec4(0,0,1,0);\n\
+                else if (closestPlaneIdx == 3)\n\
+                    dstColor = vec4(0,1,1,0);\n\
+                dstColor *= 100000.0 / minDist;\n\
                 for (i=0; i < gl_VerticesIn; i++) {\n\
-                    gl_FrontColor = gl_FrontColorIn[i];\n\
+                    gl_FrontColor = dstColor + gl_FrontColorIn[i];\n\
+                    vec4 p = gl_PositionIn[i];\n\
+                    if (closestPlaneIdx != -1)\n\
+                        p = shift(p);\n\
+                    gl_Position = gl_ModelViewProjectionMatrix * p;\n\
+                    EmitVertex();\n\
+                }\n\
+                return;\n\
+                for (i=0; i < gl_VerticesIn; i++) {\n\
+                    gl_FrontColor = dstColor + gl_FrontColorIn[i];\n\
                     vec4 p = gl_PositionIn[i];\n\
                     if (leftBitmap == 0)\n\
                         p = shift(p);\n\
@@ -767,6 +822,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
             vec4 yellow = vec4(1,1,0,0);\n\
             vec4 planeColor = vec4(0.3,0.3,0.4,0);\n\
             gl_FrontColor = gl_FrontColorIn[0];\n\
+            \n\
             if (leftBitmap == 1) {\n\
                     tri(a,ab,ca, red);\n\
                     tri(shift(ab),shift(b),shift(c), blue);\n\
@@ -812,20 +868,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
                 }\n\
         }\n\
     ";
-    // + (b-a) * (abs((slicePlaneMatrix * a) / (slicePlaneMatrix * (b-a))));\n
-     //a = a + (b-a) * (abs((slicePlaneMatrix * a) / (slicePlaneMatrix * (b-a))));
-/*
 
-                if (slicePlaneDst > 0.0)\n\
-
-                    */
-/*
-    float lambda = -(slicePlaneMatrix * vec4(a.xyz,1)).x / (slicePlaneMatrix * vec4((b-a).xyz, 0)).x;\n\
-    vec4 ab = a + lambda * (b-a);\n\
-*/
-    //code << "  float slicePlaneDst = (" << slicePlaneMatrixName << "* vec4(res + " << centroidName << ", 1.0)).x;" << std::endl;
-    //code << "  if (slicePlaneDst > 0.0)" << std::endl;
-    //code << "    res += " << sliceShiftVecName << ";" << std::endl;
 
     CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << geometryShaderSource << std::endl;)
 

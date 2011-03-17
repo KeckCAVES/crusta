@@ -83,9 +83,11 @@ class LightingShader
     GLint layerfNodataUniform;
     GLint demDefaultUniform;
 
-    GLint slicePlaneMatrixUniform;
-    GLint sliceShiftVecUniform;
-    GLint slicePlaneCenterUniform;
+    GLint numPlanesUniform;
+    GLint slicePlanesUniform;
+    GLint separatingPlanesUniform;
+    GLint sliceShiftVecsUniform;
+    GLint slicePlaneCentersUniform;
     GLint sliceFaultCenterUniform;
     GLint sliceFalloffUniform;
 
@@ -130,7 +132,7 @@ class LightingShader
         layerfNodataUniform = -2;
         demDefaultUniform   = -2;
 
-        slicePlaneMatrixUniform = sliceShiftVecUniform = slicePlaneCenterUniform = -2;
+        slicePlanesUniform = separatingPlanesUniform = sliceShiftVecsUniform = slicePlaneCentersUniform = -2;
     }
 
     void setTextureStep(float ts)
@@ -160,14 +162,31 @@ class LightingShader
         CHECK_GLA
     }
 
-    void setSlicePlane(float M[16], Vector3 shiftVec, Vector3 planeCenter, Vector3 faultCenter, double falloff) {
-        glUniformMatrix4fv(slicePlaneMatrixUniform, 1, GL_TRUE, M);
+    // planes are stored as contiguous 4-tuples of (nx,ny,ny,distance_to_origin)
+    // they are assumed to be relative the centroid of this tile
+    void setSlicePlanes(int numPlanes, float planes[4*15], float separatingPlanes[4*16], Vector3 shiftVecs[15], Vector3 planeCenters[15], Vector3 faultCenter, double falloff) {
+        glUniform1i(numPlanesUniform, numPlanes);
 
-        float shift[3] = { shiftVec[0], shiftVec[1], shiftVec[2] };
-        glUniform3fv(sliceShiftVecUniform, 1, shift);
+        glUniform4fv(slicePlanesUniform, numPlanes, planes);
+        glUniform4fv(separatingPlanesUniform, numPlanes ? (numPlanes+1) :0, separatingPlanes);
 
-        float pc[3] = { planeCenter[0], planeCenter[1], planeCenter[2] };
-        glUniform3fv(slicePlaneCenterUniform, 1, pc);
+        float shift[3*15];
+        for (int i=0; i < numPlanes; ++i) {
+            shift[3*i+0] = shiftVecs[i][0];
+            shift[3*i+1] = shiftVecs[i][1];
+            shift[3*i+2] = shiftVecs[i][2];
+        }
+
+        glUniform3fv(sliceShiftVecsUniform, numPlanes, shift);
+
+        float pc[3*15];
+        for (int i=0; i < numPlanes; ++i) {
+            pc[3*i+0] = planeCenters[i][0];
+            pc[3*i+1] = planeCenters[i][1];
+            pc[3*i+2] = planeCenters[i][2];
+        }
+
+        glUniform3fv(slicePlaneCentersUniform, numPlanes, pc);
 
         float fc[3] = { faultCenter[0], faultCenter[1], faultCenter[2] };
         glUniform3fv(sliceFaultCenterUniform, 1, fc);

@@ -74,9 +74,9 @@ protected:
     /** the currently probed surface point */
     SurfacePoint surfacePoint;
 
+    /** the tool's marker locations */
+    static std::vector<Point3> markers;
 
-    /** keep track of which markers are set */
-    int markersSet;
     /** keep track of which markers are being hovered over */
     int markersHover;
     /** keep track of which markers are selected and being dragged */
@@ -119,6 +119,22 @@ public:
 public:
     virtual void setupComponent(Crusta* crusta);
 
+    struct Plane {
+        // fault line (segment) between points a and b
+        Plane(const Vector3 &a, const Vector3 &b, double slopeAngleDegrees);
+        double getPointDistance(const Vector3 &point) const;
+        Vector3 getPlaneCenter() const;
+
+        Vector3 strikeDirection;
+        Vector3 dipDirection;
+
+        // for drawing lines on surface etc.
+        Vector3 startPoint, endPoint;
+        // hessian normal form
+        Vector3 normal;
+        double distance;
+    };
+
     // FIXME: Does not allow for multiple instances
     struct SliceParameters {
         double angle;
@@ -126,21 +142,20 @@ public:
         double slopeAngleDegrees;
         double falloffFactor;
 
-        /** the tool's marker locations */
-        Point3 faultLine[2];
+        Vector3 faultCenter; // center of mass of control points
 
+        /** keep track of which markers are set */
+        //int numActivePoints;
+        //FaultPlane planes[15];
+
+        std::vector<Plane> faultPlanes;
+        std::vector<Plane> separatingPlanes;
+
+        SliceParameters();
         // plane equations parameters (recalculated when values above change)
-        void updatePlaneParameters();
+        void updatePlaneParameters(const std::vector<Point3> &pts);
 
-        Vector3 planeStrikeDirection;
-        Vector3 planeDipDirection;
-        Vector3 planeNormal;
-
-        double getPlaneDistanceFrom(Vector3 p) const;
-        Vector3 getPlaneCenter() const;
-        Vector3 getShiftVector() const;
-        Vector3 getFaultCenter() const;
-        double getFalloff() const;
+        Vector3 getShiftVector(const Plane &p) const;
     };
 
     static SliceParameters _sliceParameters;

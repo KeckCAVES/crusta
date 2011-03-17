@@ -15,6 +15,8 @@
 #include <Vrui/DisplayState.h>
 #include <Vrui/Vrui.h>
 
+#include <limits>
+
 #include <crusta/Crusta.h>
 
 
@@ -25,6 +27,7 @@ SliceTool::Factory* SliceTool::factory = NULL;
 const Scalar SliceTool::markerSize            = 0.2;
 const Scalar SliceTool::selectDistance        = 0.5;
 SliceTool::SliceParameters SliceTool::_sliceParameters;
+std::vector<Point3> SliceTool::markers;
 
 SliceTool::CallbackData::
 CallbackData(SliceTool* probe_) :
@@ -43,7 +46,7 @@ SampleCallbackData(SliceTool* probe_, int sampleId_, int numSamples_,
 SliceTool::
 SliceTool(const Vrui::ToolFactory* iFactory,
                  const Vrui::ToolInputAssignment& inputAssignment) :
-    Tool(iFactory, inputAssignment), markersSet(0), markersHover(0), markersSelected(0),
+    Tool(iFactory, inputAssignment), markersHover(0), markersSelected(0),
     dialog(NULL)
 {
     const GLMotif::StyleSheet *style = Vrui::getWidgetManager()->getStyleSheet();
@@ -61,14 +64,14 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     angleSlider->getValueChangedCallbacks().add(this, &SliceTool::angleSliderCallback);
     angleSlider->setValue(0.0);
 
-    angleTextField = new GLMotif::TextField("angleextField", top, 5);
+    angleTextField = new GLMotif::TextField("angleTextField", top, 5);
     angleTextField->setFloatFormat(GLMotif::TextField::FIXED);
     angleTextField->setFieldWidth(2);
     angleTextField->setPrecision(0);
 
     new GLMotif::Label("DisplacementLabel", top, "Displacement magnitude");
     GLMotif::Slider *displacementSlider = new GLMotif::Slider("displacementSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    displacementSlider->setValueRange(0, 1.0, 0.01);
+    displacementSlider->setValueRange(0, 1e6, 1e3);
     displacementSlider->getValueChangedCallbacks().add(this, &SliceTool::displacementSliderCallback);
     displacementSlider->setValue(0.0);
 
@@ -100,10 +103,11 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     top->manageChild();
 
     updateTextFields();
+    _sliceParameters.updatePlaneParameters(markers);
 }
 
 void SliceTool::updateTextFields() {
-     displacementTextField->setValue(_sliceParameters.getShiftVector().mag());
+     //displacementTextField->setValue(_sliceParameters.getShiftVector().mag());
      angleTextField->setValue(_sliceParameters.angle);
      slopeAngleTextField->setValue(_sliceParameters.slopeAngleDegrees);
 }
@@ -111,7 +115,7 @@ void SliceTool::updateTextFields() {
 void SliceTool::angleSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
     _sliceParameters.angle = Vrui::Scalar(cbData->value);
-    _sliceParameters.updatePlaneParameters();
+    _sliceParameters.updatePlaneParameters(markers);
     updateTextFields();
     Vrui::requestUpdate();
 }
@@ -119,14 +123,14 @@ void SliceTool::angleSliderCallback(GLMotif::Slider::ValueChangedCallbackData* c
 void SliceTool::displacementSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
     _sliceParameters.displacementAmount = Vrui::Scalar(cbData->value);
-    _sliceParameters.updatePlaneParameters();
+    _sliceParameters.updatePlaneParameters(markers);
     updateTextFields();
     Vrui::requestUpdate();
 }
 void SliceTool::slopeAngleSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
     _sliceParameters.slopeAngleDegrees = Vrui::Scalar(cbData->value);
-    _sliceParameters.updatePlaneParameters();
+    _sliceParameters.updatePlaneParameters(markers);
     updateTextFields();
     Vrui::requestUpdate();
 }
@@ -134,7 +138,7 @@ void SliceTool::slopeAngleSliderCallback(GLMotif::Slider::ValueChangedCallbackDa
 void SliceTool::falloffSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
     _sliceParameters.falloffFactor = Vrui::Scalar(cbData->value);
-    _sliceParameters.updatePlaneParameters();
+    _sliceParameters.updatePlaneParameters(markers);
     updateTextFields();
     Vrui::requestUpdate();
 }
@@ -151,14 +155,14 @@ SliceTool::
 Vrui::ToolFactory* SliceTool::
 init()
 {
-    _sliceParameters.faultLine[0] = Point3(6371000,0,0);
-    _sliceParameters.faultLine[1] = Point3(0,6371000,0);
+    //markers.push_back(Point3(6371000,0,0));
+    //markers.push_back(Point3(0,6371000,0));
 
     _sliceParameters.angle = 0.0;
     _sliceParameters.displacementAmount = 0.0;
     _sliceParameters.slopeAngleDegrees = 90.0;
     _sliceParameters.falloffFactor = 1.0;
-    _sliceParameters.updatePlaneParameters();
+    _sliceParameters.updatePlaneParameters(markers);
 
 
     Vrui::ToolFactory* crustaToolFactory = dynamic_cast<Vrui::ToolFactory*>(
@@ -182,15 +186,15 @@ init()
 void SliceTool::
 resetMarkers()
 {
-    markersSet         = 0;
+    markers.clear();
     markersHover       = 0;
     markersSelected    = 0;
+    _sliceParameters.updatePlaneParameters(markers);
 }
 
 void SliceTool::
 callback()
 {
-    std::cout << "callback" << std::endl;
 }
 
 const Vrui::ToolFactory* SliceTool::
@@ -217,31 +221,15 @@ frame()
         double scaleFac   = Vrui::getNavigationTransformation().getScaling();
         double selectDist = selectDistance / scaleFac;
 
-        switch (markersSet)
-        {
-            case 1:
-            {
-                Scalar dist = Geometry::dist(pos, _sliceParameters.faultLine[0]);
-                if (dist < selectDist)
-                    markersHover = 1;
-                else
-                    markersHover = 0;
-                break;
+        double minDist = std::numeric_limits<double>::max();
+        markersHover = 0;
+
+        for (size_t i=0; i < markers.size(); ++i) {
+            double dist = Geometry::dist(pos, markers[i]);
+            if (dist < selectDist && dist < minDist) {
+                minDist = dist;
+                markersHover = i+1;
             }
-            case 2:
-            {
-                Scalar dist[2] = { Geometry::dist(pos, _sliceParameters.faultLine[0]),
-                                   Geometry::dist(pos, _sliceParameters.faultLine[1]) };
-                if (dist[0]<dist[1] && dist[0]<selectDist)
-                    markersHover = 1;
-                else if (dist[1]<dist[0] && dist[1]<selectDist)
-                    markersHover = 2;
-                else
-                    markersHover = 0;
-                break;
-            }
-            default:
-                break;
         }
 
         if (Vrui::getMainPipe() != NULL)
@@ -252,8 +240,8 @@ frame()
 
     if (markersSelected != 0)
     {
-        _sliceParameters.faultLine[markersSelected-1] = pos;
-        _sliceParameters.updatePlaneParameters();
+        markers[markersSelected - 1] = pos;
+        _sliceParameters.updatePlaneParameters(markers);
         callback();
     }
 }
@@ -275,7 +263,7 @@ display(GLContextData& contextData) const
 //- render own stuff
     CHECK_GLA
     //don't draw anything if we don't have any control points yet
-    if (markersSet == 0)
+    if (markers.empty())
         return;
 
     //save relevant GL state and set state for marker rendering
@@ -283,14 +271,14 @@ display(GLContextData& contextData) const
     glDisable(GL_LIGHTING);
 
     //go to navigational coordinates
-    std::vector<Point3> markerPos(markersSet);
-    for (int i=0; i<markersSet; ++i)
-        markerPos[i] = crusta->mapToScaledGlobe(_sliceParameters.faultLine[i]);
+    std::vector<Point3> markerPos;
+    for (int i=0; i< markers.size(); ++i)
+        markerPos.push_back(crusta->mapToScaledGlobe(markers[i]));
 
     Vector3 centroid(0.0, 0.0, 0.0);
-    for (int i=0; i<markersSet; ++i)
+    for (int i=0; i < markers.size(); ++i)
         centroid += Vector3(markerPos[i]);
-    centroid /= markersSet;
+    centroid /= markers.size();
 
     //load the centroid relative translated navigation transformation
     glPushMatrix();
@@ -306,7 +294,7 @@ display(GLContextData& contextData) const
 
     CHECK_GLA
     //draw the control points
-    for (int i=0; i<markersSet; ++i)
+    for (int i=0; i < markers.size(); ++i)
     {
         if (markersHover == i+1)
         {
@@ -352,46 +340,23 @@ buttonCallback(int, int, Vrui::InputDevice::ButtonCallbackData* cbData)
 
     if (cbData->newButtonState)
     {
-        switch (markersSet)
-        {
-        case 0:
-            {
-                _sliceParameters.faultLine[0]      = surfacePoint.position;
-                markersSet      = 1;
-                markersHover    = 1;
-                markersSelected = 1;
-            } break;
-
-        case 1:
-            {
-            _sliceParameters.faultLine[1]      = surfacePoint.position;
-            markersSet      = 2;
-            markersHover    = 2;
-            markersSelected = 2;
-        } break;
-
-        case 2:
-            {
-        if (markersHover == 0)
-        {
-            //resetting marker placement
-            _sliceParameters.faultLine[0]      = surfacePoint.position;
-            markersSet      = 1;
+        if (markersHover > 0) {
+            // cursor hovering above existing marker - drag it
+            markers[markersHover - 1]      = surfacePoint.position;
+            markersSelected = markersHover;
+        } else if (markers.size() < 16) {
+            // not all markers used - add new marker
+            markers.push_back(surfacePoint.position);
+            markersHover = markersSelected = markers.size();
+        } else {
+            // all markers in use - reset markers
+            markers.clear();
+            markers.push_back(surfacePoint.position);
             markersHover    = 1;
             markersSelected = 1;
         }
-        else
-        {
-            //modifying existing marker position
-            _sliceParameters.faultLine[markersHover-1] = surfacePoint.position;
-            markersSelected         = markersHover;
-        }
-    } break;
 
-        default:
-            break;
-        }
-        _sliceParameters.updatePlaneParameters();
+        _sliceParameters.updatePlaneParameters(markers);
         callback();
     }
     else
@@ -411,61 +376,87 @@ setupComponent(Crusta* crusta)
         navXform.transform(Vrui::getDisplayCenter()));
 }
 
+SliceTool::Plane::Plane(const Vector3 &a, const Vector3 &b, double slopeAngleDegrees) : startPoint(a), endPoint(b) {
+    strikeDirection = endPoint - startPoint;
+    strikeDirection.normalize();
+
+    // midpoint of fault line / plane
+
+    // radius vector (center of planet to midpoint of fault line) = normal (because planet center is at (0,0,0))
+    normal = cross(strikeDirection, startPoint); // normal of plane containing point and planet center
+
+    // rotate normal by 90 degrees around strike dir, now it's the tangential (horizon) plane
+    // additionally, rotate by given slope angle
+    normal = Vrui::Rotation::rotateAxis(strikeDirection, (90.0 + slopeAngleDegrees) / 360.0 * 2 * M_PI).transform(normal);
+    normal.normalize();
+
+    // dip vector
+    dipDirection = cross(strikeDirection, normal);
+    dipDirection.normalize(); // just to be sure :)
+
+    distance = startPoint * normal;
+}
+
+double SliceTool::Plane::getPointDistance(const Vector3 &point) const {
+    return normal * point - distance;
+}
+
+Vector3 SliceTool::Plane::getPlaneCenter() const {
+    return getPointDistance(Vector3(0,0,0)) * normal;
+}
+
+SliceTool::SliceParameters::SliceParameters() {
+}
+
 
 const SliceTool::SliceParameters &SliceTool::getParameters() {
     return _sliceParameters;
 }
 
-void SliceTool::SliceParameters::updatePlaneParameters() {
-    Vector3 pA(faultLine[0]);
-    Vector3 pB(faultLine[1]);
+void SliceTool::SliceParameters::updatePlaneParameters(const std::vector<Point3> &pts) {
+    std::cout << "updatePlaneParameters: " << pts.size() << " markers" << std::endl;
 
-    // half of strike vector
-    planeStrikeDirection = (pB - pA) * 0.5;
-    // midpoint of fault line / plane
+    faultCenter = Vector3(0,0,0);
+    if (!pts.empty()) {
+        for (size_t i=0; i < pts.size(); ++i)
+            faultCenter += Vector3(pts[i]);
+        faultCenter *= 1.0 / pts.size();
+    }
 
-    // radius vector (center of planet to midpoint of fault line) = normal (because planet center is at (0,0,0))
-    Vector3 n((pA + pB) * 0.5);
+    faultPlanes.clear();
+    separatingPlanes.clear();
 
-    // dip vector
-    planeDipDirection = cross(planeStrikeDirection, n);
-    planeDipDirection.normalize();
+    if (pts.size() < 2)
+        return;
 
-    // scale to same length as strike vector (for starters)
-    planeDipDirection *= planeStrikeDirection.mag();
-    // rotate around strike vector
-    planeDipDirection = Vrui::Rotation::rotateAxis(planeStrikeDirection, slopeAngleDegrees / 360.0 * 2 * M_PI).transform(planeDipDirection);
+    size_t nPlanes = pts.size() - 1;
 
+    for (size_t i=0; i < nPlanes; ++i) {
+        faultPlanes.push_back(Plane(Vector3(pts[i]), Vector3(pts[i+1]), slopeAngleDegrees));
+    }
 
+    for (size_t i=0; i < pts.size(); ++i) {
+        Vector3 n(0,0,0);
+        if (i == 0)
+            n = faultPlanes[i].normal;
+        else if (i == pts.size() - 1)
+            n = faultPlanes[i-1].normal;
+        else
+            n = 0.5 * (faultPlanes[i-1].normal + faultPlanes[i].normal);
+        n.normalize();
 
-    planeNormal = normalize(cross(planeStrikeDirection,planeDipDirection)); // recalculate normal
-    //double planeD = (pA - center) * n;  // plane distance from origin
-
-
+        separatingPlanes.push_back(Plane(Vector3(pts[i]), Vector3(pts[i]) + 1e6 * n, 270.0));
+    }
 }
 
-double SliceTool::SliceParameters::getPlaneDistanceFrom(Vector3 p) const {
-    return (faultLine[0] - p) * planeNormal;
-}
 
-Vector3 SliceTool::SliceParameters::getPlaneCenter() const {
-    return getPlaneDistanceFrom(Vector3(0,0,0)) * planeNormal;
-}
-
-Vector3 SliceTool::SliceParameters::getShiftVector() const {
+Vector3 SliceTool::SliceParameters::getShiftVector(const Plane &p) const {
     double strikeComponent = cos(angle / 360.0 * 2 * M_PI);
     double dipComponent = sin(angle / 360.0 * 2 * M_PI);
 
-    return Vector3(displacementAmount * strikeComponent * planeStrikeDirection +
-                   displacementAmount * dipComponent * planeDipDirection);
+    return Vector3(displacementAmount * strikeComponent * p.strikeDirection +
+                   displacementAmount * dipComponent * p.dipDirection);
 }
 
-Vector3 SliceTool::SliceParameters::getFaultCenter() const {
-    return 0.5 * (Vector3(faultLine[0]) + Vector3(faultLine[1]));
-}
-
-double SliceTool::SliceParameters::getFalloff() const {
-    return falloffFactor * (faultLine[0] - faultLine[1]).mag();
-}
 
 END_CRUSTA
