@@ -732,15 +732,18 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
             float d = length(p.xyz - sliceFaultCenter);\n\
             float lambda = clamp(2 * (sliceFalloff - d) / sliceFalloff, 0.0, 1.0);\n\
             float lambdaRest = 1.0;\n\
-            int pIdx = closestPlaneIdx;\n\
+            int pIdx = closestPlaneIdx;\n\  
+            vec4 dir;\n\
             while (lambdaRest > 0.0 && pIdx < numPlanes) {\n\
-                vec4 dir = vec4(sliceShiftVecs[pIdx], 0.0);\n\
+                dir = vec4(sliceShiftVecs[pIdx], 0.0);\n\
                 vec4 nextPlane = separatingPlanes[pIdx+1];\n\
                 float lambdaMax = -dot(nextPlane, p) / dot(nextPlane, dir);\n\
                 p = p + min(lambdaMax, lambdaRest) * dir;\n\
                 lambdaRest -= lambdaMax;\n\
                 pIdx++;\n\
             }\n\
+            if (lambdaRest > 0.0)\n\
+                p = p + lambdaRest * dir;\n\
             return p;\n\
         }\n\
         void main(void) {\n\
@@ -772,7 +775,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
                     float dst = dot(slicePlanes[i], gl_PositionIn[0]);\n\
                     float dstLeft = dot(separatingPlanes[i], gl_PositionIn[0]);\n\
                     float dstRight = dot(separatingPlanes[i+1], gl_PositionIn[0]);\n\
-                    if (dst > 0.0 && dst < minDist && dstLeft > 0.0 && dstRight < 0.0) {\n\
+                    if (dst > 0.0 && dst < minDist && (i == 0 || dstLeft > 0.0) && (i == (numPlanes-1) || dstRight < 0.0)) {\n\
                         closestPlaneIdx = i;\n\
                         minDist = dst;\n\
                         break;\n\
@@ -787,7 +790,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
                     dstColor = vec4(0,0,1,0);\n\
                 else if (closestPlaneIdx == 3)\n\
                     dstColor = vec4(0,1,1,0);\n\
-                dstColor *= 100000.0 / minDist;\n\
+                dstColor *= 50000.0 / minDist;\n\
                 for (i=0; i < gl_VerticesIn; i++) {\n\
                     gl_FrontColor = dstColor + gl_FrontColorIn[i];\n\
                     vec4 p = gl_PositionIn[i];\n\

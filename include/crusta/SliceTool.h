@@ -153,7 +153,7 @@ public:
 
         SliceParameters();
         // plane equations parameters (recalculated when values above change)
-        void updatePlaneParameters(const std::vector<Point3> &pts);
+        void updatePlaneParameters(const std::vector<Point3> &points);
 
         Vector3 getShiftVector(const Plane &p) const;
     };

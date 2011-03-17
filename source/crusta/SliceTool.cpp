@@ -413,7 +413,27 @@ const SliceTool::SliceParameters &SliceTool::getParameters() {
     return _sliceParameters;
 }
 
-void SliceTool::SliceParameters::updatePlaneParameters(const std::vector<Point3> &pts) {
+void SliceTool::SliceParameters::updatePlaneParameters(const std::vector<Point3> &points) {
+    faultPlanes.clear();
+    separatingPlanes.clear();
+
+    if (points.size() < 2)
+        return;
+
+    std::vector<Vector3> pts;
+    // project all points to average sphere
+    double radius = 0.0;
+    for (size_t i=0; i < points.size(); ++i)
+        radius += Vector3(points[i]).mag();
+
+    radius /= points.size();
+    for (size_t i=0; i < points.size(); ++i) {
+        Vector3 v = Vector3(points[i]);
+        v.normalize();
+        pts.push_back(radius * v);
+    }
+
+
     std::cout << "updatePlaneParameters: " << pts.size() << " markers" << std::endl;
 
     faultCenter = Vector3(0,0,0);
@@ -423,11 +443,6 @@ void SliceTool::SliceParameters::updatePlaneParameters(const std::vector<Point3>
         faultCenter *= 1.0 / pts.size();
     }
 
-    faultPlanes.clear();
-    separatingPlanes.clear();
-
-    if (pts.size() < 2)
-        return;
 
     size_t nPlanes = pts.size() - 1;
 
