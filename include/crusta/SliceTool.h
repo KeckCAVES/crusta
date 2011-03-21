@@ -87,8 +87,8 @@ protected:
     /** popup window for modifying the modes */
     GLMotif::PopupWindow* dialog;
 
-    GLMotif::TextField* displacementTextField;
-    GLMotif::TextField* angleTextField;
+    GLMotif::TextField* strikeAmountTextField;
+    GLMotif::TextField* dipAmountTextField;
     GLMotif::TextField* slopeAngleTextField;
 private:
     static Factory* factory;
@@ -101,8 +101,8 @@ public:
     virtual void frame();
     virtual void display(GLContextData& contextData) const;
 
-    virtual void angleSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
-    virtual void displacementSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
+    virtual void strikeAmountSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
+    virtual void dipAmountSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
 
     virtual void slopeAngleSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
     virtual void falloffSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
@@ -136,8 +136,8 @@ public:
 
     // FIXME: Does not allow for multiple instances
     struct SliceParameters {
-        double angle;
-        double displacementAmount;
+        double strikeAmount;
+        double dipAmount;
         double slopeAngleDegrees;
         double falloffFactor;
 
@@ -153,8 +153,6 @@ public:
         // plane equations parameters (recalculated when values above change)
         void updatePlaneParameters();
         Vector3 getShiftVector(const Plane &p) const;
-        double getStrikeShiftAmount() const;
-        double getDipShiftAmount() const;
     };
 
     static SliceParameters _sliceParameters;

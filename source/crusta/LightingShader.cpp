@@ -450,6 +450,7 @@ initUniforms(GLContextData& contextData)
     separatingPlanesUniform = glGetUniformLocation(programObject, "separatingPlanes");
     strikeShiftAmountUniform = glGetUniformLocation(programObject, "strikeShiftAmount");
     dipShiftAmountUniform = glGetUniformLocation(programObject, "dipShiftAmount");
+    slopeAngleUniform = glGetUniformLocation(programObject, "slopeAngle");
     slicePlaneCentersUniform = glGetUniformLocation(programObject, "slicePlaneCenters");
     sliceFaultCenterUniform = glGetUniformLocation(programObject, "sliceFaultCenter");
     sliceFalloffUniform     = glGetUniformLocation(programObject, "sliceFalloff");
@@ -710,6 +711,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
         uniform vec4 separatingPlanes[64];\n\
         uniform float strikeShiftAmount;\n\
         uniform float dipShiftAmount;\n\
+        uniform float slopeAngle;\n\
         uniform vec3 slicePlaneCenters[63];\n\
         uniform vec3 sliceFaultCenter;\n\
         uniform float sliceFalloff;\n\
@@ -759,9 +761,9 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
             float alphaRest = strikeShiftAmount;\n\
             int pIdx = closestPlaneIdx;\n\
             \n\
-            while (alphaRest > 0.0) {\n\
+            while (alphaRest >= 0.0) {\n\
                 vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
-                vec3 rotPlaneNormal = normalize(cross(p.xyz + center, faultLine));\n\
+                vec3 rotPlaneNormal = 0*slicePlanes[pIdx].xyz + 1* normalize(cross(p.xyz + center, faultLine));\n\
                 vec3 nextSepNormal = -separatingPlanes[pIdx+1].xyz;\n\
                 vec3 rotPlaneSepPlaneISect = normalize(cross(rotPlaneNormal, nextSepNormal));\n\
                 float sepAlpha = acos(dot(normalize(p.xyz + center), rotPlaneSepPlaneISect));\n\
@@ -770,8 +772,12 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
                     rotAngle = min(alphaRest, sepAlpha);\n\
                 p = vec4(rotAxisAngle(rotPlaneNormal, rotAngle, p.xyz + center) - center, 1);\n\
                 alphaRest -= rotAngle;\n\
-                if (alphaRest <= 0.0)\n\
-                    return p + vec4(500000.0 * dipShiftAmount * normalize(cross(slicePlanes[pIdx].xyz, normalize(faultLine))), 0);\n\
+                if (alphaRest <= 0.0) {\n\
+                    vec3 dipDir = rotAxisAngle(normalize(faultLine), slopeAngle, normalize(- (center + p.xyz)));\n\
+                    vec3 dipVec = 500000.0 * dipShiftAmount * normalize(cross(slicePlanes[pIdx].xyz, normalize(faultLine)));\n\
+                    dipVec = dipShiftAmount * dipDir;\n\
+                    return p + vec4(dipVec, 0);\n\
+                }\n\
                 pIdx++;\n\
             }\n\
         }\n\
@@ -786,7 +792,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
                     leftBitmap += bitVal;\n\
                 bitVal *= 2;\n\
             }\n\
-            if (strikeShiftAmount == 0)\n\
+            if (strikeShiftAmount == 0 && dipShiftAmount == 0)\n\
                 leftBitmap = 7;\n\
             if (leftBitmap == 0 || leftBitmap == 7) {\n\
                 float minDist = 1e9;\n\

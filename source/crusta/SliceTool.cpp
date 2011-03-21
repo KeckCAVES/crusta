@@ -57,27 +57,27 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     GLMotif::RowColumn* top = new GLMotif::RowColumn("SPTtop", dialog, false);
     top->setNumMinorWidgets(3);
 
-    new GLMotif::Label("Angle", top, "Displacement angle");
-    GLMotif::Slider *angleSlider = new GLMotif::Slider("DipSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    angleSlider->setValueRange(0, 360.0, 2.5);
-    angleSlider->getValueChangedCallbacks().add(this, &SliceTool::angleSliderCallback);
-    angleSlider->setValue(0.0);
+    new GLMotif::Label("StrikeAmount", top, "Strike");
+    GLMotif::Slider *strikeAmountSlider = new GLMotif::Slider("StrikeAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
+    strikeAmountSlider->setValueRange(0, 0.1 * 2 * M_PI, 0.0001 * 2 * M_PI);
+    strikeAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::strikeAmountSliderCallback);
+    strikeAmountSlider->setValue(0.0);
 
-    angleTextField = new GLMotif::TextField("angleTextField", top, 5);
-    angleTextField->setFloatFormat(GLMotif::TextField::FIXED);
-    angleTextField->setFieldWidth(2);
-    angleTextField->setPrecision(0);
+    strikeAmountTextField = new GLMotif::TextField("strikeAmountTextField", top, 5);
+    strikeAmountTextField->setFloatFormat(GLMotif::TextField::FIXED);
+    strikeAmountTextField->setFieldWidth(2);
+    strikeAmountTextField->setPrecision(0);
 
-    new GLMotif::Label("DisplacementLabel", top, "Displacement magnitude");
-    GLMotif::Slider *displacementSlider = new GLMotif::Slider("displacementSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    displacementSlider->setValueRange(0, 0.1 * M_PI,  0.00001 * M_PI);
-    displacementSlider->getValueChangedCallbacks().add(this, &SliceTool::displacementSliderCallback);
-    displacementSlider->setValue(0.0);
+    new GLMotif::Label("dipAmountLabel", top, "Dip");
+    GLMotif::Slider *dipAmountSlider = new GLMotif::Slider("dipAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
+    dipAmountSlider->setValueRange(0, 1e5, 100);
+    dipAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::dipAmountSliderCallback);
+    dipAmountSlider->setValue(0.0);
 
-    displacementTextField = new GLMotif::TextField("displacemenTextField", top, 5);
-    displacementTextField->setFloatFormat(GLMotif::TextField::FIXED);
-    displacementTextField->setFieldWidth(2);
-    displacementTextField->setPrecision(0);
+    dipAmountTextField = new GLMotif::TextField("dipAmountextField", top, 5);
+    dipAmountTextField->setFloatFormat(GLMotif::TextField::FIXED);
+    dipAmountTextField->setFieldWidth(2);
+    dipAmountTextField->setPrecision(0);
 
 
 
@@ -87,7 +87,7 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     slopeAngleSlider->getValueChangedCallbacks().add(this, &SliceTool::slopeAngleSliderCallback);
     slopeAngleSlider->setValue(90.0);
 
-    slopeAngleTextField = new GLMotif::TextField("displacemenTextField", top, 10);
+    slopeAngleTextField = new GLMotif::TextField("dipAmountextField", top, 10);
     slopeAngleTextField->setFloatFormat(GLMotif::TextField::FIXED);
     slopeAngleTextField->setFieldWidth(2);
     slopeAngleTextField->setPrecision(0);
@@ -107,21 +107,21 @@ SliceTool(const Vrui::ToolFactory* iFactory,
 
 void SliceTool::updateTextFields() {
      //displacementTextField->setValue(_sliceParameters.getShiftVector().mag());
-     angleTextField->setValue(_sliceParameters.angle);
+     strikeAmountTextField->setValue(_sliceParameters.strikeAmount);
      slopeAngleTextField->setValue(_sliceParameters.slopeAngleDegrees);
 }
 
-void SliceTool::angleSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
+void SliceTool::strikeAmountSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
-    _sliceParameters.angle = Vrui::Scalar(cbData->value);
+    _sliceParameters.strikeAmount = Vrui::Scalar(cbData->value);
     _sliceParameters.updatePlaneParameters();
     updateTextFields();
     Vrui::requestUpdate();
 }
 
-void SliceTool::displacementSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
+void SliceTool::dipAmountSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
-    _sliceParameters.displacementAmount = Vrui::Scalar(cbData->value);
+    _sliceParameters.dipAmount = Vrui::Scalar(cbData->value);
     _sliceParameters.updatePlaneParameters();
     updateTextFields();
     Vrui::requestUpdate();
@@ -157,8 +157,8 @@ init()
     //_sliceParameters.controlPoints.push_back(Point3(6371000,0,0));
     //_sliceParameters.controlPoints.push_back(Point3(0,6371000,0));
 
-    _sliceParameters.angle = 0.0;
-    _sliceParameters.displacementAmount = 0.0;
+    _sliceParameters.strikeAmount = 0.0;
+    _sliceParameters.dipAmount = 0.0;
     _sliceParameters.slopeAngleDegrees = 90.0;
     _sliceParameters.falloffFactor = 1.0;
     _sliceParameters.updatePlaneParameters();
@@ -386,14 +386,14 @@ SliceTool::Plane::Plane(const Vector3 &a, const Vector3 &b, double slopeAngleDeg
 
     // rotate normal by 90 degrees around strike dir, now it's the tangential (horizon) plane
     // additionally, rotate by given slope angle
-    normal = Vrui::Rotation::rotateAxis(strikeDirection, (90.0 + slopeAngleDegrees) / 360.0 * 2 * M_PI).transform(normal);
+    normal = Vrui::Rotation::rotateAxis(strikeDirection, (90.0 + 90.0) / 360.0 * 2 * M_PI).transform(normal);
     normal.normalize();
 
     // dip vector
     dipDirection = cross(strikeDirection, normal);
     dipDirection.normalize(); // just to be sure :)
 
-    distance = startPoint * normal;
+    distance = -startPoint * normal;
 }
 
 SliceTool::Plane::Plane(const Vector3 &a, const Vector3 &b) : startPoint(a), endPoint(b) {
@@ -480,21 +480,8 @@ void SliceTool::SliceParameters::updatePlaneParameters() {
 
 
 Vector3 SliceTool::SliceParameters::getShiftVector(const Plane &p) const {
-    double strikeComponent = cos(angle / 360.0 * 2 * M_PI);
-    double dipComponent = sin(angle / 360.0 * 2 * M_PI);
-
-    return Vector3(displacementAmount * strikeComponent * p.strikeDirection +
-                   displacementAmount * dipComponent * p.dipDirection);
-}
-
-double SliceTool::SliceParameters::getStrikeShiftAmount() const {
-    double strikeComponent = cos(angle / 360.0 * 2 * M_PI);
-    return displacementAmount * strikeComponent;
-}
-
-double SliceTool::SliceParameters::getDipShiftAmount() const {
-    double dipComponent = sin(angle / 360.0 * 2 * M_PI);
-    return displacementAmount * dipComponent;
+    return Vector3(strikeAmount * p.strikeDirection +
+                   dipAmount * p.dipDirection);
 }
 
 END_CRUSTA

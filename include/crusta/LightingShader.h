@@ -89,6 +89,7 @@ class LightingShader
     //GLint sliceShiftVecsUniform;
     GLint strikeShiftAmountUniform;
     GLint dipShiftAmountUniform;
+    GLint slopeAngleUniform;
     GLint slicePlaneCentersUniform;
     GLint sliceFaultCenterUniform;
     GLint sliceFalloffUniform;
@@ -136,6 +137,7 @@ class LightingShader
         demDefaultUniform   = -2;
 
         slicePlanesUniform = separatingPlanesUniform = strikeShiftAmountUniform = dipShiftAmountUniform = slicePlaneCentersUniform = -2;
+        slopeAngleUniform = -2;
         faultLineControlPointsUniform = -2;
     }
 
@@ -168,7 +170,7 @@ class LightingShader
 
     // planes are stored as contiguous 4-tuples of (nx,ny,ny,distance_to_origin)
     // they are assumed to be relative the centroid of this tile
-    void setSlicePlanes(int numPlanes, float faultLineControlPoints[3*64], float planes[4*63], float separatingPlanes[4*64], double strikeShiftAmount, double dipShiftAmount, Vector3 planeCenters[63], Vector3 faultCenter, double falloff) {
+    void setSlicePlanes(int numPlanes, float faultLineControlPoints[3*64], float planes[4*63], float separatingPlanes[4*64], double strikeShiftAmount, double dipShiftAmount, double slopeAngle, Vector3 planeCenters[63], Vector3 faultCenter, double falloff) {
         glUniform1i(numPlanesUniform, numPlanes);
 
         int numPoints = numPlanes ? (numPlanes+1) : 0;
@@ -178,6 +180,7 @@ class LightingShader
 
         glUniform1f(strikeShiftAmountUniform, strikeShiftAmount);        
         glUniform1f(dipShiftAmountUniform, dipShiftAmount);
+        glUniform1f(slopeAngleUniform, slopeAngle);
 
         float pc[3*63];
         for (int i=0; i < numPlanes; ++i) {
