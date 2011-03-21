@@ -70,7 +70,7 @@ SliceTool(const Vrui::ToolFactory* iFactory,
 
     new GLMotif::Label("DisplacementLabel", top, "Displacement magnitude");
     GLMotif::Slider *displacementSlider = new GLMotif::Slider("displacementSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    displacementSlider->setValueRange(0, 1e6, 1e3);
+    displacementSlider->setValueRange(0, 0.1 * M_PI,  0.00001 * M_PI);
     displacementSlider->getValueChangedCallbacks().add(this, &SliceTool::displacementSliderCallback);
     displacementSlider->setValue(0.0);
 
@@ -396,6 +396,20 @@ SliceTool::Plane::Plane(const Vector3 &a, const Vector3 &b, double slopeAngleDeg
     distance = startPoint * normal;
 }
 
+SliceTool::Plane::Plane(const Vector3 &a, const Vector3 &b) : startPoint(a), endPoint(b) {
+    strikeDirection = endPoint - startPoint;
+    strikeDirection.normalize();
+
+    normal = -cross(a, b);
+    normal.normalize();
+
+    // dip vector
+    dipDirection = Vector3(-0.5 * (a+b));
+    dipDirection.normalize();
+
+    distance = 0;
+}
+
 double SliceTool::Plane::getPointDistance(const Vector3 &point) const {
     return normal * point - distance;
 }
@@ -459,7 +473,8 @@ void SliceTool::SliceParameters::updatePlaneParameters() {
             n = 0.5 * (faultPlanes[i-1].normal + faultPlanes[i].normal);
         n.normalize();
 
-        separatingPlanes.push_back(Plane(Vector3(pts[i]), Vector3(pts[i]) + 1e6 * n, 270.0));
+        // separatingPlanes.push_back(Plane(Vector3(pts[i]), Vector3(pts[i]) + 1e6 * n, 270.0));
+        separatingPlanes.push_back(Plane(Vector3(pts[i]), Vector3(pts[i]) + 1e6 * n));
     }
 }
 
@@ -472,5 +487,14 @@ Vector3 SliceTool::SliceParameters::getShiftVector(const Plane &p) const {
                    displacementAmount * dipComponent * p.dipDirection);
 }
 
+double SliceTool::SliceParameters::getStrikeShiftAmount() const {
+    double strikeComponent = cos(angle / 360.0 * 2 * M_PI);
+    return displacementAmount * strikeComponent;
+}
+
+double SliceTool::SliceParameters::getDipShiftAmount() const {
+    double dipComponent = sin(angle / 360.0 * 2 * M_PI);
+    return displacementAmount * dipComponent;
+}
 
 END_CRUSTA

@@ -117,8 +117,10 @@ public:
     virtual void setupComponent(Crusta* crusta);
 
     struct Plane {
-        // fault line (segment) between points a and b
+        // fault line (segment) between points a and b with given slope
         Plane(const Vector3 &a, const Vector3 &b, double slopeAngleDegrees);
+        // plane through 2 points and planet center (intersection with planet is great circle)
+        Plane(const Vector3 &a, const Vector3 &b);
         double getPointDistance(const Vector3 &point) const;
         Vector3 getPlaneCenter() const;
 
@@ -150,8 +152,9 @@ public:
         SliceParameters();
         // plane equations parameters (recalculated when values above change)
         void updatePlaneParameters();
-
         Vector3 getShiftVector(const Plane &p) const;
+        double getStrikeShiftAmount() const;
+        double getDipShiftAmount() const;
     };
 
     static SliceParameters _sliceParameters;

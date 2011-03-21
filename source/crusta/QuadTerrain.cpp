@@ -388,11 +388,51 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
     std::vector<float> slicePlanes;
     std::vector<float> controlPoints;
     std::vector<float> separatingPlanes;
-    std::vector<Vector3> shiftVecs;
+    //std::vector<Vector3> shiftVecs;
     std::vector<Vector3> planeCenters;
 
     // assert(params.faultPlanes.size() + 1 == params.separatingPlanes.size());
 
+    for (size_t i=0; i < params.faultPlanes.size(); ++i) {
+        Vector3 ctrlA = Vector3(params.controlPoints[i]);
+        Vector3 ctrlB = Vector3(params.controlPoints[i+1]);
+
+        const SliceTool::Plane &faultPlane = params.faultPlanes[i];
+        const SliceTool::Plane &sepA = params.separatingPlanes[i];
+        const SliceTool::Plane &sepb = params.separatingPlanes[i+1];
+
+        int jMax = (i == params.faultPlanes.size() - 1) ? 1 : 0; // include last control point in last interval
+        for (size_t j=0; j <= jMax; ++j) {
+            // linear interpolation for now
+            double lambda = j / 1.0;
+            // control point
+            Vector3 ctrlP = ctrlA + lambda * (ctrlB - ctrlA);
+            controlPoints.push_back(ctrlP[0] - center[0]);
+            controlPoints.push_back(ctrlP[1] - center[1]);
+            controlPoints.push_back(ctrlP[2] - center[2]);
+
+            // fault plane
+            double distance = -faultPlane.distance - faultPlane.normal * center;
+
+            slicePlanes.push_back(faultPlane.normal[0]);
+            slicePlanes.push_back(faultPlane.normal[1]);
+            slicePlanes.push_back(faultPlane.normal[2]);
+            slicePlanes.push_back(-distance);
+
+            //shiftVecs.push_back(params.getShiftVector(faultPlane));
+            planeCenters.push_back(faultPlane.getPlaneCenter() - center);
+
+            // separating planes
+            distance = -sepA.distance + sepA.normal * (-center + ctrlP - ctrlA);
+
+            separatingPlanes.push_back(sepA.normal[0]);
+            separatingPlanes.push_back(sepA.normal[1]);
+            separatingPlanes.push_back(sepA.normal[2]);
+            separatingPlanes.push_back(-distance);
+        }
+    }
+
+    /*
     for (size_t i=0; i < params.faultPlanes.size(); ++i) {
         const SliceTool::Plane &p = params.faultPlanes[i];
 
@@ -422,8 +462,11 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
         separatingPlanes.push_back(p.normal[2]);
         separatingPlanes.push_back(-distance);
     }
+*/
+    std::cout << "ctrl points: " << controlPoints.size() << std::endl;
 
-    crustaGl->terrainShader.setSlicePlanes(params.faultPlanes.size(), &(controlPoints[0]), &(slicePlanes[0]), &(separatingPlanes[0]), &(shiftVecs[0]),
+    crustaGl->terrainShader.setSlicePlanes(params.faultPlanes.size(), &(controlPoints[0]), &(slicePlanes[0]), &(separatingPlanes[0]),
+                                           params.getStrikeShiftAmount(), params.getDipShiftAmount(),
                                            &(planeCenters[0]), params.faultCenter - center, params.falloffFactor * 1e6);
 
     //crustaGl->terrainShader.disable();
@@ -591,6 +634,27 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         glEnd();
     }
 
+    for (size_t i=0; i < params.faultPlanes.size(); ++i) {
+        const SliceTool::Plane &p = params.faultPlanes[i];
+
+        glLineWidth(5.0);
+        glColor3f(1,1,0);
+
+        glBegin(GL_LINE_STRIP);
+        // line segment
+        Vector3 A = p.startPoint;
+        Vector3 B = p.endPoint;
+
+        double omega = acos(A.normalize() * B.normalize());
+
+        for (size_t i=0; i < 64; ++i) {
+            double t = i / 63.0;
+            Vector3 pt = (1.0 / sin(omega)) * (sin((1-t)*omega) * p.startPoint + sin(t * omega) * p.endPoint);
+            glVertex3f(pt[0], pt[1], pt[2]);
+        }
+
+        glEnd();
+    }
     for (size_t i=0; i < params.separatingPlanes.size(); ++i) {
         const SliceTool::Plane &p = params.separatingPlanes[i];
 
@@ -601,7 +665,7 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         glLineWidth(5.0);
         glBegin(GL_LINES);
         // line segment
-        glColor3f(1,1,1);
+        glColor3f(1,0,1);
         glVertex3f(p.startPoint[0], p.startPoint[1], p.startPoint[2]);
         glVertex3f(p.endPoint[0], p.endPoint[1], p.endPoint[2]);
         // normal
@@ -610,7 +674,73 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         glVertex3f(c2[0], c2[1], c2[2]);
         glEnd();
     }
+    // great circle test
+    if (params.faultPlanes.size() > 1) {
+        const SliceTool::Plane &p = params.faultPlanes[0];
 
+        glLineWidth(5.0);
+        glColor3f(1,1,0);
+
+        glBegin(GL_LINE_STRIP);
+        // line segment
+        Vector3 A = p.startPoint;
+        Vector3 B = p.endPoint;
+        A.normalize();
+        B.normalize();
+
+        Vector3 rotAxis = B - A;
+        rotAxis.normalize();
+
+        // normal vector of plane containing segment and planet center
+        Vector3 n = cross(Vector3(params.controlPoints[0]), Vector3(params.controlPoints[1]));
+        n.normalize();
+
+        // the point we want to find the great arc for
+        Vector3 p1 = Vector3(params.controlPoints[2]);
+
+        // find the great arc as the plane which contains the planet center, p1 and a point offset from the center parallel to the segment dir
+        Vector3 newN = cross(p1, Vector3(params.controlPoints[1]) - Vector3(params.controlPoints[0]));
+        newN.normalize();
+
+        // determine the angle of rotation between the two great arcs (the angle between the plane normals)
+        double angle = acos(n * newN);
+
+
+        Vector3 p2 = p1 - (n * p1) * p1 / (p1.mag() * p1.mag());
+
+
+        glVertex3f(p1[0], p1[1], p1[2]);
+        glVertex3f(p2[0], p2[1], p2[2]);
+        p1.normalize();
+        p2.normalize();
+       // double angle = acos(p1 * p2);
+
+        double omega = acos(A * B);
+        glEnd();
+         glBegin(GL_LINE_STRIP);
+        for (size_t i=0; i < 64; ++i) {
+            double t = i / 63.0;
+            Vector3 pt = (1.0 / sin(omega)) * (sin((1-t)*omega) * p.startPoint + sin(t * omega) * p.endPoint);
+            pt = Vrui::Rotation::rotateAxis(rotAxis, -angle).transform(pt);
+            glVertex3f(pt[0], pt[1], pt[2]);
+        }
+
+        glEnd();
+
+        glColor3f(1,0,0);
+
+        Vector3 isectVec = cross(newN, -params.separatingPlanes[1].normal);
+        isectVec.normalize();
+        isectVec *= 1e8;
+
+
+        glBegin(GL_LINES);
+        glVertex3f(0,0,0);
+        glVertex3f(isectVec[0], isectVec[1], isectVec[2]);
+        glEnd();
+
+        // float sepAlpha = acos(dot(normalize(p.xyz + center), rotPlaneSepPlaneISect));
+    }
 
     glEnable(GL_LIGHTING);
     glEnable(GL_DEPTH_TEST);
