@@ -447,11 +447,12 @@ initUniforms(GLContextData& contextData)
     numPlanesUniform =  glGetUniformLocation(programObject, "numPlanes");
     faultLineControlPointsUniform = glGetUniformLocation(programObject, "faultLineControlPoints");
     slicePlanesUniform = glGetUniformLocation(programObject, "slicePlanes");
+    slopePlanesUniform = glGetUniformLocation(programObject, "slopePlanes");
     separatingPlanesUniform = glGetUniformLocation(programObject, "separatingPlanes");
     strikeShiftAmountUniform = glGetUniformLocation(programObject, "strikeShiftAmount");
     dipShiftAmountUniform = glGetUniformLocation(programObject, "dipShiftAmount");
     slopeAngleUniform = glGetUniformLocation(programObject, "slopeAngle");
-    slicePlaneCentersUniform = glGetUniformLocation(programObject, "slicePlaneCenters");
+    slopePlaneCentersUniform = glGetUniformLocation(programObject, "slopePlaneCenters");
     sliceFaultCenterUniform = glGetUniformLocation(programObject, "sliceFaultCenter");
     sliceFalloffUniform     = glGetUniformLocation(programObject, "sliceFalloff");
 
@@ -709,17 +710,18 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
         uniform vec4 slicePlanes[63];\n\
         uniform vec3 faultLineControlPoints[64];\n\
         uniform vec4 separatingPlanes[64];\n\
+        uniform vec4 slopePlanes[63];\n\
         uniform float strikeShiftAmount;\n\
         uniform float dipShiftAmount;\n\
         uniform float slopeAngle;\n\
-        uniform vec3 slicePlaneCenters[63];\n\
+        uniform vec3 slopePlaneCenters[63];\n\
         uniform vec3 sliceFaultCenter;\n\
         uniform float sliceFalloff;\n\
         uniform vec3 center;\n\
         int closestPlaneIdx;\n\
         \n\
         vec4 isect(vec4 a, vec4 b) {\n\
-            float lambda = -dot(slicePlanes[0], vec4(a.xyz,1)) / dot(slicePlanes[0], vec4((b-a).xyz, 0));\n\
+            float lambda = -dot(slicePlanes[closestPlaneIdx], vec4(a.xyz,1)) / dot(slicePlanes[closestPlaneIdx], vec4((b-a).xyz, 0));\n\
             return a + lambda * (b-a);\n\
         }\n\
         void tri(vec4 a, vec4 b, vec4 c, vec4 col) {\n\
@@ -732,7 +734,12 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
             EndPrimitive();\n\
         }\n\
         void quad(vec4 a, vec4 b, vec4 col) {\n\
-            tri(b,a, vec4(slicePlaneCenters[0], 1), col);\n\
+            vec3 c = slopePlaneCenters[closestPlaneIdx];\n\
+            vec3 normal = -normalize(gl_NormalMatrix * cross(a.xyz - c, b.xyz - c));\n\
+            normal = normalize(gl_NormalMatrix * slopePlanes[closestPlaneIdx].xyz);\n\
+            float diffuse = max(0.0, dot(normal, normalize(gl_LightSource[0].position.xyz)));\n\
+            gl_FrontColor = 1.0 * vec4(0.6,0.6,1.0,0);\n\
+            tri(b,a, vec4(c, 1), col);\n\
         }\n\
         vec3 slerp(vec3 p0, vec3 p1, float t) {\n\
             float omega = acos(dot(normalize(p0), normalize(p1)));\n\
@@ -755,7 +762,25 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
             \n\
             return rotmat * p;\n\
         }\n\
+        void findClosestPlaneIdx(vec4 p) {\n\
+           closestPlaneIdx = -1;\n\
+           float minDist = 1e9;\n\
+           \n\
+           for (int i=0; i < numPlanes; i++) {\n\
+              float dst = dot(slicePlanes[i], p);\n\
+              float dstLeft = dot(separatingPlanes[i], p);\n\
+              float dstRight = dot(separatingPlanes[i+1], p);\n\
+              \n\
+              if (dst > 0.0 && dst < minDist && (i == 0 || dstLeft > 0.0) && (i == (numPlanes-1) || dstRight < 0.0)) {\n\
+                closestPlaneIdx = i;\n\
+                minDist = dst;\n\
+                break;\n\
+              }\n\
+            }\n\
+        }\n\
         vec4 shift(vec4 p) {\n\
+            if (closestPlaneIdx == -1)\n\
+                return p;\n\
             float d = length(p.xyz - sliceFaultCenter);\n\
             float lambda = clamp(2 * (sliceFalloff - d) / sliceFalloff, 0.0, 1.0);\n\
             float alphaRest = strikeShiftAmount;\n\
@@ -785,38 +810,23 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
             int i;\n\
             int leftBitmap = 0;\n\
             int bitVal = 1;\n\
-            for (i=0; i < gl_VerticesIn; i++) {\n\
-                vec4 p = gl_PositionIn[i];\n\
-                float slicePlaneDst = dot(slicePlanes[0], p);\n\
-                if (slicePlaneDst < 0.0)\n\
-                    leftBitmap += bitVal;\n\
-                bitVal *= 2;\n\
-            }\n\
-            if (strikeShiftAmount == 0 && dipShiftAmount == 0)\n\
+            findClosestPlaneIdx(gl_PositionIn[0]);\n\
+            if (closestPlaneIdx == -1)\n\
+                findClosestPlaneIdx(gl_PositionIn[1]);\n\
+            if (closestPlaneIdx == -1)\n\
+                findClosestPlaneIdx(gl_PositionIn[2]);\n\
+            if (strikeShiftAmount == 0 && dipShiftAmount == 0 || closestPlaneIdx == -1) {\n\
                 leftBitmap = 7;\n\
+            } else {\n\
+                for (i=0; i < gl_VerticesIn; i++) {\n\
+                    vec4 p = gl_PositionIn[i];\n\
+                    float slicePlaneDst = dot(slicePlanes[closestPlaneIdx], p);\n\
+                    if (slicePlaneDst < 0.0)\n\
+                        leftBitmap += bitVal;\n\
+                    bitVal *= 2;\n\
+                }\n\
+            }\n\
             if (leftBitmap == 0 || leftBitmap == 7) {\n\
-                float minDist = 1e9;\n\
-                closestPlaneIdx = -1;\n\
-                for (int i=0; i < numPlanes; i++) {\n\
-                    float dst = dot(slicePlanes[i], gl_PositionIn[0]);\n\
-                    if (dst > 0.0 && dst < minDist) {\n\
-                        minDist = dst;\n\
-                        closestPlaneIdx = i;\n\
-                    }\n\
-                }\n\
-                closestPlaneIdx = -1;\n\
-                minDist = 1e9;\n\
-                for (int i=0; i < numPlanes; i++) {\n\
-                    float dst = dot(slicePlanes[i], gl_PositionIn[0]);\n\
-                    float dstLeft = dot(separatingPlanes[i], gl_PositionIn[0]);\n\
-                    float dstRight = dot(separatingPlanes[i+1], gl_PositionIn[0]);\n\
-                    \n\
-                    if (dst > 0.0 && dst < minDist && (i == 0 || dstLeft > 0.0) && (i == (numPlanes-1) || dstRight < 0.0)) {\n\
-                        closestPlaneIdx = i;\n\
-                        minDist = dst;\n\
-                        break;\n\
-                    }\n\
-                }\n\
                 vec4 dstColor = vec4(0,0,0,0);\n\
                 if (closestPlaneIdx == 0)\n\
                     dstColor = vec4(1,0,0,0);\n\
@@ -826,7 +836,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
                     dstColor = vec4(0,0,1,0);\n\
                 else if (closestPlaneIdx == 3)\n\
                     dstColor = vec4(0,1,1,0);\n\
-                dstColor *= 50000.0 / minDist;\n\
+                dstColor *= 0;\n\
                 for (i=0; i < gl_VerticesIn; i++) {\n\
                     gl_FrontColor = dstColor + gl_FrontColorIn[i];\n\
                     vec4 p = gl_PositionIn[i];\n\
@@ -835,16 +845,6 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
                     gl_Position = gl_ModelViewProjectionMatrix * p;\n\
                     EmitVertex();\n\
                 }\n\
-                return;\n\
-                for (i=0; i < gl_VerticesIn; i++) {\n\
-                    gl_FrontColor = dstColor + gl_FrontColorIn[i];\n\
-                    vec4 p = gl_PositionIn[i];\n\
-                    if (leftBitmap == 0)\n\
-                        p = shift(p);\n\
-                    gl_Position = gl_ModelViewProjectionMatrix * p;\n\
-                    EmitVertex();\n\
-                }\n\
-                EndPrimitive();\n\
                 return;\n\
             }\n\
             vec4 a = gl_PositionIn[0];\n\

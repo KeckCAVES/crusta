@@ -86,11 +86,11 @@ class LightingShader
     GLint numPlanesUniform;
     GLint slicePlanesUniform;
     GLint separatingPlanesUniform;
-    //GLint sliceShiftVecsUniform;
+    GLint slopePlanesUniform;
     GLint strikeShiftAmountUniform;
     GLint dipShiftAmountUniform;
     GLint slopeAngleUniform;
-    GLint slicePlaneCentersUniform;
+    GLint slopePlaneCentersUniform;
     GLint sliceFaultCenterUniform;
     GLint sliceFalloffUniform;
     GLint faultLineControlPointsUniform;
@@ -136,8 +136,9 @@ class LightingShader
         layerfNodataUniform = -2;
         demDefaultUniform   = -2;
 
-        slicePlanesUniform = separatingPlanesUniform = strikeShiftAmountUniform = dipShiftAmountUniform = slicePlaneCentersUniform = -2;
+        slicePlanesUniform = separatingPlanesUniform = strikeShiftAmountUniform = dipShiftAmountUniform = slopePlaneCentersUniform = -2;
         slopeAngleUniform = -2;
+        slopePlanesUniform = -2;
         faultLineControlPointsUniform = -2;
     }
 
@@ -170,13 +171,14 @@ class LightingShader
 
     // planes are stored as contiguous 4-tuples of (nx,ny,ny,distance_to_origin)
     // they are assumed to be relative the centroid of this tile
-    void setSlicePlanes(int numPlanes, float faultLineControlPoints[3*64], float planes[4*63], float separatingPlanes[4*64], double strikeShiftAmount, double dipShiftAmount, double slopeAngle, Vector3 planeCenters[63], Vector3 faultCenter, double falloff) {
+    void setSlicePlanes(int numPlanes, float faultLineControlPoints[3*64], float planes[4*63], float separatingPlanes[4*64], float slopePlanes[4*63], double strikeShiftAmount, double dipShiftAmount, double slopeAngle, Vector3 planeCenters[63], Vector3 faultCenter, double falloff) {
         glUniform1i(numPlanesUniform, numPlanes);
 
         int numPoints = numPlanes ? (numPlanes+1) : 0;
         glUniform3fv(faultLineControlPointsUniform, numPoints, faultLineControlPoints);
         glUniform4fv(slicePlanesUniform, numPlanes, planes);
         glUniform4fv(separatingPlanesUniform, numPoints, separatingPlanes);
+        glUniform4fv(slopePlanesUniform, numPlanes, slopePlanes);
 
         glUniform1f(strikeShiftAmountUniform, strikeShiftAmount);        
         glUniform1f(dipShiftAmountUniform, dipShiftAmount);
@@ -189,7 +191,7 @@ class LightingShader
             pc[3*i+2] = planeCenters[i][2];
         }
 
-        glUniform3fv(slicePlaneCentersUniform, numPlanes, pc);
+        glUniform3fv(slopePlaneCentersUniform, numPlanes, pc);
 
         float fc[3] = { faultCenter[0], faultCenter[1], faultCenter[2] };
         glUniform3fv(sliceFaultCenterUniform, 1, fc);

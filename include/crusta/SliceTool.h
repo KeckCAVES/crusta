@@ -148,6 +148,7 @@ public:
 
         std::vector<Plane> faultPlanes;
         std::vector<Plane> separatingPlanes;
+        std::vector<Plane> slopePlanes;
 
         SliceParameters();
         // plane equations parameters (recalculated when values above change)

@@ -59,7 +59,7 @@ SliceTool(const Vrui::ToolFactory* iFactory,
 
     new GLMotif::Label("StrikeAmount", top, "Strike");
     GLMotif::Slider *strikeAmountSlider = new GLMotif::Slider("StrikeAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    strikeAmountSlider->setValueRange(0, 0.1 * 2 * M_PI, 0.0001 * 2 * M_PI);
+    strikeAmountSlider->setValueRange(0, 0.1 * 2 * M_PI, 0.00001 * 2 * M_PI);
     strikeAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::strikeAmountSliderCallback);
     strikeAmountSlider->setValue(0.0);
 
@@ -383,10 +383,12 @@ SliceTool::Plane::Plane(const Vector3 &a, const Vector3 &b, double slopeAngleDeg
 
     // radius vector (center of planet to midpoint of fault line) = normal (because planet center is at (0,0,0))
     normal = cross(strikeDirection, startPoint); // normal of plane containing point and planet center
+    normal.normalize();
 
     // rotate normal by 90 degrees around strike dir, now it's the tangential (horizon) plane
     // additionally, rotate by given slope angle
-    normal = Vrui::Rotation::rotateAxis(strikeDirection, (90.0 + 90.0) / 360.0 * 2 * M_PI).transform(normal);
+
+    normal = Vrui::Rotation::rotateAxis(strikeDirection, (90.0 + slopeAngleDegrees) / 360.0 * 2 * M_PI).transform(normal);
     normal.normalize();
 
     // dip vector
@@ -429,6 +431,7 @@ const SliceTool::SliceParameters &SliceTool::getParameters() {
 void SliceTool::SliceParameters::updatePlaneParameters() {
     faultPlanes.clear();
     separatingPlanes.clear();
+    slopePlanes.clear();
 
     if (controlPoints.size() < 2)
         return;
@@ -447,8 +450,6 @@ void SliceTool::SliceParameters::updatePlaneParameters() {
     }
 
 
-    std::cout << "updatePlaneParameters: " << pts.size() << " markers" << std::endl;
-
     faultCenter = Vector3(0,0,0);
     if (!pts.empty()) {
         for (size_t i=0; i < pts.size(); ++i)
@@ -460,7 +461,8 @@ void SliceTool::SliceParameters::updatePlaneParameters() {
     size_t nPlanes = pts.size() - 1;
 
     for (size_t i=0; i < nPlanes; ++i) {
-        faultPlanes.push_back(Plane(Vector3(pts[i]), Vector3(pts[i+1]), slopeAngleDegrees));
+        faultPlanes.push_back(Plane(Vector3(pts[i]), Vector3(pts[i+1]), 90));
+        slopePlanes.push_back(Plane(Vector3(pts[i]), Vector3(pts[i+1]), slopeAngleDegrees));
     }
 
     for (size_t i=0; i < pts.size(); ++i) {
@@ -473,7 +475,6 @@ void SliceTool::SliceParameters::updatePlaneParameters() {
             n = 0.5 * (faultPlanes[i-1].normal + faultPlanes[i].normal);
         n.normalize();
 
-        // separatingPlanes.push_back(Plane(Vector3(pts[i]), Vector3(pts[i]) + 1e6 * n, 270.0));
         separatingPlanes.push_back(Plane(Vector3(pts[i]), Vector3(pts[i]) + 1e6 * n));
     }
 }

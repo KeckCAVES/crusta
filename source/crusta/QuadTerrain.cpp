@@ -388,6 +388,7 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
     std::vector<float> slicePlanes;
     std::vector<float> controlPoints;
     std::vector<float> separatingPlanes;
+    std::vector<float> slopePlanes;
     //std::vector<Vector3> shiftVecs;
     std::vector<Vector3> planeCenters;
 
@@ -398,9 +399,10 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
         Vector3 ctrlB = Vector3(params.controlPoints[i+1]);
 
         const SliceTool::Plane &faultPlane = params.faultPlanes[i];
+        const SliceTool::Plane &slopePlane = params.slopePlanes[i];
         const SliceTool::Plane &sepA = params.separatingPlanes[i];
         const SliceTool::Plane &sepb = params.separatingPlanes[i+1];
-
+        
         int jMax = (i == params.faultPlanes.size() - 1) ? 1 : 0; // include last control point in last interval
         for (size_t j=0; j <= jMax; ++j) {
             // linear interpolation for now
@@ -419,9 +421,14 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
             slicePlanes.push_back(faultPlane.normal[2]);
             slicePlanes.push_back(-distance);
 
-            //shiftVecs.push_back(params.getShiftVector(faultPlane));
-            planeCenters.push_back(faultPlane.getPlaneCenter() - center);
+            distance = -slopePlane.distance - slopePlane.normal * center;
 
+            slopePlanes.push_back(slopePlane.normal[0]);
+            slopePlanes.push_back(slopePlane.normal[1]);
+            slopePlanes.push_back(slopePlane.normal[2]);
+            slopePlanes.push_back(-distance);
+
+            planeCenters.push_back(slopePlane.getPlaneCenter() - center);
             // separating planes
             distance = -sepA.distance + sepA.normal * (-center + ctrlP - ctrlA);
 
@@ -463,9 +470,9 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
         separatingPlanes.push_back(-distance);
     }
 */
-    std::cout << "ctrl points: " << controlPoints.size() << std::endl;
 
-    crustaGl->terrainShader.setSlicePlanes(params.faultPlanes.size(), &(controlPoints[0]), &(slicePlanes[0]), &(separatingPlanes[0]),
+
+    crustaGl->terrainShader.setSlicePlanes(params.faultPlanes.size(), &(controlPoints[0]), &(slicePlanes[0]), &(separatingPlanes[0]), &(slopePlanes[0]),
                                            params.strikeAmount, params.dipAmount, (params.slopeAngleDegrees - 90.0) * (2*M_PI) / 360.0,
                                            &(planeCenters[0]), params.faultCenter - center, params.falloffFactor * 1e6);
 
@@ -734,10 +741,10 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         isectVec *= 1e8;
 
 
-        glBegin(GL_LINES);
-        glVertex3f(0,0,0);
-        glVertex3f(isectVec[0], isectVec[1], isectVec[2]);
-        glEnd();
+        //glBegin(GL_LINES);
+       // glVertex3f(0,0,0);
+        //glVertex3f(isectVec[0], isectVec[1], isectVec[2]);
+        //glEnd();
 
         // float sepAlpha = acos(dot(normalize(p.xyz + center), rotPlaneSepPlaneISect));
     }
