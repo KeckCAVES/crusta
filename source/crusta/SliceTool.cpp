@@ -1,5 +1,5 @@
 #include <crusta/SliceTool.h>
-
+#include <crusta/CrustaSettings.h>
 
 #include <Comm/MulticastPipe.h>
 #include <Geometry/OrthogonalTransformation.h>
@@ -7,7 +7,6 @@
 #include <GLMotif/PopupWindow.h>
 #include <GLMotif/RowColumn.h>
 #include <GLMotif/StyleSheet.h>
-#include <GLMotif/ToggleButton.h>
 #include <GLMotif/WidgetManager.h>
 #include <GLMotif/StyleSheet.h>
 #include <Vrui/InputGraphManager.h>
@@ -59,7 +58,7 @@ SliceTool(const Vrui::ToolFactory* iFactory,
 
     new GLMotif::Label("StrikeAmount", top, "Strike");
     GLMotif::Slider *strikeAmountSlider = new GLMotif::Slider("StrikeAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    strikeAmountSlider->setValueRange(0, 0.1 * 2 * M_PI, 0.00001 * 2 * M_PI);
+    strikeAmountSlider->setValueRange(0, 500, 0.1);
     strikeAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::strikeAmountSliderCallback);
     strikeAmountSlider->setValue(0.0);
 
@@ -70,7 +69,7 @@ SliceTool(const Vrui::ToolFactory* iFactory,
 
     new GLMotif::Label("dipAmountLabel", top, "Dip");
     GLMotif::Slider *dipAmountSlider = new GLMotif::Slider("dipAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    dipAmountSlider->setValueRange(0, 1e5, 100);
+    dipAmountSlider->setValueRange(0, 200, 1);
     dipAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::dipAmountSliderCallback);
     dipAmountSlider->setValue(0.0);
 
@@ -98,6 +97,10 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     falloffSlider->setValueRange(0.0, 5.0, 0.025);
     falloffSlider->getValueChangedCallbacks().add(this, &SliceTool::falloffSliderCallback);
     falloffSlider->setValue(1.0);
+
+    GLMotif::ToggleButton *showFaultLinesButton = new GLMotif::ToggleButton("ShowFaultLinesButton", top, "Show Lines");
+    showFaultLinesButton->setToggle(true);
+    showFaultLinesButton->getValueChangedCallbacks().add(this, &SliceTool::showFaultLinesButtonCallback);
 
     top->manageChild();
 
@@ -142,6 +145,11 @@ void SliceTool::falloffSliderCallback(GLMotif::Slider::ValueChangedCallbackData*
     Vrui::requestUpdate();
 }
 
+void SliceTool::showFaultLinesButtonCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData) {
+    _sliceParameters.showFaultLines = cbData->set;
+    Vrui::requestUpdate();
+}
+
 SliceTool::
 ~SliceTool()
 {
@@ -161,6 +169,7 @@ init()
     _sliceParameters.dipAmount = 0.0;
     _sliceParameters.slopeAngleDegrees = 90.0;
     _sliceParameters.falloffFactor = 1.0;
+    _sliceParameters.showFaultLines = true;
     _sliceParameters.updatePlaneParameters();
 
 
@@ -483,6 +492,19 @@ void SliceTool::SliceParameters::updatePlaneParameters() {
 Vector3 SliceTool::SliceParameters::getShiftVector(const Plane &p) const {
     return Vector3(strikeAmount * p.strikeDirection +
                    dipAmount * p.dipDirection);
+}
+
+Vector3 SliceTool::SliceParameters::getLinearTranslation() const {
+    if (controlPoints.size() <= 1)
+        return Vector3(0,0,0);
+
+    Vector3 a = Vector3(controlPoints.front());
+    Vector3 b = Vector3(controlPoints.back());
+
+    Vector3 delta = b - a;
+    delta.normalize();
+
+    return strikeAmount * delta;
 }
 
 END_CRUSTA

@@ -705,6 +705,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
     geometryShaderSource += "\
         #version 120\n\
         #extension GL_EXT_geometry_shader4 : enable\n\
+        #extension GL_ARB_gpu_shader_fp64 : enable\n\
         \n\
         uniform int numPlanes;\n\
         uniform vec4 slicePlanes[63];\n\
@@ -748,6 +749,20 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
         vec3 lerp(vec3 p0, vec3 p1, float t) {\n\
             return p0 + t * (p1-p0);\n\
         }\n\
+        vec3 rotAxisAngleLocal(vec3 axis, float angle, vec3 p) {\n\
+            double c = cos(angle);\n\
+            double s = sin(angle);\n\
+            double t = 1 - c;\n\
+            double x = axis.x;\n\
+            double y = axis.y;\n\
+            double z = axis.z;\n\
+            \n\
+            dmat3 rotmat = dmat3(t*x*x +   c, t*x*y + z*s, t*x*z - y*s,\n\
+                                 t*x*y - z*s, t*y*y +   c, t*y*z + x*s,\n\
+                                 t*x*z + y*s, t*y*z - x*s, t*z*z +   c);\n\
+            \n\
+            return vec3(rotmat * (dvec3(p) + center) - center);\n\
+        }\n\
         vec3 rotAxisAngle(vec3 axis, float angle, vec3 p) {\n\
             float c = cos(angle);\n\
             float s = sin(angle);\n\
@@ -778,7 +793,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
               }\n\
             }\n\
         }\n\
-        vec4 shift(vec4 p) {\n\
+        vec4 shiftArc(vec4 p) {\n\
             if (closestPlaneIdx == -1)\n\
                 return p;\n\
             float d = length(p.xyz - sliceFaultCenter);\n\
@@ -788,14 +803,14 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
             \n\
             while (alphaRest >= 0.0) {\n\
                 vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
-                vec3 rotPlaneNormal = 0*slicePlanes[pIdx].xyz + 1* normalize(cross(p.xyz + center, faultLine));\n\
+                vec3 rotPlaneNormal = slicePlanes[pIdx].xyz + 0* normalize(cross(p.xyz + center, faultLine));\n\
                 vec3 nextSepNormal = -separatingPlanes[pIdx+1].xyz;\n\
                 vec3 rotPlaneSepPlaneISect = normalize(cross(rotPlaneNormal, nextSepNormal));\n\
                 float sepAlpha = acos(dot(normalize(p.xyz + center), rotPlaneSepPlaneISect));\n\
                 float rotAngle = alphaRest;\n\
                 if (pIdx < numPlanes-1)\n\
                     rotAngle = min(alphaRest, sepAlpha);\n\
-                p = vec4(rotAxisAngle(rotPlaneNormal, rotAngle, p.xyz + center) - center, 1);\n\
+                p = vec4(rotAxisAngleLocal(rotPlaneNormal,rotAngle, p.xyz), 1);\n\
                 alphaRest -= rotAngle;\n\
                 if (alphaRest <= 0.0) {\n\
                     vec3 dipDir = rotAxisAngle(normalize(faultLine), slopeAngle, normalize(- (center + p.xyz)));\n\
@@ -805,6 +820,32 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
                 }\n\
                 pIdx++;\n\
             }\n\
+        }\n\
+        vec4 shift(vec4 p) {\n\
+          if (closestPlaneIdx == -1)\n\
+              return p;\n\
+          float d = length(p.xyz - sliceFaultCenter);\n\
+          float lambda = clamp(2 * (sliceFalloff - d) / sliceFalloff, 0.0, 1.0);\n\
+          float lambdaRest = strikeShiftAmount;\n\
+          int pIdx = closestPlaneIdx;\n\
+          \n\
+          while (lambdaRest >= 0.0) {\n\
+              vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
+              vec3 shiftDir = normalize(faultLine);\n\
+              vec3 sepPlaneNormal = separatingPlanes[pIdx+1].xyz;\n\
+              float lambdaIntersect = -dot(sepPlaneNormal, p.xyz + center) / dot(sepPlaneNormal, shiftDir);\n\
+              float shiftAmount = lambdaRest;\n\
+              if (pIdx < numPlanes-1)\n\
+                  shiftAmount = min(shiftAmount, lambdaIntersect);\n\
+              p = vec4(p.xyz + shiftAmount * shiftDir, 1);\n\
+              lambdaRest -= shiftAmount;\n\
+              if (lambdaRest <= 0.0) {\n\
+                  vec3 dipDir = rotAxisAngle(normalize(faultLine), slopeAngle, normalize(- (center + p.xyz)));\n\
+                  vec3 dipVec = dipShiftAmount * dipDir;\n\
+                  return p + vec4(dipVec, 0);\n\
+              }\n\
+              pIdx++;\n\
+          }\n\
         }\n\
         void main(void) {\n\
             int i;\n\

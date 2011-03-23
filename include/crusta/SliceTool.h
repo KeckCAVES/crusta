@@ -9,6 +9,7 @@
 #include <GLMotif/Button.h>
 #include <GLMotif/RadioBox.h>
 #include <GLMotif/Slider.h>
+#include <GLMotif/ToggleButton.h>
 #include <GLMotif/TextField.h>
 #include <Vrui/Tools/GenericToolFactory.h>
 
@@ -106,6 +107,7 @@ public:
 
     virtual void slopeAngleSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
     virtual void falloffSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
+    virtual void showFaultLinesButtonCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
 
     virtual void buttonCallback(int deviceIndex, int deviceButtonIndex,
                                 Vrui::InputDevice::ButtonCallbackData* cbData);
@@ -136,6 +138,7 @@ public:
 
     // FIXME: Does not allow for multiple instances
     struct SliceParameters {
+        bool showFaultLines;
         double strikeAmount;
         double dipAmount;
         double slopeAngleDegrees;
@@ -154,6 +157,8 @@ public:
         // plane equations parameters (recalculated when values above change)
         void updatePlaneParameters();
         Vector3 getShiftVector(const Plane &p) const;
+
+        Vector3 getLinearTranslation() const;
     };
 
     static SliceParameters _sliceParameters;

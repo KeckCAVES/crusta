@@ -619,8 +619,41 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
     std::vector<Vector3> planeCenters;
 
 
-    glDisable(GL_DEPTH_TEST);
+
     glDisable(GL_LIGHTING);
+    glBegin(GL_TRIANGLES);
+    glColor3f(0.6,0.6,1.0); // same blue color as in shader
+    // fill out corners at control points (with tris to centers)
+    if (params.controlPoints.size() > 1) {
+        for (size_t i=1; i < params.controlPoints.size()-1; ++i) {
+            Vector3 a = Vector3(params.controlPoints[i]);
+            Vector3 b = params.slopePlanes[i].getPlaneCenter();
+            Vector3 c = params.slopePlanes[i-1].getPlaneCenter();
+
+            glVertex3f(a[0], a[1], a[2]);
+            glVertex3f(b[0], b[1], b[2]);
+            glVertex3f(c[0], c[1], c[2]);
+
+        }
+    }
+    glEnd();
+    glDisable(GL_DEPTH_TEST);
+
+    // render displacement approx for lod adaption
+    /*
+    if (params.controlPoints.size() >= 1) {
+        glColor3f(1,0,1);
+        glLineWidth(5.0);
+        glBegin(GL_LINES);
+        Vector3 p = Vector3(params.controlPoints[0]);
+        glVertex3f(p[0], p[1], p[2]);
+        p += params.getLinearTranslation();
+        glVertex3f(p[0], p[1], p[2]);
+
+        glEnd();
+    }
+    */
+    /*
     for (size_t i=0; i < params.faultPlanes.size(); ++i) {
         const SliceTool::Plane &p = params.faultPlanes[i];
 
@@ -640,28 +673,30 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         glVertex3f(c2[0], c2[1], c2[2]);
         glEnd();
     }
+*/
+    if (params.showFaultLines) {
+        for (size_t i=0; i < params.faultPlanes.size(); ++i) {
+           // std::cout << "controlpoint0 = " << params.controlPoints[0][0] << ", " << params.controlPoints[0][1] << ", " << params.controlPoints[0][2] << std::endl;
 
-    for (size_t i=0; i < params.faultPlanes.size(); ++i) {
-        const SliceTool::Plane &p = params.faultPlanes[i];
+            Vector3 a = Vector3(params.controlPoints[i]);
+            Vector3 b = Vector3(params.controlPoints[i+1]);
 
-        glLineWidth(5.0);
-        glColor3f(1,1,0);
+            glLineWidth(5.0);
+            glColor3f(1,1,0);
 
-        glBegin(GL_LINE_STRIP);
-        // line segment
-        Vector3 A = p.startPoint;
-        Vector3 B = p.endPoint;
+            glBegin(GL_LINE_STRIP);
+            double omega = acos(Vector3(a).normalize() * Vector3(b).normalize());
 
-        double omega = acos(A.normalize() * B.normalize());
+            for (size_t i=0; i < 64; ++i) {
+                double t = i / 63.0;
+                Vector3 pt = (1.0 / sin(omega)) * (sin((1-t)*omega) * a + sin(t * omega) * b);
+                glVertex3f(pt[0], pt[1], pt[2]);
+            }
 
-        for (size_t i=0; i < 64; ++i) {
-            double t = i / 63.0;
-            Vector3 pt = (1.0 / sin(omega)) * (sin((1-t)*omega) * p.startPoint + sin(t * omega) * p.endPoint);
-            glVertex3f(pt[0], pt[1], pt[2]);
+            glEnd();
         }
-
-        glEnd();
     }
+    /*
     for (size_t i=0; i < params.separatingPlanes.size(); ++i) {
         const SliceTool::Plane &p = params.separatingPlanes[i];
 
@@ -681,7 +716,9 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         glVertex3f(c2[0], c2[1], c2[2]);
         glEnd();
     }
+    */
     // great circle test
+    /*
     if (params.faultPlanes.size() > 1) {
         const SliceTool::Plane &p = params.faultPlanes[0];
 
@@ -748,7 +785,7 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
 
         // float sepAlpha = acos(dot(normalize(p.xyz + center), rotPlaneSepPlaneISect));
     }
-
+*/
     glEnable(GL_LIGHTING);
     glEnable(GL_DEPTH_TEST);
 
