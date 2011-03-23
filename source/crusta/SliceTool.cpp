@@ -69,14 +69,14 @@ SliceTool(const Vrui::ToolFactory* iFactory,
 
     new GLMotif::Label("dipAmountLabel", top, "Dip");
     GLMotif::Slider *dipAmountSlider = new GLMotif::Slider("dipAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*40.0f);
-    dipAmountSlider->setValueRange(-10, 10, 0.01);
+    dipAmountSlider->setValueRange(-20, 20, 0.01);
     dipAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::dipAmountSliderCallback);
     dipAmountSlider->setValue(0.0);
 
     dipAmountTextField = new GLMotif::TextField("dipAmountextField", top, 5);
     dipAmountTextField->setFloatFormat(GLMotif::TextField::FIXED);
-    dipAmountTextField->setFieldWidth(2);
-    dipAmountTextField->setPrecision(0);
+    dipAmountTextField->setFieldWidth(5);
+    dipAmountTextField->setPrecision(2);
 
 
 
@@ -88,8 +88,8 @@ SliceTool(const Vrui::ToolFactory* iFactory,
 
     slopeAngleTextField = new GLMotif::TextField("dipAmountextField", top, 10);
     slopeAngleTextField->setFloatFormat(GLMotif::TextField::FIXED);
-    slopeAngleTextField->setFieldWidth(2);
-    slopeAngleTextField->setPrecision(0);
+    slopeAngleTextField->setFieldWidth(5);
+    slopeAngleTextField->setPrecision(2);
 
 
     new GLMotif::Label("FalloffLabel", top, "Falloff");
@@ -111,6 +111,7 @@ SliceTool(const Vrui::ToolFactory* iFactory,
 void SliceTool::updateTextFields() {
      //displacementTextField->setValue(_sliceParameters.getShiftVector().mag());
      strikeAmountTextField->setValue(_sliceParameters.strikeAmount);
+     dipAmountTextField->setValue(_sliceParameters.dipAmount);
      slopeAngleTextField->setValue(_sliceParameters.slopeAngleDegrees);
 }
 
