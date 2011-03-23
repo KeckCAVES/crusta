@@ -736,10 +736,6 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
         }\n\
         void quad(vec4 a, vec4 b, vec4 col) {\n\
             vec3 c = slopePlaneCenters[closestPlaneIdx];\n\
-            vec3 normal = -normalize(gl_NormalMatrix * cross(a.xyz - c, b.xyz - c));\n\
-            normal = normalize(gl_NormalMatrix * slopePlanes[closestPlaneIdx].xyz);\n\
-            float diffuse = max(0.0, dot(normal, normalize(gl_LightSource[0].position.xyz)));\n\
-            gl_FrontColor = 1.0 * vec4(0.6,0.6,1.0,0);\n\
             tri(b,a, vec4(c, 1), col);\n\
         }\n\
         vec3 slerp(vec3 p0, vec3 p1, float t) {\n\
@@ -833,16 +829,17 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
               vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
               vec3 shiftDir = normalize(faultLine);\n\
               vec3 sepPlaneNormal = separatingPlanes[pIdx+1].xyz;\n\
-              float lambdaIntersect = -dot(sepPlaneNormal, p.xyz + center) / dot(sepPlaneNormal, shiftDir);\n\
+              float lambdaIntersect = -dot(separatingPlanes[pIdx+1], p) / dot(sepPlaneNormal, shiftDir);\n\
               float shiftAmount = lambdaRest;\n\
-              if (pIdx < numPlanes-1)\n\
-                  shiftAmount = min(shiftAmount, lambdaIntersect);\n\
-              p = vec4(p.xyz + shiftAmount * shiftDir, 1);\n\
-              lambdaRest -= shiftAmount;\n\
-              if (lambdaRest <= 0.0) {\n\
-                  vec3 dipDir = rotAxisAngle(normalize(faultLine), slopeAngle, normalize(- (center + p.xyz)));\n\
-                  vec3 dipVec = dipShiftAmount * dipDir;\n\
-                  return p + vec4(dipVec, 0);\n\
+              \n\
+              if (pIdx == numPlanes-1 || lambdaRest <= lambdaIntersect) {\n\
+                    p = vec4(p.xyz + lambdaRest * shiftDir, 1);\n\
+                    vec3 dipDir = rotAxisAngle(normalize(faultLine), slopeAngle, normalize(- (center + p.xyz)));\n\
+                    vec3 dipVec = dipShiftAmount * dipDir;\n\
+                    return p + vec4(dipVec, 0);\n\
+              } else {\n\
+                    p = vec4(p.xyz + lambdaIntersect * shiftDir, 1);\n\
+                    lambdaRest -= lambdaIntersect;\n\
               }\n\
               pIdx++;\n\
           }\n\
@@ -859,7 +856,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
             if (strikeShiftAmount == 0 && dipShiftAmount == 0 || closestPlaneIdx == -1) {\n\
                 leftBitmap = 7;\n\
             } else {\n\
-                for (i=0; i < gl_VerticesIn; i++) {\n\
+                for (i=0; i < 3; i++) {\n\
                     vec4 p = gl_PositionIn[i];\n\
                     float slicePlaneDst = dot(slicePlanes[closestPlaneIdx], p);\n\
                     if (slicePlaneDst < 0.0)\n\
@@ -896,11 +893,11 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
             vec4 bc = isect(b,c);\n\
             vec4 ca = isect(c,a);\n\
             \n\
-            vec4 red = 0*vec4(1,0,0,0);\n\
-            vec4 blue = 0*vec4(0,0,1,0);\n\
+            vec4 red = vec4(1,0,0,0);\n\
+            vec4 blue = vec4(0,0,1,0);\n\
             vec4 green = 0*vec4(0,1,0,0);\n\
             vec4 yellow = vec4(1,1,0,0);\n\
-            vec4 planeColor = vec4(0.3,0.3,0.4,0);\n\
+            vec4 planeColor = vec4(0.6,0.6,1.0,0);\n\
             gl_FrontColor = gl_FrontColorIn[0];\n\
             \n\
             if (leftBitmap == 1) {\n\
@@ -911,12 +908,15 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
                     quad(ab,ca, yellow);\n\
                     quad(shift(ca),shift(ab), yellow);\n\
                 } else if (leftBitmap == 2) {\n\
+                    gl_FrontColor = red;\n\
                     tri(b,bc,ab, red);\n\
                     tri(shift(bc),shift(c),shift(a), blue);\n\
                     tri(shift(bc),shift(a),shift(ab), green);\n\
                     gl_FrontColor = planeColor;\n\
                     quad(bc,ab, yellow);\n\
                     quad(shift(ab),shift(bc), yellow);\n\
+                    quad(ab,bc, yellow);\n\
+                    quad(shift(bc),shift(ab), yellow);\n\
                 } else if (leftBitmap == 4) {\n\
                     tri(c,ca,bc, red);\n\
                     tri(shift(ca),shift(a),shift(b), blue);\n\

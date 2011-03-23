@@ -475,7 +475,9 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
     crustaGl->terrainShader.setSlicePlanes(params.faultPlanes.size(), &(controlPoints[0]), &(slicePlanes[0]), &(separatingPlanes[0]), &(slopePlanes[0]),
                                            params.strikeAmount, params.dipAmount, (params.slopeAngleDegrees - 90.0) * (2*M_PI) / 360.0,
                                            &(planeCenters[0]), params.faultCenter - center, params.falloffFactor * 1e6);
-
+    crustaGl->terrainShader.setSlicePlanes(params.faultPlanes.size(), &(controlPoints[0]), &(slopePlanes[0]), &(separatingPlanes[0]), &(slopePlanes[0]),
+                                           params.strikeAmount, params.dipAmount, (params.slopeAngleDegrees - 90.0) * (2*M_PI) / 360.0,
+                                           &(planeCenters[0]), params.faultCenter - center, params.falloffFactor * 1e6);
     //crustaGl->terrainShader.disable();
 
     // render slicing plane
@@ -621,9 +623,11 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
 
 
     glDisable(GL_LIGHTING);
+    /*
     glBegin(GL_TRIANGLES);
     glColor3f(0.6,0.6,1.0); // same blue color as in shader
     // fill out corners at control points (with tris to centers)
+
     if (params.controlPoints.size() > 1) {
         for (size_t i=1; i < params.controlPoints.size()-1; ++i) {
             Vector3 a = Vector3(params.controlPoints[i]);
@@ -637,6 +641,7 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         }
     }
     glEnd();
+*/
     glDisable(GL_DEPTH_TEST);
 
     // render displacement approx for lod adaption
@@ -681,16 +686,16 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
             Vector3 a = Vector3(params.controlPoints[i]);
             Vector3 b = Vector3(params.controlPoints[i+1]);
 
-            glLineWidth(5.0);
+            glLineWidth(3.0);
             glColor3f(1,1,0);
 
             glBegin(GL_LINE_STRIP);
             double omega = acos(Vector3(a).normalize() * Vector3(b).normalize());
 
-            for (size_t i=0; i < 64; ++i) {
-                double t = i / 63.0;
+            for (size_t i=0; i < 2; ++i) {
+                double t = i / 1.0;
                 Vector3 pt = (1.0 / sin(omega)) * (sin((1-t)*omega) * a + sin(t * omega) * b);
-                glVertex3f(pt[0], pt[1], pt[2]);
+                glVertex3d(pt[0], pt[1], pt[2]);
             }
 
             glEnd();

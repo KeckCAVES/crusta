@@ -57,8 +57,8 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     top->setNumMinorWidgets(3);
 
     new GLMotif::Label("StrikeAmount", top, "Strike");
-    GLMotif::Slider *strikeAmountSlider = new GLMotif::Slider("StrikeAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    strikeAmountSlider->setValueRange(0, 500, 0.1);
+    GLMotif::Slider *strikeAmountSlider = new GLMotif::Slider("StrikeAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*40.0f);
+    strikeAmountSlider->setValueRange(0, 250, 0.01);
     strikeAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::strikeAmountSliderCallback);
     strikeAmountSlider->setValue(0.0);
 
@@ -68,8 +68,8 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     strikeAmountTextField->setPrecision(0);
 
     new GLMotif::Label("dipAmountLabel", top, "Dip");
-    GLMotif::Slider *dipAmountSlider = new GLMotif::Slider("dipAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    dipAmountSlider->setValueRange(0, 200, 1);
+    GLMotif::Slider *dipAmountSlider = new GLMotif::Slider("dipAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*40.0f);
+    dipAmountSlider->setValueRange(-10, 10, 0.01);
     dipAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::dipAmountSliderCallback);
     dipAmountSlider->setValue(0.0);
 
@@ -81,7 +81,7 @@ SliceTool(const Vrui::ToolFactory* iFactory,
 
 
     new GLMotif::Label("SlopeAngleLabel", top, "Slope angle");
-    GLMotif::Slider *slopeAngleSlider = new GLMotif::Slider("slopeAngleSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
+    GLMotif::Slider *slopeAngleSlider = new GLMotif::Slider("slopeAngleSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*40.0f);
     slopeAngleSlider->setValueRange(0.0 + 15.0, 180.0 - 15.0, 1.0);
     slopeAngleSlider->getValueChangedCallbacks().add(this, &SliceTool::slopeAngleSliderCallback);
     slopeAngleSlider->setValue(90.0);
@@ -93,7 +93,7 @@ SliceTool(const Vrui::ToolFactory* iFactory,
 
 
     new GLMotif::Label("FalloffLabel", top, "Falloff");
-    GLMotif::Slider *falloffSlider = new GLMotif::Slider("falloffSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
+    GLMotif::Slider *falloffSlider = new GLMotif::Slider("falloffSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*40.0f);
     falloffSlider->setValueRange(0.0, 5.0, 0.025);
     falloffSlider->getValueChangedCallbacks().add(this, &SliceTool::falloffSliderCallback);
     falloffSlider->setValue(1.0);
