@@ -826,6 +826,49 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
               return p;\n\
           float d = length(p.xyz - sliceFaultCenter);\n\
           float lambda = clamp(2 * (sliceFalloff - d) / sliceFalloff, 0.0, 1.0);\n\
+          bool pos = strikeShiftAmount >= 0.0;\n\
+          float lambdaRest = abs(strikeShiftAmount);\n\
+          int pIdx = closestPlaneIdx;\n\
+          float faultLength = length(faultLineControlPoints[numPlanes] - faultLineControlPoints[0]);\n\
+          \n\
+          while (lambdaRest > 0.0 && (pos && pIdx < numPlanes-1 || !pos && pIdx > 0)) {\n\
+              vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
+              vec3 upDir = normalize(faultLineControlPoints[pIdx] + center);\n\
+              vec3 strikeDir = (pos ? 1 : -1) * normalize(faultLine - dot(upDir, faultLine) * upDir);\n\
+              vec4 sepPlane = separatingPlanes[pos ? pIdx+1 : pIdx];\n\
+              float lambdaIntersect = -dot(sepPlane, p) / dot(sepPlane.xyz, strikeDir);\n\
+              if (lambdaIntersect > 0.0) {\n\
+                   float lambdaIncrement = min(lambdaIntersect, lambdaRest);\n\
+                   float compressionFactor = dot(strikeDir, -slicePlanes[pos ? 0 : (numPlanes-1)].xyz);\n\
+                  \n\
+                   p = vec4(p.xyz + lambdaIncrement * strikeDir, 1);\n\
+                   lambdaRest -= lambdaIncrement;\n\
+                   totalCompression += lambdaIncrement * compressionFactor;\n\
+              }\n\
+              pIdx+= pos ? 1 : -1;\n\
+          }\n\
+          if (lambdaRest > 0.0) {\n\
+            vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
+            vec3 upDir = normalize(faultLineControlPoints[pIdx] + center);\n\
+            vec3 strikeDir = (pos ? 1 : -1) * normalize(faultLine - dot(upDir, faultLine) * upDir);\n\
+            float compressionFactor = dot(strikeDir, -slicePlanes[pos ? 0 : (numPlanes-1)].xyz);\n\
+            p = vec4(p.xyz + lambdaRest * strikeDir, 1);\n\
+            totalCompression += lambdaRest * compressionFactor;\n\
+          }\n\
+          vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
+          vec3 upDir = normalize(faultLineControlPoints[pIdx] + center);\n\
+          vec3 strikeDir = (pos ? 1 : -1) * normalize(faultLine - dot(upDir, faultLine) * upDir);\n\
+          vec3 dipDir = (pos ? 1 : -1) * normalize(cross(slopePlanes[pIdx].xyz, strikeDir));\n\
+          p = vec4(p.xyz + dipShiftAmount * dipDir, 1);\n\
+          totalCompression *= sliceColoring;\n\
+          return p;\n\
+        }\n\
+        vec4 shiftOld(vec4 p) {\n\
+          totalCompression = 0.0;\n\
+          if (closestPlaneIdx == -1)\n\
+              return p;\n\
+          float d = length(p.xyz - sliceFaultCenter);\n\
+          float lambda = clamp(2 * (sliceFalloff - d) / sliceFalloff, 0.0, 1.0);\n\
           float lambdaRest = strikeShiftAmount;\n\
           int pIdx = closestPlaneIdx;\n\
           float faultLength = length(faultLineControlPoints[numPlanes] - faultLineControlPoints[0]);\n\

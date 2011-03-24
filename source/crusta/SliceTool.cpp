@@ -59,7 +59,7 @@ SliceTool(const Vrui::ToolFactory* iFactory,
 
     new GLMotif::Label("StrikeAmount", top, "Strike");
     GLMotif::Slider *strikeAmountSlider = new GLMotif::Slider("StrikeAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    strikeAmountSlider->setValueRange(0, 250, 0.01);
+    strikeAmountSlider->setValueRange(-250, 250, 0.01);
     strikeAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::strikeAmountSliderCallback);
     strikeAmountSlider->setValue(0.0);
 
