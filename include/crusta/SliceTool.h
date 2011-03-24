@@ -104,13 +104,15 @@ public:
 
     virtual void strikeAmountSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
     virtual void dipAmountSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
-
     virtual void slopeAngleSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
     virtual void falloffSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
+    virtual void coloringSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
     virtual void showFaultLinesButtonCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
+    virtual void resetButtonCallback(GLMotif::Button::SelectCallbackData *);
 
     virtual void buttonCallback(int deviceIndex, int deviceButtonIndex,
                                 Vrui::InputDevice::ButtonCallbackData* cbData);
+
 
     void updateTextFields();
 
@@ -139,6 +141,7 @@ public:
     // FIXME: Does not allow for multiple instances
     struct SliceParameters {
         bool showFaultLines;
+        double coloring;
         double strikeAmount;
         double dipAmount;
         double slopeAngleDegrees;

@@ -455,6 +455,7 @@ initUniforms(GLContextData& contextData)
     slopePlaneCentersUniform = glGetUniformLocation(programObject, "slopePlaneCenters");
     sliceFaultCenterUniform = glGetUniformLocation(programObject, "sliceFaultCenter");
     sliceFalloffUniform     = glGetUniformLocation(programObject, "sliceFalloff");
+    sliceColoringUniform = glGetUniformLocation(programObject, "sliceColoring");
 
     DataManager::SourceShaders& dataSources =
         DATAMANAGER->getSourceShaders(contextData);
@@ -718,6 +719,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
         uniform vec3 slopePlaneCenters[63];\n\
         uniform vec3 sliceFaultCenter;\n\
         uniform float sliceFalloff;\n\
+        uniform float sliceColoring;\n\
         uniform vec3 center;\n\
         int closestPlaneIdx;\n\
         float totalCompression;\n\
@@ -827,9 +829,6 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
           float lambdaRest = strikeShiftAmount;\n\
           int pIdx = closestPlaneIdx;\n\
           float faultLength = length(faultLineControlPoints[numPlanes] - faultLineControlPoints[0]);\n\
-          vec3 mainFaultLine = normalize(faultLineControlPoints[1] - faultLineControlPoints[0]);\n\
-          vec3 mainUpDir = normalize(faultLineControlPoints[0] + center);\n\
-          vec3 mainStrikeDir = normalize(mainFaultLine - dot(mainUpDir, mainFaultLine) * mainUpDir);\n\
           \n\
           while (lambdaRest > 0.0 && pIdx < numPlanes-1) {\n\
               vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
@@ -840,7 +839,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
               float lambdaIntersect = -dot(separatingPlanes[pIdx+1], p) / dot(sepPlaneNormal, strikeDir);\n\
               if (lambdaIntersect > 0.0) {\n\
                    float lambdaIncrement = min(lambdaIntersect, lambdaRest);\n\
-                   float compressionFactor = dot(dipDir, mainStrikeDir);\n\
+                   float compressionFactor = dot(strikeDir, -slicePlanes[0].xyz);\n\
                   \n\
                    p = vec4(p.xyz + lambdaIncrement * strikeDir, 1);\n\
                    lambdaRest -= lambdaIncrement;\n\
@@ -853,7 +852,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
             vec3 upDir = normalize(faultLineControlPoints[pIdx] + center);\n\
             vec3 strikeDir = normalize(faultLine - dot(upDir, faultLine) * upDir);\n\
             vec3 dipDir = normalize(cross(slopePlanes[pIdx].xyz, strikeDir));\n\
-            float compressionFactor = dot(dipDir, mainStrikeDir);\n\
+            float compressionFactor = dot(strikeDir, -slicePlanes[0].xyz);\n\
             p = vec4(p.xyz + lambdaRest * strikeDir, 1);\n\
             totalCompression += lambdaRest * compressionFactor;\n\
           }\n\
@@ -862,6 +861,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
           vec3 strikeDir = normalize(faultLine - dot(upDir, faultLine) * upDir);\n\
           vec3 dipDir = normalize(cross(slopePlanes[pIdx].xyz, strikeDir));\n\
           p = vec4(p.xyz + dipShiftAmount * dipDir, 1);\n\
+          totalCompression *= sliceColoring;\n\
           return p;\n\
         }\n\
         void main(void) {\n\
@@ -894,7 +894,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
                     dstColor = vec4(0,0,1,0);\n\
                 else if (closestPlaneIdx == 3)\n\
                     dstColor = vec4(0,1,1,0);\n\
-                dstColor *= 0.5;\n\
+                dstColor *= 0;\n\
                 for (i=0; i < gl_VerticesIn; i++) {\n\
                     gl_FrontColor = dstColor + gl_FrontColorIn[i];\n\
                     vec4 p = gl_PositionIn[i];\n\

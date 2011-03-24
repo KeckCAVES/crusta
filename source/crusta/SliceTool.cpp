@@ -55,9 +55,10 @@ SliceTool(const Vrui::ToolFactory* iFactory,
 
     GLMotif::RowColumn* top = new GLMotif::RowColumn("SPTtop", dialog, false);
     top->setNumMinorWidgets(3);
+    top->setColumnWeight(1, 1.0);
 
     new GLMotif::Label("StrikeAmount", top, "Strike");
-    GLMotif::Slider *strikeAmountSlider = new GLMotif::Slider("StrikeAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*40.0f);
+    GLMotif::Slider *strikeAmountSlider = new GLMotif::Slider("StrikeAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
     strikeAmountSlider->setValueRange(0, 250, 0.01);
     strikeAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::strikeAmountSliderCallback);
     strikeAmountSlider->setValue(0.0);
@@ -68,7 +69,7 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     strikeAmountTextField->setPrecision(0);
 
     new GLMotif::Label("dipAmountLabel", top, "Dip");
-    GLMotif::Slider *dipAmountSlider = new GLMotif::Slider("dipAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*40.0f);
+    GLMotif::Slider *dipAmountSlider = new GLMotif::Slider("dipAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
     dipAmountSlider->setValueRange(-20, 20, 0.01);
     dipAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::dipAmountSliderCallback);
     dipAmountSlider->setValue(0.0);
@@ -81,7 +82,7 @@ SliceTool(const Vrui::ToolFactory* iFactory,
 
 
     new GLMotif::Label("SlopeAngleLabel", top, "Slope angle");
-    GLMotif::Slider *slopeAngleSlider = new GLMotif::Slider("slopeAngleSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*40.0f);
+    GLMotif::Slider *slopeAngleSlider = new GLMotif::Slider("slopeAngleSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
     slopeAngleSlider->setValueRange(0.0 + 15.0, 180.0 - 15.0, 1.0);
     slopeAngleSlider->getValueChangedCallbacks().add(this, &SliceTool::slopeAngleSliderCallback);
     slopeAngleSlider->setValue(90.0);
@@ -93,7 +94,7 @@ SliceTool(const Vrui::ToolFactory* iFactory,
 
 
     new GLMotif::Label("FalloffLabel", top, "Falloff");
-    GLMotif::Slider *falloffSlider = new GLMotif::Slider("falloffSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*40.0f);
+    GLMotif::Slider *falloffSlider = new GLMotif::Slider("falloffSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
     falloffSlider->setValueRange(0.0, 5.0, 0.025);
     falloffSlider->getValueChangedCallbacks().add(this, &SliceTool::falloffSliderCallback);
     falloffSlider->setValue(1.0);
@@ -102,9 +103,26 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     showFaultLinesButton->setToggle(true);
     showFaultLinesButton->getValueChangedCallbacks().add(this, &SliceTool::showFaultLinesButtonCallback);
 
+    new GLMotif::Label("coloringLabel", top, "Coloring");
+    GLMotif::Slider *coloringSlider = new GLMotif::Slider("coloringSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
+    coloringSlider->setValueRange(0, 0.1, 0.001);
+    coloringSlider->getValueChangedCallbacks().add(this, &SliceTool::coloringSliderCallback);
+    coloringSlider->setValue(0.0);
+
+    GLMotif::Button *resetButton = new GLMotif::Button("ResetButton", top, "Reset");
+    resetButton->getSelectCallbacks().add(this, &SliceTool::resetButtonCallback);
+
     top->manageChild();
 
     updateTextFields();
+    _sliceParameters.updatePlaneParameters();
+}
+
+
+void SliceTool::resetButtonCallback(GLMotif::Button::SelectCallbackData *) {
+    _sliceParameters.controlPoints.clear();
+    markersHover    = 0;
+    markersSelected = 0;
     _sliceParameters.updatePlaneParameters();
 }
 
@@ -146,6 +164,14 @@ void SliceTool::falloffSliderCallback(GLMotif::Slider::ValueChangedCallbackData*
     Vrui::requestUpdate();
 }
 
+void SliceTool::coloringSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
+{
+    _sliceParameters.coloring = Vrui::Scalar(cbData->value);
+    _sliceParameters.updatePlaneParameters();
+    updateTextFields();
+    Vrui::requestUpdate();
+}
+
 void SliceTool::showFaultLinesButtonCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData) {
     _sliceParameters.showFaultLines = cbData->set;
     Vrui::requestUpdate();
@@ -171,6 +197,7 @@ init()
     _sliceParameters.slopeAngleDegrees = 90.0;
     _sliceParameters.falloffFactor = 1.0;
     _sliceParameters.showFaultLines = true;
+    _sliceParameters.coloring = 0.0;
     _sliceParameters.updatePlaneParameters();
 
 
@@ -281,11 +308,11 @@ display(GLContextData& contextData) const
 
     //go to navigational coordinates
     std::vector<Point3> markerPos;
-    for (int i=0; i< _sliceParameters.controlPoints.size(); ++i)
+    for (size_t i=0; i< _sliceParameters.controlPoints.size(); ++i)
         markerPos.push_back(crusta->mapToScaledGlobe(_sliceParameters.controlPoints[i]));
 
     Vector3 centroid(0.0, 0.0, 0.0);
-    for (int i=0; i < _sliceParameters.controlPoints.size(); ++i)
+    for (size_t i=0; i < _sliceParameters.controlPoints.size(); ++i)
         centroid += Vector3(markerPos[i]);
     centroid /= _sliceParameters.controlPoints.size();
 
@@ -303,7 +330,7 @@ display(GLContextData& contextData) const
 
     CHECK_GLA
     //draw the control points
-    for (int i=0; i < _sliceParameters.controlPoints.size(); ++i)
+    for (size_t i=0; i < _sliceParameters.controlPoints.size(); ++i)
     {
         if (markersHover == i+1)
         {
@@ -353,16 +380,16 @@ buttonCallback(int, int, Vrui::InputDevice::ButtonCallbackData* cbData)
             // cursor hovering above existing marker - drag it
             _sliceParameters.controlPoints[markersHover - 1]      = surfacePoint.position;
             markersSelected = markersHover;
-        } else if (_sliceParameters.controlPoints.size() < 16) {
+        } else if (_sliceParameters.controlPoints.size() < 64) {
             // not all markers used - add new marker
             _sliceParameters.controlPoints.push_back(surfacePoint.position);
             markersHover = markersSelected = _sliceParameters.controlPoints.size();
         } else {
             // all markers in use - reset markers
-            _sliceParameters.controlPoints.clear();
-            _sliceParameters.controlPoints.push_back(surfacePoint.position);
-            markersHover    = 1;
-            markersSelected = 1;
+            //_sliceParameters.controlPoints.clear();
+            //_sliceParameters.controlPoints.push_back(surfacePoint.position);
+            //markersHover    = 1;
+            //markersSelected = 1;
         }
 
         _sliceParameters.updatePlaneParameters();
@@ -370,7 +397,6 @@ buttonCallback(int, int, Vrui::InputDevice::ButtonCallbackData* cbData)
     }
     else
         markersSelected = 0;
-
 }
 
 void SliceTool::
