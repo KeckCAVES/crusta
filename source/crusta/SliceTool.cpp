@@ -57,9 +57,9 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     top->setNumMinorWidgets(3);
     top->setColumnWeight(1, 1.0);
 
-    new GLMotif::Label("StrikeAmount", top, "Strike");
+    new GLMotif::Label("StrikeAmount", top, "Offset");
     GLMotif::Slider *strikeAmountSlider = new GLMotif::Slider("StrikeAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    strikeAmountSlider->setValueRange(-250, 250, 0.01);
+    strikeAmountSlider->setValueRange(-350, 350, 0.25);
     strikeAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::strikeAmountSliderCallback);
     strikeAmountSlider->setValue(0.0);
 
@@ -68,9 +68,20 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     strikeAmountTextField->setFieldWidth(2);
     strikeAmountTextField->setPrecision(0);
 
-    new GLMotif::Label("dipAmountLabel", top, "Dip");
+    new GLMotif::Label("SlopeAngleLabel", top, "Dip");
+    GLMotif::Slider *slopeAngleSlider = new GLMotif::Slider("slopeAngleSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
+    slopeAngleSlider->setValueRange(0.0, 180.0, 1.0);
+    slopeAngleSlider->getValueChangedCallbacks().add(this, &SliceTool::slopeAngleSliderCallback);
+    slopeAngleSlider->setValue(90.0);
+
+    slopeAngleTextField = new GLMotif::TextField("dipAmountextField", top, 10);
+    slopeAngleTextField->setFloatFormat(GLMotif::TextField::FIXED);
+    slopeAngleTextField->setFieldWidth(5);
+    slopeAngleTextField->setPrecision(2);
+
+    new GLMotif::Label("dipAmountLabel", top, "Vertical displacement");
     GLMotif::Slider *dipAmountSlider = new GLMotif::Slider("dipAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    dipAmountSlider->setValueRange(-20, 20, 0.01);
+    dipAmountSlider->setValueRange(-20, 20, 0.025);
     dipAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::dipAmountSliderCallback);
     dipAmountSlider->setValue(0.0);
 
@@ -80,22 +91,9 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     dipAmountTextField->setPrecision(2);
 
 
-
-    new GLMotif::Label("SlopeAngleLabel", top, "Slope angle");
-    GLMotif::Slider *slopeAngleSlider = new GLMotif::Slider("slopeAngleSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    slopeAngleSlider->setValueRange(0.0 + 15.0, 180.0 - 15.0, 1.0);
-    slopeAngleSlider->getValueChangedCallbacks().add(this, &SliceTool::slopeAngleSliderCallback);
-    slopeAngleSlider->setValue(90.0);
-
-    slopeAngleTextField = new GLMotif::TextField("dipAmountextField", top, 10);
-    slopeAngleTextField->setFloatFormat(GLMotif::TextField::FIXED);
-    slopeAngleTextField->setFieldWidth(5);
-    slopeAngleTextField->setPrecision(2);
-
-
     new GLMotif::Label("FalloffLabel", top, "Falloff");
     GLMotif::Slider *falloffSlider = new GLMotif::Slider("falloffSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    falloffSlider->setValueRange(0.0, 5.0, 0.025);
+    falloffSlider->setValueRange(0.1, 200.0, 0.1);
     falloffSlider->getValueChangedCallbacks().add(this, &SliceTool::falloffSliderCallback);
     falloffSlider->setValue(1.0);
 

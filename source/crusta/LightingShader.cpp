@@ -722,6 +722,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
         uniform float sliceColoring;\n\
         uniform vec3 center;\n\
         int closestPlaneIdx;\n\
+        float closestPlaneDst;\n\
         float totalCompression;\n\
         \n\
         vec4 isect(vec4 a, vec4 b) {\n\
@@ -778,16 +779,16 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
         }\n\
         void findClosestPlaneIdx(vec4 p) {\n\
            closestPlaneIdx = -1;\n\
-           float minDist = 1e9;\n\
+           closestPlaneDst = 1e9;\n\
            \n\
            for (int i=0; i < numPlanes; i++) {\n\
               float dst = dot(slicePlanes[i], p);\n\
               float dstLeft = dot(separatingPlanes[i], p);\n\
               float dstRight = dot(separatingPlanes[i+1], p);\n\
               \n\
-              if (dst > 0.0 && dst < minDist && (i == 0 || dstLeft > 0.0) && (i == (numPlanes-1) || dstRight < 0.0)) {\n\
+              if (dst > 0.0 && dst < closestPlaneDst && (i == 0 || dstLeft > 0.0) && (i == (numPlanes-1) || dstRight < 0.0)) {\n\
                 closestPlaneIdx = i;\n\
-                minDist = dst;\n\
+                closestPlaneDst = dst;\n\
                 break;\n\
               }\n\
             }\n\
@@ -860,7 +861,15 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
           vec3 strikeDir = (pos ? 1 : -1) * normalize(faultLine - dot(upDir, faultLine) * upDir);\n\
           vec3 dipDir = (pos ? 1 : -1) * normalize(cross(slopePlanes[pIdx].xyz, strikeDir));\n\
           p = vec4(p.xyz + dipShiftAmount * dipDir, 1);\n\
-          totalCompression *= sliceColoring;\n\
+          float minimumSegmentDistance = 1e9;\n\
+          for (pIdx=0; pIdx < numPlanes; pIdx++) {\n\
+              float dst = dot(p, slicePlanes[pIdx]);\n\
+              bool rightFromLeftPlane = (dot(p, separatingPlanes[pIdx]) > 0.0);\n\
+              bool leftFromRightPlane = (dot(p, separatingPlanes[pIdx+1]) < 0.0);\n\
+              if (dst >= 0.0 && rightFromLeftPlane && leftFromRightPlane)\n\
+                minimumSegmentDistance = min(minimumSegmentDistance, dst);\n\
+          }\n\
+          totalCompression *= sliceColoring * max(0, (sliceFalloff - minimumSegmentDistance)) / sliceFalloff;\n\
           return p;\n\
         }\n\
         vec4 shiftOld(vec4 p) {\n\
@@ -943,7 +952,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
                     vec4 p = gl_PositionIn[i];\n\
                     if (closestPlaneIdx != -1) {\n\
                         p = shift(p);\n\
-                        gl_FrontColor += vec4(-totalCompression, totalCompression, 0, 0);\n\
+                        gl_FrontColor += vec4(-totalCompression, 0, totalCompression, 0);\n\
                     }\n\
                     gl_Position = gl_ModelViewProjectionMatrix * vec4(p.xyz, 1);\n\
                     EmitVertex();\n\
