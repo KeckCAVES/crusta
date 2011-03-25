@@ -317,8 +317,7 @@ LightingShader::LightingShader() :
     glAttachObjectARB(programObject,geometryShader);
     glProgramParameteriEXT(programObject, GL_GEOMETRY_INPUT_TYPE_EXT, GL_TRIANGLES);
     glProgramParameteriEXT(programObject, GL_GEOMETRY_OUTPUT_TYPE_EXT, GL_TRIANGLE_STRIP);
-    glProgramParameteriEXT(programObject, GL_GEOMETRY_VERTICES_OUT_EXT, 32); // FIXME
-
+    glProgramParameteriEXT(programObject, GL_GEOMETRY_VERTICES_OUT_EXT, 15);
     clearUniforms();
 }
 
