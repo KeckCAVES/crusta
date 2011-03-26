@@ -89,13 +89,12 @@ class LightingShader
     GLint slopePlanesUniform;
     GLint strikeShiftAmountUniform;
     GLint dipShiftAmountUniform;
-    GLint slopeAngleUniform;
     GLint slopePlaneCentersUniform;
     GLint sliceFaultCenterUniform;
     GLint sliceFalloffUniform;
     GLint sliceColoringUniform;
-    GLint faultLineControlPointsUniform;
-
+    GLint strikeDirectionsUniform;
+    GLint dipDirectionsUniform;
     FrameStamp colorMapperConfigurationStamp;
 
     /* Private methods: */
@@ -138,12 +137,9 @@ class LightingShader
         demDefaultUniform   = -2;
 
         slicePlanesUniform = separatingPlanesUniform = strikeShiftAmountUniform = dipShiftAmountUniform = slopePlaneCentersUniform = -2;
-        slopeAngleUniform = -2;
-        slopePlanesUniform = -2;
         sliceFalloffUniform = -2;
-        faultLineControlPointsUniform = -2;
-
         sliceColoringUniform = -2;
+        strikeDirectionsUniform = dipDirectionsUniform = -2;
     }
 
     void setTextureStep(float ts)
@@ -175,18 +171,21 @@ class LightingShader
 
     // planes are stored as contiguous 4-tuples of (nx,ny,ny,distance_to_origin)
     // they are assumed to be relative the centroid of this tile
-    void setSlicePlanes(int numPlanes, float faultLineControlPoints[3*64], float planes[4*63], float separatingPlanes[4*64], float slopePlanes[4*63], double strikeShiftAmount, double dipShiftAmount, double slopeAngle, Vector3 planeCenters[63], Vector3 faultCenter, double falloff, double coloring) {
-        glUniform1i(numPlanesUniform, numPlanes);
+    void setSlicePlanes(int numPlanes, float strikeDirections[3*63], float dipDirections[3*63], float planes[4*63], float separatingPlanes[4*64], float slopePlanes[4*63], double strikeShiftAmount, double dipShiftAmount, Vector3 planeCenters[63], Vector3 faultCenter, double falloff, double coloring) {
+        CHECK_GLA
 
+        glUniform1i(numPlanesUniform, numPlanes);
         int numPoints = numPlanes ? (numPlanes+1) : 0;
-        glUniform3fv(faultLineControlPointsUniform, numPoints, faultLineControlPoints);
+
+        glUniform3fv(strikeDirectionsUniform, numPlanes, strikeDirections);
+        glUniform3fv(dipDirectionsUniform, numPlanes, dipDirections);
+
         glUniform4fv(slicePlanesUniform, numPlanes, planes);
         glUniform4fv(separatingPlanesUniform, numPoints, separatingPlanes);
         glUniform4fv(slopePlanesUniform, numPlanes, slopePlanes);
 
         glUniform1f(strikeShiftAmountUniform, strikeShiftAmount);        
         glUniform1f(dipShiftAmountUniform, dipShiftAmount);
-        glUniform1f(slopeAngleUniform, slopeAngle);
 
         float pc[3*63];
         for (int i=0; i < numPlanes; ++i) {

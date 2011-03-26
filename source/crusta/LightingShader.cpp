@@ -317,6 +317,7 @@ LightingShader::LightingShader() :
     glAttachObjectARB(programObject,geometryShader);
     glProgramParameteriEXT(programObject, GL_GEOMETRY_INPUT_TYPE_EXT, GL_TRIANGLES);
     glProgramParameteriEXT(programObject, GL_GEOMETRY_OUTPUT_TYPE_EXT, GL_TRIANGLE_STRIP);
+    //glProgramParameteriEXT(programObject, GL_GEOMETRY_VERTICES_OUT_EXT, 15);
     glProgramParameteriEXT(programObject, GL_GEOMETRY_VERTICES_OUT_EXT, 15);
     clearUniforms();
 }
@@ -444,17 +445,17 @@ initUniforms(GLContextData& contextData)
     demDefaultUniform   = glGetUniformLocation(programObject, "demDefault");
 
     numPlanesUniform =  glGetUniformLocation(programObject, "numPlanes");
-    faultLineControlPointsUniform = glGetUniformLocation(programObject, "faultLineControlPoints");
     slicePlanesUniform = glGetUniformLocation(programObject, "slicePlanes");
     slopePlanesUniform = glGetUniformLocation(programObject, "slopePlanes");
     separatingPlanesUniform = glGetUniformLocation(programObject, "separatingPlanes");
     strikeShiftAmountUniform = glGetUniformLocation(programObject, "strikeShiftAmount");
     dipShiftAmountUniform = glGetUniformLocation(programObject, "dipShiftAmount");
-    slopeAngleUniform = glGetUniformLocation(programObject, "slopeAngle");
     slopePlaneCentersUniform = glGetUniformLocation(programObject, "slopePlaneCenters");
     sliceFaultCenterUniform = glGetUniformLocation(programObject, "sliceFaultCenter");
     sliceFalloffUniform     = glGetUniformLocation(programObject, "sliceFalloff");
     sliceColoringUniform = glGetUniformLocation(programObject, "sliceColoring");
+    strikeDirectionsUniform = glGetUniformLocation(programObject, "strikeDirections");
+    dipDirectionsUniform = glGetUniformLocation(programObject, "dipDirections");
 
     DataManager::SourceShaders& dataSources =
         DATAMANAGER->getSourceShaders(contextData);
@@ -510,6 +511,11 @@ compileShader(GLContextData& contextData)
         varying vec3 normal;\n\
         varying vec2 texCoord;\n\
         \n\
+        uniform int numPlanes;\n\
+        uniform vec4 slicePlanes[63];\n\
+        uniform vec4 separatingPlanes[64];\n\
+        \n\
+        varying int vtxShaderClosestPlaneIdx;\n\
     ";
 
     vertexShaderFunctions += dataSources.topography.getCode();
@@ -521,6 +527,22 @@ compileShader(GLContextData& contextData)
         {\n\
             return " + dataSources.topography.sample("coords") + ";\n\
         }\n\
+        void findClosestPlaneIdx(vec4 p) {\n\
+           vtxShaderClosestPlaneIdx = -1;\n\
+           float closestPlaneDst = 1e9;\n\
+           float dstLeft = dot(separatingPlanes[0], p);\n\
+           \n\
+           for (int i=0; i < numPlanes; i++) {\n\
+                float dst = dot(slicePlanes[i], p);\n\
+                float dstRight = dot(separatingPlanes[i+1], p);\n\
+                \n\
+                if (dst > 0.0 && dst < closestPlaneDst &&  (i == 0 || dstLeft > 0.0) && (i == (numPlanes-1) || dstRight < 0.0)) {\n\
+                    vtxShaderClosestPlaneIdx = i;\n\
+                    closestPlaneDst = dst;\n\
+                }\n\
+                dstLeft = dstRight;\n\
+        }\n\
+}\n\
     ";
 
     /* Create the main vertex shader starting boilerplate: */
@@ -643,6 +665,7 @@ compileShader(GLContextData& contextData)
             /* now happens in the geometry shader */\n\
             //gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 1.0);\n\
             gl_Position = vec4(position, 1.0);\n\
+            findClosestPlaneIdx(gl_Position);\n\
             \n\
             /* Pass the texture coordinates to the fragment program: */\n\
             texCoord = gl_Vertex.xy;\n\
@@ -709,17 +732,18 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
         \n\
         uniform int numPlanes;\n\
         uniform vec4 slicePlanes[63];\n\
-        uniform vec3 faultLineControlPoints[64];\n\
         uniform vec4 separatingPlanes[64];\n\
+        uniform vec3 strikeDirections[63];\n\
+        uniform vec3 dipDirections[63];\n\
         uniform vec4 slopePlanes[63];\n\
         uniform float strikeShiftAmount;\n\
         uniform float dipShiftAmount;\n\
-        uniform float slopeAngle;\n\
         uniform vec3 slopePlaneCenters[63];\n\
         uniform vec3 sliceFaultCenter;\n\
         uniform float sliceFalloff;\n\
         uniform float sliceColoring;\n\
         uniform vec3 center;\n\
+        varying in int vtxShaderClosestPlaneIdx[3];\n\
         int closestPlaneIdx;\n\
         float closestPlaneDst;\n\
         float totalCompression;\n\
@@ -779,45 +803,17 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
         void findClosestPlaneIdx(vec4 p) {\n\
            closestPlaneIdx = -1;\n\
            closestPlaneDst = 1e9;\n\
+           float dstLeft = dot(separatingPlanes[0], p);\n\
            \n\
            for (int i=0; i < numPlanes; i++) {\n\
               float dst = dot(slicePlanes[i], p);\n\
-              float dstLeft = dot(separatingPlanes[i], p);\n\
               float dstRight = dot(separatingPlanes[i+1], p);\n\
               \n\
-              if (dst > 0.0 && dst < closestPlaneDst && (i == 0 || dstLeft > 0.0) && (i == (numPlanes-1) || dstRight < 0.0)) {\n\
+              if (dst > 0.0 && dst < closestPlaneDst &&  (i == 0 || dstLeft > 0.0) && (i == (numPlanes-1) || dstRight < 0.0)) {\n\
                 closestPlaneIdx = i;\n\
                 closestPlaneDst = dst;\n\
-                break;\n\
               }\n\
-            }\n\
-        }\n\
-        vec4 shiftArc(vec4 p) {\n\
-            if (closestPlaneIdx == -1)\n\
-                return p;\n\
-            float d = length(p.xyz - sliceFaultCenter);\n\
-            float lambda = clamp(2 * (sliceFalloff - d) / sliceFalloff, 0.0, 1.0);\n\
-            float alphaRest = strikeShiftAmount;\n\
-            int pIdx = closestPlaneIdx;\n\
-            \n\
-            while (alphaRest >= 0.0) {\n\
-                vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
-                vec3 rotPlaneNormal = slicePlanes[pIdx].xyz + 0* normalize(cross(p.xyz + center, faultLine));\n\
-                vec3 nextSepNormal = -separatingPlanes[pIdx+1].xyz;\n\
-                vec3 rotPlaneSepPlaneISect = normalize(cross(rotPlaneNormal, nextSepNormal));\n\
-                float sepAlpha = acos(dot(normalize(p.xyz + center), rotPlaneSepPlaneISect));\n\
-                float rotAngle = alphaRest;\n\
-                if (pIdx < numPlanes-1)\n\
-                    rotAngle = min(alphaRest, sepAlpha);\n\
-                p = vec4(rotAxisAngleLocal(rotPlaneNormal,rotAngle, p.xyz), 1);\n\
-                alphaRest -= rotAngle;\n\
-                if (alphaRest <= 0.0) {\n\
-                    vec3 dipDir = rotAxisAngle(normalize(faultLine), slopeAngle, normalize(- (center + p.xyz)));\n\
-                    vec3 dipVec = 500000.0 * dipShiftAmount * normalize(cross(slicePlanes[pIdx].xyz, normalize(faultLine)));\n\
-                    dipVec = dipShiftAmount * dipDir;\n\
-                    return p + vec4(dipVec, 0);\n\
-                }\n\
-                pIdx++;\n\
+              dstLeft = dstRight;\n\
             }\n\
         }\n\
         vec4 shift(vec4 p) {\n\
@@ -829,12 +825,9 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
           bool pos = strikeShiftAmount >= 0.0;\n\
           float lambdaRest = abs(strikeShiftAmount);\n\
           int pIdx = closestPlaneIdx;\n\
-          float faultLength = length(faultLineControlPoints[numPlanes] - faultLineControlPoints[0]);\n\
           \n\
           while (lambdaRest > 0.0 && (pos && pIdx < numPlanes-1 || !pos && pIdx > 0)) {\n\
-              vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
-              vec3 upDir = normalize(faultLineControlPoints[pIdx] + center);\n\
-              vec3 strikeDir = (pos ? 1 : -1) * normalize(faultLine - dot(upDir, faultLine) * upDir);\n\
+              vec3 strikeDir = (pos ? 1 : -1) * strikeDirections[pIdx];\n\
               vec4 sepPlane = separatingPlanes[pos ? pIdx+1 : pIdx];\n\
               float lambdaIntersect = -dot(sepPlane, p) / dot(sepPlane.xyz, strikeDir);\n\
               if (lambdaIntersect > 0.0) {\n\
@@ -848,18 +841,13 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
               pIdx+= pos ? 1 : -1;\n\
           }\n\
           if (lambdaRest > 0.0) {\n\
-            vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
-            vec3 upDir = normalize(faultLineControlPoints[pIdx] + center);\n\
-            vec3 strikeDir = (pos ? 1 : -1) * normalize(faultLine - dot(upDir, faultLine) * upDir);\n\
+            vec3 strikeDir = (pos ? 1 : -1) * strikeDirections[pIdx];\n\
             float compressionFactor = dot(strikeDir, -slicePlanes[pos ? 0 : (numPlanes-1)].xyz);\n\
             p = vec4(p.xyz + lambdaRest * strikeDir, 1);\n\
             totalCompression += lambdaRest * compressionFactor;\n\
           }\n\
-          vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
-          vec3 upDir = normalize(faultLineControlPoints[pIdx] + center);\n\
-          vec3 strikeDir = (pos ? 1 : -1) * normalize(faultLine - dot(upDir, faultLine) * upDir);\n\
-          vec3 dipDir = (pos ? 1 : -1) * normalize(cross(slopePlanes[pIdx].xyz, strikeDir));\n\
-          p = vec4(p.xyz + dipShiftAmount * dipDir, 1);\n\
+          vec3 strikeDir = (pos ? 1 : -1) * strikeDirections[pIdx];\n\
+          p = vec4(p.xyz + dipShiftAmount * dipDirections[pIdx], 1);\n\
           float minimumSegmentDistance = 1e9;\n\
           for (pIdx=0; pIdx < numPlanes; pIdx++) {\n\
               float dst = dot(p, slicePlanes[pIdx]);\n\
@@ -871,61 +859,20 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
           totalCompression *= sliceColoring * max(0, (sliceFalloff - minimumSegmentDistance)) / sliceFalloff;\n\
           return p;\n\
         }\n\
-        vec4 shiftOld(vec4 p) {\n\
-          totalCompression = 0.0;\n\
-          if (closestPlaneIdx == -1)\n\
-              return p;\n\
-          float d = length(p.xyz - sliceFaultCenter);\n\
-          float lambda = clamp(2 * (sliceFalloff - d) / sliceFalloff, 0.0, 1.0);\n\
-          float lambdaRest = strikeShiftAmount;\n\
-          int pIdx = closestPlaneIdx;\n\
-          float faultLength = length(faultLineControlPoints[numPlanes] - faultLineControlPoints[0]);\n\
-          \n\
-          while (lambdaRest > 0.0 && pIdx < numPlanes-1) {\n\
-              vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
-              vec3 upDir = normalize(faultLineControlPoints[pIdx] + center);\n\
-              vec3 strikeDir = normalize(faultLine - dot(upDir, faultLine) * upDir);\n\
-              vec3 dipDir = normalize(cross(slopePlanes[pIdx].xyz, strikeDir));\n\
-              vec3 sepPlaneNormal = separatingPlanes[pIdx+1].xyz;\n\
-              float lambdaIntersect = -dot(separatingPlanes[pIdx+1], p) / dot(sepPlaneNormal, strikeDir);\n\
-              if (lambdaIntersect > 0.0) {\n\
-                   float lambdaIncrement = min(lambdaIntersect, lambdaRest);\n\
-                   float compressionFactor = dot(strikeDir, -slicePlanes[0].xyz);\n\
-                  \n\
-                   p = vec4(p.xyz + lambdaIncrement * strikeDir, 1);\n\
-                   lambdaRest -= lambdaIncrement;\n\
-                   totalCompression += lambdaIncrement * compressionFactor;\n\
-              }\n\
-              pIdx++;\n\
-          }\n\
-          if (lambdaRest > 0.0) {\n\
-            vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
-            vec3 upDir = normalize(faultLineControlPoints[pIdx] + center);\n\
-            vec3 strikeDir = normalize(faultLine - dot(upDir, faultLine) * upDir);\n\
-            vec3 dipDir = normalize(cross(slopePlanes[pIdx].xyz, strikeDir));\n\
-            float compressionFactor = dot(strikeDir, -slicePlanes[0].xyz);\n\
-            p = vec4(p.xyz + lambdaRest * strikeDir, 1);\n\
-            totalCompression += lambdaRest * compressionFactor;\n\
-          }\n\
-          vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
-          vec3 upDir = normalize(faultLineControlPoints[pIdx] + center);\n\
-          vec3 strikeDir = normalize(faultLine - dot(upDir, faultLine) * upDir);\n\
-          vec3 dipDir = normalize(cross(slopePlanes[pIdx].xyz, strikeDir));\n\
-          p = vec4(p.xyz + dipShiftAmount * dipDir, 1);\n\
-          totalCompression *= sliceColoring;\n\
-          return p;\n\
-        }\n\
         void main(void) {\n\
-            int i;\n\
+           int i;\n\
             int leftBitmap = 0;\n\
             int bitVal = 1;\n\
-            findClosestPlaneIdx(gl_PositionIn[0]);\n\
-            if (closestPlaneIdx == -1)\n\
-                findClosestPlaneIdx(gl_PositionIn[1]);\n\
-            if (closestPlaneIdx == -1)\n\
-                findClosestPlaneIdx(gl_PositionIn[2]);\n\
+            closestPlaneIdx = max(vtxShaderClosestPlaneIdx[0], max(vtxShaderClosestPlaneIdx[1], vtxShaderClosestPlaneIdx[2]));\n\
+            \n\
             if (strikeShiftAmount == 0 && dipShiftAmount == 0 || closestPlaneIdx == -1) {\n\
-                leftBitmap = 7;\n\
+                 for (i=0; i < gl_VerticesIn; i++) {\n\
+                     gl_FrontColor = gl_FrontColorIn[i];\n\
+                     gl_Position = gl_ModelViewProjectionMatrix * gl_PositionIn[i];\n\
+                     EmitVertex();\n\
+                 }\n\
+                 EndPrimitive();\n\
+                 return;\n\
             } else {\n\
                 for (i=0; i < 3; i++) {\n\
                     vec4 p = gl_PositionIn[i];\n\
@@ -935,27 +882,15 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
                     bitVal *= 2;\n\
                 }\n\
             }\n\
-            if (leftBitmap == 0 || leftBitmap == 7) {\n\
-                vec4 dstColor = vec4(0,0,0,0);\n\
-                if (closestPlaneIdx == 0)\n\
-                    dstColor = vec4(1,0,0,0);\n\
-                else if (closestPlaneIdx == 1)\n\
-                    dstColor = vec4(0,1,0,0);\n\
-                else if (closestPlaneIdx == 2)\n\
-                    dstColor = vec4(0,0,1,0);\n\
-                else if (closestPlaneIdx == 3)\n\
-                    dstColor = vec4(0,1,1,0);\n\
-                dstColor *= 0;\n\
+            if (leftBitmap == 0) {\n\
                 for (i=0; i < gl_VerticesIn; i++) {\n\
-                    gl_FrontColor = dstColor + gl_FrontColorIn[i];\n\
-                    vec4 p = gl_PositionIn[i];\n\
-                    if (closestPlaneIdx != -1) {\n\
-                        p = shift(p);\n\
-                        gl_FrontColor += vec4(-totalCompression, 0, totalCompression, 0);\n\
-                    }\n\
+                    gl_FrontColor = gl_FrontColorIn[i];\n\
+                    vec4 p = shift(gl_PositionIn[i]);\n\
+                    gl_FrontColor += vec4(-totalCompression, 0, totalCompression, 0);\n\
                     gl_Position = gl_ModelViewProjectionMatrix * vec4(p.xyz, 1);\n\
                     EmitVertex();\n\
                 }\n\
+                EndPrimitive();\n\
                 return;\n\
             }\n\
             vec4 a = gl_PositionIn[0];\n\
@@ -1021,6 +956,36 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
         }\n\
     ";
 
+    /*
+        vec4 shiftArc(vec4 p) {\n\
+            if (closestPlaneIdx == -1)\n\
+                return p;\n\
+            float d = length(p.xyz - sliceFaultCenter);\n\
+            float lambda = clamp(2 * (sliceFalloff - d) / sliceFalloff, 0.0, 1.0);\n\
+            float alphaRest = strikeShiftAmount;\n\
+            int pIdx = closestPlaneIdx;\n\
+            \n\
+            while (alphaRest >= 0.0) {\n\
+                vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
+                vec3 rotPlaneNormal = slicePlanes[pIdx].xyz + 0* normalize(cross(p.xyz + center, faultLine));\n\
+                vec3 nextSepNormal = -separatingPlanes[pIdx+1].xyz;\n\
+                vec3 rotPlaneSepPlaneISect = normalize(cross(rotPlaneNormal, nextSepNormal));\n\
+                float sepAlpha = acos(dot(normalize(p.xyz + center), rotPlaneSepPlaneISect));\n\
+                float rotAngle = alphaRest;\n\
+                if (pIdx < numPlanes-1)\n\
+                    rotAngle = min(alphaRest, sepAlpha);\n\
+                p = vec4(rotAxisAngleLocal(rotPlaneNormal,rotAngle, p.xyz), 1);\n\
+                alphaRest -= rotAngle;\n\
+                if (alphaRest <= 0.0) {\n\
+                    vec3 dipDir = rotAxisAngle(normalize(faultLine), slopeAngle, normalize(- (center + p.xyz)));\n\
+                    vec3 dipVec = 500000.0 * dipShiftAmount * normalize(cross(slicePlanes[pIdx].xyz, normalize(faultLine)));\n\
+                    dipVec = dipShiftAmount * dipDir;\n\
+                    return p + vec4(dipVec, 0);\n\
+                }\n\
+                pIdx++;\n\
+            }\n\
+        }\n\
+*/
        /*if (dst > 0.0 && dst < minDist && (i == 0 || dstLeft > 0.0) && (i == (numPlanes-1) || dstRight < 0.0)) {\n\*/
     CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << geometryShaderSource << std::endl;)
 

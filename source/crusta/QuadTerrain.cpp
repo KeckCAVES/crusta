@@ -386,62 +386,17 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
     SliceTool::SliceParameters params = SliceTool::getParameters();
 
     std::vector<float> slicePlanes;
-    std::vector<float> controlPoints;
     std::vector<float> separatingPlanes;
     std::vector<float> slopePlanes;
     //std::vector<Vector3> shiftVecs;
     std::vector<Vector3> planeCenters;
 
-    // assert(params.faultPlanes.size() + 1 == params.separatingPlanes.size());
+    std::vector<float> strikeDirections;
+    std::vector<float> dipDirections;
 
-    for (size_t i=0; i < params.faultPlanes.size(); ++i) {
-        Vector3 ctrlA = Vector3(params.controlPoints[i]);
-        Vector3 ctrlB = Vector3(params.controlPoints[i+1]);
-
-        const SliceTool::Plane &faultPlane = params.faultPlanes[i];
-        const SliceTool::Plane &slopePlane = params.slopePlanes[i];
-        const SliceTool::Plane &sepA = params.separatingPlanes[i];
-        const SliceTool::Plane &sepb = params.separatingPlanes[i+1];
-        
-        int jMax = (i == params.faultPlanes.size() - 1) ? 1 : 0; // include last control point in last interval
-        for (size_t j=0; j <= jMax; ++j) {
-            // linear interpolation for now
-            double lambda = j / 1.0;
-            // control point
-            Vector3 ctrlP = ctrlA + lambda * (ctrlB - ctrlA);
-            controlPoints.push_back(ctrlP[0] - center[0]);
-            controlPoints.push_back(ctrlP[1] - center[1]);
-            controlPoints.push_back(ctrlP[2] - center[2]);
-
-            // fault plane
-            double distance = -faultPlane.distance - faultPlane.normal * center;
-
-            slicePlanes.push_back(faultPlane.normal[0]);
-            slicePlanes.push_back(faultPlane.normal[1]);
-            slicePlanes.push_back(faultPlane.normal[2]);
-            slicePlanes.push_back(-distance);
-
-            distance = -slopePlane.distance - slopePlane.normal * center;
-
-            slopePlanes.push_back(slopePlane.normal[0]);
-            slopePlanes.push_back(slopePlane.normal[1]);
-            slopePlanes.push_back(slopePlane.normal[2]);
-            slopePlanes.push_back(-distance);
-
-            planeCenters.push_back(slopePlane.getPlaneCenter() - center);
-            // separating planes
-            distance = -sepA.distance + sepA.normal * (-center + ctrlP - ctrlA);
-
-            separatingPlanes.push_back(sepA.normal[0]);
-            separatingPlanes.push_back(sepA.normal[1]);
-            separatingPlanes.push_back(sepA.normal[2]);
-            separatingPlanes.push_back(-distance);
-        }
-    }
-
-    /*
     for (size_t i=0; i < params.faultPlanes.size(); ++i) {
         const SliceTool::Plane &p = params.faultPlanes[i];
+        const SliceTool::Plane &slopePlane = params.slopePlanes[i];
 
         double distance = -p.distance - p.normal * center; // translate plane to tile centroid
 
@@ -450,17 +405,42 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
         slicePlanes.push_back(p.normal[2]);
         slicePlanes.push_back(-distance);
 
-        shiftVecs.push_back(params.getShiftVector(p));
+        distance = -slopePlane.distance - slopePlane.normal * center;
+
+        slopePlanes.push_back(slopePlane.normal[0]);
+        slopePlanes.push_back(slopePlane.normal[1]);
+        slopePlanes.push_back(slopePlane.normal[2]);
+        slopePlanes.push_back(-distance);
 
         planeCenters.push_back(p.getPlaneCenter() - center);
+
+
+        Vector3 upDir = Vector3(Vector3(params.controlPoints[i]));
+        upDir.normalize();
+        Vector3 faultLine = Vector3(params.controlPoints[i+1]) - Vector3(params.controlPoints[i]);
+        Vector3 strikeDir = faultLine - (upDir * faultLine) * upDir;
+        strikeDir.normalize();
+
+        strikeDirections.push_back(strikeDir[0]);
+        strikeDirections.push_back(strikeDir[1]);
+        strikeDirections.push_back(strikeDir[2]);
+
+        Vector3 dipDir = cross(slopePlane.normal, strikeDir);
+        dipDir.normalize();
+
+        dipDirections.push_back(dipDir[0]);
+        dipDirections.push_back(dipDir[1]);
+        dipDirections.push_back(dipDir[2]);
+
+        //vec3 upDir = normalize(faultLineControlPoints[pIdx] + center);\n\
+        //vec3 strikeDir = (pos ? 1 : -1) * normalize(faultLine - dot(upDir, faultLine) * upDir);\n\
+        //vec3 dipDir = (pos ? 1 : -1) * normalize(cross(slopePlanes[pIdx].xyz, strikeDir));\n\
+
+
     }
 
     for (size_t i=0; i < params.separatingPlanes.size(); ++i) {
         const SliceTool::Plane &p = params.separatingPlanes[i];
-
-        controlPoints.push_back(params.controlPoints[i][0] - center[0]);
-        controlPoints.push_back(params.controlPoints[i][1] - center[1]);
-        controlPoints.push_back(params.controlPoints[i][2] - center[2]);
 
         double distance = -p.distance - p.normal * center; // translate plane to tile centroid
 
@@ -469,11 +449,16 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
         separatingPlanes.push_back(p.normal[2]);
         separatingPlanes.push_back(-distance);
     }
-*/
 
 
-    crustaGl->terrainShader.setSlicePlanes(params.faultPlanes.size(), &(controlPoints[0]), &(slopePlanes[0]), &(separatingPlanes[0]), &(slopePlanes[0]),
-                                           params.strikeAmount, params.dipAmount, (params.slopeAngleDegrees - 90.0) * (2*M_PI) / 360.0,
+    //vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
+    //vec3 upDir = normalize(faultLineControlPoints[pIdx] + center);\n\
+    //vec3 strikeDir = (pos ? 1 : -1) * normalize(faultLine - dot(upDir, faultLine) * upDir);\n\
+    //vec3 dipDir = (pos ? 1 : -1) * normalize(cross(slopePlanes[pIdx].xyz, strikeDir));\n\
+
+
+    crustaGl->terrainShader.setSlicePlanes(params.faultPlanes.size(), &(strikeDirections[0]), &(dipDirections[0]), &(slopePlanes[0]), &(separatingPlanes[0]), &(slopePlanes[0]),
+                                           params.strikeAmount, params.dipAmount,
                                            &(planeCenters[0]), params.faultCenter - center, params.falloffFactor, params.coloring);
     //crustaGl->terrainShader.disable();
 
