@@ -516,6 +516,14 @@ compileShader(GLContextData& contextData)
         uniform vec4 separatingPlanes[64];\n\
         \n\
         varying int vtxShaderClosestPlaneIdx;\n\
+        varying float vtxShaderTotalCompression;\n\
+        varying vec4 vtxShaderShiftedPoint;\n\
+        uniform vec3 strikeDirections[63];\n\
+        uniform vec3 dipDirections[63];\n\
+        uniform float strikeShiftAmount;\n\
+        uniform float dipShiftAmount;\n\
+        uniform float sliceFalloff;\n\
+        uniform float sliceColoring;\n\
     ";
 
     vertexShaderFunctions += dataSources.topography.getCode();
@@ -541,8 +549,53 @@ compileShader(GLContextData& contextData)
                     closestPlaneDst = dst;\n\
                 }\n\
                 dstLeft = dstRight;\n\
+            }\n\
         }\n\
-}\n\
+        float getCompressionDistanceFactor(vec4 p) {\n\
+           float minimumSegmentDistance = 1e9;\n\
+           for (int pIdx=0; pIdx < numPlanes; pIdx++) {\n\
+                float dst = dot(p, slicePlanes[pIdx]);\n\
+                bool rightFromLeftPlane = (dot(p, separatingPlanes[pIdx]) > 0.0);\n\
+                bool leftFromRightPlane = (dot(p, separatingPlanes[pIdx+1]) < 0.0);\n\
+                if (dst >= 0.0 && rightFromLeftPlane && leftFromRightPlane)\n\
+                    minimumSegmentDistance = min(minimumSegmentDistance, dst);\n\
+            }\n\
+            return sliceColoring * max(0.0, (sliceFalloff - minimumSegmentDistance)) / sliceFalloff;\n\
+        }\n\
+        void shift(vec4 p) {\n\
+          vtxShaderTotalCompression = 0.0;\n\
+          if (vtxShaderClosestPlaneIdx == -1) {\n\
+              vtxShaderShiftedPoint = p;\n\
+              return;\n\
+          }\n\
+          bool pos = strikeShiftAmount >= 0.0;\n\
+          float lambdaRest = abs(strikeShiftAmount);\n\
+          int pIdx = vtxShaderClosestPlaneIdx;\n\
+          vec3 strikeDir = (pos ? 1 : -1) * strikeDirections[pIdx];\n\
+          vec3 firstPlaneNormal = -slicePlanes[pos ? 0 : (numPlanes-1)].xyz;\n\
+          float compressionFactor = dot(strikeDir, firstPlaneNormal);\n\
+          \n\
+          while (lambdaRest > 0.0 && (pos && pIdx < numPlanes-1 || !pos && pIdx > 0)) {\n\
+              vec4 sepPlane = separatingPlanes[pos ? pIdx+1 : pIdx];\n\
+              float lambdaIntersect = -dot(sepPlane, p) / dot(sepPlane.xyz, strikeDir);\n\
+              if (lambdaIntersect > 0.0) {\n\
+                   float lambdaIncrement = min(lambdaIntersect, lambdaRest);\n\
+                  \n\
+                   p = vec4(p.xyz + lambdaIncrement * strikeDir, 1);\n\
+                   lambdaRest -= lambdaIncrement;\n\
+                   vtxShaderTotalCompression += lambdaIncrement * compressionFactor;\n\
+              }\n\
+              pIdx+= pos ? 1 : -1;\n\
+              strikeDir = (pos ? 1 : -1) * strikeDirections[pIdx];\n\
+              compressionFactor = dot(strikeDir, firstPlaneNormal);\n\
+          }\n\
+          if (lambdaRest > 0.0) {\n\
+            p = vec4(p.xyz + lambdaRest * strikeDir, 1);\n\
+            vtxShaderTotalCompression += lambdaRest * compressionFactor;\n\
+          }\n\
+          vtxShaderShiftedPoint = vec4(p.xyz + dipShiftAmount * dipDirections[pIdx], 1);\n\
+          vtxShaderTotalCompression *= getCompressionDistanceFactor(p);\n\
+        }\n\
     ";
 
     /* Create the main vertex shader starting boilerplate: */
@@ -666,6 +719,7 @@ compileShader(GLContextData& contextData)
             //gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 1.0);\n\
             gl_Position = vec4(position, 1.0);\n\
             findClosestPlaneIdx(gl_Position);\n\
+            shift(gl_Position);\n\
             \n\
             /* Pass the texture coordinates to the fragment program: */\n\
             texCoord = gl_Vertex.xy;\n\
@@ -744,6 +798,8 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
         uniform float sliceColoring;\n\
         uniform vec3 center;\n\
         varying in int vtxShaderClosestPlaneIdx[3];\n\
+        varying in vec4 vtxShaderShiftedPoint[3];\n\
+        varying in float vtxShaderTotalCompression[3];\n\
         int closestPlaneIdx;\n\
         float closestPlaneDst;\n\
         float totalCompression;\n\
@@ -816,47 +872,47 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
               dstLeft = dstRight;\n\
             }\n\
         }\n\
+        float getCompressionDistanceFactor(vec4 p) {\n\
+           float minimumSegmentDistance = 1e9;\n\
+           for (int pIdx=0; pIdx < numPlanes; pIdx++) {\n\
+                float dst = dot(p, slicePlanes[pIdx]);\n\
+                bool rightFromLeftPlane = (dot(p, separatingPlanes[pIdx]) > 0.0);\n\
+                bool leftFromRightPlane = (dot(p, separatingPlanes[pIdx+1]) < 0.0);\n\
+                if (dst >= 0.0 && rightFromLeftPlane && leftFromRightPlane)\n\
+                    minimumSegmentDistance = min(minimumSegmentDistance, dst);\n\
+            }\n\
+            return sliceColoring * max(0, (sliceFalloff - minimumSegmentDistance)) / sliceFalloff;\n\
+        }\n\
         vec4 shift(vec4 p) {\n\
           totalCompression = 0.0;\n\
           if (closestPlaneIdx == -1)\n\
               return p;\n\
-          float d = length(p.xyz - sliceFaultCenter);\n\
-          float lambda = clamp(2 * (sliceFalloff - d) / sliceFalloff, 0.0, 1.0);\n\
           bool pos = strikeShiftAmount >= 0.0;\n\
           float lambdaRest = abs(strikeShiftAmount);\n\
           int pIdx = closestPlaneIdx;\n\
+          vec3 strikeDir = (pos ? 1 : -1) * strikeDirections[pIdx];\n\
+          vec3 firstPlaneNormal = -slicePlanes[pos ? 0 : (numPlanes-1)].xyz;\n\
+          float compressionFactor = dot(strikeDir, firstPlaneNormal);\n\
           \n\
           while (lambdaRest > 0.0 && (pos && pIdx < numPlanes-1 || !pos && pIdx > 0)) {\n\
-              vec3 strikeDir = (pos ? 1 : -1) * strikeDirections[pIdx];\n\
               vec4 sepPlane = separatingPlanes[pos ? pIdx+1 : pIdx];\n\
               float lambdaIntersect = -dot(sepPlane, p) / dot(sepPlane.xyz, strikeDir);\n\
               if (lambdaIntersect > 0.0) {\n\
                    float lambdaIncrement = min(lambdaIntersect, lambdaRest);\n\
-                   float compressionFactor = dot(strikeDir, -slicePlanes[pos ? 0 : (numPlanes-1)].xyz);\n\
                   \n\
                    p = vec4(p.xyz + lambdaIncrement * strikeDir, 1);\n\
                    lambdaRest -= lambdaIncrement;\n\
                    totalCompression += lambdaIncrement * compressionFactor;\n\
               }\n\
               pIdx+= pos ? 1 : -1;\n\
+              strikeDir = (pos ? 1 : -1) * strikeDirections[pIdx];\n\
+              compressionFactor = dot(strikeDir, firstPlaneNormal);\n\
           }\n\
           if (lambdaRest > 0.0) {\n\
-            vec3 strikeDir = (pos ? 1 : -1) * strikeDirections[pIdx];\n\
-            float compressionFactor = dot(strikeDir, -slicePlanes[pos ? 0 : (numPlanes-1)].xyz);\n\
             p = vec4(p.xyz + lambdaRest * strikeDir, 1);\n\
             totalCompression += lambdaRest * compressionFactor;\n\
           }\n\
-          vec3 strikeDir = (pos ? 1 : -1) * strikeDirections[pIdx];\n\
           p = vec4(p.xyz + dipShiftAmount * dipDirections[pIdx], 1);\n\
-          float minimumSegmentDistance = 1e9;\n\
-          for (pIdx=0; pIdx < numPlanes; pIdx++) {\n\
-              float dst = dot(p, slicePlanes[pIdx]);\n\
-              bool rightFromLeftPlane = (dot(p, separatingPlanes[pIdx]) > 0.0);\n\
-              bool leftFromRightPlane = (dot(p, separatingPlanes[pIdx+1]) < 0.0);\n\
-              if (dst >= 0.0 && rightFromLeftPlane && leftFromRightPlane)\n\
-                minimumSegmentDistance = min(minimumSegmentDistance, dst);\n\
-          }\n\
-          totalCompression *= sliceColoring * max(0, (sliceFalloff - minimumSegmentDistance)) / sliceFalloff;\n\
           return p;\n\
         }\n\
         void main(void) {\n\
@@ -885,8 +941,8 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
             if (leftBitmap == 0) {\n\
                 for (i=0; i < gl_VerticesIn; i++) {\n\
                     gl_FrontColor = gl_FrontColorIn[i];\n\
-                    vec4 p = shift(gl_PositionIn[i]);\n\
-                    gl_FrontColor += vec4(-totalCompression, 0, totalCompression, 0);\n\
+                    vec4 p = vtxShaderShiftedPoint[i];\n\
+                    gl_FrontColor += vec4(-vtxShaderTotalCompression[i], 0, vtxShaderTotalCompression[i], 0);\n\
                     gl_Position = gl_ModelViewProjectionMatrix * vec4(p.xyz, 1);\n\
                     EmitVertex();\n\
                 }\n\
@@ -896,6 +952,10 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
             vec4 a = gl_PositionIn[0];\n\
             vec4 b = gl_PositionIn[1];\n\
             vec4 c = gl_PositionIn[2];\n\
+            \n\
+            vec4 sa = vtxShaderShiftedPoint[0];\n\
+            vec4 sb = vtxShaderShiftedPoint[1];\n\
+            vec4 sc = vtxShaderShiftedPoint[2];\n\
             \n\
             vec4 ab = isect(a,b);\n\
             vec4 bc = isect(b,c);\n\
@@ -909,49 +969,67 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
             gl_FrontColor = gl_FrontColorIn[0];\n\
             \n\
             if (leftBitmap == 1) {\n\
+                    vec4 sab = shift(ab);\n\
+                    vec4 sca = shift(ca);\n\
+                    \n\
                     tri(a,ab,ca, red);\n\
-                    tri(shift(ab),shift(b),shift(c), blue);\n\
-                    tri(shift(ab),shift(c),shift(ca), green);\n\
+                    tri(sab,sb,sc, blue);\n\
+                    tri(sab,sc,sca, green);\n\
                     gl_FrontColor = planeColor;\n\
                     quad(ab,ca, yellow);\n\
-                    quad(shift(ca),shift(ab), yellow);\n\
+                    quad(sca,sab, yellow);\n\
                 } else if (leftBitmap == 2) {\n\
+                    vec4 sab = shift(ab);\n\
+                    vec4 sbc = shift(bc);\n\
+                    \n\
                     tri(b,bc,ab, red);\n\
-                    tri(shift(bc),shift(c),shift(a), blue);\n\
-                    tri(shift(bc),shift(a),shift(ab), green);\n\
+                    tri(sbc,sc,sa, blue);\n\
+                    tri(sbc,sa,shift(ab), green);\n\
                     gl_FrontColor = planeColor;\n\
                     quad(bc,ab, yellow);\n\
-                    quad(shift(ab),shift(bc), yellow);\n\
+                    quad(sab,sbc, yellow);\n\
                     quad(ab,bc, yellow);\n\
-                    quad(shift(bc),shift(ab), yellow);\n\
+                    quad(sbc,sab, yellow);\n\
                 } else if (leftBitmap == 4) {\n\
+                    vec4 sca = shift(ca);\n\
+                    vec4 sbc = shift(bc);\n\
+                    \n\
                     tri(c,ca,bc, red);\n\
-                    tri(shift(ca),shift(a),shift(b), blue);\n\
-                    tri(shift(ca),shift(b),shift(bc), green);\n\
+                    tri(sca,sa,sb, blue);\n\
+                    tri(sca,sb,sbc, green);\n\
                     gl_FrontColor = planeColor;\n\
                     quad(ca,bc, yellow);\n\
-                    quad(shift(bc),shift(ca), yellow);\n\
+                    quad(sbc,sca, yellow);\n\
                 } else if (leftBitmap == 3) {\n\
+                    vec4 sca = shift(ca);\n\
+                    vec4 sbc = shift(bc);\n\
+                    \n\
                     tri(b,bc,ca,blue);\n\
                     tri(b,ca,a, green);\n\
-                    tri(shift(bc),shift(c),shift(ca), red);\n\
+                    tri(sbc,sc,sca, red);\n\
                     gl_FrontColor = planeColor;\n\
                     quad(bc,ca, yellow);\n\
-                    quad(shift(ca),shift(bc), yellow);\n\
+                    quad(sca,sbc, yellow);\n\
                 } else if (leftBitmap == 5) {\n\
+                    vec4 sab = shift(ab);\n\
+                    vec4 sbc = shift(bc);\n\
+                    \n\
                     tri(a,ab,bc, blue);\n\
                     tri(a,bc,c, green);\n\
-                    tri(shift(ab),shift(b),shift(bc), red);\n\
+                    tri(sab,sb,sbc, red);\n\
                     gl_FrontColor = planeColor;\n\
                     quad(ab,bc, yellow);\n\
-                    quad(shift(bc),shift(ab), yellow);\n\
+                    quad(sbc,sab, yellow);\n\
                 } else if (leftBitmap == 6) {\n\
+                    vec4 sab = shift(ab);\n\
+                    vec4 sca = shift(ca);\n\
+                    \n\
                     tri(c,ca,ab, blue);\n\
                     tri(c,ab,b, green);\n\
-                    tri(shift(ca),shift(a),shift(ab), red);\n\
+                    tri(sca,sa,sab, red);\n\
                     gl_FrontColor = planeColor;\n\
                     quad(ca,ab, yellow);\n\
-                    quad(shift(ab),shift(ca), yellow);\n\
+                    quad(sab,sca, yellow);\n\
                 }\n\
         }\n\
     ";

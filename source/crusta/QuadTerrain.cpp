@@ -458,8 +458,7 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
 
 
     crustaGl->terrainShader.setSlicePlanes(params.faultPlanes.size(), &(strikeDirections[0]), &(dipDirections[0]), &(slopePlanes[0]), &(separatingPlanes[0]), &(slopePlanes[0]),
-                                           params.strikeAmount, params.dipAmount,
-                                           &(planeCenters[0]), params.faultCenter - center, params.falloffFactor, params.coloring);
+                                           params.strikeAmount, params.dipAmount, &(planeCenters[0]), params.faultCenter - center, params.falloffFactor, params.coloring);
     //crustaGl->terrainShader.disable();
 
     // render slicing plane
