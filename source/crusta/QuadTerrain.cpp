@@ -667,8 +667,26 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
             Vector3 a = Vector3(params.controlPoints[i]);
             Vector3 b = Vector3(params.controlPoints[i+1]);
 
-            glLineWidth(3.0);
-            glColor3f(1,1,0);
+            glLineWidth(8.0);
+
+            if (i == 0) {
+                glColor3f(1,1,1);
+            } else {
+                Vector3 upDir = Vector3(a);
+                upDir.normalize();
+                Vector3 faultLine = Vector3(b - a);
+                Vector3 strikeDir = faultLine - (upDir * faultLine) * upDir;
+                strikeDir.normalize();
+                double compression = params.slopePlanes[0].normal * strikeDir;
+                double sign = compression > 0 ? 1 : -1;
+                compression = sign * sqrt(sqrt(fabs(compression)));
+                if (params.strikeAmount < 0.0)
+                    compression *= -1;
+
+                glColor3f(min( compression + 1.0, 1.0),
+                          1 - fabs(compression),
+                          min(-compression + 1.0, 1.0));
+            }
 
             glBegin(GL_LINE_STRIP);
             double omega = acos(Vector3(a).normalize() * Vector3(b).normalize());
