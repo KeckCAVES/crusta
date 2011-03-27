@@ -57,7 +57,7 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     top->setNumMinorWidgets(3);
     top->setColumnWeight(1, 1.0);
 
-    new GLMotif::Label("StrikeAmount", top, "Offset");
+    new GLMotif::Label("StrikeAmount", top, "Strike-slip");
     GLMotif::Slider *strikeAmountSlider = new GLMotif::Slider("StrikeAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
     strikeAmountSlider->setValueRange(-350, 350, 0.25);
     strikeAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::strikeAmountSliderCallback);
@@ -68,7 +68,7 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     strikeAmountTextField->setFieldWidth(2);
     strikeAmountTextField->setPrecision(0);
 
-    new GLMotif::Label("SlopeAngleLabel", top, "Dip");
+    new GLMotif::Label("SlopeAngleLabel", top, "Fault dip");
     GLMotif::Slider *slopeAngleSlider = new GLMotif::Slider("slopeAngleSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
     slopeAngleSlider->setValueRange(0.0, 180.0, 1.0);
     slopeAngleSlider->getValueChangedCallbacks().add(this, &SliceTool::slopeAngleSliderCallback);
@@ -79,7 +79,7 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     slopeAngleTextField->setFieldWidth(5);
     slopeAngleTextField->setPrecision(2);
 
-    new GLMotif::Label("dipAmountLabel", top, "Vertical displacement");
+    new GLMotif::Label("dipAmountLabel", top, "Dip-slip");
     GLMotif::Slider *dipAmountSlider = new GLMotif::Slider("dipAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
     dipAmountSlider->setValueRange(-20, 20, 0.025);
     dipAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::dipAmountSliderCallback);
