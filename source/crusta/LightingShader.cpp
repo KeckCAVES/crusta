@@ -572,7 +572,7 @@ compileShader(GLContextData& contextData)
           float lambdaRest = abs(strikeShiftAmount);\n\
           int pIdx = vtxShaderClosestPlaneIdx;\n\
           vec3 strikeDir = (pos ? 1 : -1) * strikeDirections[pIdx];\n\
-          vec3 firstPlaneNormal = -slicePlanes[pos ? 0 : (numPlanes-1)].xyz;\n\
+          vec3 firstPlaneNormal = -slicePlanes[0].xyz;\n\
           float compressionFactor = dot(strikeDir, firstPlaneNormal);\n\
           \n\
           while (lambdaRest > 0.0 && (pos && pIdx < numPlanes-1 || !pos && pIdx > 0)) {\n\
@@ -891,7 +891,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
           float lambdaRest = abs(strikeShiftAmount);\n\
           int pIdx = closestPlaneIdx;\n\
           vec3 strikeDir = (pos ? 1 : -1) * strikeDirections[pIdx];\n\
-          vec3 firstPlaneNormal = -slicePlanes[pos ? 0 : (numPlanes-1)].xyz;\n\
+          vec3 firstPlaneNormal = -slicePlanes[0].xyz;\n\
           float compressionFactor = dot(strikeDir, firstPlaneNormal);\n\
           \n\
           while (lambdaRest > 0.0 && (pos && pIdx < numPlanes-1 || !pos && pIdx > 0)) {\n\
