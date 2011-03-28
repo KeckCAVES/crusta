@@ -942,7 +942,12 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
                 for (i=0; i < gl_VerticesIn; i++) {\n\
                     gl_FrontColor = gl_FrontColorIn[i];\n\
                     vec4 p = vtxShaderShiftedPoint[i];\n\
-                    gl_FrontColor += vec4(-vtxShaderTotalCompression[i], 0, vtxShaderTotalCompression[i], 0);\n\
+                    if (vtxShaderTotalCompression[i] >= 0.0)\n\
+                        gl_FrontColor += vec4(0, 0, vtxShaderTotalCompression[i], 0);\n\
+                    else {\n\
+                        float k = min(1.0, -vtxShaderTotalCompression[i]);\n\
+                        gl_FrontColor += vec4(k, k * (165./255.), 0, 0);\n\
+                    }\n\
                     gl_Position = gl_ModelViewProjectionMatrix * vec4(p.xyz, 1);\n\
                     EmitVertex();\n\
                 }\n\

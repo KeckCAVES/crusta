@@ -326,6 +326,9 @@ display(GLContextData& contextData) const
     Scalar scaleFac = Vrui::getNavigationTransformation().getScaling();
     Scalar size     = markerSize/scaleFac;
 
+    for (size_t i=0; i < _sliceParameters.controlPoints.size(); ++i)
+        markerPos[i] = Point3(Vector3(markerPos[i])-centroid);
+
     CHECK_GLA
     //draw the control points
     for (size_t i=0; i < _sliceParameters.controlPoints.size(); ++i)
@@ -341,7 +344,6 @@ display(GLContextData& contextData) const
             glLineWidth(1.0f);
         }
 
-        markerPos[i] = Point3(Vector3(markerPos[i])-centroid);
         glBegin(GL_LINES);
             glVertex3f(markerPos[i][0]-size, markerPos[i][1], markerPos[i][2]);
             glVertex3f(markerPos[i][0]+size, markerPos[i][1], markerPos[i][2]);
@@ -349,10 +351,79 @@ display(GLContextData& contextData) const
             glVertex3f(markerPos[i][0], markerPos[i][1]+size, markerPos[i][2]);
             glVertex3f(markerPos[i][0], markerPos[i][1], markerPos[i][2]-size);
             glVertex3f(markerPos[i][0], markerPos[i][1], markerPos[i][2]+size);
+
+            /*
+            if (i <  _sliceParameters.controlPoints.size() - 1) {
+                glVertex3f(markerPos[i][0], markerPos[i][1], markerPos[i][2]);
+                glVertex3f(markerPos[i+1][0], markerPos[i+1][1], markerPos[i+1][2]);
+            }
+            */
         glEnd();
 
         CHECK_GLA
     }
+
+   // glDisable(GL_DEPTH_TEST);
+
+    GLdouble depthRange[2];
+    glGetDoublev(GL_DEPTH_RANGE, depthRange);
+    glDepthRange(0.0, 0.0);
+
+    if (_sliceParameters.showFaultLines) {
+        glLineWidth(8.0);
+        glBegin(GL_LINES);
+
+        for (size_t i=0; i < _sliceParameters.faultPlanes.size(); ++i) {
+           // std::cout << "controlpoint0 = " << params.controlPoints[0][0] << ", " << params.controlPoints[0][1] << ", " << params.controlPoints[0][2] << std::endl;
+
+            Vector3 a = Vector3(markerPos[i]);
+            Vector3 b = Vector3(markerPos[i+1]);
+
+            if (i == 0) {
+                glColor3f(1,1,1);
+            } else {
+                Vector3 upDir = Vector3(_sliceParameters.controlPoints[i]);
+                upDir.normalize();
+                Vector3 faultLine = Vector3(b - a);
+                Vector3 strikeDir = faultLine - (upDir * faultLine) * upDir;
+                strikeDir.normalize();
+                double compression = _sliceParameters.slopePlanes[0].normal * strikeDir;
+                double sign = compression > 0 ? 1 : -1;
+                compression = sign * sqrt(sqrt(fabs(compression)));
+                if (_sliceParameters.strikeAmount < 0.0)
+                    compression *= -1;
+
+                if (compression < 0.0) {
+                    double k = -compression;
+                    //glColor3f(compression + 1, 1 + compression, 1.0);
+                    glColor3f(1-k, 1-k, 1);
+                } else {
+                    double k = compression;
+                    //glColor3f(1.0, 1 - compression, -compression);
+                    glColor3f(1, 1-k + k * (165./255.), 1-k);
+                }
+            }
+
+            glVertex3d(a[0], a[1], a[2]);
+            glVertex3d(b[0], b[1], b[2]);
+
+            /*
+            double omega = acos(Vector3(a).normalize() * Vector3(b).normalize());
+
+            for (size_t i=0; i < 2; ++i) {
+                double t = i / 1.0;
+                Vector3 pt = (1.0 / sin(omega)) * (sin((1-t)*omega) * a + sin(t * omega) * b);
+                glVertex3d(pt[0], pt[1], pt[2]);
+            }
+*/
+        }
+
+        glEnd();
+    }
+
+    glDepthRange(depthRange[0], depthRange[1]);
+
+    //glEnable(GL_DEPTH_TEST);
 
     //restore coordinate system
     glPopMatrix();

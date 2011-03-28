@@ -603,7 +603,7 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
 
 
 
-    glDisable(GL_LIGHTING);
+
     /*
     glBegin(GL_TRIANGLES);
     glColor3f(0.6,0.6,1.0); // same blue color as in shader
@@ -623,7 +623,6 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
     }
     glEnd();
 */
-    glDisable(GL_DEPTH_TEST);
 
     // render displacement approx for lod adaption
     /*
@@ -660,46 +659,8 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         glEnd();
     }
 */
-    if (params.showFaultLines) {
-        for (size_t i=0; i < params.faultPlanes.size(); ++i) {
-           // std::cout << "controlpoint0 = " << params.controlPoints[0][0] << ", " << params.controlPoints[0][1] << ", " << params.controlPoints[0][2] << std::endl;
 
-            Vector3 a = Vector3(params.controlPoints[i]);
-            Vector3 b = Vector3(params.controlPoints[i+1]);
 
-            glLineWidth(8.0);
-
-            if (i == 0) {
-                glColor3f(1,1,1);
-            } else {
-                Vector3 upDir = Vector3(a);
-                upDir.normalize();
-                Vector3 faultLine = Vector3(b - a);
-                Vector3 strikeDir = faultLine - (upDir * faultLine) * upDir;
-                strikeDir.normalize();
-                double compression = params.slopePlanes[0].normal * strikeDir;
-                double sign = compression > 0 ? 1 : -1;
-                compression = sign * sqrt(sqrt(fabs(compression)));
-                if (params.strikeAmount < 0.0)
-                    compression *= -1;
-
-                glColor3f(min( compression + 1.0, 1.0),
-                          1 - fabs(compression),
-                          min(-compression + 1.0, 1.0));
-            }
-
-            glBegin(GL_LINE_STRIP);
-            double omega = acos(Vector3(a).normalize() * Vector3(b).normalize());
-
-            for (size_t i=0; i < 2; ++i) {
-                double t = i / 1.0;
-                Vector3 pt = (1.0 / sin(omega)) * (sin((1-t)*omega) * a + sin(t * omega) * b);
-                glVertex3d(pt[0], pt[1], pt[2]);
-            }
-
-            glEnd();
-        }
-    }
     /*
     for (size_t i=0; i < params.separatingPlanes.size(); ++i) {
         const SliceTool::Plane &p = params.separatingPlanes[i];
@@ -790,8 +751,6 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         // float sepAlpha = acos(dot(normalize(p.xyz + center), rotPlaneSepPlaneISect));
     }
 */
-    glEnable(GL_LIGHTING);
-    glEnable(GL_DEPTH_TEST);
 
     //restore the GL transform as it was before
     glPopMatrix();
