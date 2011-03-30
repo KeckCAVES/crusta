@@ -412,8 +412,7 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
         slopePlanes.push_back(slopePlane.normal[2]);
         slopePlanes.push_back(-distance);
 
-        planeCenters.push_back(p.getPlaneCenter() - center);
-
+        planeCenters.push_back(slopePlane.getPlaneCenter() - center);
 
         Vector3 upDir = Vector3(Vector3(params.controlPoints[i]));
         upDir.normalize();
