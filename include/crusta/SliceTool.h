@@ -8,7 +8,7 @@
 #include <Misc/CallbackList.h>
 #include <GLMotif/Button.h>
 #include <GLMotif/RadioBox.h>
-#include <GLMotif/Slider.h>
+#include <GLMotif/RelativeSlider.h>
 #include <GLMotif/ToggleButton.h>
 #include <GLMotif/TextField.h>
 #include <Vrui/Tools/GenericToolFactory.h>
@@ -102,11 +102,13 @@ public:
     virtual void frame();
     virtual void display(GLContextData& contextData) const;
 
-    virtual void strikeAmountSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
-    virtual void dipAmountSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
+    virtual void strikeAmountSliderCallback(GLMotif::RelativeSlider::ValueCallbackData* cbData);
+    virtual void dipAmountSliderCallback(GLMotif::RelativeSlider::ValueCallbackData* cbData);
+
     virtual void slopeAngleSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
     virtual void falloffSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
     virtual void coloringSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
+
     virtual void showFaultLinesButtonCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     virtual void resetButtonCallback(GLMotif::Button::SelectCallbackData *);
 

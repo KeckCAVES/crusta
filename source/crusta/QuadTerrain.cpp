@@ -431,9 +431,9 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
         dipDirections.push_back(dipDir[1]);
         dipDirections.push_back(dipDir[2]);
 
-        //vec3 upDir = normalize(faultLineControlPoints[pIdx] + center);\n\
-        //vec3 strikeDir = (pos ? 1 : -1) * normalize(faultLine - dot(upDir, faultLine) * upDir);\n\
-        //vec3 dipDir = (pos ? 1 : -1) * normalize(cross(slopePlanes[pIdx].xyz, strikeDir));\n\
+        //vec3 upDir = normalize(faultLineControlPoints[pIdx] + center);\n
+        //vec3 strikeDir = (pos ? 1 : -1) * normalize(faultLine - dot(upDir, faultLine) * upDir);\n
+        //vec3 dipDir = (pos ? 1 : -1) * normalize(cross(slopePlanes[pIdx].xyz, strikeDir));\n
 
 
     }
@@ -450,10 +450,10 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
     }
 
 
-    //vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n\
-    //vec3 upDir = normalize(faultLineControlPoints[pIdx] + center);\n\
-    //vec3 strikeDir = (pos ? 1 : -1) * normalize(faultLine - dot(upDir, faultLine) * upDir);\n\
-    //vec3 dipDir = (pos ? 1 : -1) * normalize(cross(slopePlanes[pIdx].xyz, strikeDir));\n\
+    //vec3 faultLine = faultLineControlPoints[pIdx+1] - faultLineControlPoints[pIdx];\n
+    //vec3 upDir = normalize(faultLineControlPoints[pIdx] + center);\n
+    //vec3 strikeDir = (pos ? 1 : -1) * normalize(faultLine - dot(upDir, faultLine) * upDir);\n
+    //vec3 dipDir = (pos ? 1 : -1) * normalize(cross(slopePlanes[pIdx].xyz, strikeDir));\n
 
 
     crustaGl->terrainShader.setSlicePlanes(params.faultPlanes.size(), &(strikeDirections[0]), &(dipDirections[0]), &(slopePlanes[0]), &(separatingPlanes[0]), &(slopePlanes[0]),

@@ -134,10 +134,24 @@ void RelativeSlider::
 callback(const ValueCallbackData::ProductionReason& reason)
 {
     float relativeValue;
-    if (value<0)
-        relativeValue = -(pow(2.0f, Math::abs(value)) - 1.0f);
-    else
-        relativeValue =   pow(2.0f, Math::abs(value)) - 1.0f;
+    switch (reason)
+    {
+        case ValueCallbackData::DRAGGED:
+        {
+            if (value<0)
+                relativeValue = -(pow(2.0f, Math::abs(value)) - 1.0f);
+            else
+                relativeValue =   pow(2.0f, Math::abs(value)) - 1.0f;
+        } break;
+
+        case ValueCallbackData::CLICKED_LEFT:
+            relativeValue = -valueIncrement;
+            break;
+
+        case ValueCallbackData::CLICKED_RIGHT:
+            relativeValue = valueIncrement;
+            break;
+     }
 
     ValueCallbackData cbData(this, reason, relativeValue);
     valueCallbacks.call(&cbData);

@@ -58,44 +58,44 @@ SliceTool(const Vrui::ToolFactory* iFactory,
     top->setColumnWeight(1, 1.0);
 
     new GLMotif::Label("StrikeAmount", top, "Strike-slip");
-    GLMotif::Slider *strikeAmountSlider = new GLMotif::Slider("StrikeAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    strikeAmountSlider->setValueRange(-350, 350, 0.25);
-    strikeAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::strikeAmountSliderCallback);
+    GLMotif::RelativeSlider *strikeAmountSlider = new GLMotif::RelativeSlider("StrikeAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
     strikeAmountSlider->setValue(0.0);
+    strikeAmountSlider->setValueRange(-2.0, 2.0, 0.01);
+    strikeAmountSlider->getValueCallbacks().add(this, &SliceTool::strikeAmountSliderCallback);
 
     strikeAmountTextField = new GLMotif::TextField("strikeAmountTextField", top, 5);
     strikeAmountTextField->setFloatFormat(GLMotif::TextField::FIXED);
-    strikeAmountTextField->setFieldWidth(2);
-    strikeAmountTextField->setPrecision(0);
+    strikeAmountTextField->setFieldWidth(6);
+    strikeAmountTextField->setPrecision(3);
 
     new GLMotif::Label("SlopeAngleLabel", top, "Fault dip");
     GLMotif::Slider *slopeAngleSlider = new GLMotif::Slider("slopeAngleSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
+    slopeAngleSlider->setValue(90.0);
     slopeAngleSlider->setValueRange(0.0, 180.0, 1.0);
     slopeAngleSlider->getValueChangedCallbacks().add(this, &SliceTool::slopeAngleSliderCallback);
-    slopeAngleSlider->setValue(90.0);
 
-    slopeAngleTextField = new GLMotif::TextField("dipAmountextField", top, 10);
+    slopeAngleTextField = new GLMotif::TextField("slopeAmountextField", top, 10);
     slopeAngleTextField->setFloatFormat(GLMotif::TextField::FIXED);
-    slopeAngleTextField->setFieldWidth(5);
-    slopeAngleTextField->setPrecision(2);
+    slopeAngleTextField->setFieldWidth(3);
+    slopeAngleTextField->setPrecision(0);
 
     new GLMotif::Label("dipAmountLabel", top, "Dip-slip");
-    GLMotif::Slider *dipAmountSlider = new GLMotif::Slider("dipAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
-    dipAmountSlider->setValueRange(-20, 20, 0.025);
-    dipAmountSlider->getValueChangedCallbacks().add(this, &SliceTool::dipAmountSliderCallback);
+    GLMotif::RelativeSlider *dipAmountSlider = new GLMotif::RelativeSlider("dipAmountSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
     dipAmountSlider->setValue(0.0);
+    dipAmountSlider->setValueRange(-2.0, 2.0, 0.01);
+    dipAmountSlider->getValueCallbacks().add(this, &SliceTool::dipAmountSliderCallback);
 
     dipAmountTextField = new GLMotif::TextField("dipAmountextField", top, 5);
     dipAmountTextField->setFloatFormat(GLMotif::TextField::FIXED);
-    dipAmountTextField->setFieldWidth(5);
-    dipAmountTextField->setPrecision(2);
+    dipAmountTextField->setFieldWidth(6);
+    dipAmountTextField->setPrecision(3);
 
 
     new GLMotif::Label("FalloffLabel", top, "Falloff");
     GLMotif::Slider *falloffSlider = new GLMotif::Slider("falloffSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
+    falloffSlider->setValue(1.0);
     falloffSlider->setValueRange(0.1, 200.0, 0.1);
     falloffSlider->getValueChangedCallbacks().add(this, &SliceTool::falloffSliderCallback);
-    falloffSlider->setValue(1.0);
 
     GLMotif::ToggleButton *showFaultLinesButton = new GLMotif::ToggleButton("ShowFaultLinesButton", top, "Show Lines");
     showFaultLinesButton->setToggle(true);
@@ -103,9 +103,9 @@ SliceTool(const Vrui::ToolFactory* iFactory,
 
     new GLMotif::Label("coloringLabel", top, "Coloring");
     GLMotif::Slider *coloringSlider = new GLMotif::Slider("coloringSlider", top, GLMotif::Slider::HORIZONTAL, style->fontHeight*10.0f);
+    coloringSlider->setValue(0.0);
     coloringSlider->setValueRange(0, 0.1, 0.001);
     coloringSlider->getValueChangedCallbacks().add(this, &SliceTool::coloringSliderCallback);
-    coloringSlider->setValue(0.0);
 
     GLMotif::Button *resetButton = new GLMotif::Button("ResetButton", top, "Reset");
     resetButton->getSelectCallbacks().add(this, &SliceTool::resetButtonCallback);
@@ -131,17 +131,17 @@ void SliceTool::updateTextFields() {
      slopeAngleTextField->setValue(_sliceParameters.slopeAngleDegrees);
 }
 
-void SliceTool::strikeAmountSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
+void SliceTool::strikeAmountSliderCallback(GLMotif::RelativeSlider::ValueCallbackData* cbData)
 {
-    _sliceParameters.strikeAmount = Vrui::Scalar(cbData->value);
+    _sliceParameters.strikeAmount += Vrui::Scalar(cbData->value);
     _sliceParameters.updatePlaneParameters();
     updateTextFields();
     Vrui::requestUpdate();
 }
 
-void SliceTool::dipAmountSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
+void SliceTool::dipAmountSliderCallback(GLMotif::RelativeSlider::ValueCallbackData* cbData)
 {
-    _sliceParameters.dipAmount = Vrui::Scalar(cbData->value);
+    _sliceParameters.dipAmount += Vrui::Scalar(cbData->value);
     _sliceParameters.updatePlaneParameters();
     updateTextFields();
     Vrui::requestUpdate();
@@ -331,7 +331,7 @@ display(GLContextData& contextData) const
 
     CHECK_GLA
     //draw the control points
-    for (size_t i=0; i < _sliceParameters.controlPoints.size(); ++i)
+    for (int i=0; i < static_cast<int>(_sliceParameters.controlPoints.size()); ++i)
     {
         if (markersHover == i+1)
         {
