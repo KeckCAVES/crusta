@@ -540,6 +540,7 @@ compileShader(GLContextData& contextData)
             \n\
             /* Compute the vertex position in eye coordinates: */\n\
             vertexEc = gl_ModelViewMatrix * vec4(position, 1.0);\n\
+            gl_ClipVertex = vertexEc;\n\
             \n\
             /* Compute the normal vector in eye coordinates: */\n\
             normalEc=normalize(gl_NormalMatrix*normal);\n\
