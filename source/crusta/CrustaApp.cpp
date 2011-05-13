@@ -85,8 +85,8 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
         std::string token = std::string(argv[i]);
         if (token == std::string("-settings"))
             settingsNames.push_back(argv[++i]);
-		else if (token == std::string("-version"))
-			std::cout << "Crusta version: " << CRUSTA_VERSION << std::endl;
+        else if (token == std::string("-version"))
+            std::cout << "Crusta version: " << CRUSTA_VERSION << std::endl;
         else
             dataNames.push_back(token);
     }
@@ -106,8 +106,6 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
         viewerHeadlightStates[i] =
             Vrui::getViewer(i)->getHeadlight().isEnabled();
     }
-
-    specularSettings.setupComponent(crusta);
 
     produceMainMenu();
     produceVerticalScaleDialog();
@@ -169,18 +167,18 @@ showCallback(ToggleButton::ValueChangedCallbackData* cbData)
     }
 }
 
-
-CrustaApp::SpecularSettingsDialog::
-SpecularSettingsDialog() :
-    CrustaComponent(NULL), colorPicker("SpecularSettingsColorPicker",
-                                       Vrui::getWidgetManager(),
-                                       "Pick Specular Color")
+CrustaApp::TerrainColorSettingsDialog::
+TerrainColorSettingsDialog() :
+    currentButton(NULL),
+    colorPicker("TerrainColorSettingsColorPicker",
+                Vrui::getWidgetManager(),
+                "Pick Color")
 {
-    name  = "SpecularSettings";
-    label = "Specular Reflectance Settings";
+    name  = "TerrainColorSettings";
+    label = "Terrain Color Settings";
 }
 
-void CrustaApp::SpecularSettingsDialog::
+void CrustaApp::TerrainColorSettingsDialog::
 init()
 {
     Dialog::init();
@@ -188,85 +186,135 @@ init()
     const StyleSheet* style = Vrui::getWidgetManager()->getStyleSheet();
 
     colorPicker.getColorPicker()->getColorChangedCallbacks().add(
-            this, &CrustaApp::SpecularSettingsDialog::colorChangedCallback);
+            this, &CrustaApp::TerrainColorSettingsDialog::colorChangedCallback);
 
+    RowColumn* root = new RowColumn("TCSRoot", dialog, false);
+    root->setNumMinorWidgets(2);
 
-    RowColumn* root = new RowColumn("Root", dialog, false);
+    Button* button = NULL;
 
-    RowColumn* colorRoot = new RowColumn(
-        "ColorRoot", root, false);
+//- Emissive Color
+    new Label("TCSEmissive", root, "Emissive:");
+    button = new Button("TSCEmissiveButton", root, "");
+    button->setBackgroundColor(SETTINGS->terrainEmissiveColor);
+    button->getSelectCallbacks().add(
+        this, &CrustaApp::TerrainColorSettingsDialog::colorButtonCallback);
 
-    Color sc = SETTINGS->terrainSpecularColor;
-    new Label("SSColor", colorRoot, "Color: ");
-    colorButton = new Button("SSColorButton", colorRoot, "");
-    colorButton->setBackgroundColor(Color(sc[0], sc[1], sc[2], sc[3]));
-    colorButton->getSelectCallbacks().add(
-        this, &CrustaApp::SpecularSettingsDialog::colorButtonCallback);
+//- Ambient Color
+    new Label("TCSAmbient", root, "Ambient:");
+    button = new Button("TSCAmbientButton", root, "");
+    button->setBackgroundColor(SETTINGS->terrainAmbientColor);
+    button->getSelectCallbacks().add(
+        this, &CrustaApp::TerrainColorSettingsDialog::colorButtonCallback);
 
-    colorRoot->setNumMinorWidgets(2);
-    colorRoot->manageChild();
+//- Diffuse Color
+    new Label("TCSDiffuse", root, "Diffuse:");
+    button = new Button("TSCDiffuseButton", root, "");
+    button->setBackgroundColor(SETTINGS->terrainDiffuseColor);
+    button->getSelectCallbacks().add(
+        this, &CrustaApp::TerrainColorSettingsDialog::colorButtonCallback);
 
+//- Specular Color
+    new Label("TCSSpecular", root, "Specular:");
+    button = new Button("TSCSpecularButton", root, "");
+    button->setBackgroundColor(SETTINGS->terrainSpecularColor);
+    button->getSelectCallbacks().add(
+        this, &CrustaApp::TerrainColorSettingsDialog::colorButtonCallback);
+
+//- Specular Shininess
+    new Label("TCSShininess", root, "Shininess:");
     RowColumn* shininessRoot = new RowColumn(
-        "ShininessRoot", root, false);
+        "TCSShininessRoot", root, false);
+    shininessRoot->setNumMinorWidgets(2);
 
-    float shininess = SETTINGS->terrainShininess;
-    new Label("SSShininess", shininessRoot, "Shininess: ");
     Slider* slider = new Slider(
-        "SSShininessSlider", shininessRoot, Slider::HORIZONTAL,
+        "TCSShininessSlider", shininessRoot, Slider::HORIZONTAL,
         10.0 * style->fontHeight);
-    slider->setValue(log(shininess)/log(2));
-    slider->setValueRange(0.00f, 7.0f, 0.00001f);
+    slider->setValue(SETTINGS->terrainShininess);
+    slider->setValueRange(0.0f, 128.0f, 1.0f);
     slider->getValueChangedCallbacks().add(
-        this, &CrustaApp::SpecularSettingsDialog::shininessChangedCallback);
+        this, &CrustaApp::TerrainColorSettingsDialog::shininessChangedCallback);
     shininessField = new TextField(
         "SSShininessField", shininessRoot, 7);
     shininessField->setPrecision(4);
-    shininessField->setValue(shininess);
+    shininessField->setValue(SETTINGS->terrainShininess);
 
-    shininessRoot->setNumMinorWidgets(3);
     shininessRoot->manageChild();
 
-
-    root->setNumMinorWidgets(2);
     root->manageChild();
 }
 
-void CrustaApp::SpecularSettingsDialog::
-colorButtonCallback(
-    Button::SelectCallbackData* cbData)
+void CrustaApp::TerrainColorSettingsDialog::
+colorButtonCallback(GLMotif::Button::SelectCallbackData* cbData)
 {
     WidgetManager* manager = Vrui::getWidgetManager();
-    if (!manager->isVisible(&colorPicker))
+
+    //hide the picker if user clicks on the same button when the picker is up
+    if (manager->isVisible(&colorPicker) && cbData->button==currentButton)
     {
-        //bring up the color picker
+        Vrui::popdownPrimaryWidget(&colorPicker);
+        return;
+    }
+
+    //update the current button
+    currentButton = cbData->button;
+
+    //update the color of the picker
+    if (strcmp(currentButton->getName(), "TSCEmissiveButton") == 0)
+    {
+        colorPicker.getColorPicker()->setCurrentColor(
+            SETTINGS->terrainEmissiveColor);
+    }
+    else if (strcmp(currentButton->getName(), "TSCAmbientButton") == 0)
+    {
+        colorPicker.getColorPicker()->setCurrentColor(
+            SETTINGS->terrainAmbientColor);
+    }
+    else if (strcmp(currentButton->getName(), "TSCDiffuseButton") == 0)
+    {
+        colorPicker.getColorPicker()->setCurrentColor(
+            SETTINGS->terrainDiffuseColor);
+    }
+    else if (strcmp(currentButton->getName(), "TSCSpecularButton") == 0)
+    {
         colorPicker.getColorPicker()->setCurrentColor(
             SETTINGS->terrainSpecularColor);
+    }
+
+    //pop up the picker if necessary
+    if (!manager->isVisible(&colorPicker))
+    {
         manager->popupPrimaryWidget(
             &colorPicker, manager->calcWidgetTransformation(cbData->button));
     }
-    else
-    {
-        //close the color picker
-        Vrui::popdownPrimaryWidget(&colorPicker);
-    }
 }
 
-void CrustaApp::SpecularSettingsDialog::
-colorChangedCallback(
-        ColorPicker::ColorChangedCallbackData* cbData)
+void CrustaApp::TerrainColorSettingsDialog::
+colorChangedCallback(GLMotif::ColorPicker::ColorChangedCallbackData* cbData)
 {
-    const Color& c = cbData->newColor;
-    colorButton->setBackgroundColor(c);
-    crusta->setTerrainSpecularColor(Color(c[0], c[1], c[2], c[3]));
+    assert(currentButton != NULL);
+
+    //update the color of the corresponding button
+    currentButton->setBackgroundColor(cbData->newColor);
+    //update appropriate color setting
+    if (strcmp(currentButton->getName(), "TSCEmissiveButton") == 0)
+        SETTINGS->terrainEmissiveColor = cbData->newColor;
+    else if (strcmp(currentButton->getName(), "TSCAmbientButton") == 0)
+        SETTINGS->terrainAmbientColor = cbData->newColor;
+    else if (strcmp(currentButton->getName(), "TSCDiffuseButton") == 0)
+        SETTINGS->terrainDiffuseColor = cbData->newColor;
+    else if (strcmp(currentButton->getName(), "TSCSpecularButton") == 0)
+        SETTINGS->terrainSpecularColor = cbData->newColor;
 }
 
-void CrustaApp::SpecularSettingsDialog::
-shininessChangedCallback(Slider::ValueChangedCallbackData* cbData)
+void CrustaApp::TerrainColorSettingsDialog::
+shininessChangedCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
-    float shininess = pow(2, cbData->value) - 1.0f;
-    crusta->setTerrainShininess(shininess);
-    shininessField->setValue(shininess);
+    //update the shininess setting and corresponding text field
+    SETTINGS->terrainShininess = cbData->value;
+    shininessField->setValue(cbData->value);
 }
+
 
 CrustaApp::LayerSettingsDialog::
 LayerSettingsDialog(PaletteEditor* editor) :
@@ -431,8 +479,8 @@ produceMainMenu()
     decorateLinesToggle->getValueChangedCallbacks().add(
         this, &CrustaApp::decorateLinesCallback);
 
-    //specular settings dialog toggle
-    specularSettings.createMenuEntry(settingsMenu);
+    //terrain color settings dialog toggle
+    terrainColorSettings.createMenuEntry(settingsMenu);
 
     /* Create the advanced submenu */
     Popup* advancedMenuPopup =

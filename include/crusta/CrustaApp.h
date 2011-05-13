@@ -66,10 +66,10 @@ private:
         GLMotif::Container*   parentMenu;
     };
 
-    class SpecularSettingsDialog : public Dialog, public CrustaComponent
+    class TerrainColorSettingsDialog : public Dialog
     {
     public:
-        SpecularSettingsDialog();
+        TerrainColorSettingsDialog();
     protected:
         void init();
     private:
@@ -80,8 +80,8 @@ private:
         void shininessChangedCallback(
             GLMotif::Slider::ValueChangedCallbackData* cbData);
 
+        GLMotif::Button*           currentButton;
         GLMotif::ColorPickerWindow colorPicker;
-        GLMotif::Button*           colorButton;
         GLMotif::TextField*        shininessField;
     };
 
@@ -184,8 +184,8 @@ private:
 
     GLMotif::PaletteEditor* paletteEditor;
 
-    SpecularSettingsDialog specularSettings;
-    LayerSettingsDialog layerSettings;
+    TerrainColorSettingsDialog terrainColorSettings;
+    LayerSettingsDialog        layerSettings;
 
     /** the crusta instance */
     Crusta* crusta;

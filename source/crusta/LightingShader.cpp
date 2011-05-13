@@ -572,19 +572,21 @@ compileShader(GLContextData& contextData)
     vertexShaderMain+=
         "\
         /* Modulate with the texture color: */\n\
-        vec4 terrainColor = " + colorSource.sample("coord") + ";\n\
+        vec4 layerColor = " + colorSource.sample("coord") + ";\n\
         ";
 
     vertexShaderMain+=
         "\
-        ambient *= terrainColor;\n\
-        diffuse *= terrainColor;\n";
+        ambient.rgb *= layerColor.rgb;\n\
+        diffuse.rgb *= layerColor.rgb;\n";
 
     /* Continue the main vertex shader: */
     vertexShaderMain+=
         "\
+        /* Initialize the color contribution with the terrain's emmisive */\n\
+        color = gl_FrontMaterial.emission;\n\
         /* Calculate global ambient light term: */\n\
-        color  = gl_LightModel.ambient*ambient;\n\
+        color += gl_LightModel.ambient*ambient;\n\
         \n\
         /* Apply all enabled light sources: */\n";
 
@@ -619,7 +621,7 @@ compileShader(GLContextData& contextData)
         "\
             \n\
             /* Compute final vertex color: */\n\
-            gl_FrontColor = color;\n\
+            gl_FrontColor = vec4(color.rgb, gl_FrontMaterial.diffuse.a);\n\
             \n\
             /* Use finalize vertex transformation: */\n\
             gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 1.0);\n\
