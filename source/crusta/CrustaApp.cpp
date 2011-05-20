@@ -229,14 +229,14 @@ init()
 
     Slider* slider = new Slider(
         "TCSShininessSlider", shininessRoot, Slider::HORIZONTAL,
-        10.0 * style->fontHeight);
+        5.0 * style->fontHeight);
     slider->setValue(SETTINGS->terrainShininess);
     slider->setValueRange(0.0f, 128.0f, 1.0f);
     slider->getValueChangedCallbacks().add(
         this, &CrustaApp::TerrainColorSettingsDialog::shininessChangedCallback);
     shininessField = new TextField(
-        "SSShininessField", shininessRoot, 7);
-    shininessField->setPrecision(4);
+        "SSShininessField", shininessRoot, 3);
+    shininessField->setPrecision(3);
     shininessField->setValue(SETTINGS->terrainShininess);
 
     shininessRoot->manageChild();
@@ -262,21 +262,25 @@ colorButtonCallback(GLMotif::Button::SelectCallbackData* cbData)
     //update the color of the picker
     if (strcmp(currentButton->getName(), "TSCEmissiveButton") == 0)
     {
+        colorPicker.setTitleString("Pick Emissive Color");
         colorPicker.getColorPicker()->setCurrentColor(
             SETTINGS->terrainEmissiveColor);
     }
     else if (strcmp(currentButton->getName(), "TSCAmbientButton") == 0)
     {
+        colorPicker.setTitleString("Pick Ambient Color");
         colorPicker.getColorPicker()->setCurrentColor(
             SETTINGS->terrainAmbientColor);
     }
     else if (strcmp(currentButton->getName(), "TSCDiffuseButton") == 0)
     {
+        colorPicker.setTitleString("Pick Diffuse Color");
         colorPicker.getColorPicker()->setCurrentColor(
             SETTINGS->terrainDiffuseColor);
     }
     else if (strcmp(currentButton->getName(), "TSCSpecularButton") == 0)
     {
+        colorPicker.setTitleString("Pick Specular Color");
         colorPicker.getColorPicker()->setCurrentColor(
             SETTINGS->terrainSpecularColor);
     }

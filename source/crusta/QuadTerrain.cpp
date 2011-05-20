@@ -393,10 +393,21 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
     glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &elementArrayBuffer);
 
     glPushAttrib(GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_LINE_BIT |
-                 GL_POLYGON_BIT);
+                 GL_POLYGON_BIT | GL_COLOR_BUFFER_BIT);
     CHECK_GLA
 
-    glEnable(GL_CULL_FACE);
+    //setup transparent rendering
+    if (SETTINGS->terrainDiffuseColor[3] < 0.95f)
+    {
+        glDisable(GL_CULL_FACE);
+        glDepthMask(GL_FALSE);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+    else
+    {
+        glEnable(GL_CULL_FACE);
+    }
 
     //setup the texturing
     glActiveTexture(GL_TEXTURE0);

@@ -8,6 +8,8 @@
 #include <GL/GLTransformationWrappers.h>
 #include <Misc/File.h>
 #include <Misc/ThrowStdErr.h>
+#include <Vrui/DisplayState.h>
+#include <Vrui/Viewer.h>
 #include <Vrui/Vrui.h>
 
 #include <crusta/checkGl.h>
@@ -818,6 +820,28 @@ CRUSTA_DEBUG(8, CRUSTA_DEBUG_OUT <<
     mapMan->frame();
 }
 
+struct DistanceToEyeSorter
+{
+    DistanceToEyeSorter(SurfaceApproximation* approx, const Point3& eye) :
+        surface(approx), eyePosition(eye)
+    {}
+    void sortVisibles()
+    {
+        std::sort(surface->visibles.begin(), surface->visibles.end(), *this);
+    }
+
+    bool operator()(int i, int j)
+    {
+        double distI = Geometry::dist(eyePosition,
+                                      surface->nodes[i].node->boundingCenter);
+        double distJ = Geometry::dist(eyePosition,
+                                      surface->nodes[j].node->boundingCenter);
+        return distI > distJ;
+    }
+    SurfaceApproximation* surface;
+    Point3 eyePosition;
+};
+
 void Crusta::
 display(GLContextData& contextData)
 {
@@ -843,6 +867,14 @@ display(GLContextData& contextData)
         (*it)->prepareDisplay(contextData, surface);
         CHECK_GLA
     }
+
+    //sort the visible tiles with respect to the distance to the camera
+    Point3 eyePosition =
+        Vrui::getDisplayState(contextData).viewer->getHeadPosition();
+    eyePosition =
+        Vrui::getInverseNavigationTransformation().transform(eyePosition);
+    DistanceToEyeSorter sorter(&surface, eyePosition);
+    sorter.sortVisibles();
 
 statsMan.extractTileStats(surface);
 

@@ -310,7 +310,7 @@ configureShaders(GLContextData& contextData)
         gl.colors.push_back(ShaderColorReader(&(*it)));
 
 
-#if 1
+#if 0
 //- feed all the non-topography layerfs to the multiplier
     gl.multiplier.clear();
 
@@ -343,14 +343,19 @@ configureShaders(GLContextData& contextData)
 #else
 //- reconnect the mixer
     gl.mixer.clear();
-    for (ShaderColorReaders::iterator it=gl.colors.begin(); it!=gl.colors.end();
-         ++it)
+
+    int numColorLayers = static_cast<int>(mainColorLayers.size());
+    for (int i=0; i<numColorLayers; ++i)
     {
-        gl.mixer.addSource(&(*it));
+        if (mainColorLayers[i].isVisible)
+            gl.mixer.addSource(&gl.colors[i]);
     }
-    for (GpuFloatLayers::iterator it=gl.layers.begin(); it!=gl.layers.end(); ++it)
+
+    int numFloatLayers = static_cast<int>(mainFloatLayers.size());
+    for (int i=0; i<numFloatLayers; ++i)
     {
-        gl.mixer.addSource(&(it->mapShader));
+        if (mainFloatLayers[i].isVisible)
+            gl.mixer.addSource(&gl.floatLayers[i].mapShader);
     }
 #endif
 
