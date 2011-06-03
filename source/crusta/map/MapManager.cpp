@@ -305,13 +305,13 @@ updateActiveShape(int toolId)
 ///\todo actually track multiple tools
     if (activeShape == NULL)
     {
-        mapSymbolLabel->setLabel("-");
+        mapSymbolLabel->setString("-");
     }
     else
     {
         const Shape::Symbol& symbol = activeShape->getSymbol();
         std::string& symbolName     = symbolReverseNameMap[symbol.id];
-        mapSymbolLabel->setLabel(symbolName.c_str());
+        mapSymbolLabel->setString(symbolName.c_str());
     }
 }
 
@@ -672,7 +672,7 @@ symbolChangedCallback(GLMotif::ListBox::ItemSelectedCallbackData* cbData)
     if (activeShape != NULL)
     {
         activeShape->setSymbol(activeSymbol);
-        mapSymbolLabel->setLabel(symbolName.c_str());
+        mapSymbolLabel->setString(symbolName.c_str());
     }
 }
 

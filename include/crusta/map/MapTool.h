@@ -66,7 +66,7 @@ public:
     virtual void frame();
     virtual void display(GLContextData& contextData) const;
 
-    virtual void buttonCallback(int deviceIndex, int buttonIndex,
+    virtual void buttonCallback(int buttonSlotIndex,
                                 Vrui::InputDevice::ButtonCallbackData* cbData);
 
 //- Inherited from Crusta::Component

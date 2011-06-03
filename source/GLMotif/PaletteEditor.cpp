@@ -80,7 +80,7 @@ const Vector preferredSize(10.0f, 5.0f, 0.0f);
 
     controlPointValue = new TextField("ControlPointValue", info, 12);
     controlPointValue->setPrecision(6);
-    controlPointValue->setLabel("");
+    controlPointValue->setString("");
 
     info->manageChild();
 
@@ -186,7 +186,7 @@ selectedControlPointChangedCallback(
         ColorMapEditor::SelectedControlPointChangedCallbackData::DESELECT)
     {
         Misc::ColorMap::Color color(0.5f,0.5f,0.5f, 1.0f);
-        controlPointValue->setLabel("");
+        controlPointValue->setString("");
         if (!inColorPickerCallback)
             colorPicker->setCurrentColor(color);
     }

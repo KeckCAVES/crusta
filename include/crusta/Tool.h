@@ -2,7 +2,7 @@
 #define _Tool_H_
 
 
-#include <Vrui/Tools/GenericToolFactory.h>
+#include <Vrui/GenericToolFactory.h>
 
 #include <crusta/CrustaComponent.h>
 

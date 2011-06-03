@@ -126,7 +126,7 @@ getShapes()
 Point3 MapTool::
 getPosition()
 {
-    Vrui::NavTrackerState nav = Vrui::getDeviceTransformation(getDevice(0));
+    Vrui::NavTrackerState nav = Vrui::getDeviceTransformation(getButtonDevice(0));
     Vrui::NavTrackerState::Vector trans = nav.getTranslation();
     return Point3(trans[0], trans[1], trans[2]);
 }
@@ -379,7 +379,7 @@ display(GLContextData& contextData) const
 }
 
 void MapTool::
-buttonCallback(int deviceIndex, int buttonIndex,
+buttonCallback(int buttonSlotIndex,
                Vrui::InputDevice::ButtonCallbackData* cbData)
 {
 statsMan.start(StatsManager::EDITLINE);
@@ -391,7 +391,7 @@ statsMan.start(StatsManager::EDITLINE);
 
     if (cbData->newButtonState)
     {
-        if (deviceIndex==0 && buttonIndex==0)
+        if (buttonSlotIndex==0)
         {
             switch (mode)
             {
@@ -457,7 +457,7 @@ statsMan.start(StatsManager::EDITLINE);
     }
     else
     {
-        if (deviceIndex==0 && buttonIndex==0)
+        if (buttonSlotIndex==0)
         {
             switch (mode)
             {

@@ -78,7 +78,7 @@ std::string FileAndFolderSelectionDialog::getCurrentPath(void) const
         /* Append the button's label to the full path name: */
         if(i>1)
             fullPath.push_back('/');
-        fullPath.append(static_cast<Button*>(pathButtonBox->getChild(i))->getLabel());
+        fullPath.append(static_cast<Button*>(pathButtonBox->getChild(i))->getString());
         }
 
     return fullPath;
@@ -265,19 +265,19 @@ void FileAndFolderSelectionDialog::updateActionButtons(void)
         std::string item=fileList->getListBox()->getItem(selectedItem);
         if(item[item.size()-1]=='/')
             {
-            enterButton->setLabel("Enter");
-            pickButton->setLabel("Pick");
+            enterButton->setString("Enter");
+            pickButton->setString("Pick");
             }
         else
             {
-            enterButton->setLabel("-");
-            pickButton->setLabel("Pick");
+            enterButton->setString("-");
+            pickButton->setString("Pick");
             }
     }
     else
         {
-        enterButton->setLabel("-");
-        pickButton->setLabel("-");
+        enterButton->setString("-");
+        pickButton->setString("-");
         }
     }
 

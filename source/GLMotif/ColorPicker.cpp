@@ -141,7 +141,7 @@ updateWidgets()
         std::ostringstream oss;
         oss.width(3);
         oss << (int)(color[index[i]]*255.0f + 0.5f);
-        rgbaLabels[i]->setLabel(oss.str().c_str());
+        rgbaLabels[i]->setString(oss.str().c_str());
         rgbaSliders[i]->setValue(color[index[i]]);
     }
 }
