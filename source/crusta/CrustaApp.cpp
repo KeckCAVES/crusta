@@ -32,8 +32,9 @@
 #include <GL/GLContextData.h>
 #include <Vrui/Lightsource.h>
 #include <Vrui/LightsourceManager.h>
-#include <Vrui/Tools/LocatorTool.h>
+#include <Vrui/LocatorTool.h>
 #include <Vrui/Viewer.h>
+#include <Vrui/CoordinateManager.h>
 #include <Vrui/Vrui.h>
 
 #include <crusta/ColorMapper.h>
@@ -47,7 +48,7 @@
 #include <Geometry/Geoid.h>
 #include <Misc/FunctionCalls.h>
 #include <Vrui/ToolManager.h>
-#include <Vrui/Tools/SurfaceNavigationTool.h>
+#include <Vrui/SurfaceNavigationTool.h>
 
 #if CRUSTA_ENABLE_DEBUG
 #include <crusta/DebugTool.h>
@@ -111,6 +112,9 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     produceVerticalScaleDialog();
     produceLightingDialog();
 
+    /* Set the navigational coordinate system unit: */
+    Vrui::getCoordinateManager()->setUnit(Geometry::LinearUnit(Geometry::LinearUnit::METER,1));
+	
     resetNavigationCallback(NULL);
 
 #if CRUSTA_ENABLE_DEBUG
@@ -750,10 +754,10 @@ produceLightingDialog()
 }
 
 void CrustaApp::
-alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
+alignSurfaceFrame(const Vrui::SurfaceNavigationTool::AlignmentData& alignmentData)
 {
 /* Do whatever to the surface frame, but don't change its scale factor: */
-    Point3 origin = surfaceFrame.getOrigin();
+    Point3 origin = alignmentData.surfaceFrame.getOrigin();
     if (origin == Point3::origin)
         origin = Point3(0.0, 1.0, 0.0);
 
@@ -764,8 +768,8 @@ alignSurfaceFrame(Vrui::NavTransform& surfaceFrame)
     Point3 lonLatEle = geoid.cartesianToGeodetic(surfacePoint.position);
     Geometry::Geoid<double>::Frame frame =
         geoid.geodeticToCartesianFrame(lonLatEle);
-    surfaceFrame = Vrui::NavTransform(
-        frame.getTranslation(), frame.getRotation(), surfaceFrame.getScaling());
+    alignmentData.surfaceFrame = Vrui::NavTransform(
+        frame.getTranslation(), frame.getRotation(), alignmentData.surfaceFrame.getScaling());
 }
 
 
@@ -822,7 +826,7 @@ changeScaleCallback(Slider::ValueChangedCallbackData* cbData)
     std::ostringstream oss;
     oss.precision(2);
     oss << newVerticalScale << "x";
-    verticalScaleLabel->setLabel(oss.str().c_str());
+    verticalScaleLabel->setString(oss.str().c_str());
 }
 
 
@@ -1009,7 +1013,7 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
     {
         /* Set the new tool's alignment function: */
         surfaceNavigationTool->setAlignFunction(
-            Misc::createFunctionCall<Vrui::NavTransform&,CrustaApp>(
+            Misc::createFunctionCall<const Vrui::SurfaceNavigationTool::AlignmentData&,CrustaApp>(
                 this,&CrustaApp::alignSurfaceFrame));
     }
 

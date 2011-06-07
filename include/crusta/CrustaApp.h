@@ -10,6 +10,7 @@
 #include <GLMotif/Slider.h>
 #include <GLMotif/ToggleButton.h>
 
+#include <Vrui/SurfaceNavigationTool.h>
 #include <Vrui/Application.h>
 #include <Vrui/Geometry.h>
 
@@ -122,7 +123,7 @@ private:
     void produceVerticalScaleDialog();
     void produceLightingDialog();
 
-    void alignSurfaceFrame(Vrui::NavTransform& surfaceFrame);
+    void alignSurfaceFrame(const Vrui::SurfaceNavigationTool::AlignmentData& alignmentData);
 
     void changeColorMapCallback(
         GLMotif::ColorMapEditor::ColorMapChangedCallbackData* cbData);
@@ -189,7 +190,7 @@ private:
 
     /** the crusta instance */
     Crusta* crusta;
-
+		
 //- inherited from Vrui::Application
 public:
     virtual void frame();

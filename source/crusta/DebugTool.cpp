@@ -43,9 +43,7 @@ init()
     Factory* toolFactory = new Factory("DebugTool", "Debug Tool", NULL,
                                        *Vrui::getToolManager());
 
-    toolFactory->setNumDevices(1);
-    toolFactory->setNumButtons(0, numButtons);
-    toolFactory->setNumValuators(0, 0);
+    toolFactory->setNumButtons(numButtons);
 
     Vrui::getToolManager()->addClass(toolFactory,
         Vrui::ToolManager::defaultToolFactoryDestructor);
@@ -85,7 +83,7 @@ frame()
     if (!buttons[0])
         return;
 
-    Vrui::InputDevice* device = input.getDevice(0);
+    Vrui::InputDevice* device = getButtonDevice(0);
 
     //transform the physical frame to navigation space
     Vrui::NavTransform physicalFrame = device->getTransformation();
@@ -116,10 +114,10 @@ frame()
 }
 
 void DebugTool::
-buttonCallback(int, int deviceButtonIndex,
+buttonCallback(int buttonSlotIndex,
                Vrui::InputDevice::ButtonCallbackData* cbData)
 {
-    buttons[deviceButtonIndex] = cbData->newButtonState;
+    buttons[buttonSlotIndex] = cbData->newButtonState;
 }
 
 

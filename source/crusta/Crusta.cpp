@@ -785,6 +785,8 @@ CRUSTA_DEBUG(8, CRUSTA_DEBUG_OUT <<
 "\n\n\n--------------------------------------\n" << CURRENT_FRAME <<
 "\n\n\n";)
 
+#if 0
+
     //apply the vertical scale changes
     if (verticalScale != changedVerticalScale)
     {
@@ -815,6 +817,8 @@ CRUSTA_DEBUG(8, CRUSTA_DEBUG_OUT <<
            the processing to the frame that will have the proper navigation */
         changedVerticalScale = newVerticalScale;
     }
+
+#endif
 
     //let the map manager update all the mapping stuff
     mapMan->frame();
