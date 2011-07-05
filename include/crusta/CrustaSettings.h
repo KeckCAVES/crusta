@@ -38,7 +38,6 @@ public:
     ///\}
 
     ///\{ cache settings
-///\todo deprecate both Height and Imagery caches
     int cacheMainNodeSize;
     int cacheMainGeometrySize;
     int cacheMainColorSize;

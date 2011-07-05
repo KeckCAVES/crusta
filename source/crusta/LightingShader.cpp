@@ -29,6 +29,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 #include <crusta/ColorMapper.h>
 #include <crusta/DataManager.h>
+#include <crusta/ResourceLocator.h>
 ///\todo integrate properly (VIS 2010)
 #include <crusta/Crusta.h>
 
@@ -294,8 +295,8 @@ LightingShader::LightingShader() :
     lightStates(0),
     vertexShader(0),fragmentShader(0),
     programObject(0),
-    decoratedLineRenderer(std::string(CRUSTA_SHARE_PATH) +
-                          "/decoratedRenderer.fp"),
+    decoratedLineRenderer(RESOURCELOCATOR.locateFile(
+                          "shaders/decoratedRenderer.fp")),
     colorMapperConfigurationStamp(0)
 {
     /* Determine the maximum number of light sources supported by the local OpenGL: */

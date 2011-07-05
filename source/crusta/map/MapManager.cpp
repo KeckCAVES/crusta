@@ -39,6 +39,7 @@
 #include <crusta/QuadCache.h>
 #include <crusta/QuadNodeData.h>
 #include <crusta/QuadTerrain.h>
+#include <crusta/ResourceLocator.h>
 
 ///\todo remove dbg
 #if CRUSTA_ENABLE_DEBUG
@@ -654,9 +655,7 @@ void MapManager::
 openSymbolsGroupCallback(GLMotif::Button::SelectCallbackData* cbData)
 {
     //open the dialog at the same position as the main menu
-    Vrui::getWidgetManager()->popupPrimaryWidget(
-        symbolGroupMap[cbData->button->getName()],
-        Vrui::getWidgetManager()->calcWidgetTransformation(cbData->button));
+    Vrui::popupPrimaryWidget(symbolGroupMap[cbData->button->getName()]);
 }
 
 void MapManager::
@@ -830,9 +829,9 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
 
 
 //- parse the symbols definition file to create the symbols lists
-    std::string cfgFile(CRUSTA_SHARE_PATH);
-    cfgFile += "/mapSymbols.cfg";
-    std::ifstream symbolsConfig(cfgFile.c_str());
+    std::string cfgFileName =
+        RESOURCELOCATOR.locateFile("config/mapSymbols.cfg");
+    std::ifstream symbolsConfig(cfgFileName.c_str());
     if (!symbolsConfig.good())
         return;
 
@@ -946,8 +945,7 @@ showMapControlDialogCallback(
     if(cbData->set)
     {
         //open the dialog at the same position as the main menu:
-        Vrui::getWidgetManager()->popupPrimaryWidget(mapControlDialog,
-            Vrui::getWidgetManager()->calcWidgetTransformation(cbData->toggle));
+        Vrui::popupPrimaryWidget(mapControlDialog);
     }
     else
     {
@@ -966,8 +964,7 @@ loadMapCallback(GLMotif::Button::SelectCallbackData* cbData)
         &MapManager::loadMapFileOKCallback);
     mapFileDialog->getCancelCallbacks().add(this,
         &MapManager::loadMapFileCancelCallback);
-    Vrui::getWidgetManager()->popupPrimaryWidget(mapFileDialog,
-        Vrui::getWidgetManager()->calcWidgetTransformation(mapControlDialog));
+    Vrui::popupPrimaryWidget(mapFileDialog);
 }
 
 void MapManager::

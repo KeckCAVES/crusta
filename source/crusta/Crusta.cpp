@@ -19,6 +19,7 @@
 #include <crusta/map/MapManager.h>
 #include <crusta/QuadCache.h>
 #include <crusta/QuadTerrain.h>
+#include <crusta/ResourceLocator.h>
 #include <crusta/Section.h>
 #include <crusta/Sphere.h>
 #include <crusta/SurfaceProbeTool.h>
@@ -110,8 +111,8 @@ CrustaGlData() :
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    std::string imgFileName(CRUSTA_SHARE_PATH);
-    imgFileName += "/mapSymbolAtlas.tga";
+    std::string imgFileName = RESOURCELOCATOR.locateFile(
+        "images/mapSymbolAtlas.tga");
     try
     {
         Misc::File imgFile(imgFileName.c_str(), "r");
@@ -145,10 +146,14 @@ CrustaGlData::
 
 ///\todo split crusta and planet
 void Crusta::
-init(const std::vector<std::string>& settingsFiles)
+init(const std::string& exePath, const Strings& settingsFiles,
+     const std::string& resourcePath)
 {
 ///\todo split crusta and planet
 ///\todo extend the interface to pass an optional configuration file
+
+    //initialize the resource locator
+    RESOURCELOCATOR.init(exePath, resourcePath);
     //initialize the crusta user settings
     SETTINGS = new CrustaSettings;
     SETTINGS->loadFromFiles(settingsFiles);
@@ -785,8 +790,6 @@ CRUSTA_DEBUG(8, CRUSTA_DEBUG_OUT <<
 "\n\n\n--------------------------------------\n" << CURRENT_FRAME <<
 "\n\n\n";)
 
-#if 0
-
     //apply the vertical scale changes
     if (verticalScale != changedVerticalScale)
     {
@@ -817,8 +820,6 @@ CRUSTA_DEBUG(8, CRUSTA_DEBUG_OUT <<
            the processing to the frame that will have the proper navigation */
         changedVerticalScale = newVerticalScale;
     }
-
-#endif
 
     //let the map manager update all the mapping stuff
     mapMan->frame();

@@ -60,7 +60,8 @@ class Crusta : public GLObject
 public:
     typedef std::vector<std::string> Strings;
 
-    void init(const Strings& settingsFiles);
+    void init(const std::string& exePath, const Strings& settingsFiles,
+              const std::string& resourcePath);
     void shutdown();
 
     void load(Strings& dataBases);

@@ -284,8 +284,7 @@ loadPaletteCallback(Misc::CallbackData*)
     fileDialog->getOKCallbacks().add(this, &PaletteEditor::loadFileOKCallback);
     fileDialog->getCancelCallbacks().add(this,
         &PaletteEditor::loadFileCancelCallback);
-    Vrui::getWidgetManager()->popupPrimaryWidget(fileDialog,
-        Vrui::getWidgetManager()->calcWidgetTransformation(this));
+    Vrui::popupPrimaryWidget(fileDialog);
 }
 
 void PaletteEditor::

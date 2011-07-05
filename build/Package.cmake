@@ -9,9 +9,9 @@ set(CPACK_PACKAGE_VERSION ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION
 set(CPACK_PACKAGE_VENDOR "keckcaves.org")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
     "A geologist's virtual globe to support remote virtual studies.")
-set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../share/readme.txt")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/../share/license.txt")
-set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/../share/readme.txt")
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/readme.txt")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/license.txt")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/readme.txt")
 
 
 # Setup the system name
@@ -32,7 +32,20 @@ endif()
 
 # Setup the generators
 if (APPLE)
-   set(CPACK_GENERATOR TGZ;PackageMaker)
+    set(CPACK_GENERATOR Bundle)
+
+    set(CPACK_INSTALL_PREFIX "")
+    set(CPACK_PACKAGE_FILE_NAME ${PROJECT_NAME}-${CPACK_PACKAGE_VERSION})
+    set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/Crusta.icns")
+
+    set(CPACK_BUNDLE_NAME ${PROJECT_NAME})
+    set(CPACK_BUNDLE_ICON "${CMAKE_SOURCE_DIR}/Crusta.icns")
+    set(CPACK_BUNDLE_PLIST "${CMAKE_SOURCE_DIR}/Info.plist")
+    set(CPACK_BUNDLE_STARTUP_COMMAND "${CMAKE_SOURCE_DIR}/Crusta.scpt")
+
+#what do I actually pass to the <apps> of fixup_bundle
+#    install(CODE "include(BundleUtilities)
+#                  fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/bin/crustaDesktop\" \"\" \"\")")
 else()
    set(CPACK_GENERATOR TGZ;DEB;RPM)
 

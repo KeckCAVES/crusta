@@ -1,10 +1,11 @@
 install(TARGETS CrustaCore  crusta construo CrustaVislet
-        RUNTIME DESTINATION "${CRUSTA_EXECUTABLE_PATH}"
-        LIBRARY DESTINATION "${CRUSTA_LIBRARY_PATH}"
-        ARCHIVE DESTINATION "${CRUSTA_LIBRARY_PATH}"
+        RUNTIME DESTINATION "${STAGE_EXE_PATH}"
+        LIBRARY DESTINATION "${STAGE_LIB_PATH}"
+        ARCHIVE DESTINATION "${STAGE_LIB_PATH}"
 )
 
-install(PROGRAMS ${CRUSTA_DESKTOP} DESTINATION ${CRUSTA_EXECUTABLE_PATH})
+install(PROGRAMS ${CRUSTA_DESKTOP}
+        DESTINATION ${STAGE_EXE_PATH})
 
 set(CRUSTA_SHARES ../share/mapSymbolAtlas.tga
                   ../share/mapSymbols.cfg
@@ -12,4 +13,6 @@ set(CRUSTA_SHARES ../share/mapSymbolAtlas.tga
                   ../share/plainRenderer.fp
                   ../share/desktop.cfg
 )
-install(FILES ${CRUSTA_SHARES} DESTINATION ${CRUSTA_SHARE_PATH})
+install(FILES ${CRUSTA_SHARES}
+        DESTINATION ${STAGE_SHARE_PATH})
+
