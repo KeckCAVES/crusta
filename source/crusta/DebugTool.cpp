@@ -108,7 +108,7 @@ frame()
                 surfacePoint.cellIndex[0] << "x" << surfacePoint.cellIndex[1] <<
                 "   " << surfacePoint.cellPosition[0] << "|" <<
                 surfacePoint.cellPosition[1] << "   index " <<
-                surfacePoint.nodeIndex.index << "\n";
+                surfacePoint.nodeIndex.index() << "\n";
         }
     }
 }

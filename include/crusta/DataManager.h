@@ -138,8 +138,6 @@ public:
     /** load the root data of a patch */
     void loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope);
 
-    /** process requests */
-    void frame();
     /** process any GL changes */
     void display(GLContextData& contextData);
 
@@ -177,18 +175,6 @@ protected:
     typedef std::vector<ColorFile*>  ColorFiles;
     typedef std::vector<LayerfFile*> LayerfFiles;
 
-    struct FetchRequest
-    {
-        Crusta*        crusta;
-        NodeMainBuffer parent;
-        NodeMainBuffer child;
-        uint8          which;
-
-        FetchRequest();
-        bool operator ==(const FetchRequest& other) const;
-    };
-    typedef std::list<FetchRequest> FetchRequests;
-
     struct GlItem : public GLObject::DataItem
     {
         GlItem();
@@ -199,14 +185,21 @@ protected:
     };
 
     /** get main buffers from the managed caches */
-    const NodeMainBuffer grabMainBuffer(const TreeIndex& index,
-                                        bool grabCurrent) const;
+    bool grabMainBuffer(const TreeIndex& index, const FrameStamp older,
+                        NodeMainBuffer& mainBuf) const;
     /** release main buffers to the managed caches */
     void releaseMainBuffer(const TreeIndex& index,
                            const NodeMainBuffer& buffer) const;
 
+    /** find the gpu buffers from the managed caches */
+    bool findGpuBuffer(GLContextData& contextData, const NodeMainData& main,
+                       NodeGpuBuffer& gpuBuf) const;
+    /** grab the gpu buffers from the managed caches */
+    bool grabGpuBuffer(GLContextData& contextData, const NodeMainData& main,
+                       NodeGpuBuffer& gpuBuf) const;
     /** stream required data to the gpu */
-    bool streamGpuData(GLContextData& contextData, BatchElement& batchel);
+    void streamGpuData(GLContextData& contextData, BatchElement& batchel,
+                       NodeGpuBuffer& gpuBuf);
 
     /** load the data required for the child of the specified node */
     void loadChild(Crusta* crusta, NodeMainData& parent, uint8 which,
@@ -228,6 +221,9 @@ protected:
                       const LayerDataf::Type* const parentLayerf,
                       NodeData* child, uint8 layer,
                       LayerDataf::Type* childLayerf);
+
+    /** merge a new request into the pending list */
+    void addRequest(Request req);
 
     /** start the fetching thread */
     void startFetchThread();
@@ -260,30 +256,23 @@ protected:
     /** value for the "no-data" float layer data element */
     LayerDataf::Type layerfNodata;
 
-    /** index into the first node of the surface that needs to be considered
+    /** indices of the nodes of the surface that needs to be considered
         for the next gpu batch */
-    size_t batchIndex;
+    std::vector<size_t> remainingBatchIndices;
 
     /** temporary storage for computing the high-precision surface geometry */
     double* tempGeometryBuf;
 
-    /** keep track of pending child requests */
-    Requests childRequests;
-
-    /** buffer for fetch requests to the fetch thread */
-    FetchRequests fetchRequests;
-    /** buffer for fetch results that have been processed by the fetch thread */
-    FetchRequests fetchResults;
-
-    /** used to protect access to any of the buffers. For simplicity fetching
-        is stalled as a frame is processed */
+    /** serialize access to data requesting */
     Threads::Mutex requestMutex;
-    /** allow the fetching thread to blocking wait for requests */
-    Threads::Cond fetchCond;
+    /** keep track of pending child requests */
+    std::list<Request> childRequests;
 
     /** flags the fetch thread to terminate */
     bool terminateFetch;
 
+    /** allow the fetching thread to blocking wait for requests */
+    Threads::Cond fetchCond;
     /** thread handling fetch request processing */
     Threads::Thread fetchThread;
 

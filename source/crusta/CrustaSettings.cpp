@@ -71,9 +71,16 @@ loadFromFiles(const Strings& cfgNames)
         //ignore this exception
     }
     catch (std::runtime_error e) {
-        std::cout << "Caught exception " << e.what() << " while reading " <<
-                     "the system-wide crustaSettings.cfg configuration file." <<
-                     std::endl;
+        if (std::string("FileLocator::locateFile:").compare(0, 24, e.what()))
+        {
+            //ignore FileLocator failure
+        }
+        else
+        {
+            std::cout << "Caught exception " << e.what() << " while " <<
+                         "reading the system-wide crustaSettings.cfg " <<
+                         "configuration file." << std::endl;
+        }
     }
 
     //try to load the default local configuration file

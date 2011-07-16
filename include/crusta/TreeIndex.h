@@ -10,13 +10,36 @@ BEGIN_CRUSTA
 /** uniquely specifies a node in the quadtree hierarchy */
 struct TreeIndex
 {
-    TreeIndex(uint8 iPatch=0,uint8 iChild=0,uint8 iLevel=0,uint64 iIndex=0);
+    TreeIndex(uint8 iPatch=0, uint8 iChild=0, uint8 iLevel=0, uint64 iIndex=0);
     TreeIndex(const TreeIndex& i);
 
     TreeIndex& operator=(const TreeIndex& other);
     bool operator==(const TreeIndex& other) const;
     bool operator!=(const TreeIndex& other) const;
-    
+
+    ///\{ reserved for differentiating same indices (5 bits)
+    uint8 reserved() const;
+    void  reserved(const uint8 v);
+    ///\}
+    ///\{ index of the base patch of the global hierarchy (5 bits)
+    uint8 patch() const;
+    void  patch(const uint8 v);
+    ///\}
+    ///\{ index within the group of siblings (2 bits)
+    uint8 child() const;
+    void  child(const uint8 v);
+    ///\}
+    ///\{ level in the global hierarchy: 0 is root (6 bits)
+    uint8 level() const;
+    void  level(const uint8 v);
+    ///\}
+    /**\{ describes a path from the root to the indicated node as a sequence
+          of two-bit child-indices. The sequence starts with the least
+          significant bits. (46 bits)*/
+    uint64 index() const;
+    void   index(const uint64 v);
+    ///\}
+
     TreeIndex up() const;
     TreeIndex down(uint8 which) const;
 
@@ -26,14 +49,8 @@ struct TreeIndex
 
     static const TreeIndex invalid;
 
-    uint64 reserved : 5; ///< reserved for differentiating same indices
-    uint64 patch    : 5; ///< index of the base patch of the global hierarchy
-    uint64 child    : 2; ///< index within the group of siblings
-    uint64 level    : 6; ///< level in the global hierarchy (0 is root)
-    /** describes a path from the root to the indicated node as a sequence
-     of two-bit child-indices. The sequence starts with the least
-     significant bits. */
-    uint64 index    : 46;
+    /** the raw bits of the index. Use accessors to read/write components */
+    uint64 raw;
 };
 
 /** A traversal helper for following the path from the root to a node specified

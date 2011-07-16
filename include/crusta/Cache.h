@@ -17,6 +17,8 @@
 #include <list>
 #include <vector>
 
+#include <Threads/Mutex.h>
+
 #include <crusta/DataIndex.h>
 
 #ifdef __GNUC__
@@ -35,25 +37,23 @@ BEGIN_CRUSTA
 
 template <typename BufferParam>
 class CacheUnit;
-template <typename BufferParam>
-struct IndexedBuffer;
 
 template <typename DataParam>
-class CacheBuffer
+class CacheBufferBase
 {
-    friend class  CacheUnit< CacheBuffer<DataParam> >;
-    friend struct IndexedBuffer< CacheBuffer<DataParam> >;
-
 public:
     typedef DataParam DataType;
 
-    CacheBuffer();
+    CacheBufferBase();
 
     /** retrieve the frame stamp of the buffer */
     const FrameStamp& getFrameStamp() const;
-    /** retrieve the data from the buffer */
+    /** retrieve the index of the buffer */
+    const DataIndex& getIndex() const;
+    /**\{ retrieve the data from the buffer */
     DataParam& getData();
     const DataParam& getData() const;
+    /**\}*/
 
 protected:
     static const FrameStamp OLDEST_FRAMESTAMP;
@@ -69,34 +69,43 @@ protected:
     State state;
     /** frame stamp used to evaluate LRU prioritization */
     FrameStamp frameStamp;
+    /** unique key for the data entry */
+    DataIndex index;
+
     /** the actual node data */
     DataParam data;
 };
 
 template <typename DataParam>
-class CacheArrayBuffer : public CacheBuffer<DataParam*>
+class CacheBuffer : public CacheBufferBase<DataParam>
 {
-    friend class  CacheUnit< CacheArrayBuffer<DataParam> >;
-    friend struct IndexedBuffer< CacheArrayBuffer<DataParam> >;
+    friend class CacheUnit< CacheBuffer<DataParam> >;
 
 public:
-    typedef DataParam* DataType;
-    typedef DataParam  DataArrayType;
+    typedef std::list<CacheBuffer*>    LruList;
+    typedef typename LruList::iterator LruHandle;
 
-    ~CacheArrayBuffer();
+protected:
+    /** handle of the buffer in the LRU control container */
+    LruHandle lruHandle;
 };
 
-
-/** combines a tree index with a cache buffer when the buffer is taken
-    outside the context of the buffer map */
-template <typename BufferParam>
-struct IndexedBuffer
+template <typename DataParam>
+class CacheArrayBuffer : public CacheBufferBase<DataParam*>
 {
-    IndexedBuffer(DataIndex iIndex, BufferParam* iBuffer);
-    bool operator >(const IndexedBuffer& other) const;
+    friend class  CacheUnit< CacheArrayBuffer<DataParam> >;
 
-    DataIndex    index;
-    BufferParam* buffer;
+public:
+    typedef DataParam*                   DataType;
+    typedef DataParam                    DataArrayType;
+    typedef std::list<CacheArrayBuffer*> LruList;
+    typedef typename LruList::iterator   LruHandle;
+
+    ~CacheArrayBuffer();
+
+protected:
+    /** handle of the buffer in the LRU control container */
+    LruHandle lruHandle;
 };
 
 
@@ -107,7 +116,6 @@ class CacheUnit
 public:
     typedef BufferParam BufferType;
 
-    CacheUnit();
     virtual ~CacheUnit();
 
     /** initialize the cache */
@@ -129,10 +137,6 @@ public:
 
     /** confirm use of the buffer for the current frame */
     void touch(BufferParam* buffer);
-    /** invalidate a buffer and make it available for reuse */
-    void reset(BufferParam* buffer);
-    /** invalidate a set of buffers and make them available for reuse */
-    void reset(int numBuffers);
     /** pin the element in the cache such that it cannot be swaped out */
     void pin(BufferParam* buffer);
     /** unpin the element in the cache */
@@ -140,17 +144,20 @@ public:
 
     /** find a buffer within the cached set. Returns NULL if not found. */
     BufferParam* find(const DataIndex& index) const;
-    /** request a buffer from the cache. The least recently used that is not
+    /** request a buffer from the cache. The least recently used that is not a
         pinned buffer is returned. An additional filter may limit available
-        buffer to ones that are not current. The buffer is removed from the
-        cache as a result.
-        WARNING: it is assumed that a call to findCached was issued prior.
+        buffer to ones that are older than 'older'. The buffer is removed from
+        the cache as a result.
+        WARNING: it is assumed that a call to find was issued prior.
                  grabBuffer does not verify that an appropriate buffer is
                  already cached. */
-    BufferParam* grabBuffer(bool grabCurrent);
+    BufferParam* grabBuffer(const FrameStamp older);
     /** return a buffer to the cache. The buffer will be reinserted into the
         cache with the given index */
     void releaseBuffer(const DataIndex& index, BufferParam* buffer);
+
+    /** age the given number of most recently used entries */
+    void ageMRU(int numBuffers, const FrameStamp age);
 
 ///\todo move back to the protected group
     /** prints the content of the cache in LRU order */
@@ -158,13 +165,14 @@ public:
 
 protected:
     typedef PortableTable<DataIndex,BufferParam*,DataIndex::hash> BufferPtrMap;
-    typedef std::vector< IndexedBuffer<BufferParam> > IndexedBuffers;
+    typedef typename BufferParam::LruList LruList;
+
+    /** updates buffers to reflect having been touched. (internal use, locks are
+        left to the calling method) */
+    void touchBuffer(BufferParam* buffer);
 
     /** prints the state of the LRU */
     void printLru(const char* cause);
-    /** make sure the LRU prioritized sequence of the cached buffers is up to
-        date*/
-    void refreshLru();
 
     /** a string identifier for the cache (mainly used for debugging) */
     std::string name;
@@ -172,12 +180,10 @@ protected:
     /** keep a record of all the buffers cached by the unit */
     BufferPtrMap cached;
     /** keep a LRU prioritized view of the cached buffers */
-    IndexedBuffers lruCached;
+    LruList lru;
 
-    /** dirty bit for LRU in case buffers have been pinned or unpinned */
-    bool pinUnpinLruDirty;
-    /** dirty bit for LRU in case buffers have been touched or reset */
-    bool touchResetLruDirty;
+    /** synchronize access to the cache */
+    Threads::Mutex cacheMutex;
 };
 
 

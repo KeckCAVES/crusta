@@ -207,9 +207,10 @@ unload()
     terminateFetchThread();
 
     //clear all the requests
-    childRequests.clear();
-    fetchRequests.clear();
-    fetchResults.clear();
+    {
+        Threads::Mutex::Lock lock(requestMutex);
+        childRequests.clear();
+    }
 
     //clear the main memory caches and flag the GPU ones
     CACHE->clear();
@@ -359,12 +360,12 @@ getSourceShaders(GLContextData& contextData)
 #define GRAB_BUFFER(cacheType, name, cache, index)\
 cacheType::BufferType* name##Buf = cache.find(index);\
 if (name##Buf == NULL)\
-    name##Buf = cache.grabBuffer(false);\
+    name##Buf = cache.grabBuffer(CURRENT_FRAME);\
 if (name##Buf == NULL)\
    {\
        Misc::throwStdErr("DataManager::loadRoot: failed to acquire %s cache "\
                          "buffer for root node of patch %d", #name,\
-                         rootIndex.patch);\
+                         rootIndex.patch());\
    }\
 cacheType::BufferType::DataType& name##Data = name##Buf->getData();
 
@@ -460,81 +461,6 @@ loadRoot(Crusta* crusta, TreeIndex rootIndex, const Scope& scope)
 
 
 void DataManager::
-frame()
-{
-CRUSTA_DEBUG(14, CRUSTA_DEBUG_OUT << "\n++++++++  DataManager::frame() //\n";
-             MainCache& mc=CACHE->getMainCache(); mc.node.printCache();)
-
-    //reprioritize the requests (do this here as the rest blocks fetching)
-    std::sort(childRequests.begin(), childRequests.end(),
-              std::greater<Request>());
-
-    //block fetching as we manipulate the requests
-    Threads::Mutex::Lock lock(requestMutex);
-
-    //giver the cache update 0.08ms (8ms for 120 fps, so 1% of frame time)
-    double endTime = CURRENT_FRAME + 0.08e-3;
-
-    //update as much as possible
-    int numFetches = SETTINGS->dataManMaxFetchRequests -
-                     static_cast<int>(fetchRequests.size());
-    for (Requests::iterator it=childRequests.begin();
-         numFetches>0 && CURRENT_FRAME<endTime && it!=childRequests.end(); ++it)
-    {
-        //make sure the request is not pending
-        FetchRequest searchReq;
-        searchReq.parent = it->parent;
-        searchReq.which  = it->child;
-        if ((std::find(fetchResults.begin(), fetchResults.end(), searchReq) !=
-             fetchResults.end()) ||
-            std::find(fetchRequests.begin(), fetchRequests.end(), searchReq) !=
-            fetchRequests.end())
-        {
-            continue;
-        }
-
-        FetchRequest fetch;
-        fetch.crusta = it->crusta;
-        fetch.parent = it->parent;
-        fetch.which  = it->child;
-///\todo data needs to be grabbed more flexibly
-        TreeIndex childIndex =
-            it->parent.node->getData().index.down(fetch.which);
-        fetch.child  = grabMainBuffer(childIndex, false);
-        if (!isComplete(fetch.child))
-        {
-CRUSTA_DEBUG(10, CRUSTA_DEBUG_OUT <<
-"Datamanager::frame: no more room in the cache for new data\n";)
-            break;
-        }
-
-        //submit the fetch request
-        fetchRequests.push_back(fetch);
-        fetchCond.signal();
-        --numFetches;
-    }
-    childRequests.clear();
-
-    //inject the processed requests into the tree
-    for (FetchRequests::iterator it=fetchResults.begin();
-         it!=fetchResults.end(); ++it)
-    {
-        //validate buffers
-        TreeIndex childIndex = it->parent.node->getData().index.down(it->which);
-        releaseMainBuffer(childIndex, it->child);
-
-CRUSTA_DEBUG(14, CRUSTA_DEBUG_OUT <<
-"MainCache::frame: request for Index " << childIndex.med_str() << ":" <<
-it->which << " processed\n";)
-    }
-    fetchResults.clear();
-
-CRUSTA_DEBUG(14, CRUSTA_DEBUG_OUT <<
-"\n********  DataManager::frame() //end\n"; MainCache& mc=CACHE->getMainCache();
-mc.node.printCache();)
-}
-
-void DataManager::
 display(GLContextData& contextData)
 {
     //check if the GPU caches need to be cleared
@@ -552,29 +478,25 @@ display(GLContextData& contextData)
 void DataManager::
 request(const Request& req)
 {
-    //make sure merging of the requests is done one at a time
-    Threads::Mutex::Lock lock(requestMutex);
-
-    //requests cannot be duplicated so we simply append the requests
-    childRequests.push_back(req);
-
-    //request a frame to process these requests
-    if (!childRequests.empty())
-        Vrui::requestUpdate();
+    {
+        //make sure merging of the requests is done one at a time
+        Threads::Mutex::Lock lock(requestMutex);
+        addRequest(req);
+    }
+    fetchCond.signal();
 }
 
 void DataManager::
 request(const Requests& reqs)
 {
-    //make sure merging of the requests is done one at a time
-    Threads::Mutex::Lock lock(requestMutex);
-
-    //potential request duplication handled at fetch time, so just append here
-    childRequests.insert(childRequests.end(), reqs.begin(), reqs.end());
-
-    //request a frame to process these requests
-    if (!childRequests.empty())
-        Vrui::requestUpdate();
+    {
+        //make sure merging of the requests is done one at a time
+        Threads::Mutex::Lock lock(requestMutex);
+        for (Requests::const_iterator it=reqs.begin(); it!=reqs.end(); ++it)
+            addRequest(*it);
+        if (!childRequests.empty())
+            fetchCond.signal();
+    }
 }
 
 
@@ -690,20 +612,45 @@ startGpuBatch(GLContextData& contextData, const SurfaceApproximation& surface,
               Batch& batch)
 {
     batch.clear();
+    assert(remainingBatchIndices.empty());
 
-    //go through all the render nodes and collect the appropriate data
+    //stream nodes cached nodes and reserved the indices of the missing
     size_t numNodes = surface.visibles.size();
-    for (batchIndex=0; batchIndex<numNodes; ++batchIndex)
+    for (int i=0; i<numNodes; ++i)
     {
-        //make sure the cached data is up to date
         BatchElement batchel;
-        batchel.main = surface.visible(batchIndex);
-        if (!streamGpuData(contextData, batchel))
-            break;
-        CHECK_GLA;
+        batchel.main = surface.visible(i);
+        NodeGpuBuffer gpuBuf;
+        if (findGpuBuffer(contextData, batchel.main, gpuBuf))
+        {
+            //make sure the data is up to date
+            streamGpuData(contextData, batchel, gpuBuf);
+            CHECK_GLA;
+            //add to the batch
+            batch.push_back(batchel);
+        }
+        else
+            remainingBatchIndices.push_back(i);
+    }
 
-        //add the node and data to the current batch
-        batch.push_back(batchel);
+    //add missing nodes as much as the cache will allow
+    while (!remainingBatchIndices.empty())
+    {
+        BatchElement batchel;
+        batchel.main = surface.visible(remainingBatchIndices.back());
+        NodeGpuBuffer gpuBuf;
+        if (grabGpuBuffer(contextData, batchel.main, gpuBuf))
+        {
+            //make sure the data is up to date
+            streamGpuData(contextData, batchel, gpuBuf);
+            CHECK_GLA;
+            //add to the batch
+            batch.push_back(batchel);
+            //remove the index from the remaining set
+            remainingBatchIndices.pop_back();
+        }
+        else
+            break;
     }
 }
 
@@ -714,32 +661,39 @@ nextGpuBatch(GLContextData& contextData, const SurfaceApproximation& surface,
     batch.clear();
 
     //are any more batches even possible
-    size_t numNodes = surface.visibles.size() - batchIndex;
+    size_t numNodes = remainingBatchIndices.size();
     if (numNodes == 0)
         return;
 
     //try to reset enough cache entries for the remaining nodes
     GpuCache& gpuCache = CACHE->getGpuCache(contextData);
-    gpuCache.geometry.reset(numNodes);
+    gpuCache.geometry.ageMRU(numNodes, LAST_FRAME);
+    gpuCache.color.ageMRU(numNodes, LAST_FRAME);
 
     size_t numLayerBufs = numNodes * 3*colorFiles.size() + layerfFiles.size();
-    gpuCache.layerf.reset(numLayerBufs);
+    gpuCache.layerf.ageMRU(numLayerBufs, LAST_FRAME);
 
-    gpuCache.coverage.reset(numNodes);
-    gpuCache.lineData.reset(numNodes);
+    gpuCache.coverage.ageMRU(numNodes, LAST_FRAME);
+    gpuCache.lineData.ageMRU(numNodes, LAST_FRAME);
 
-    numNodes = surface.visibles.size();
-    for (; batchIndex<numNodes; ++batchIndex)
+    //add missing nodes as much as the cache will allow
+    while (!remainingBatchIndices.empty())
     {
-        //make sure the cached data is up to date
         BatchElement batchel;
-        batchel.main = surface.visible(batchIndex);
-        if (!streamGpuData(contextData, batchel))
+        batchel.main = surface.visible(remainingBatchIndices.back());
+        NodeGpuBuffer gpuBuf;
+        if (grabGpuBuffer(contextData, batchel.main, gpuBuf))
+        {
+            //make sure the data is up to date
+            streamGpuData(contextData, batchel, gpuBuf);
+            CHECK_GLA;
+            //add to the batch
+            batch.push_back(batchel);
+            //remove the index from the remaining set
+            remainingBatchIndices.pop_back();
+        }
+        else
             break;
-        CHECK_GLA;
-
-        //add the node and data to the current batch
-        batch.push_back(batchel);
     }
 }
 
@@ -791,20 +745,6 @@ touch(NodeMainBuffer& mainBuf) const
 }
 
 
-DataManager::FetchRequest::
-FetchRequest() :
-    crusta(NULL), which(~0)
-{
-}
-
-bool DataManager::FetchRequest::
-operator ==(const FetchRequest& other) const
-{
-    return parent.node->getData().index == other.parent.node->getData().index &&
-           which == other.which;
-}
-
-
 DataManager::GlItem::
 GlItem() :
     sourceShaders(NULL), resetSourceShadersStamp(0)
@@ -812,36 +752,40 @@ GlItem() :
 }
 
 
-#define GET_BUFFER(ret, cache, index, check)\
+#define GRABMAINBUFFER(ret, cache, index, older)\
 ret = cache.find(index);\
 if (ret == NULL)\
-    ret = cache.grabBuffer(check);
+{\
+    ret = cache.grabBuffer(older);\
+    if (ret == NULL)\
+        return false;\
+}
 
-const NodeMainBuffer DataManager::
-grabMainBuffer(const TreeIndex& index, bool current) const
+bool DataManager::
+grabMainBuffer(const TreeIndex& index, const FrameStamp older,
+               NodeMainBuffer& mainBuf) const
 {
     MainCache& mc = CACHE->getMainCache();
 
-    NodeMainBuffer ret;
-    GET_BUFFER(    ret.node,     mc.node, DataIndex(0,index), current);
-    GET_BUFFER(ret.geometry, mc.geometry, DataIndex(0,index), current);
-    GET_BUFFER(  ret.height,   mc.layerf, DataIndex(0,index), current);
+    GRABMAINBUFFER(    mainBuf.node,     mc.node, DataIndex(0,index), older);
+    GRABMAINBUFFER(mainBuf.geometry, mc.geometry, DataIndex(0,index), older);
+    GRABMAINBUFFER(  mainBuf.height,   mc.layerf, DataIndex(0,index), older);
 
-    const int numColorLayers = static_cast<int>(colorFiles.size());
-    ret.colors.resize(numColorLayers, NULL);
-    for (int l=0; l<numColorLayers; ++l)
+    size_t numColorLayers = colorFiles.size();
+    mainBuf.colors.resize(numColorLayers, NULL);
+    for (size_t i=0; i<numColorLayers; ++i)
     {
-        GET_BUFFER(ret.colors[l], mc.color, DataIndex(l, index), current)
+        GRABMAINBUFFER(mainBuf.colors[i],mc.color,DataIndex(i,index),older);
     }
 
-    const int numFloatLayers = static_cast<int>(layerfFiles.size());
-    ret.layers.resize(numFloatLayers, NULL);
-    for (int l=0; l<numFloatLayers; ++l)
+    size_t numFloatLayers = layerfFiles.size();
+    mainBuf.layers.resize(numFloatLayers, NULL);
+    for (size_t i=0; i<numFloatLayers; ++i)
     {
-        GET_BUFFER(ret.layers[l], mc.layerf, DataIndex(l+1, index), current)
+        GRABMAINBUFFER(mainBuf.layers[i],mc.layerf,DataIndex(i+1,index),older);
     }
 
-    return ret;
+    return true;
 }
 
 void DataManager::
@@ -872,17 +816,96 @@ releaseMainBuffer(const TreeIndex& index, const NodeMainBuffer& buffer) const
 }
 
 
-#define STREAM(cacheType, cache, index, mainData, gpuData, format, type)\
+#define FINDGPUBUFFER(buf, cache, index)\
 {\
-cacheType::BufferType* buf = cache.find(index);\
-if (buf == NULL)\
-{\
-    buf = cache.grabBuffer(false);\
+    buf = cache.find(index);\
     if (buf == NULL)\
         return false;\
-}\
+}
+
+bool DataManager::
+findGpuBuffer(GLContextData& contextData, const NodeMainData& main,
+              NodeGpuBuffer& gpuBuf) const
+{
+    const TreeIndex& index = main.node->index;
+    GpuCache& cache = CACHE->getGpuCache(contextData);
+
+    //geometry
+    FINDGPUBUFFER(gpuBuf.geometry, cache.geometry, DataIndex(0,index));
+    //height
+    FINDGPUBUFFER(gpuBuf.height, cache.layerf, DataIndex(0,index));
+    //colors
+    size_t numColorLayers = main.colors.size();
+    gpuBuf.colors.resize(numColorLayers, NULL);
+    for (size_t i=0; i<numColorLayers; ++i)
+        FINDGPUBUFFER(gpuBuf.colors[i], cache.color, DataIndex(i,index));
+    //layerfs
+    size_t numFloatLayers = main.layers.size();
+    gpuBuf.layers.resize(numFloatLayers, NULL);
+    for (size_t i=0; i<numFloatLayers; ++i)
+        FINDGPUBUFFER(gpuBuf.layers[i], cache.layerf, DataIndex(i+1,index));
+    //decorated vector art data
+    if (SETTINGS->lineDecorated && main.node->lineNumSegments!=0)
+    {
+        //line data
+        FINDGPUBUFFER(gpuBuf.lineData, cache.lineData, DataIndex(0,index));
+        //coverage
+        FINDGPUBUFFER(gpuBuf.coverage, cache.coverage, DataIndex(0,index));
+    }
+
+    //successfully found all the components of the buffer
+    return true;
+}
+
+#define GRABGPUBUFFER(buf, cache, index)\
+{\
+    buf = cache.find(index);\
+    if (buf == NULL)\
+    {\
+        buf = cache.grabBuffer(CURRENT_FRAME);\
+        if (buf == NULL)\
+            return false;\
+    }\
+}
+
+bool DataManager::
+grabGpuBuffer(GLContextData &contextData, const NodeMainData &main,
+              NodeGpuBuffer &gpuBuf) const
+{
+    const TreeIndex& index = main.node->index;
+    GpuCache& cache = CACHE->getGpuCache(contextData);
+
+    //geometry
+    GRABGPUBUFFER(gpuBuf.geometry, cache.geometry, DataIndex(0,index));
+    //height
+    GRABGPUBUFFER(gpuBuf.height, cache.layerf, DataIndex(0,index));
+    //colors
+    size_t numColorLayers = main.colors.size();
+    gpuBuf.colors.resize(numColorLayers, NULL);
+    for (size_t i=0; i<numColorLayers; ++i)
+        GRABGPUBUFFER(gpuBuf.colors[i], cache.color, DataIndex(i,index));
+    //layerfs
+    size_t numFloatLayers = main.layers.size();
+    gpuBuf.layers.resize(numFloatLayers, NULL);
+    for (size_t i=0; i<numFloatLayers; ++i)
+        GRABGPUBUFFER(gpuBuf.layers[i], cache.layerf, DataIndex(i+1,index));
+    //decorated vector art data
+    if (SETTINGS->lineDecorated && main.node->lineNumSegments!=0)
+    {
+        //line data
+        GRABGPUBUFFER(gpuBuf.lineData, cache.lineData, DataIndex(0,index));
+        //coverage
+        GRABGPUBUFFER(gpuBuf.coverage, cache.coverage, DataIndex(0,index));
+    }
+
+    //successfully found all the components of the buffer
+    return true;
+}
+
+#define STREAM(buf, cache, index, mainData, gpuData, format, type)\
+{\
 gpuData = &buf->getData();\
-if (cache.isGrabbed(buf) || !cache.isValid(buf))\
+if (!cache.isValid(buf))\
 {\
     cache.stream(*gpuData, format, type, mainData);\
     CHECK_GLA;\
@@ -890,8 +913,9 @@ if (cache.isGrabbed(buf) || !cache.isValid(buf))\
 cache.releaseBuffer(index, buf);\
 }
 
-bool DataManager::
-streamGpuData(GLContextData& contextData, BatchElement& batchel)
+void DataManager::
+streamGpuData(GLContextData& contextData, BatchElement& batchel,
+              NodeGpuBuffer& gpuBuf)
 {
     GpuCache& cache        = CACHE->getGpuCache(contextData);
     NodeMainData& main     = batchel.main;
@@ -900,49 +924,39 @@ streamGpuData(GLContextData& contextData, BatchElement& batchel)
 
     CHECK_GLA;
 //- handle the geometry data
-    STREAM(GpuGeometryCache, cache.geometry, DataIndex(0,index), main.geometry,
+    STREAM(gpuBuf.geometry, cache.geometry, DataIndex(0,index), main.geometry,
            gpu.geometry, GL_RGB, GL_FLOAT)
 
 //- handle the height data
-    STREAM(GpuLayerfCache, cache.layerf, DataIndex(0,index), main.height,
+    STREAM(gpuBuf.height, cache.layerf, DataIndex(0,index), main.height,
            gpu.height, GL_RED, GL_FLOAT)
 
 //- handle the color data
-    int numColorLayers = static_cast<int>(main.colors.size());
+    size_t numColorLayers = main.colors.size();
     gpu.colors.resize(numColorLayers, NULL);
-    for (int l=0; l<numColorLayers; ++l)
+    for (size_t i=0; i<numColorLayers; ++i)
     {
-        STREAM(GpuColorCache, cache.color, DataIndex(l,index),
-               main.colors[l], gpu.colors[l], GL_RGB, GL_UNSIGNED_BYTE)
+        STREAM(gpuBuf.colors[i], cache.color, DataIndex(i,index),
+               main.colors[i], gpu.colors[i], GL_RGB, GL_UNSIGNED_BYTE)
     }
 
 //- handle the layer data
-    int numFloatLayers = static_cast<int>(main.layers.size());
+    size_t numFloatLayers = main.layers.size();
     gpu.layers.resize(numFloatLayers, NULL);
-    for (int l=0; l<numFloatLayers; ++l)
+    for (size_t i=0; i<numFloatLayers; ++i)
     {
-        STREAM(GpuLayerfCache, cache.layerf, DataIndex(l+1,index),
-               main.layers[l], gpu.layers[l], GL_RED, GL_FLOAT)
+        STREAM(gpuBuf.layers[i], cache.layerf, DataIndex(i+1,index),
+               main.layers[i], gpu.layers[i], GL_RED, GL_FLOAT)
     }
 
     //decorated vector art requires up-to-date line data and coverage textures
     if (SETTINGS->lineDecorated && main.node->lineNumSegments!=0)
     {
     //- handle the line data
-        //acquire buffer
-        GpuLineDataCache::BufferType* lineData =
-            cache.lineData.find(DataIndex(0,index));
-        if (lineData == NULL)
-        {
-            lineData = cache.lineData.grabBuffer(false);
-            if (lineData == NULL)
-                return false;
-        }
         //update data
-        gpu.lineData = &lineData->getData();
+        gpu.lineData = &gpuBuf.lineData->getData();
         bool updatedLine = false;
-        if (cache.lineData.isGrabbed(lineData) ||
-            !cache.lineData.isValid(lineData)  ||
+        if (!cache.lineData.isValid(gpuBuf.lineData)  ||
             gpu.lineData->age < main.node->lineDataStamp)
         {
             //stream the line data from the main representation
@@ -955,22 +969,12 @@ streamGpuData(GLContextData& contextData, BatchElement& batchel)
             updatedLine = true;
         }
         //validate buffer
-        cache.lineData.releaseBuffer(DataIndex(0,index), lineData);
+        cache.lineData.releaseBuffer(DataIndex(0,index), gpuBuf.lineData);
 
     //- handle the coverage data
-        //acquire buffer
-        GpuCoverageCache::BufferType* coverage =
-            cache.coverage.find(DataIndex(0,index));
-        if (coverage == NULL)
-        {
-            coverage = cache.coverage.grabBuffer(false);
-            if (coverage == NULL)
-                return false;
-        }
         //update the data
-        gpu.coverage = &coverage->getData();
-        if (updatedLine || cache.coverage.isGrabbed(coverage) ||
-            !cache.coverage.isValid(coverage))
+        gpu.coverage = &gpuBuf.coverage->getData();
+        if (updatedLine || !cache.coverage.isValid(gpuBuf.coverage))
         {
             //render the new coverage into the coverage texture
             CHECK_GLA;
@@ -982,10 +986,8 @@ streamGpuData(GLContextData& contextData, BatchElement& batchel)
             CHECK_GLA;
         }
         //validate buffer
-        cache.coverage.releaseBuffer(DataIndex(0,index), coverage);
+        cache.coverage.releaseBuffer(DataIndex(0,index), gpuBuf.coverage);
     }
-
-    return true;
 }
 
 void DataManager::
@@ -1173,7 +1175,7 @@ sourceDem(const NodeData* const parent,
     if (child->demTile.node != INVALID_TILEINDEX)
     {
         TileHeader header;
-        File* file = demFile->getPatch(child->index.patch);
+        File* file = demFile->getPatch(child->index.patch());
         if (!file->readTile(child->demTile.node, child->demTile.children,
                             header, childHeight))
         {
@@ -1188,8 +1190,8 @@ sourceDem(const NodeData* const parent,
     {
         if (parent != NULL)
         {
-            sampleParent(child->index.child, range, childHeight, parentHeight,
-                         demNodata);
+            sampleParent(child->index.child(), range,
+                         childHeight, parentHeight, demNodata);
         }
         else
         {
@@ -1213,7 +1215,7 @@ sourceColor(const NodeData* const parent,
     {
         assert(layer < colorFiles.size());
         //get the color data into a temporary storage
-        File* file = colorFiles[layer]->getPatch(child->index.patch);
+        File* file = colorFiles[layer]->getPatch(child->index.patch());
         if (!file->readTile(child->colorTiles[layer].node,
                             child->colorTiles[layer].children, childColor))
         {
@@ -1226,7 +1228,7 @@ sourceColor(const NodeData* const parent,
     {
         if (parent != NULL)
         {
-            sampleParent(child->index.child, childColor, parentColor,
+            sampleParent(child->index.child(), childColor, parentColor,
                          colorNodata);
         }
         else
@@ -1247,7 +1249,7 @@ sourceLayerf(const NodeData* const parent,
     if (child->layerTiles[layer].node != INVALID_TILEINDEX)
     {
         assert(layer<layerfFiles.size());
-        File* file = layerfFiles[layer]->getPatch(child->index.patch);
+        File* file = layerfFiles[layer]->getPatch(child->index.patch());
         if (!file->readTile(child->layerTiles[layer].node,
                             child->layerTiles[layer].children,
                             childLayerf))
@@ -1261,7 +1263,7 @@ sourceLayerf(const NodeData* const parent,
     {
         if (parent != NULL)
         {
-            sampleParent(child->index.child, childLayerf, parentLayerf,
+            sampleParent(child->index.child(), childLayerf, parentLayerf,
                          layerfNodata);
         }
         else
@@ -1272,6 +1274,37 @@ sourceLayerf(const NodeData* const parent,
     }
 }
 
+
+void DataManager::
+addRequest(Request req)
+{
+    typedef std::list<Request> ReqList;
+
+    //find where to insert the request and coalesce duplicates
+    ReqList::iterator insertIte;
+    for (insertIte=childRequests.begin(); insertIte!=childRequests.end();)
+    {
+        //remove existing entry, but update the LOD as necessary
+        if (req == *insertIte)
+        {
+            req.lod = std::min(req.lod, insertIte->lod);
+            childRequests.erase(insertIte++);
+            continue;
+        }
+        //stop at the right LOD insertion point
+        if (req > *insertIte)
+            break;
+        else
+            ++insertIte;
+    }
+
+    //insert the request
+    childRequests.insert(insertIte, req);
+    //keep the request list manageable
+    while (childRequests.size() > SETTINGS->dataManMaxFetchRequests)
+        childRequests.pop_front();
+    assert(!childRequests.empty());
+}
 
 void DataManager::
 startFetchThread()
@@ -1297,38 +1330,53 @@ terminateFetchThread()
 void* DataManager::
 fetchThreadFunc()
 {
-    FetchRequest* fetch = NULL;
+    Request req;
     while (true)
     {
+    //-- grab a request from the pending list
         {
+            //make sure there are requests available
             Threads::Mutex::Lock lock(requestMutex);
-            //post current result
-            if (fetch != NULL)
-            {
-                fetchResults.push_back(*fetch);
-                fetchRequests.pop_front();
-                //need to reactivate cache to process fetch completion
-                Vrui::requestUpdate();
-            }
+            if (childRequests.empty())
+                fetchCond.wait(requestMutex);
             //terminate before trying to fetch more?
             if (terminateFetch)
                 return NULL;
-
-            //wait for new requests if there are none pending
-            if (fetchRequests.empty())
-                fetchCond.wait(requestMutex);
-
-            //was the signal actually to terminate? If not grab the request
-            if (terminateFetch)
-                return NULL;
-            else
-                fetch = &fetchRequests.front();
+            //grab the request
+            assert(!childRequests.empty());
+            req = childRequests.back();
+            childRequests.pop_back();
         }
 
-        //fetch it
-        NodeMainData parentData = getData(fetch->parent);
-        NodeMainData childData  = getData(fetch->child);
-        loadChild(fetch->crusta, parentData, fetch->which, childData);
+    //-- try to grab a cache entry to satisfy the request
+        TreeIndex childIndex=req.parent.node->getData().index.down(req.child);
+        /* Because the frame swaps are no synchronized with this thread, the
+           grab could occur right after the swap (i.e., CURRENT_FRAME set to
+           the new timestamp), then all the cache entries would be valid
+           candidates for reuse. To prevent tossing out data that the current
+           evaluation of the surface approximation would retain from the
+           previous frame, we restrict candidates to ones that have been
+           neglected for at least two frames already */
+        NodeMainBuffer mainBuf;
+        if (!grabMainBuffer(childIndex, LAST_FRAME, mainBuf))
+        {
+            //we couldn't secure a buffer from the cache bail on this request
+CRUSTA_DEBUG(11, CRUSTA_DEBUG_OUT <<
+"FetchThread: no more room in the cache for new request\n";)
+            continue;
+        }
+
+    //-- fetch it
+        NodeMainData parentData = getData(req.parent);
+        NodeMainData childData  = getData(mainBuf);
+        loadChild(req.crusta, parentData, req.child, childData);
+
+    //-- make it available
+        releaseMainBuffer(childIndex, mainBuf);
+CRUSTA_DEBUG(14, CRUSTA_DEBUG_OUT <<
+"FetchThread: request for Index " << childIndex.med_str() << ":" <<
+req.child << " processed\n";)
+        Vrui::requestUpdate();
     }
 
     return NULL;

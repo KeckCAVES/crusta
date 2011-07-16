@@ -252,7 +252,7 @@ getColorSource(GLContextData& contextData)
 #define GRAB_BUFFER(cacheType, name, cache, index)\
 cacheType::BufferType* name##Buf = cache.find(index);\
 if (name##Buf == NULL)\
-    name##Buf = cache.grabBuffer(false);\
+    name##Buf = cache.grabBuffer(CURRENT_FRAME);\
 if (name##Buf == NULL)\
 {\
     Misc::throwStdErr("ColorMapper::configureGpuLayers: failed to acquire %s "\

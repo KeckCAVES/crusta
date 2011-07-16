@@ -56,6 +56,7 @@ bool DEBUG_INTERSECT = false;
     stamps generated during the initialization process for deferred GPU
     initializations */
 FrameStamp CURRENT_FRAME(0.00000001);
+FrameStamp LAST_FRAME(0.0);
 
 
 #define CRUSTA_ENABLE_RECORD_FRAMERATE 0
@@ -306,7 +307,7 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     assert(nodeData.node != NULL);
 
     NodeData* node = nodeData.node;
-    assert(node->index.patch < static_cast<uint>(renderPatches.size()));
+    assert(node->index.patch() < static_cast<uint>(renderPatches.size()));
 
 //- grab the finest level data possible
     const Vector3 vpos(pos);
@@ -673,7 +674,7 @@ Still this should be handled more robustly */
 
         const Polyhedron* const polyhedron = DATAMANAGER->getPolyhedron();
         Polyhedron::Connectivity neighbors[4];
-        polyhedron->getConnectivity(patch->getRootNode().node->index.patch,
+        polyhedron->getConnectivity(patch->getRootNode().node->index.patch(),
                                     neighbors);
         patch  = renderPatches[neighbors[sideOut][0]];
         sideIn = mapSide[neighbors[sideOut][1]][sideOut];
@@ -754,10 +755,7 @@ void Crusta::
 frame()
 {
 ///\todo split crusta and planet
-///\todo hack. allow for the cache processing to happen as a display post-proc
-    //process the requests from the last frame
-    DATAMANAGER->frame();
-
+    LAST_FRAME = CURRENT_FRAME;
     CURRENT_FRAME = Vrui::getApplicationTime();
 
 ///\todo hack. start the actual new frame

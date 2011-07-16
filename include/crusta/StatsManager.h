@@ -15,17 +15,6 @@ BEGIN_CRUSTA
 
 class StatsManager
 {
-protected:
-    static const int     numTimers = 5;
-    static Timer         timers[numTimers];
-    static std::ofstream file;
-
-    static int numTiles;
-    static int numSegments;
-    static int maxSegmentsPerTile;
-    static int numData;
-    static int numDataUpdated;
-
 public:
     enum Stat
     {
@@ -44,6 +33,17 @@ public:
 
     static void extractTileStats(const SurfaceApproximation& surface);
     static void incrementDataUpdated();
+
+protected:
+    static const int     numTimers = 5;
+    static Timer         timers[numTimers];
+    static std::ofstream file;
+    
+    static int numTiles;
+    static int numSegments;
+    static int maxSegmentsPerTile;
+    static int numData;
+    static int numDataUpdated;
 };
 
 
