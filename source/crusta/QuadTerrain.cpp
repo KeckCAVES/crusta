@@ -49,7 +49,7 @@ static const float TEXTURE_COORD_START = TILE_TEXTURE_COORD_STEP * 0.5;
 static const float TEXTURE_COORD_END   = 1.0 - TEXTURE_COORD_START;
 
 bool QuadTerrain::displayDebuggingBoundingSpheres = false;
-bool QuadTerrain::displayDebuggingGrid            = true;
+bool QuadTerrain::displayDebuggingGrid            = false;
 
 ///\todo dependency on VruiGlew must be dynamically allocated after VruiGlew
 QuadTerrain::GlData* QuadTerrain::glData = 0;
