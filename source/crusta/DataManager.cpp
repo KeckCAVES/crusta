@@ -616,7 +616,7 @@ startGpuBatch(GLContextData& contextData, const SurfaceApproximation& surface,
 
     //stream nodes cached nodes and reserved the indices of the missing
     size_t numNodes = surface.visibles.size();
-    for (int i=0; i<numNodes; ++i)
+    for (size_t i=0; i<numNodes; ++i)
     {
         BatchElement batchel;
         batchel.main = surface.visible(i);
@@ -1301,8 +1301,11 @@ addRequest(Request req)
     //insert the request
     childRequests.insert(insertIte, req);
     //keep the request list manageable
-    while (childRequests.size() > SETTINGS->dataManMaxFetchRequests)
+    while (static_cast<int>(childRequests.size()) >
+           SETTINGS->dataManMaxFetchRequests)
+    {
         childRequests.pop_front();
+    }
     assert(!childRequests.empty());
 }
 
