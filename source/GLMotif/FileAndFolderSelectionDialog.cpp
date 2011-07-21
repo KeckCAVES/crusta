@@ -524,15 +524,6 @@ FileAndFolderSelectionDialog::FileAndFolderSelectionDialog(WidgetManager* widget
     fileList->getListBox()->getItemSelectedCallbacks().add(this,&FileAndFolderSelectionDialog::listItemSelectedCallback);
     fileList->getListBox()->getValueChangedCallbacks().add(this,&FileAndFolderSelectionDialog::listItemValueChangedCallback);
 
-    /* Select the last path button (to read the initial directory): */
-    setSelectedPathButton(pathButtonIndex);
-
-    /* Read the initial directory: */
-    if(!readDirectory())
-        {
-        /* This is bad! */
-        }
-
     /* Create the button box: */
     RowColumn* buttonBox=new RowColumn("ButtonBox",fileSelectionDialog,false);
     buttonBox->setOrientation(RowColumn::HORIZONTAL);
@@ -590,6 +581,9 @@ FileAndFolderSelectionDialog::FileAndFolderSelectionDialog(WidgetManager* widget
     fileSelectionDialog->setRowWeight(1,1.0f);
 
     fileSelectionDialog->manageChild();
+
+    /* Select the last path button (to read the initial directory): */
+    setSelectedPathButton(pathButtonIndex);
     }
 
 FileAndFolderSelectionDialog::~FileAndFolderSelectionDialog(void)
