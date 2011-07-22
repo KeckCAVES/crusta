@@ -1,5 +1,5 @@
-# Version 2.8 or greater is required for packaging
-cmake_minimum_required(VERSION 2.8)
+# Version 2.8.3 or greater is required for packaging
+cmake_minimum_required(VERSION 2.8.3)
 
 # Add local cmake directory to the module search path (for FindVrui)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
@@ -13,7 +13,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
 
 ##-- Set project name and target version
 
-project(Crusta)
+project(crusta)
 set(PROJECT_MAJOR_VERSION 1)
 set(PROJECT_MINOR_VERSION 0)
 set(PROJECT_PATCH_VERSION 0)
@@ -87,4 +87,4 @@ include(Core)
 include(Crusta)
 include(Construo)
 
-#include(Package)
+include(Package)
