@@ -1,7 +1,7 @@
 #include <crusta/SurfaceProbeTool.h>
 
 
-#include <Comm/MulticastPipe.h>
+#include <Cluster/MulticastPipe.h>
 #include <Geometry/OrthogonalTransformation.h>
 #include <GL/GLTransformationWrappers.h>
 #include <GLMotif/PopupWindow.h>

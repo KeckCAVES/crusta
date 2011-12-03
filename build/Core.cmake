@@ -8,7 +8,6 @@ set(CORE_FILES
     ../include/GLMotif/ColorMapInOut.h
     ../include/GLMotif/ColorPicker.h
     ../include/GLMotif/ColorPickerWindow.h
-    ../include/GLMotif/FileAndFolderSelectionDialog.h
     ../include/GLMotif/PaletteEditor.h
     ../include/GLMotif/RangeEditor.h
     ../include/GLMotif/RelativeSlider.h
@@ -102,7 +101,6 @@ set(CORE_FILES
     ../source/GLMotif/ColorMapInOut.cpp
     ../source/GLMotif/ColorPicker.cpp
     ../source/GLMotif/ColorPickerWindow.cpp
-    ../source/GLMotif/FileAndFolderSelectionDialog.cpp
     ../source/GLMotif/PaletteEditor.cpp
     ../source/GLMotif/RangeEditor.cpp
     ../source/GLMotif/RelativeSlider.cpp

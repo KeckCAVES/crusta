@@ -32,7 +32,7 @@ if(CRUSTA_BUNDLE)
 
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};@loader_path/../Frameworks;@loader_path/../Libraries")
 
-    set(VRUI_MAKEINCLUDE "${CRUSTA_BUNDLE}/Contents/Libraries/Vrui-2.1/share/Vrui.makeinclude")
+    set(VRUI_MAKEINCLUDE "${CRUSTA_BUNDLE}/Contents/Libraries/Vrui-2.2/share/Vrui.makeinclude")
 else()
     set(BIN_PATH "${CMAKE_INSTALL_PREFIX}/bin")
     set(SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share/crusta")

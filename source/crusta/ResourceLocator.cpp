@@ -16,6 +16,7 @@ init(const std::string& exePath, const std::string& resourcePath)
 }
 
 ResourceLocator RESOURCELOCATOR;
+IO::DirectoryPtr CURRENTDIRECTORY;
 
 
 END_CRUSTA

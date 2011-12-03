@@ -36,6 +36,7 @@
 #include <Vrui/CoordinateManager.h>
 #include <Vrui/Vrui.h>
 
+#include <crusta/ResourceLocator.h>
 #include <crusta/ColorMapper.h>
 #include <crusta/Crusta.h>
 #include <crusta/map/MapManager.h>
@@ -806,9 +807,10 @@ showDataDialogCallback(Button::SelectCallbackData*)
 void CrustaApp::
 addDataCallback(Button::SelectCallbackData*)
 {
-    FileAndFolderSelectionDialog* fileDialog =
-        new FileAndFolderSelectionDialog(Vrui::getWidgetManager(),
-            "Load Crusta Globe File", 0, NULL);
+    FileSelectionDialog* fileDialog =
+        new FileSelectionDialog(Vrui::getWidgetManager(),
+            "Load Crusta Globe File", CURRENTDIRECTORY, NULL);
+    fileDialog->setCanSelectDirectory(true);
     fileDialog->getOKCallbacks().add(this,
         &CrustaApp::addDataFileOkCallback);
     fileDialog->getCancelCallbacks().add(this,
@@ -817,21 +819,39 @@ addDataCallback(Button::SelectCallbackData*)
 }
 
 void CrustaApp::
-addDataFileOkCallback(FileAndFolderSelectionDialog::OKCallbackData* cbData)
+addDataFileOkCallback(FileSelectionDialog::OKCallbackData* cbData)
 {
-    //record the selected file
-    dataPaths.push_back(cbData->selectedFileName);
-    dataListBox->addItem(cbData->selectedFileName.c_str());
+    /* Check if the user selected a file or a directory: */
+    std::string newDataPath;
+    if(cbData->selectedFileName==0)
+      {
+      /* User selected a directory: */
+      newDataPath=cbData->selectedDirectory->getPath();
+			
+			CURRENTDIRECTORY=cbData->selectedDirectory->getParent();
+      }
+    else
+      {
+      /* User selected a file: */
+      newDataPath=cbData->selectedDirectory->getPath(cbData->selectedFileName);
+			
+			CURRENTDIRECTORY=cbData->selectedDirectory;
+      }
+    
+		//record the selected file
+    dataPaths.push_back(newDataPath);
+    dataListBox->addItem(newDataPath.c_str());
+    
     //destroy the file selection dialog
-    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
+    cbData->fileSelectionDialog->close();
 }
 
 void CrustaApp::
 addDataFileCancelCallback(
-    FileAndFolderSelectionDialog::CancelCallbackData* cbData)
+    FileSelectionDialog::CancelCallbackData* cbData)
 {
     //destroy the file selection dialog
-    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
+    cbData->fileSelectionDialog->close();
 }
 
 void CrustaApp::
@@ -1014,7 +1034,7 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
         /* Set the new tool's alignment function: */
         typedef Vrui::SurfaceNavigationTool::AlignmentData AlignmentData;
         surfaceNavigationTool->setAlignFunction(
-            Misc::createFunctionCall<const AlignmentData&,CrustaApp>(
+            Misc::createFunctionCall(
                 this,&CrustaApp::alignSurfaceFrame));
     }
 

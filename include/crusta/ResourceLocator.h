@@ -3,6 +3,7 @@
 
 
 #include <Misc/FileLocator.h>
+#include <IO/Directory.h>
 
 #include <crusta/basics.h>
 
@@ -17,7 +18,7 @@ public:
 };
 
 extern ResourceLocator RESOURCELOCATOR;
-
+extern IO::DirectoryPtr CURRENTDIRECTORY;
 
 END_CRUSTA
 

@@ -29,6 +29,7 @@
 #include <Misc/CreateNumberedFileName.h>
 #include <Vrui/Vrui.h>
 #include <Vrui/DisplayState.h>
+#include <Vrui/OpenFile.h>
 
 #include <crusta/checkGl.h>
 #include <crusta/Crusta.h>
@@ -959,7 +960,7 @@ loadMapCallback(GLMotif::Button::SelectCallbackData* cbData)
 {
     GLMotif::FileSelectionDialog* mapFileDialog =
         new GLMotif::FileSelectionDialog(Vrui::getWidgetManager(),
-                                         "Load Map File", 0, NULL);
+                                         "Load Map File", CURRENTDIRECTORY, NULL);
     mapFileDialog->getOKCallbacks().add(this,
         &MapManager::loadMapFileOKCallback);
     mapFileDialog->getCancelCallbacks().add(this,
@@ -981,10 +982,12 @@ saveMapCallback(GLMotif::Button::SelectCallbackData* cbData)
 void MapManager::
 loadMapFileOKCallback(GLMotif::FileSelectionDialog::OKCallbackData* cbData)
 {
+    CURRENTDIRECTORY=cbData->selectedDirectory;
+
     //load the selected map file
-    load(cbData->selectedFileName.c_str());
+    load(cbData->getSelectedPath().c_str());
     //destroy the file selection dialog
-    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
+    cbData->fileSelectionDialog->close();
 }
 
 void MapManager::
@@ -992,7 +995,7 @@ loadMapFileCancelCallback(
     GLMotif::FileSelectionDialog::CancelCallbackData* cbData)
 {
     //destroy the file selection dialog
-    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
+    cbData->fileSelectionDialog->close();
 }
 
 

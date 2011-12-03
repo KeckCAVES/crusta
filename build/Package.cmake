@@ -36,7 +36,7 @@ endif()
 # Setup debian specific properties
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER tbernardin@ucdavis.edu)
 set(CPACK_DEBIAN_PACKAGE_SECTION science)
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libgdal1-1.7.0 | libgdal1-1.6.0, vrui (>= 2.1)")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libgdal1-1.7.0 | libgdal1-1.6.0, vrui (>= 2.2)")
 #file(READ ${CPACK_PACKAGE_DESCRIPTION_FILE} CPACK_DEBIAN_PACKAGE_DESCRIPTION)
 
 

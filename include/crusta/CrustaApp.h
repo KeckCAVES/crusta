@@ -5,7 +5,7 @@
 #include <GLMotif/Button.h>
 #include <GLMotif/ColorMapEditor.h>
 #include <GLMotif/ColorPickerWindow.h>
-#include <GLMotif/FileAndFolderSelectionDialog.h>
+#include <GLMotif/FileSelectionDialog.h>
 #include <GLMotif/RangeEditor.h>
 #include <GLMotif/Slider.h>
 #include <GLMotif/ToggleButton.h>
@@ -161,9 +161,9 @@ private:
     void showDataDialogCallback(GLMotif::Button::SelectCallbackData* cbData);
     void addDataCallback(GLMotif::Button::SelectCallbackData* cbData);
     void addDataFileOkCallback(
-        GLMotif::FileAndFolderSelectionDialog::OKCallbackData* cbData);
+        GLMotif::FileSelectionDialog::OKCallbackData* cbData);
     void addDataFileCancelCallback(
-        GLMotif::FileAndFolderSelectionDialog::CancelCallbackData* cbData);
+        GLMotif::FileSelectionDialog::CancelCallbackData* cbData);
     void removeDataCallback(GLMotif::Button::SelectCallbackData* cbData);
     void clearDataCallback(GLMotif::Button::SelectCallbackData* cbData);
     void loadDataOkCallback(GLMotif::Button::SelectCallbackData* cbData);

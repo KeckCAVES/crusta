@@ -11,6 +11,7 @@
 #include <Vrui/DisplayState.h>
 #include <Vrui/Viewer.h>
 #include <Vrui/Vrui.h>
+#include <Vrui/OpenFile.h>
 
 #include <crusta/checkGl.h>
 #include <crusta/ColorMapper.h>
@@ -155,6 +156,10 @@ init(const std::string& exePath, const Strings& settingsFiles,
 
     //initialize the resource locator
     RESOURCELOCATOR.init(exePath, resourcePath);
+		
+		/* Initialize the current directory: */
+		CURRENTDIRECTORY=Vrui::openDirectory(".");
+		
     //initialize the crusta user settings
     SETTINGS = new CrustaSettings;
     SETTINGS->loadFromFiles(settingsFiles);

@@ -3,7 +3,6 @@
 
 #include <iostream>
 
-#include <Comm/MulticastPipe.h>
 #include <Geometry/OrthogonalTransformation.h>
 #include <Vrui/ToolManager.h>
 #include <Vrui/Vrui.h>

@@ -13,7 +13,7 @@
 if( CMAKE_BUILD_TYPE STREQUAL "Debug" )
     find_file( VRUI_MAKEINCLUDE Vrui.debug.makeinclude
                PATHS $ENV{VRUI_MAKEINCLUDE} /opt /usr/local /usr
-               PATH_SUFFIXES Vrui-2.1/share)
+               PATH_SUFFIXES Vrui-2.2/share)
     if( NOT VRUI_MAKEINCLUDE )
         message( WARNING "Debug build type but debug Vrui not found; using non-debug version" )
     endif()
@@ -22,7 +22,7 @@ endif()
 if( NOT VRUI_MAKEINCLUDE )
     find_file( VRUI_MAKEINCLUDE Vrui.makeinclude
                PATHS $ENV{VRUI_MAKEINCLUDE} /opt /usr/local /usr
-               PATH_SUFFIXES Vrui-2.1/share)
+               PATH_SUFFIXES Vrui-2.2/share)
 endif()
 
 # Macro to extract the content from the makeinclude
