@@ -1,7 +1,7 @@
 #include <crusta/SliceTool.h>
 #include <crusta/CrustaSettings.h>
 
-#include <Comm/MulticastPipe.h>
+#include <Cluster/MulticastPipe.h>
 #include <Geometry/OrthogonalTransformation.h>
 #include <GL/GLTransformationWrappers.h>
 #include <GLMotif/PopupWindow.h>
@@ -206,8 +206,7 @@ init()
         "CrustaSliceTool", "Slice Tool",
         crustaToolFactory, *Vrui::getToolManager());
 
-    surfaceFactory->setNumDevices(1);
-    surfaceFactory->setNumButtons(0, 1);
+    surfaceFactory->setNumButtons(1);
 
     Vrui::getToolManager()->addClass(surfaceFactory,
         Vrui::ToolManager::defaultToolFactoryDestructor);
@@ -241,7 +240,7 @@ void SliceTool::
 frame()
 {
     //project the device position
-    surfacePoint = project(input.getDevice(0), false);
+    surfacePoint = project(getButtonDevice(0), false);
 
     //no updates if the projection failed
     if (projectionFailed)
@@ -288,7 +287,7 @@ display(GLContextData& contextData) const
     const Vrui::NavTransform& navXform = Vrui::getNavigationTransformation();
     Point3 position = navXform.transform(surfacePoint.position);
 
-    Vrui::NavTransform devXform = input.getDevice(0)->getTransformation();
+    Vrui::NavTransform devXform = getButtonDevice(0)->getTransformation();
     Vrui::NavTransform projXform(Vector3(position), devXform.getRotation(),
                                  devXform.getScaling());
 
@@ -434,10 +433,10 @@ display(GLContextData& contextData) const
 
 
 void SliceTool::
-buttonCallback(int, int, Vrui::InputDevice::ButtonCallbackData* cbData)
+buttonCallback(int, Vrui::InputDevice::ButtonCallbackData* cbData)
 {
     //project the device position
-    surfacePoint = project(input.getDevice(0), false);
+    surfacePoint = project(getButtonDevice(0), false);
 
     //disable any button callback if the projection has failed.
     if (projectionFailed)

@@ -11,7 +11,7 @@
 #include <GLMotif/RelativeSlider.h>
 #include <GLMotif/ToggleButton.h>
 #include <GLMotif/TextField.h>
-#include <Vrui/Tools/GenericToolFactory.h>
+#include <Vrui/GenericToolFactory.h>
 
 #include <crusta/SurfaceProjector.h>
 #include <crusta/Tool.h>
@@ -112,7 +112,7 @@ public:
     virtual void showFaultLinesButtonCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
     virtual void resetButtonCallback(GLMotif::Button::SelectCallbackData *);
 
-    virtual void buttonCallback(int deviceIndex, int deviceButtonIndex,
+    virtual void buttonCallback(int buttonSlotIndex,
                                 Vrui::InputDevice::ButtonCallbackData* cbData);
 
 
