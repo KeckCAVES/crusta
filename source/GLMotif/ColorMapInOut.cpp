@@ -115,15 +115,15 @@ draw(GLContextData& contextData) const
     glColor(backgroundColor);
     glBegin(GL_QUAD_STRIP);
     glNormal3f(0.0f,0.0f,1.0f);
-    glVertex(labelBox.getCorner(0));
+    glVertex(label.getLabelBox().getCorner(0));
     glVertex(getInterior().getCorner(0));
-    glVertex(labelBox.getCorner(1));
+    glVertex(label.getLabelBox().getCorner(1));
     glVertex(getInterior().getCorner(1));
-    glVertex(labelBox.getCorner(3));
+    glVertex(label.getLabelBox().getCorner(3));
     glVertex(getInterior().getCorner(3));
-    glVertex(labelBox.getCorner(2));
+    glVertex(label.getLabelBox().getCorner(2));
     glVertex(getInterior().getCorner(2));
-    glVertex(labelBox.getCorner(0));
+    glVertex(label.getLabelBox().getCorner(0));
     glVertex(getInterior().getCorner(0));
     glEnd();
 
@@ -140,7 +140,7 @@ draw(GLContextData& contextData) const
     glEnd();
 
     //draw the label texture
-    drawLabel(contextData);
+    label.draw(contextData);
 }
 
 void ColorMapInOut::

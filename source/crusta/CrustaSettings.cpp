@@ -5,8 +5,11 @@
 
 #include <Misc/ConfigurationFile.h>
 #include <Misc/File.h>
+#include <Misc/CompoundValueCoders.h>
 #include <Misc/StandardValueCoders.h>
 #include <GL/GLValueCoders.h>
+
+#include <crusta/ResourceLocator.h>
 
 
 BEGIN_CRUSTA
@@ -60,16 +63,24 @@ loadFromFiles(const Strings& cfgNames)
     //try to load the default system-wide configuration
     try
     {
-        cfgFile.merge((std::string(CRUSTA_SHARE_PATH) +
-                       std::string("crustaSettings.cfg")).c_str());
+        std::string cfgFileName = RESOURCELOCATOR.locateFile(
+            "config/crustaSettings.cfg");
+        cfgFile.merge(cfgFileName.c_str());
     }
     catch (Misc::File::OpenError e) {
         //ignore this exception
     }
     catch (std::runtime_error e) {
-        std::cout << "Caught exception " << e.what() << " while reading " <<
-                     "the system-wide crustaSettings.cfg configuration file." <<
-                     std::endl;
+        if (std::string("FileLocator::locateFile:").compare(0, 24, e.what()))
+        {
+            //ignore FileLocator failure
+        }
+        else
+        {
+            std::cout << "Caught exception " << e.what() << " while " <<
+                         "reading the system-wide crustaSettings.cfg " <<
+                         "configuration file." << std::endl;
+        }
     }
 
     //try to load the default local configuration file
@@ -99,10 +110,9 @@ loadFromFiles(const Strings& cfgNames)
         }
     }
 
-
     //try to extract the globe specifications
     cfgFile.setCurrentSection("/Crusta/Globe");
-    globeName   = cfgFile.retrieveString("name", globeName);
+    globeName   = cfgFile.retrieveValue<std::string>("name", globeName);
     globeRadius = cfgFile.retrieveValue<double>("radius", globeRadius);
 
     //try to extract the terrain properties

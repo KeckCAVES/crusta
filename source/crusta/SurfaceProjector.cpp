@@ -1,7 +1,7 @@
 #include <crusta/SurfaceProjector.h>
 
 
-#include <Comm/MulticastPipe.h>
+#include <Cluster/MulticastPipe.h>
 #include <Geometry/OrthogonalTransformation.h>
 #include <Vrui/Vrui.h>
 

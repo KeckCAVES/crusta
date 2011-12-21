@@ -4,6 +4,8 @@
 #include <cassert>
 #include <sstream>
 
+#include <iostream>
+
 
 BEGIN_CRUSTA
 
@@ -12,63 +14,136 @@ const TreeIndex TreeIndex::invalid(~0,~0,~0,~0);
 
 
 TreeIndex::
-TreeIndex(uint8 iPatch, uint8 iChild, uint8 iLevel, uint64 iIndex) :
-    reserved(31),
-    patch(iPatch), child(iChild), level(iLevel), index(iIndex)
-{}
+TreeIndex(uint8 iPatch, uint8 iChild, uint8 iLevel, uint64 iIndex)
+{
+    reserved(~0);
+    patch(iPatch);
+    child(iChild);
+    level(iLevel);
+    index(iIndex);
+}
 TreeIndex::
-TreeIndex(const TreeIndex& i) :
-    reserved(31),
-    patch(i.patch), child(i.child), level(i.level), index(i.index)
-{}
+TreeIndex(const TreeIndex& i)
+{
+    reserved(~0);
+    patch(i.patch());
+    child(i.child());
+    level(i.level());
+    index(i.index());
+}
 
 
 TreeIndex& TreeIndex::
 operator=(const TreeIndex& other)
 {
-    reserved = 31;
-    patch    = other.patch;
-    child    = other.child;
-    level    = other.level;
-    index    = other.index;
+    reserved(~0);
+    patch(other.patch());
+    child(other.child());
+    level(other.level());
+    index(other.index());
     return *this;
 }
 
 bool TreeIndex::
 operator==(const TreeIndex& other) const
 {
-    return *(reinterpret_cast<const uint64*>(this)) ==
-           *(reinterpret_cast<const uint64*>(&other));
+    return this->raw == other.raw;
 }
 
 bool TreeIndex::
 operator!=(const TreeIndex& other) const
 {
-    return !(*this == other);
+    return this->raw != other.raw;
 }
+
+uint8 TreeIndex::
+reserved() const
+{
+    return static_cast<uint8>(raw&0x1F);
+}
+
+void TreeIndex::
+reserved(const uint8 v)
+{
+    raw &= ~static_cast<uint64>(0x1F);
+    raw |=  static_cast<uint64>(v&0x1F);
+}
+
+uint8 TreeIndex::
+patch() const
+{
+    return static_cast<uint8>((raw&0x3E0)>>5);
+}
+
+void TreeIndex::
+patch(const uint8 v)
+{
+    raw &= ~static_cast<uint64>(0x3E0);
+    raw |=  static_cast<uint64>((v&0x1F)<<5);
+}
+
+uint8 TreeIndex::
+child() const
+{
+    return static_cast<uint8>((raw&0xC00)>>10);
+}
+
+void TreeIndex::
+child(const uint8 v)
+{
+    raw &= ~static_cast<uint64>(0xC00);
+    raw |=  static_cast<uint64>((v&0x3)<<10);
+}
+
+uint8 TreeIndex::
+level() const
+{
+    return static_cast<uint8>((raw&0x3F000)>>12);
+}
+
+void TreeIndex::
+level(const uint8 v)
+{
+    raw &= ~static_cast<uint64>(0x3F000);
+    raw |=  static_cast<uint64>((v&0x3F)<<12);
+}
+
+uint64 TreeIndex::
+index() const
+{
+    return (raw&0xFFFFFFFFFFFC0000)>>18;
+}
+
+void TreeIndex::
+index(const uint64 v)
+{
+    raw &= ~0xFFFFFFFFFFFC0000;
+    raw |=  (v&0x3FFFFFFFFFFF)<<18;
+}
+
 
 
 
 TreeIndex TreeIndex::
 up() const
 {
-    assert(level>0);
-    if (level <= 1)
-        return TreeIndex(patch, 0, 0, 0);
+    assert(level()>0);
+    if (level() <= 1)
+        return TreeIndex(patch(), 0, 0, 0);
     else
     {
-        uint8  newChild = (((uint64)(index)) >> ((level-2) * 2)) & 0x3;
-        uint64 newIndex = ((uint64)(index));
-        newIndex = newIndex & ~(((uint64)(0x3)) << ((level-1) * 2));
-        return TreeIndex(patch, newChild, level-1, newIndex);
+        uint8  newChild = static_cast<uint8>(((index())>>((level()-2)*2))&0x3);
+        uint64 newIndex = index();
+        newIndex = newIndex & ~(((uint64)(0x3)) << ((level()-1) * 2));
+        return TreeIndex(patch(), newChild, level()-1, newIndex);
     }
 }
 
 TreeIndex TreeIndex::
 down(uint8 which) const
 {
-    uint64 newIndex = ((uint64)(index)) | (((uint64)(which)) << (level*2));
-    return TreeIndex(patch, which, level+1, newIndex);
+    uint64 newIndex = index() | (static_cast<uint64>(which) << (level()*2));
+    return TreeIndex(patch(), which, level()+1, newIndex);
 }
 
 
@@ -77,13 +152,13 @@ str() const
 {
     std::ostringstream os;
 
-    if (level == uint8(~0))
+    if (level() == invalid.level())
         return "i";
-    if (level == 0)
+    if (level() == 0)
         return "r";
 
-    uint64 i = index;
-    for (uint j=0; j<level; ++j, i>>=2)
+    uint64 i = index();
+    for (uint j=0; j<level(); ++j, i>>=2)
         os << (i&0x3);
 
     return os.str();
@@ -93,38 +168,44 @@ std::string TreeIndex::
 med_str() const
 {
     std::ostringstream os;
-    if (reserved == uint8(~0))
+    if (reserved() == invalid.reserved())
         os << "i|";
     else
-        os << reserved << "|";
-    os << patch << ".";
+        os << static_cast<int>(reserved()) << "|";
+    if (patch() == invalid.patch())
+        os << "i.";
+    else
+        os << static_cast<int>(patch()) << ".";
 
-    if (level == uint8(~0))
-        return "i";
-    if (level == 0)
+    if (level() == invalid.level())
+    {
+        os << "i";
+        return os.str();
+    }
+    if (level() == 0)
     {
         os << "r";
         return os.str();
     }
 
-    uint64 i = index;
-    for (uint j=0; j<level; ++j, i>>=2)
+    uint64 i = index();
+    for (uint j=0; j<level(); ++j, i>>=2)
         os << (i&0x3);
 
     return os.str();
 }
 
 std::ostream&
-operator<<(std::ostream& os, const TreeIndex& i)
+operator<<(std::ostream& os, const TreeIndex& ti)
 {
-    if (i.level == uint8(~0))
+    if (ti.level() == TreeIndex::invalid.level())
         return os << std::string("i");
-    if (i.level == 0)
+    if (ti.level() == 0)
         return os << std::string("r");
 
-    uint64 index = i.index;
-    for (uint j=0; j<i.level; ++j, index>>=2)
-        os << (index&0x3);
+    uint64 i = ti.index();
+    for (uint j=0; j<ti.level(); ++j, i>>=2)
+        os << (i&0x3);
 
     return os;
 }
@@ -134,7 +215,7 @@ operator<<(std::ostream& os, const TreeIndex& i)
 
 TreePath::
 TreePath(TreeIndex i) :
-    level(i.level==0?0:i.level+1), index(i.index)
+    level(i.level()==0?0:i.level()+1), index(i.index())
 {}
 
 uint8 TreePath::

@@ -29,6 +29,7 @@
 #include <Misc/CreateNumberedFileName.h>
 #include <Vrui/Vrui.h>
 #include <Vrui/DisplayState.h>
+#include <Vrui/OpenFile.h>
 
 #include <crusta/checkGl.h>
 #include <crusta/Crusta.h>
@@ -39,6 +40,7 @@
 #include <crusta/QuadCache.h>
 #include <crusta/QuadNodeData.h>
 #include <crusta/QuadTerrain.h>
+#include <crusta/ResourceLocator.h>
 
 ///\todo remove dbg
 #if CRUSTA_ENABLE_DEBUG
@@ -305,13 +307,13 @@ updateActiveShape(int toolId)
 ///\todo actually track multiple tools
     if (activeShape == NULL)
     {
-        mapSymbolLabel->setLabel("-");
+        mapSymbolLabel->setString("-");
     }
     else
     {
         const Shape::Symbol& symbol = activeShape->getSymbol();
         std::string& symbolName     = symbolReverseNameMap[symbol.id];
-        mapSymbolLabel->setLabel(symbolName.c_str());
+        mapSymbolLabel->setString(symbolName.c_str());
     }
 }
 
@@ -654,9 +656,7 @@ void MapManager::
 openSymbolsGroupCallback(GLMotif::Button::SelectCallbackData* cbData)
 {
     //open the dialog at the same position as the main menu
-    Vrui::getWidgetManager()->popupPrimaryWidget(
-        symbolGroupMap[cbData->button->getName()],
-        Vrui::getWidgetManager()->calcWidgetTransformation(cbData->button));
+    Vrui::popupPrimaryWidget(symbolGroupMap[cbData->button->getName()]);
 }
 
 void MapManager::
@@ -672,7 +672,7 @@ symbolChangedCallback(GLMotif::ListBox::ItemSelectedCallbackData* cbData)
     if (activeShape != NULL)
     {
         activeShape->setSymbol(activeSymbol);
-        mapSymbolLabel->setLabel(symbolName.c_str());
+        mapSymbolLabel->setString(symbolName.c_str());
     }
 }
 
@@ -830,9 +830,9 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
 
 
 //- parse the symbols definition file to create the symbols lists
-    std::string cfgFile(CRUSTA_SHARE_PATH);
-    cfgFile += "/mapSymbols.cfg";
-    std::ifstream symbolsConfig(cfgFile.c_str());
+    std::string cfgFileName =
+        RESOURCELOCATOR.locateFile("config/mapSymbols.cfg");
+    std::ifstream symbolsConfig(cfgFileName.c_str());
     if (!symbolsConfig.good())
         return;
 
@@ -946,8 +946,7 @@ showMapControlDialogCallback(
     if(cbData->set)
     {
         //open the dialog at the same position as the main menu:
-        Vrui::getWidgetManager()->popupPrimaryWidget(mapControlDialog,
-            Vrui::getWidgetManager()->calcWidgetTransformation(cbData->toggle));
+        Vrui::popupPrimaryWidget(mapControlDialog);
     }
     else
     {
@@ -961,13 +960,12 @@ loadMapCallback(GLMotif::Button::SelectCallbackData* cbData)
 {
     GLMotif::FileSelectionDialog* mapFileDialog =
         new GLMotif::FileSelectionDialog(Vrui::getWidgetManager(),
-                                         "Load Map File", 0, NULL);
+                                         "Load Map File", CURRENTDIRECTORY, NULL);
     mapFileDialog->getOKCallbacks().add(this,
         &MapManager::loadMapFileOKCallback);
     mapFileDialog->getCancelCallbacks().add(this,
         &MapManager::loadMapFileCancelCallback);
-    Vrui::getWidgetManager()->popupPrimaryWidget(mapFileDialog,
-        Vrui::getWidgetManager()->calcWidgetTransformation(mapControlDialog));
+    Vrui::popupPrimaryWidget(mapFileDialog);
 }
 
 void MapManager::
@@ -984,10 +982,12 @@ saveMapCallback(GLMotif::Button::SelectCallbackData* cbData)
 void MapManager::
 loadMapFileOKCallback(GLMotif::FileSelectionDialog::OKCallbackData* cbData)
 {
+    CURRENTDIRECTORY=cbData->selectedDirectory;
+
     //load the selected map file
-    load(cbData->selectedFileName.c_str());
+    load(cbData->getSelectedPath().c_str());
     //destroy the file selection dialog
-    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
+    cbData->fileSelectionDialog->close();
 }
 
 void MapManager::
@@ -995,7 +995,7 @@ loadMapFileCancelCallback(
     GLMotif::FileSelectionDialog::CancelCallbackData* cbData)
 {
     //destroy the file selection dialog
-    Vrui::getWidgetManager()->deleteWidget(cbData->fileSelectionDialog);
+    cbData->fileSelectionDialog->close();
 }
 
 

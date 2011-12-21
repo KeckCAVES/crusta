@@ -5,13 +5,15 @@
 #include <GLMotif/Button.h>
 #include <GLMotif/ColorMapEditor.h>
 #include <GLMotif/ColorPickerWindow.h>
-#include <GLMotif/FileAndFolderSelectionDialog.h>
+#include <GLMotif/FileSelectionDialog.h>
 #include <GLMotif/RangeEditor.h>
 #include <GLMotif/Slider.h>
 #include <GLMotif/ToggleButton.h>
 
+#include <Vrui/SurfaceNavigationTool.h>
 #include <Vrui/Application.h>
 #include <Vrui/Geometry.h>
+#include <Vrui/Lightsource.h>
 
 #include <crusta/basics.h>
 #include <crusta/CrustaComponent.h>
@@ -58,18 +60,66 @@ private:
         virtual void init();
         void showCallback(
             GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
+        void closeCallback(Misc::CallbackData* cbData);
 
         std::string name;
         std::string label;
 
-        GLMotif::PopupWindow* dialog;
-        GLMotif::Container*   parentMenu;
+        GLMotif::PopupWindow*  dialog;
+        GLMotif::Container*    parentMenu;
+        GLMotif::ToggleButton* toggle;
     };
 
-    class SpecularSettingsDialog : public Dialog, public CrustaComponent
+    class VerticalScaleDialog : public Dialog
     {
     public:
-        SpecularSettingsDialog();
+        VerticalScaleDialog();
+        void setCrusta(Crusta* newCrusta);
+    protected:
+        void init();
+        void changeScaleCallback(
+            GLMotif::Slider::ValueChangedCallbackData* cbData);
+    private:
+        Crusta*         crusta;
+        GLMotif::Label* scaleLabel;
+    };
+
+    class LightSettingsDialog : public Dialog
+    {
+    public:
+        LightSettingsDialog();
+        ~LightSettingsDialog();
+    protected:
+        void init();
+        void updateSun(void);
+        void enableSunToggleCallback(
+            GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
+        void sunAzimuthSliderCallback(
+            GLMotif::Slider::ValueChangedCallbackData* cbData);
+        void sunElevationSliderCallback(
+            GLMotif::Slider::ValueChangedCallbackData* cbData);
+    private:
+        /** Initial enable states of all viewers' headlights */
+        std::vector<bool> viewerHeadlightStates;
+        /** Flag to store the sun activation state */
+        bool enableSun;
+        /** Light source representing the sun */
+        Vrui::Lightsource* sun;
+        /** Azimuth of sunlight direction */
+        Vrui::Scalar sunAzimuth;
+        /** Elevation of sunlight direction */
+        Vrui::Scalar sunElevation;
+
+        GLMotif::TextField* sunAzimuthTextField;
+        GLMotif::Slider* sunAzimuthSlider;
+        GLMotif::TextField* sunElevationTextField;
+        GLMotif::Slider* sunElevationSlider;
+    };
+
+    class TerrainColorSettingsDialog : public Dialog
+    {
+    public:
+        TerrainColorSettingsDialog();
     protected:
         void init();
     private:
@@ -80,8 +130,8 @@ private:
         void shininessChangedCallback(
             GLMotif::Slider::ValueChangedCallbackData* cbData);
 
+        GLMotif::Button*           currentButton;
         GLMotif::ColorPickerWindow colorPicker;
-        GLMotif::Button*           colorButton;
         GLMotif::TextField*        shininessField;
     };
 
@@ -111,37 +161,20 @@ private:
     void showDataDialogCallback(GLMotif::Button::SelectCallbackData* cbData);
     void addDataCallback(GLMotif::Button::SelectCallbackData* cbData);
     void addDataFileOkCallback(
-        GLMotif::FileAndFolderSelectionDialog::OKCallbackData* cbData);
+        GLMotif::FileSelectionDialog::OKCallbackData* cbData);
     void addDataFileCancelCallback(
-        GLMotif::FileAndFolderSelectionDialog::CancelCallbackData* cbData);
+        GLMotif::FileSelectionDialog::CancelCallbackData* cbData);
     void removeDataCallback(GLMotif::Button::SelectCallbackData* cbData);
     void clearDataCallback(GLMotif::Button::SelectCallbackData* cbData);
     void loadDataOkCallback(GLMotif::Button::SelectCallbackData* cbData);
     void loadDataCancelCallback(GLMotif::Button::SelectCallbackData* cbData);
 
-    void produceVerticalScaleDialog();
-    void produceLightingDialog();
-
-    void alignSurfaceFrame(Vrui::NavTransform& surfaceFrame);
+    void alignSurfaceFrame(const Vrui::SurfaceNavigationTool::AlignmentData& alignmentData);
 
     void changeColorMapCallback(
         GLMotif::ColorMapEditor::ColorMapChangedCallbackData* cbData);
     void changeColorMapRangeCallback(
         GLMotif::RangeEditor::RangeChangedCallbackData* cbData);
-
-    void showVerticalScaleCallback(
-        GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
-    void changeScaleCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
-
-    void showLightingDialogCallback(
-        GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
-    void updateSun(void);
-    void enableSunToggleCallback(
-        GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
-    void sunAzimuthSliderCallback(
-        GLMotif::Slider::ValueChangedCallbackData* cbData);
-    void sunElevationSliderCallback(
-        GLMotif::Slider::ValueChangedCallbackData* cbData);
 
     void showPaletteEditorCallback(
         GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
@@ -159,8 +192,6 @@ private:
 
     void resetNavigationCallback(Misc::CallbackData* cbData);
 
-    double newVerticalScale;
-
     GLMotif::PopupMenu*   popMenu;
     GLMotif::RadioBox*    curTool;
 
@@ -168,28 +199,16 @@ private:
     GLMotif::ListBox*        dataListBox;
     std::vector<std::string> dataPaths;
 
-    GLMotif::PopupWindow* verticalScaleDialog;
-    GLMotif::Label*       verticalScaleLabel;
-
-    GLMotif::PopupWindow* lightingDialog;
-    bool enableSun; // Flag to toggle sun lightsource
-    bool* viewerHeadlightStates; // Initial enable states of all viewers' headlights
-    Vrui::Lightsource* sun; // Light source representing the sun
-    Vrui::Scalar sunAzimuth; // Azimuth of sunlight direction
-    Vrui::Scalar sunElevation; // Elevation of sunlight direction
-    GLMotif::TextField* sunAzimuthTextField;
-    GLMotif::Slider* sunAzimuthSlider;
-    GLMotif::TextField* sunElevationTextField;
-    GLMotif::Slider* sunElevationSlider;
-
     GLMotif::PaletteEditor* paletteEditor;
 
-    SpecularSettingsDialog specularSettings;
-    LayerSettingsDialog layerSettings;
+    VerticalScaleDialog        verticalScaleSettings;
+    LightSettingsDialog        lightSettings;
+    TerrainColorSettingsDialog terrainColorSettings;
+    LayerSettingsDialog        layerSettings;
 
     /** the crusta instance */
     Crusta* crusta;
-
+		
 //- inherited from Vrui::Application
 public:
     virtual void frame();

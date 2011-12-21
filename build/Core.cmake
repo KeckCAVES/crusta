@@ -1,4 +1,4 @@
-add_library(CrustaCore SHARED
+set(CORE_FILES
     ../include/GL/glew.h
     ../include/GL/GlProgram.h
     ../include/GL/glxew.h
@@ -8,7 +8,6 @@ add_library(CrustaCore SHARED
     ../include/GLMotif/ColorMapInOut.h
     ../include/GLMotif/ColorPicker.h
     ../include/GLMotif/ColorPickerWindow.h
-    ../include/GLMotif/FileAndFolderSelectionDialog.h
     ../include/GLMotif/PaletteEditor.h
     ../include/GLMotif/RangeEditor.h
     ../include/GLMotif/RelativeSlider.h
@@ -58,6 +57,7 @@ add_library(CrustaCore SHARED
     ../include/crusta/QuadtreeFile.hpp
     ../include/crusta/Refinement.h
     ../include/crusta/Refinement.hpp
+    ../include/crusta/ResourceLocator.h
     ../include/crusta/Scope.h
     ../include/crusta/Scope.hpp
     ../include/crusta/Section.h
@@ -101,7 +101,6 @@ add_library(CrustaCore SHARED
     ../source/GLMotif/ColorMapInOut.cpp
     ../source/GLMotif/ColorPicker.cpp
     ../source/GLMotif/ColorPickerWindow.cpp
-    ../source/GLMotif/FileAndFolderSelectionDialog.cpp
     ../source/GLMotif/PaletteEditor.cpp
     ../source/GLMotif/RangeEditor.cpp
     ../source/GLMotif/RelativeSlider.cpp
@@ -130,6 +129,7 @@ add_library(CrustaCore SHARED
     ../source/crusta/QuadNodeData.cpp
     ../source/crusta/QuadNodeDataBundles.cpp
     ../source/crusta/QuadTerrain.cpp
+    ../source/crusta/ResourceLocator.cpp
     ../source/crusta/Scope.cpp
     ../source/crusta/Section.cpp
     ../source/crusta/shader/ShaderAtlasDataSource.cpp
@@ -157,10 +157,3 @@ add_library(CrustaCore SHARED
     ../source/crusta/ViewLod.cpp
     ../source/crusta/Visualizer.cpp
 )
-
-# Pass Vrui flags and the share path to the sources for compilation
-set_target_properties(CrustaCore PROPERTIES
-    COMPILE_FLAGS "${VRUI_CFLAGS}")
-
-target_link_libraries(CrustaCore ${VRUI_LINKFLAGS} ${GDAL_LIBRARY}
-    ${X11_OPENGL_GLU_LIBRARIES})

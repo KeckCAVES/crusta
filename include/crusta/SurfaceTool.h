@@ -2,8 +2,8 @@
 #define _SurfaceTool_H_
 
 
-#include <Vrui/Tools/GenericToolFactory.h>
-#include <Vrui/Tools/TransformTool.h>
+#include <Vrui/GenericToolFactory.h>
+#include <Vrui/TransformTool.h>
 
 #include <crusta/SurfaceProjector.h>
 
@@ -35,7 +35,7 @@ public:
     virtual void frame();
     virtual void display(GLContextData& contextData) const;
 
-    virtual void buttonCallback(int deviceIndex, int deviceButtonIndex,
+    virtual void buttonCallback(int buttonSlotIndex,
                                 Vrui::InputDevice::ButtonCallbackData* cbData);
 };
 

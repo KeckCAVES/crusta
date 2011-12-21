@@ -39,7 +39,7 @@ TreeNodeCreateTileHeader(const TreeNode<DemHeight>& node)
 ///\todo OpenMP this
     assert(node.globeFile != NULL);
     const DemHeight::Type& nodata = node.globeFile->getNodata();
-    gd::File* file = node.globeFile->getPatch(node.treeIndex.patch);
+    gd::File* file = node.globeFile->getPatch(node.treeIndex.patch());
     const int* tileSize = node.globeFile->getTileSize();
     for(int i=0; i<tileSize[0]*tileSize[1]; ++i)
     {
@@ -239,8 +239,8 @@ ConstruoVisualizer::show();
             }
 
             //adjust the coordinates given the child index inside its parent
-            nodeCoord[0] += kin->treeIndex.child&0x1 ? nodeSize : 0;
-            nodeCoord[1] += kin->treeIndex.child&0x2 ? nodeSize : 0;
+            nodeCoord[0] += kin->treeIndex.child()&0x1 ? nodeSize : 0;
+            nodeCoord[1] += kin->treeIndex.child()&0x2 ? nodeSize : 0;
             kinCoord[0]   = nodeCoord[0] + offsets[0];
             kinCoord[1]   = nodeCoord[1] + offsets[1];
 
@@ -320,7 +320,7 @@ loadMissingChildren()
     /* read the children's tile indices from the file. Only allocate the
        children if valid counterparts exist in the file */
     assert(globeFile!=NULL && "uninitialized globe file");
-    File* file = globeFile->getPatch(treeIndex.patch);
+    File* file = globeFile->getPatch(treeIndex.patch());
     TileIndex childIndices[4];
     if (!file->readTile(tileIndex, childIndices))
         return;

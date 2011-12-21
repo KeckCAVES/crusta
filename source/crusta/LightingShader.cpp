@@ -29,6 +29,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 #include <crusta/ColorMapper.h>
 #include <crusta/DataManager.h>
+#include <crusta/ResourceLocator.h>
 ///\todo integrate properly (VIS 2010)
 #include <crusta/Crusta.h>
 
@@ -294,8 +295,8 @@ LightingShader::LightingShader() :
     lightStates(0),
     vertexShader(0),fragmentShader(0), geometryShader(0),
     programObject(0),
-    decoratedLineRenderer(std::string(CRUSTA_SHARE_PATH) +
-                          "/decoratedRenderer.fp"),
+    decoratedLineRenderer(RESOURCELOCATOR.locateFile(
+                          "shaders/decoratedRenderer.fp")),
     colorMapperConfigurationStamp(0)
 {
     /* Determine the maximum number of light sources supported by the local OpenGL: */
@@ -634,6 +635,7 @@ compileShader(GLContextData& contextData)
             \n\
             /* Compute the vertex position in eye coordinates: */\n\
             vertexEc = gl_ModelViewMatrix * vec4(position, 1.0);\n\
+            gl_ClipVertex = vertexEc;\n\
             \n\
             /* Compute the normal vector in eye coordinates: */\n\
             normalEc=normalize(gl_NormalMatrix*normal);\n\
@@ -665,19 +667,21 @@ compileShader(GLContextData& contextData)
     vertexShaderMain+=
         "\
         /* Modulate with the texture color: */\n\
-        vec4 terrainColor = " + colorSource.sample("coord") + ";\n\
+        vec4 layerColor = " + colorSource.sample("coord") + ";\n\
         ";
 
     vertexShaderMain+=
         "\
-        ambient *= terrainColor;\n\
-        diffuse *= terrainColor;\n";
+        ambient.rgb *= layerColor.rgb;\n\
+        diffuse.rgb *= layerColor.rgb;\n";
 
     /* Continue the main vertex shader: */
     vertexShaderMain+=
         "\
+        /* Initialize the color contribution with the terrain's emmisive */\n\
+        color = gl_FrontMaterial.emission;\n\
         /* Calculate global ambient light term: */\n\
-        color  = gl_LightModel.ambient*ambient;\n\
+        color += gl_LightModel.ambient*ambient;\n\
         \n\
         /* Apply all enabled light sources: */\n";
 
@@ -712,7 +716,7 @@ compileShader(GLContextData& contextData)
         "\
             \n\
             /* Compute final vertex color: */\n\
-            gl_FrontColor = color;\n\
+            gl_FrontColor = vec4(color.rgb, gl_FrontMaterial.diffuse.a);\n\
             \n\
             /* Use finalize vertex transformation: */\n\
             /* now happens in the geometry shader */\n\

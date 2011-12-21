@@ -133,7 +133,7 @@ getValueCallbacks()
 void RelativeSlider::
 callback(const ValueCallbackData::ProductionReason& reason)
 {
-    float relativeValue;
+    float relativeValue=0.0f;
     switch (reason)
     {
         case ValueCallbackData::DRAGGED:

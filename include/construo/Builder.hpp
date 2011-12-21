@@ -70,7 +70,8 @@ subsampleChildren(Node* node)
 
     assert(node->children != NULL);
     //read in the node's existing data from file
-    typename gd::File* file = node->globeFile->getPatch(node->treeIndex.patch);
+    typename gd::File* file =
+        node->globeFile->getPatch(node->treeIndex.patch());
     file->readTile(node->tileIndex, nodeDataSampleBuf);
 
     const PixelType& nodata = node->globeFile->getNodata();
@@ -110,7 +111,7 @@ subsampleChildren(Node* node)
         child.data = nodeDataBuf;
         typename gd::TileHeader header = child.getTileHeader();
         typename gd::File* childFile =
-            child.globeFile->getPatch(child.treeIndex.patch);
+            child.globeFile->getPatch(child.treeIndex.patch());
         childFile->writeTile(child.tileIndex, header, child.data);
         child.data = NULL;
     }
@@ -121,7 +122,8 @@ void Builder<PixelParam>::
 refine(Node* node)
 {
     typedef GlobeData<PixelParam> gd;
-    typename gd::File* file = node->globeFile->getPatch(node->treeIndex.patch);
+    typename gd::File* file =
+        node->globeFile->getPatch(node->treeIndex.patch());
 
     //try to load the missing children from the quadtree file
     if (node->children == NULL)
@@ -252,7 +254,8 @@ sourceFinest(Node* node, Patch* imgPatch, uint overlap)
 
     //prepare the node's data buffer
     node->data = nodeDataBuf;
-    typename gd::File* file = node->globeFile->getPatch(node->treeIndex.patch);
+    typename gd::File* file =
+        node->globeFile->getPatch(node->treeIndex.patch());
     file->readTile(node->tileIndex, node->data);
 
     //go through all the image boxes and sample them
@@ -387,7 +390,7 @@ ConstruoVisualizer::peek();
     //this node has the appropriate resolution
 //ConstruoVisualizer::show();
     sourceFinest(node, imgPatch, overlap);
-    return node->treeIndex.level;
+    return node->treeIndex.level();
 }
 
 template <typename PixelParam>
@@ -519,13 +522,13 @@ ConstruoVisualizer::show();
 reading of neighbor data with differring orientation is currently absolutely
 broken, overwrites random memory regions and breaks fraking everything.
 Note: getKin across patches seem to be broken: e.g. offset==3 returned. */
-        if (kin != NULL && node->treeIndex.patch==kin->treeIndex.patch)
+        if (kin != NULL && node->treeIndex.patch()==kin->treeIndex.patch())
         {
             /* sampling from the same patch will always have data (even if that
                is "nodata" */
             assert(kin->tileIndex!=INVALID_TILEINDEX);
             typename gd::File* file =
-                kin->globeFile->getPatch(kin->treeIndex.patch);
+                kin->globeFile->getPatch(kin->treeIndex.patch());
             if (nodeOff[0]==0 && nodeOff[1]==0)
             {
                 //we're grabbing data from a same leveled kin
@@ -538,8 +541,8 @@ Note: getKin across patches seem to be broken: e.g. offset==3 returned. */
                 file->readTile(kin->tileIndex, nodeDataSampleBuf);
                 //determine the resample step size
                 double scale = 1;
-                for (uint i=kin->treeIndex.level;
-                     i<node->treeIndex.level+1U; ++i)
+                for (uint i=kin->treeIndex.level();
+                     i<node->treeIndex.level()+1U; ++i)
                 {
                     scale *= 0.5;
                 }
@@ -607,7 +610,8 @@ ConstruoVisualizer::peek();
         return;
 
 //- recurse until we've hit the requested level
-    if (node->treeIndex.level!=static_cast<uint>(level) && node->children!=NULL)
+    if (node->treeIndex.level()!=static_cast<uint8>(level) &&
+        node->children!=NULL)
     {
         for (uint i=0; i<4; ++i)
             updateCoarser(&(node->children[i]), level);
@@ -638,7 +642,9 @@ ConstruoVisualizer::peek();
 
     typedef GlobeData<PixelParam> gd;
     typename gd::TileHeader header = node->getTileHeader();
-    typename gd::File* file = node->globeFile->getPatch(node->treeIndex.patch);
+    typename gd::File* file =
+        node->globeFile->getPatch(node->treeIndex.patch());
+
     file->writeTile(node->tileIndex, header, node->data);
 
     node->data = NULL;

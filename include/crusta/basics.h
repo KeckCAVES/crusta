@@ -27,16 +27,30 @@ BEGIN_CRUSTA
 #if CRUSTA_ENABLE_DEBUG
 
 /* lvl
- 40 -  49: debug coverage: 40 manip CP, 41-44 manip cov, 49 validate cov
- 90 -  99: debug ray intersection
+ 10 - 20: cache
+    10 print datamanager frame delimiter
+    11 full: new request not possible
+    12 full: could not grab new buffer
+    15 grabbed buffer
+    17 print lru content
+    18 print cache content
+    19 cache miss on find
+    20 cache hit on find
+
+ 40 - 49: coverage
+    40    manipulate control points
+    41-44 manipulate coverage
+    49    validate coverage
+
+ 90 -  99: ray intersection
 */
 
 #ifndef CRUSTA_DEBUG_LEVEL_MIN_VALUE
-#define CRUSTA_DEBUG_LEVEL_MIN_VALUE 100000
+#define CRUSTA_DEBUG_LEVEL_MIN_VALUE 10000
 #endif //CRUSTA_DEBUG_LEVEL_MIN_VALUE
 
 #ifndef CRUSTA_DEBUG_LEVEL_MAX_VALUE
-#define CRUSTA_DEBUG_LEVEL_MAX_VALUE 100000
+#define CRUSTA_DEBUG_LEVEL_MAX_VALUE 10000
 #endif //CRUSTA_DEBUG_LEVEL_MAX_VALUE
 
 extern int CRUSTA_DEBUG_LEVEL_MIN;
@@ -102,10 +116,8 @@ static const float  TILE_TEXTURE_COORD_STEP  = 1.0 / TILE_RESOLUTION;
 
 extern bool PROJECTION_FAILED;
 
-/**\todo this framestamp is currently used as a hack around doing synchronized
-post display processing, by handling it at the begining of a new frame and
-explicitely setting the current frame stamp afterward */
 extern FrameStamp CURRENT_FRAME;
+extern FrameStamp LAST_FRAME;
 
 
 END_CRUSTA

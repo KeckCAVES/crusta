@@ -33,10 +33,8 @@ init(Vrui::ToolFactory* parent)
     Factory* polylineFactory = new Factory("CrustaPolylineTool",
         "Polyline Drawing Tool", parent, *Vrui::getToolManager());
 
-    //we want two buttons, so set two devices with one button each
-    polylineFactory->setNumDevices(2);
-    polylineFactory->setNumButtons(0, 1);
-    polylineFactory->setNumButtons(1, 1);
+    //we want two buttons
+    polylineFactory->setNumButtons(2);
 
     Vrui::getToolManager()->addClass(polylineFactory,
         Vrui::ToolManager::defaultToolFactoryDestructor);

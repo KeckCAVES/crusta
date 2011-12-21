@@ -36,6 +36,9 @@ ColorHexagon(const char* iName, Container* iParent, bool iManageChild) :
     value(1.0f), curWedge(0),
     marginWidth(0.0), preferredSize(0.0, 0.0, 0.0), isDragging(false)
 {
+    /* Initialize corner vertices' z coordinate: */
+    for(int i=0;i<7;++i)
+        corners[i][2]=0.0f;
     curCoords[0] = 1.0f; curCoords[1] = 0.0f; curCoords[2] = 0.0f;
 
     updateHexagon();

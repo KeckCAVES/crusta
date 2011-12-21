@@ -3,19 +3,20 @@
 #include <cassert>
 
 #include <Math/Constants.h>
+#include <Misc/ThrowStdErr.h>
 #include <Vrui/Vrui.h>
 
 BEGIN_CRUSTA
 
 
 template <typename DataParam>
-const FrameStamp CacheBuffer<DataParam>::
+const FrameStamp CacheBufferBase<DataParam>::
 OLDEST_FRAMESTAMP(0);
 
 template <typename DataParam>
-CacheBuffer<DataParam>::
-CacheBuffer() :
-    frameStamp(OLDEST_FRAMESTAMP)
+CacheBufferBase<DataParam>::
+CacheBufferBase() :
+    frameStamp(OLDEST_FRAMESTAMP), index(DataIndex::invalid)
 {
     state.grabbed = 0;
     state.valid   = 0;
@@ -23,21 +24,28 @@ CacheBuffer() :
 }
 
 template <typename DataParam>
-const FrameStamp& CacheBuffer<DataParam>::
+const FrameStamp& CacheBufferBase<DataParam>::
 getFrameStamp() const
 {
     return frameStamp;
 }
 
 template <typename DataParam>
-DataParam& CacheBuffer<DataParam>::
+const DataIndex& CacheBufferBase<DataParam>::
+getIndex() const
+{
+    return index;
+}
+
+template <typename DataParam>
+DataParam& CacheBufferBase<DataParam>::
 getData()
 {
     return this->data;
 }
 
 template <typename DataParam>
-const DataParam& CacheBuffer<DataParam>::
+const DataParam& CacheBufferBase<DataParam>::
 getData() const
 {
     return this->data;
@@ -53,37 +61,6 @@ CacheArrayBuffer<DataParam>::
 
 
 template <typename BufferParam>
-IndexedBuffer<BufferParam>::
-IndexedBuffer(DataIndex iIndex, BufferParam* iBuffer) :
-    index(iIndex), buffer(iBuffer)
-{
-}
-
-template <typename BufferParam>
-bool IndexedBuffer<BufferParam>::
-operator >(const IndexedBuffer& other) const
-{
-    if (buffer->state.valid == 0)
-    {
-        return other.buffer->state.valid==0 ?
-               buffer->frameStamp > other.buffer->frameStamp : false;
-    }
-    else
-    {
-        return other.buffer->state.valid==0 ?
-               true : buffer->frameStamp > other.buffer->frameStamp;
-    }
-}
-
-
-template <typename BufferParam>
-CacheUnit<BufferParam>::
-CacheUnit() :
-    pinUnpinLruDirty(true), touchResetLruDirty(true)
-{
-}
-
-template <typename BufferParam>
 CacheUnit<BufferParam>::
 ~CacheUnit()
 {
@@ -95,29 +72,20 @@ CacheUnit<BufferParam>::
 
 template <typename BufferParam>
 void CacheUnit<BufferParam>::
-clear()
-{
-    typedef typename BufferPtrMap::const_iterator iterator;
-    for (iterator it=cached.begin(); it!=cached.end(); ++it)
-        reset(it->second);
-
-    pinUnpinLruDirty   = true;
-    touchResetLruDirty = true;
-}
-
-template <typename BufferParam>
-void CacheUnit<BufferParam>::
 init(const std::string& iName, int size)
 {
     name = iName;
+
+    Threads::Mutex::Lock lock(cacheMutex);
 
     //fill the cache with buffers with no valid content
     for (int i=0; i<size; ++i)
     {
         BufferParam* buffer = new BufferParam;
+        buffer->index = DataIndex(~0, TreeIndex(~0,~0,~0,i));
+        cached.insert(typename BufferPtrMap::value_type(buffer->index,buffer));
+        buffer->lruHandle = lru.insert(lru.end(), buffer);
         initData(buffer->getData());
-        DataIndex dummyIndex(~0, TreeIndex(~0,~0,~0,i));
-        cached.insert(typename BufferPtrMap::value_type(dummyIndex, buffer));
     }
 }
 
@@ -125,6 +93,25 @@ template <typename BufferParam>
 void CacheUnit<BufferParam>::
 initData(typename BufferParam::DataType&)
 {
+}
+
+template <typename BufferParam>
+void CacheUnit<BufferParam>::
+clear()
+{
+    typedef typename BufferPtrMap::const_iterator iterator;
+
+    Threads::Mutex::Lock lock(cacheMutex);
+
+    lru.clear();
+    for (iterator it=cached.begin(); it!=cached.end(); ++it)
+    {
+        it->second->state.grabbed = 0;
+        it->second->state.valid   = 0;
+        it->second->state.pinned  = 0;
+        it->second->frameStamp    = BufferParam::OLDEST_FRAMESTAMP;
+        it->second->lruHandle     = lru.insert(lru.end(), it->second);
+    }
 }
 
 
@@ -153,63 +140,49 @@ template <typename BufferParam>
 bool CacheUnit<BufferParam>::
 isCurrent(const BufferParam* const buffer) const
 {
-    return isValid(buffer) && buffer->frameStamp == CURRENT_FRAME;
+    return isValid(buffer) && buffer->frameStamp==CURRENT_FRAME;
 }
-
 
 template <typename BufferParam>
 void CacheUnit<BufferParam>::
 touch(BufferParam* buffer)
 {
-    buffer->frameStamp  = CURRENT_FRAME;
-    buffer->state.valid = 1;
-    if (buffer->state.grabbed == 0)
-        touchResetLruDirty = true;
-}
-
-template <typename BufferParam>
-void CacheUnit<BufferParam>::
-reset(BufferParam* buffer)
-{
-    buffer->state.valid  = 0;
-    buffer->state.pinned = 0;
-    buffer->frameStamp   = BufferParam::OLDEST_FRAMESTAMP;
-    if (buffer->state.grabbed == 0)
-        pinUnpinLruDirty = true;
-}
-
-template <typename BufferParam>
-void CacheUnit<BufferParam>::
-reset(int numBuffers)
-{
-    //make sure we have an LRU to manipulate
-    refreshLru();
-
-    //reset numBuffers starting at the tail of the LRU
-    typename IndexedBuffers::reverse_iterator lit = lruCached.rbegin();
-    for (int i=0; i<numBuffers && lit!=lruCached.rend(); ++i, ++lit)
-        reset(lit->buffer);
+    Threads::Mutex::Lock lock(cacheMutex);
+    touchBuffer(buffer);
 }
 
 template <typename BufferParam>
 void CacheUnit<BufferParam>::
 pin(BufferParam* buffer)
 {
+    Threads::Mutex::Lock lock(cacheMutex);
+    if (buffer->lruHandle != lru.end())
+    {
+        lru.erase(buffer->lruHandle);
+        buffer->lruHandle = lru.end();
+CRUSTA_DEBUG(17, printLru("Pin");)
+    }
     ++buffer->state.pinned;
+    //pins are limited. Die if we overflow
     if (buffer->state.pinned==0)
-        --buffer->state.pinned;
-    if (buffer->state.grabbed == 0)
-        pinUnpinLruDirty = true;
+        Misc::throwStdErr("CacheUnit::pin: overflow on pin request");
 }
 
 template <typename BufferParam>
 void CacheUnit<BufferParam>::
 unpin(BufferParam* buffer)
 {
-    if (buffer->state.pinned!=0)
-        --buffer->state.pinned;
-    if (buffer->state.grabbed == 0)
-        pinUnpinLruDirty = true;
+    Threads::Mutex::Lock lock(cacheMutex);
+    //unpin must be matched by a previous pin
+    if (!isPinned(buffer))
+        Misc::throwStdErr("CacheUnit::unpin: buffer was not pinned");
+    --buffer->state.pinned;
+    if (!(isPinned(buffer) || isGrabbed(buffer)))
+    {
+        buffer->frameStamp = CURRENT_FRAME;
+        buffer->lruHandle  = lru.insert(lru.begin(), buffer);
+CRUSTA_DEBUG(17, printLru("Unpin");)
+    }
 }
 
 
@@ -236,84 +209,120 @@ name << "Cache" << cached.size() << "::find: missed " << index.med_str() <<
 
 template <typename BufferParam>
 BufferParam* CacheUnit<BufferParam>::
-grabBuffer(bool grabCurrent)
+grabBuffer(const FrameStamp older)
 {
-//- try to swap from the LRU
-    refreshLru();
-CRUSTA_DEBUG(18, printCache();)
+    BufferParam* buffer = NULL;
 
-    //check the tail of the LRU sequence for valid buffers
-    IndexedBuffer<BufferParam> lruBuf(DataIndex(), NULL);
-
-    if (!lruCached.empty())
+    Threads::Mutex::Lock lock(cacheMutex);
+    if (!lru.empty())
     {
-        //make sure the tail suffices the conditions
-        lruBuf = lruCached.back();
-        if (!grabCurrent && isCurrent(lruBuf.buffer))
-            lruBuf.buffer = NULL;
+CRUSTA_DEBUG(17, printLru("PreGrab");)
+        buffer = lru.back();
+        //make sure the tail is older then the age specified
+        if (buffer->frameStamp>=older)
+            buffer = NULL;
     }
 
     //if we found a valid buffer remove it from the map and the lru
-    if (lruBuf.buffer != NULL)
+    if (buffer != NULL)
     {
 CRUSTA_DEBUG(15, CRUSTA_DEBUG_OUT <<
-name << "Cache" << cached.size() << "::grabbed " << lruBuf.index.med_str() <<
+name << "Cache" << cached.size() << "::grabbed " << buffer->index.med_str() <<
 "\n";)
-        assert(cached.find(lruBuf.index)!=cached.end());
-        lruBuf.buffer->state.grabbed = 1;
-        cached.erase(lruBuf.index);
-        lruCached.pop_back();
+        assert(cached.find(buffer->index)!=cached.end());
+        buffer->state.valid   = 0;
+        buffer->state.grabbed = 1;
+        cached.erase(buffer->index);
+CRUSTA_DEBUG(18, printCache();)
+        buffer->lruHandle = lru.end();
+        lru.pop_back();
+CRUSTA_DEBUG(17, printLru("Grab");)
     }
     else
     {
-CRUSTA_DEBUG(11, CRUSTA_DEBUG_OUT <<
+CRUSTA_DEBUG(12, CRUSTA_DEBUG_OUT <<
 name << "Cache" << cached.size() << ":: unable to provide buffer\n";)
     }
 
-    return lruBuf.buffer;
+    return buffer;
 }
 
 template <typename BufferParam>
 void CacheUnit<BufferParam>::
 releaseBuffer(const DataIndex& index, BufferParam* buffer)
 {
-    //silently ignore buffers that have not been grabbed
-    if (buffer->state.grabbed == 0)
+    //silently ignore buffers that have not been grabbed (i.e., index existed)
+    if (!isGrabbed(buffer))
     {
         //validate the buffer
-        buffer->state.valid = 1;
-        buffer->frameStamp  = CURRENT_FRAME;
+        touch(buffer);
         return;
     }
 
+    Threads::Mutex::Lock lock(cacheMutex);
     assert(cached.find(index)==cached.end());
 
-CRUSTA_DEBUG(15, CRUSTA_DEBUG_OUT <<
-name << "Cache" << cached.size() << "::released " << index.med_str() << "\n";)
+    //update the index carried by the buffer
+    buffer->index = index;
 
-    cached.insert(typename BufferPtrMap::value_type(index, buffer));
-    assert(cached.find(index)!=cached.end());
+CRUSTA_DEBUG(15, CRUSTA_DEBUG_OUT <<
+name << "Cache" << cached.size() << "::released " <<
+        buffer->index.med_str() << "\n";)
+
+    cached.insert(typename BufferPtrMap::value_type(buffer->index, buffer));
+    buffer->state.grabbed = 0;
+    assert(cached.find(buffer->index)!=cached.end());
 
     //validate the buffer
-    buffer->state.grabbed = 0;
-    buffer->state.valid   = 1;
-    buffer->frameStamp    = CURRENT_FRAME;
-
-    //since we manipulated the cache, the LRU will have to be recomputed
-    pinUnpinLruDirty = true;
+    touchBuffer(buffer);
 }
+
+
+template <typename BufferParam>
+void CacheUnit<BufferParam>::
+ageMRU(int numBuffers, const FrameStamp age)
+{
+    typedef typename LruList::iterator Iterator;
+
+    Threads::Mutex::Lock lock(cacheMutex);
+    if (lru.empty())
+        return;
+
+//-- find the appropriate re-insertion point
+    Iterator insertIte;
+    for (insertIte=--lru.end();
+         insertIte!=lru.begin() && (*insertIte)->frameStamp<age;
+         --insertIte)
+    {}
+    //we've move 1 past our target (insertion is before insertIte, adjust
+    ++insertIte;
+
+/*-- artificially age numBuffers starting at the head of the LRU, reinserting
+     them at the appropriate point */
+    Iterator lit = lru.begin();
+    for (int i=0; i<numBuffers && lit!=lru.end(); ++i)
+    {
+        BufferParam* buffer = *lit;
+        buffer->frameStamp = age;
+        buffer->lruHandle = lru.insert(insertIte, buffer);
+        Iterator toRemove = lit;
+        ++lit;
+        lru.erase(toRemove);
+    }
+CRUSTA_DEBUG(17, printLru("ageMRU");)
+}
+
 
 template <typename BufferParam>
 void CacheUnit<BufferParam>::
 printCache()
 {
 #if CRUSTA_ENABLE_DEBUG
-if (name != std::string("MainLayerf"))
+if (name != std::string("GpuGeometry"))
     return;
 
-    CRUSTA_DEBUG_OUT << "print" << name << "Cache" << cached.size() <<
+    CRUSTA_DEBUG_OUT << "print__" << name << "__Cache" << cached.size() <<
                         ": frame " << CURRENT_FRAME << "\n";
-    IndexedBuffers lru;
     for (typename BufferPtrMap::const_iterator it=cached.begin();
          it!=cached.end(); ++it)
     {
@@ -323,23 +332,34 @@ if (name != std::string("MainLayerf"))
                                 it->first.med_str() << " " <<
                                 it->second->frameStamp << " ";
         }
-        else
-        {
-            lru.push_back(IndexedBuffer<BufferParam>(it->first, it->second));
-        }
     }
     CRUSTA_DEBUG_OUT << "\n-------\n";
-    std::sort(lru.begin(), lru.end(),
-              std::greater< IndexedBuffer<BufferParam> >());
-    for (typename IndexedBuffers::const_iterator it=lru.begin();
-         it!=lru.end(); ++it)
+    for (typename BufferPtrMap::const_iterator it=cached.begin();
+         it!=cached.end(); ++it)
     {
-        CRUSTA_DEBUG_OUT << (it->buffer->state.valid==0 ? '#' : ' ') <<
-                            it->index.med_str() << " " <<
-                            it->buffer->frameStamp << " ";
+        if (!isPinned(it->second))
+        {
+            CRUSTA_DEBUG_OUT << (it->second->state.valid==0 ? '#' : ' ') <<
+                                it->first.med_str() << " " <<
+                                it->second->frameStamp << " ";
+        }
     }
     CRUSTA_DEBUG_OUT << "\n\n";
 #endif //CRUSTA_ENABLE_DEBUG
+}
+
+template <typename BufferParam>
+void CacheUnit<BufferParam>::
+touchBuffer(BufferParam* buffer)
+{
+    buffer->frameStamp  = CURRENT_FRAME;
+    buffer->state.valid = 1;
+    
+    if (buffer->lruHandle != lru.end())
+        lru.erase(buffer->lruHandle);
+    if (!(isPinned(buffer) || isGrabbed(buffer)))
+        buffer->lruHandle = lru.insert(lru.begin(), buffer);
+CRUSTA_DEBUG(17, printLru("Touch");)
 }
 
 template <typename BufferParam>
@@ -350,52 +370,16 @@ printLru(const char* cause)
 if (name != std::string("GpuGeometry"))
     return;
 
-    CRUSTA_DEBUG_OUT << "Refresh" << name << "LRU" << cause << cached.size() <<
+    CRUSTA_DEBUG_OUT << "__" << name << "__LRU_" << cause << cached.size() <<
                         ": frame " << CURRENT_FRAME << "\n";
-    for (typename IndexedBuffers::const_iterator it=lruCached.begin();
-         it!=lruCached.end(); ++it)
+    for (typename LruList::const_iterator it=lru.begin(); it!=lru.end(); ++it)
     {
-        CRUSTA_DEBUG_OUT << (it->buffer->state.valid==0 ? '#' : ' ') <<
-                            it->index.med_str() << " " <<
-                            it->buffer->frameStamp << " ";
+        CRUSTA_DEBUG_OUT << ((*it)->state.valid==0 ? '#' : ' ') <<
+                             (*it)->index.med_str() << " " <<
+                             (*it)->frameStamp << " ";
     }
     CRUSTA_DEBUG_OUT << "\n\n";
 #endif //CRUSTA_ENABLE_DEBUG
-}
-
-template <typename BufferParam>
-void CacheUnit<BufferParam>::
-refreshLru()
-{
-    if (pinUnpinLruDirty)
-    {
-        //repopulate
-        lruCached.clear();
-        for (typename BufferPtrMap::const_iterator it=cached.begin();
-             it!=cached.end(); ++it)
-        {
-            if (!isPinned(it->second))
-            {
-                lruCached.push_back(
-                    IndexedBuffer<BufferParam>(it->first, it->second));
-            }
-        }
-        //resort
-        std::sort(lruCached.begin(), lruCached.end(),
-                  std::greater< IndexedBuffer<BufferParam> >());
-CRUSTA_DEBUG(17, printLru("Pin");)
-    }
-    else if (touchResetLruDirty)
-    {
-        //resort only
-        std::sort(lruCached.begin(), lruCached.end(),
-                  std::greater< IndexedBuffer<BufferParam> >());
-CRUSTA_DEBUG(17, printLru("Touch");)
-    }
-
-    //clear the dirty flags
-    pinUnpinLruDirty   = false;
-    touchResetLruDirty = false;
 }
 
 

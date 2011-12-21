@@ -1,7 +1,7 @@
 #ifndef _DebugTool_H_
 #define _DebugTool_H_
 
-#include <Vrui/Tools/GenericToolFactory.h>
+#include <Vrui/GenericToolFactory.h>
 
 #include <crusta/CrustaComponent.h>
 
@@ -42,7 +42,7 @@ public:
 
     virtual void frame();
 
-    virtual void buttonCallback(int deviceIndex, int deviceButtonIndex,
+    virtual void buttonCallback(int buttonSlotIndex,
                                 Vrui::InputDevice::ButtonCallbackData* cbData);
 };
 

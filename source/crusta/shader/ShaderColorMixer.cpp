@@ -3,9 +3,6 @@
 
 #include <sstream>
 
-#include <crusta/CrustaSettings.h>
-
-
 BEGIN_CRUSTA
 
 
@@ -21,8 +18,7 @@ getCode()
     code << std::endl;
 
     code << "vec4 " << sample("in vec2 tc") << " {" << std::endl;
-    const Color& defaultColor = SETTINGS->terrainDefaultColor;
-    code << "  vec4 color = vec4(" << std::scientific << defaultColor[0] << ", " << defaultColor[1] << ", " << defaultColor[2] << ", " << defaultColor[3] << ");" << std::endl;
+    code << "  vec4 color = vec4(1.0, 1.0, 1.0, 1.0);" << std::endl;
     code << std::endl;
 
     for (size_t i=0; i<sources.size(); ++i)

@@ -8,7 +8,7 @@
 #include <Misc/CallbackList.h>
 #include <GLMotif/Button.h>
 #include <GLMotif/RadioBox.h>
-#include <Vrui/Tools/GenericToolFactory.h>
+#include <Vrui/GenericToolFactory.h>
 
 #include <crusta/SurfaceProjector.h>
 #include <crusta/Tool.h>
@@ -127,7 +127,7 @@ public:
     virtual void frame();
     virtual void display(GLContextData& contextData) const;
 
-    virtual void buttonCallback(int deviceIndex, int deviceButtonIndex,
+    virtual void buttonCallback(int buttonSlotIndex,
                                 Vrui::InputDevice::ButtonCallbackData* cbData);
 
 //- Inherited from CrustaComponent

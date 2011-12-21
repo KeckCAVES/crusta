@@ -3,7 +3,6 @@
 
 #include <iostream>
 
-#include <Comm/MulticastPipe.h>
 #include <Geometry/OrthogonalTransformation.h>
 #include <Vrui/ToolManager.h>
 #include <Vrui/Vrui.h>
@@ -43,9 +42,7 @@ init()
     Factory* toolFactory = new Factory("DebugTool", "Debug Tool", NULL,
                                        *Vrui::getToolManager());
 
-    toolFactory->setNumDevices(1);
-    toolFactory->setNumButtons(0, numButtons);
-    toolFactory->setNumValuators(0, 0);
+    toolFactory->setNumButtons(numButtons);
 
     Vrui::getToolManager()->addClass(toolFactory,
         Vrui::ToolManager::defaultToolFactoryDestructor);
@@ -85,7 +82,7 @@ frame()
     if (!buttons[0])
         return;
 
-    Vrui::InputDevice* device = input.getDevice(0);
+    Vrui::InputDevice* device = getButtonDevice(0);
 
     //transform the physical frame to navigation space
     Vrui::NavTransform physicalFrame = device->getTransformation();
@@ -110,16 +107,16 @@ frame()
                 surfacePoint.cellIndex[0] << "x" << surfacePoint.cellIndex[1] <<
                 "   " << surfacePoint.cellPosition[0] << "|" <<
                 surfacePoint.cellPosition[1] << "   index " <<
-                surfacePoint.nodeIndex.index << "\n";
+                surfacePoint.nodeIndex.index() << "\n";
         }
     }
 }
 
 void DebugTool::
-buttonCallback(int, int deviceButtonIndex,
+buttonCallback(int buttonSlotIndex,
                Vrui::InputDevice::ButtonCallbackData* cbData)
 {
-    buttons[deviceButtonIndex] = cbData->newButtonState;
+    buttons[buttonSlotIndex] = cbData->newButtonState;
 }
 
 

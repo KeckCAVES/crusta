@@ -8,7 +8,10 @@
 #include <GL/GLTransformationWrappers.h>
 #include <Misc/File.h>
 #include <Misc/ThrowStdErr.h>
+#include <Vrui/DisplayState.h>
+#include <Vrui/Viewer.h>
 #include <Vrui/Vrui.h>
+#include <Vrui/OpenFile.h>
 
 #include <crusta/checkGl.h>
 #include <crusta/ColorMapper.h>
@@ -17,6 +20,7 @@
 #include <crusta/map/MapManager.h>
 #include <crusta/QuadCache.h>
 #include <crusta/QuadTerrain.h>
+#include <crusta/ResourceLocator.h>
 #include <crusta/Section.h>
 #include <crusta/Sphere.h>
 #include <crusta/SurfaceProbeTool.h>
@@ -54,6 +58,7 @@ bool DEBUG_INTERSECT = false;
     stamps generated during the initialization process for deferred GPU
     initializations */
 FrameStamp CURRENT_FRAME(0.00000001);
+FrameStamp LAST_FRAME(0.0);
 
 
 #define CRUSTA_ENABLE_RECORD_FRAMERATE 0
@@ -109,8 +114,8 @@ CrustaGlData() :
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    std::string imgFileName(CRUSTA_SHARE_PATH);
-    imgFileName += "/mapSymbolAtlas.tga";
+    std::string imgFileName = RESOURCELOCATOR.locateFile(
+        "images/mapSymbolAtlas.tga");
     try
     {
         Misc::File imgFile(imgFileName.c_str(), "r");
@@ -144,10 +149,18 @@ CrustaGlData::
 
 ///\todo split crusta and planet
 void Crusta::
-init(const std::vector<std::string>& settingsFiles)
+init(const std::string& exePath, const Strings& settingsFiles,
+     const std::string& resourcePath)
 {
 ///\todo split crusta and planet
 ///\todo extend the interface to pass an optional configuration file
+
+    //initialize the resource locator
+    RESOURCELOCATOR.init(exePath, resourcePath);
+		
+		/* Initialize the current directory: */
+		CURRENTDIRECTORY=Vrui::openDirectory(".");
+		
     //initialize the crusta user settings
     SETTINGS = new CrustaSettings;
     SETTINGS->loadFromFiles(settingsFiles);
@@ -302,7 +315,7 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     assert(nodeData.node != NULL);
 
     NodeData* node = nodeData.node;
-    assert(node->index.patch < static_cast<uint>(renderPatches.size()));
+    assert(node->index.patch() < static_cast<uint>(renderPatches.size()));
 
 //- grab the finest level data possible
     const Vector3 vpos(pos);
@@ -669,7 +682,7 @@ Still this should be handled more robustly */
 
         const Polyhedron* const polyhedron = DATAMANAGER->getPolyhedron();
         Polyhedron::Connectivity neighbors[4];
-        polyhedron->getConnectivity(patch->getRootNode().node->index.patch,
+        polyhedron->getConnectivity(patch->getRootNode().node->index.patch(),
                                     neighbors);
         patch  = renderPatches[neighbors[sideOut][0]];
         sideIn = mapSide[neighbors[sideOut][1]][sideOut];
@@ -750,10 +763,7 @@ void Crusta::
 frame()
 {
 ///\todo split crusta and planet
-///\todo hack. allow for the cache processing to happen as a display post-proc
-    //process the requests from the last frame
-    DATAMANAGER->frame();
-
+    LAST_FRAME = CURRENT_FRAME;
     CURRENT_FRAME = Vrui::getApplicationTime();
 
 ///\todo hack. start the actual new frame
@@ -821,6 +831,28 @@ CRUSTA_DEBUG(8, CRUSTA_DEBUG_OUT <<
     mapMan->frame();
 }
 
+struct DistanceToEyeSorter
+{
+    DistanceToEyeSorter(SurfaceApproximation* approx, const Point3& eye) :
+        surface(approx), eyePosition(eye)
+    {}
+    void sortVisibles()
+    {
+        std::sort(surface->visibles.begin(), surface->visibles.end(), *this);
+    }
+
+    bool operator()(int i, int j)
+    {
+        double distI = Geometry::dist(eyePosition,
+                                      surface->nodes[i].node->boundingCenter);
+        double distJ = Geometry::dist(eyePosition,
+                                      surface->nodes[j].node->boundingCenter);
+        return distI > distJ;
+    }
+    SurfaceApproximation* surface;
+    Point3 eyePosition;
+};
+
 void Crusta::
 display(GLContextData& contextData)
 {
@@ -846,6 +878,14 @@ display(GLContextData& contextData)
         (*it)->prepareDisplay(contextData, surface);
         CHECK_GLA
     }
+
+    //sort the visible tiles with respect to the distance to the camera
+    Point3 eyePosition =
+        Vrui::getDisplayState(contextData).viewer->getHeadPosition();
+    eyePosition =
+        Vrui::getInverseNavigationTransformation().transform(eyePosition);
+    DistanceToEyeSorter sorter(&surface, eyePosition);
+    sorter.sortVisibles();
 
 statsMan.extractTileStats(surface);
 
