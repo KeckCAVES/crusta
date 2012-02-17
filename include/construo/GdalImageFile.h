@@ -23,13 +23,8 @@
 #ifndef _GdalImageFile_H_
 #define _GdalImageFile_H_
 
-#if __APPLE__
-#include <GDAL/gdal.h>
-#include <GDAL/gdal_priv.h>
-#else
 #include <gdal.h>
 #include <gdal_priv.h>
-#endif
 
 #include <construo/ImageFile.h>
 
