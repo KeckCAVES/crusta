@@ -371,7 +371,12 @@ ConstruoVisualizer::peek();
 
     //check for an overlap
     uint overlap = node->coverage.overlaps(*(imgPatch->sphereCoverage));
-    if (overlap == SphereCoverage::SEPARATE)
+    ///\todo HACK: For some reason if we test coverage at the root nodes it can
+    //  mess up when the patch only 'slightly' goes into a given root node, so
+    //  here we make sure we always go down at least a level.
+    //  Unfortunately this subdivides nodes more than needed... must find the
+    //  root problem at some point...
+    if (overlap == SphereCoverage::SEPARATE && node->parent)
         return 0;
 
     //recurse to children if the resolution of the node is too coarse
