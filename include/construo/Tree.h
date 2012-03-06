@@ -121,6 +121,8 @@ public:
 
 END_CRUSTA
 
+#ifndef _ConstruoTree_nohpp_
 #include <construo/Tree.hpp>
+#endif
 
 #endif //_ConstruoTree_H_
