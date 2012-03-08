@@ -9,7 +9,7 @@ clear()
 {
     nodes.clear();;
     visibles.clear();;
-    neighbors.clear();
+    //neighbors.clear();
 }
 
 void SurfaceApproximation::
