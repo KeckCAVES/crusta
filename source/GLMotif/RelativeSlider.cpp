@@ -100,7 +100,7 @@ pointerButtonUp(Event& event)
 void RelativeSlider::
 pointerMotion(Event& event)
 {
-    if (isDragging)
+    if (isDragging())
     {
         /* Update the slider value and position: */
         int dimension = orientation==HORIZONTAL ? 0 : 1 ;
