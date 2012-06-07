@@ -47,6 +47,8 @@ include_directories(../include)
 # Show all warnings, don't complain about variadic macros
 set_property(GLOBAL APPEND PROPERTY CMAKE_CXX_FLAGS "-Wall")
 
+# Report share path to source files
+add_definitions(-DCRUSTA_SHARE_PATH="${SHARE_PATH}")
 
 ##-- Setup required external libraries
 

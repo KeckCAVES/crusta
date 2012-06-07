@@ -13,8 +13,9 @@ BEGIN_CRUSTA
 struct SurfaceApproximation
 {
     typedef std::vector<int>       Indices;
-    typedef int                    Neighbors[4];
-    typedef std::vector<Neighbors> NeighborIndices;
+    // DISABLED as not used, and array should be replaced with struct
+    //typedef int                    Neighbors[4];
+    //typedef std::vector<Neighbors> NeighborIndices;
 
     /** clear the surface approximation */
     void clear();
@@ -40,7 +41,8 @@ neighbors*/
     Indices visibles;
     /** stores sets of indices to neighbors nodes in the surface representation
         for the visible subset */
-    NeighborIndices neighbors;
+    // DISABLED as not yet used anywhere
+    //NeighborIndices neighbors;
 };
 
 

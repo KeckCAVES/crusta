@@ -7,13 +7,8 @@
 #include <fstream>
 #include <sstream>
 
-#if __APPLE__
-#include <GDAL/ogr_api.h>
-#include <GDAL/ogrsf_frmts.h>
-#else
 #include <ogr_api.h>
 #include <ogrsf_frmts.h>
-#endif
 
 #include <Geometry/Geoid.h>
 #include <Geometry/OrthogonalTransformation.h>
