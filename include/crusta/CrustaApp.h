@@ -169,7 +169,7 @@ private:
     void loadDataOkCallback(GLMotif::Button::SelectCallbackData* cbData);
     void loadDataCancelCallback(GLMotif::Button::SelectCallbackData* cbData);
 
-    void alignSurfaceFrame(const Vrui::SurfaceNavigationTool::AlignmentData& alignmentData);
+    void alignSurfaceFrame(Vrui::SurfaceNavigationTool::AlignmentData& alignmentData);
 
     void changeColorMapCallback(
         GLMotif::ColorMapEditor::ColorMapChangedCallbackData* cbData);
