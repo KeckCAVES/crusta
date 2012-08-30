@@ -889,7 +889,7 @@ loadDataCancelCallback(Button::SelectCallbackData*)
 }
 
 void CrustaApp::
-alignSurfaceFrame(const Vrui::SurfaceNavigationTool::AlignmentData& alignmentData)
+alignSurfaceFrame(Vrui::SurfaceNavigationTool::AlignmentData& alignmentData)
 {
 /* Do whatever to the surface frame, but don't change its scale factor: */
     Point3 origin = alignmentData.surfaceFrame.getOrigin();
