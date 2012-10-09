@@ -94,7 +94,7 @@ DataManager::
 {
     unload();
 
-    delete tempGeometryBuf;
+    delete[] tempGeometryBuf;
 }
 
 void DataManager::
