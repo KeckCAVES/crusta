@@ -668,7 +668,7 @@ nextGpuBatch(GLContextData& contextData, const SurfaceApproximation& surface,
     //try to reset enough cache entries for the remaining nodes
     GpuCache& gpuCache = CACHE->getGpuCache(contextData);
     gpuCache.geometry.ageMRU(numNodes, LAST_FRAME);
-    gpuCache.color.ageMRU(numNodes, LAST_FRAME);
+    gpuCache.color.ageMRU(numNodes * colorFiles.size(), LAST_FRAME);
 
     size_t numLayerBufs = numNodes * 3*colorFiles.size() + layerfFiles.size();
     gpuCache.layerf.ageMRU(numLayerBufs, LAST_FRAME);
