@@ -1,9 +1,25 @@
+#
+# Optionally set path to Vrui.
+# (Can also set when calling cmake by using option -DVRUI_DIR=/path/to/Vrui-2.4)
+#
+set( VRUI_DIR $ENV{HOME}/Vrui-2.4
+     CACHE PATH "Path to Vrui")
+
+#
+# Set the installation path prefix.
+# (Can also set when calling cmake by using option -DCMAKE_INSTALL_PREFIX=/path/to/install)
+#
+set( CMAKE_INSTALL_PREFIX $ENV{HOME}/Crusta
+     CACHE PATH "Installation path prefix")
+
+
+#####
+
 # Version 2.8.3 or greater is required for packaging
 cmake_minimum_required(VERSION 2.8.3)
 
 # Add local cmake directory to the module search path (for FindVrui)
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
-
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/build)
 
 
 #-------------------
@@ -26,13 +42,14 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
 
+
 if(CRUSTA_BUNDLE)
     set(BIN_PATH "${CRUSTA_BUNDLE}/Contents/MacOS")
     set(SHARE_PATH "${CRUSTA_BUNDLE}/Contents/Resources")
 
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};@loader_path/../Frameworks;@loader_path/../Libraries")
 
-    set(VRUI_MAKEINCLUDE "${CRUSTA_BUNDLE}/Contents/Libraries/Vrui-2.2/share/Vrui.makeinclude")
+    set(VRUI_MAKEINCLUDE "${CRUSTA_BUNDLE}/Contents/Libraries/Vrui-2.4/share/Vrui.makeinclude")
 else()
     set(BIN_PATH "${CMAKE_INSTALL_PREFIX}/bin")
     set(SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share/crusta")
@@ -42,7 +59,7 @@ endif()
 ##-- Setup compile properties
 
 # Add the Crusta include directory
-include_directories(../include)
+include_directories(include)
 
 # Show all warnings, don't complain about variadic macros
 set_property(GLOBAL APPEND PROPERTY CMAKE_CXX_FLAGS "-Wall")

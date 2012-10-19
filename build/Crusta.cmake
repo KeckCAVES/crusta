@@ -1,6 +1,6 @@
 add_executable(crusta ${CORE_FILES}
-    ../include/crusta/CrustaApp.h
-    ../source/crusta/CrustaApp.cpp
+    include/crusta/CrustaApp.h
+    source/crusta/CrustaApp.cpp
 )
 
 set_property(TARGET crusta APPEND PROPERTY COMPILE_FLAGS ${VRUI_CFLAGS})
@@ -11,13 +11,13 @@ target_link_libraries(crusta ${VRUI_LINKFLAGS} ${GDAL_LIBRARY} ${X11_OPENGL_GLU_
 
 install(TARGETS crusta DESTINATION ${BIN_PATH})
 
-install(FILES ../share/mapSymbolAtlas.tga
+install(FILES share/mapSymbolAtlas.tga
         DESTINATION ${SHARE_PATH}/images)
 
-install(FILES ../share/mapSymbols.cfg
-              ../share/mouse.cfg
-              ../share/trackpad.cfg
+install(FILES share/mapSymbols.cfg
+              share/mouse.cfg
+              share/trackpad.cfg
         DESTINATION ${SHARE_PATH}/config)
 
-install(FILES ../share/decoratedRenderer.fp
+install(FILES share/decoratedRenderer.fp
         DESTINATION ${SHARE_PATH}/shaders)
