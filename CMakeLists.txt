@@ -19,7 +19,7 @@ set( CMAKE_INSTALL_PREFIX $ENV{HOME}/Crusta
 cmake_minimum_required(VERSION 2.8.3)
 
 # Add local cmake directory to the module search path (for FindVrui)
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/build)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 
 #-------------------
