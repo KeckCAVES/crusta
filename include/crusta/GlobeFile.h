@@ -4,9 +4,7 @@
 
 #include <string>
 
-#if CONSTRUO_BUILD
 #include <Misc/ConfigurationFile.h>
-#endif //CONSTRUO_BUILD
 
 #include <crusta/GlobeData.h>
 #include <crusta/Polyhedron.h>
@@ -24,10 +22,8 @@ public:
     typedef GlobeData<PixelParam>     gd;
     typedef typename gd::File         File;
 
-#if CONSTRUO_BUILD
 ///\todo when moving to Vrui 2.0 no need to initialize the cfg pointer anymore
-	GlobeFile();
-#endif //CONSTRUO_BUILD
+    GlobeFile(bool writable);
     ~GlobeFile();
 
     /** check that the file is a valid wrt PixelParam */
@@ -62,6 +58,7 @@ protected:
     void loadConfiguration(const std::string& cfgName);
     void createBaseFolder(std::string path, bool parent=false);
 
+    bool writable;
     std::vector<PixelType> blank;
     PatchFiles patches;
 
@@ -72,10 +69,8 @@ protected:
     int         numPatches;
     int         tileSize[2];
 
-#if CONSTRUO_BUILD
 ///\todo when moving to Vrui 2.0 can use a value instead of a pointer again
     Misc::ConfigurationFile* cfg;
-#endif //CONSTRUO_BUILD
 };
 
 

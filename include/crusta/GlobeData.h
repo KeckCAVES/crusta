@@ -27,10 +27,7 @@ struct GlobeData
     {
         void read(Misc::LargeFile* file);
         static size_t getSize();
-
-#if CONSTRUO_BUILD
         void write(Misc::LargeFile* file) const;
-#endif //CONSTRUO_BUILD
     };
 
     ///generic header for tile scope meta-data. Defaults to an empty header.
@@ -38,12 +35,8 @@ struct GlobeData
     {
         void read(Misc::LargeFile* file);
         static size_t getSize();
-
-#if CONSTRUO_BUILD
         void write(Misc::LargeFile* file) const;
-#endif //CONSTRUO_BUILD
     };
-
 
 //- database storage traits
     ///name for the type of the stored data (e.g. topography, imagery, etc.)

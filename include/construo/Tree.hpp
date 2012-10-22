@@ -394,7 +394,9 @@ setNeighbors(ExplicitNeighborNode* nodes[4], const uint orients[4])
 
 template <typename PixelParam>
 Spheroid<PixelParam>::
-Spheroid(const std::string& baseName, const uint tileResolution[2])
+Spheroid(const std::string& baseName, const uint tileResolution[2]):
+    globeFile(true) // Request a writable globe file that is created if it
+        // doesn't exist already. TODO: Better way to do this?
 {
     //open the globe file
     globeFile.open(baseName);

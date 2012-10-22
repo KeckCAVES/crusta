@@ -28,10 +28,7 @@ struct GlobeData<DemHeight>
     public:
         void read(Misc::LargeFile* file)         {}
         static size_t getSize()                  {return 0;}
-
-#if CONSTRUO_BUILD
         void write(Misc::LargeFile* file) const  {}
-#endif //CONSTRUO_BUILD
     };
 
     struct TileHeader
@@ -49,7 +46,6 @@ struct GlobeData<DemHeight>
             return 2 * sizeof(PixelType);
         }
 
-#if CONSTRUO_BUILD
         TileHeader()
         {
             range[0] =  Math::Constants<PixelType>::max;
@@ -60,7 +56,6 @@ struct GlobeData<DemHeight>
         {
             file->write(range, 2);
         }
-#endif //CONSTRUO_BUILD
     };
 
     static const std::string typeName()

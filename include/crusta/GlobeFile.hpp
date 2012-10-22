@@ -9,7 +9,6 @@
 #include <sys/stat.h>
 
 #include <Geometry/GeometryValueCoders.h>
-#include <Misc/ConfigurationFile.h>
 #include <Misc/File.h>
 #include <Misc/StandardValueCoders.h>
 #include <Misc/ThrowStdErr.h>
@@ -20,14 +19,12 @@
 BEGIN_CRUSTA
 
 
-#if CONSTRUO_BUILD
 template <typename PixelParam>
 GlobeFile<PixelParam>::
-GlobeFile() :
-	cfg(NULL)
+GlobeFile(bool writable) :
+	cfg(NULL), writable(writable)
 {
 }
-#endif //CONSTRUO_BUILD
 
 template <typename PixelParam>
 GlobeFile<PixelParam>::
@@ -40,7 +37,7 @@ template <typename PixelParam>
 bool GlobeFile<PixelParam>::
 isCompatible(const std::string& path)
 {
-    GlobeFile<PixelParam> tmp;
+    GlobeFile<PixelParam> tmp(false);
     try
     {
         tmp.open(path);
@@ -58,10 +55,11 @@ open(const std::string& path)
 {
     close();
 
-#if CONSTRUO_BUILD
-    //create the database base directory
-    createBaseFolder(path);
-#endif //CONSTRUO_BUILD
+    if (writable)
+    {
+        //create the database base directory
+        createBaseFolder(path);
+    }
 
     //open configuration
     loadConfiguration(path + std::string("/crustaGlobeFile.cfg"));
@@ -80,21 +78,22 @@ open(const std::string& path)
         std::ostringstream oss;
         oss << path << "/patch_" << i << ".qtf";
         uint32 utileSize[2] = {tileSize[0], tileSize[1]};
-        patches.push_back(new File(oss.str().c_str(), utileSize));
+        patches.push_back(new File(oss.str().c_str(), utileSize, writable));
 
-#if CONSTRUO_BUILD
-        //make sure the quadtree file has at least a root
-        if (patches[i]->getNumTiles() == 0)
+        if (writable)
         {
-            //the new root must have index 0
+            //make sure the quadtree file has at least a root
+            if (patches[i]->getNumTiles() == 0)
+            {
+                //the new root must have index 0
 #if CRUSTA_ENABLE_DEBUG
-            TileIndex index = patches[i]->appendTile(&blank.front());
-            assert(index==0 && patches[i]->getNumTiles()==1);
+                TileIndex index = patches[i]->appendTile(&blank.front());
+                assert(index==0 && patches[i]->getNumTiles()==1);
 #else
-            patches[i]->appendTile(&blank.front());
+                patches[i]->appendTile(&blank.front());
 #endif //CRUSTA_ENABLE_DEBUG
+            }
         }
-#endif //CONSTRUO_BUILD
     }
     delete polyhedron;
 }
@@ -103,14 +102,12 @@ template <typename PixelParam>
 void GlobeFile<PixelParam>::
 close()
 {
-#if CONSTRUO_BUILD
-    if (cfg != NULL)
+    if (writable && cfg != NULL)
     {
         cfg->save();
         delete cfg;
         cfg = NULL;
     }
-#endif //CONSTRUO_BUILD
 
     typedef typename PatchFiles::iterator PatchFileIterator;
     for (PatchFileIterator it=patches.begin(); it!=patches.end(); ++it)
@@ -182,52 +179,49 @@ template <typename PixelParam>
 void GlobeFile<PixelParam>::
 loadConfiguration(const std::string& cfgName)
 {
-#if !CONSTRUO_BUILD
-    Misc::ConfigurationFile* cfg = NULL;
-#endif //!CONSTRUO_BUILD
+    bool create = false;
 
     try
     {
         cfg = new Misc::ConfigurationFile(cfgName.c_str());
+    }
+    catch (Misc::File::OpenError e)
+    {
+        if (writable) create = true;
+        else throw;
+    }
 
-        cfg->setCurrentSection("/CrustaGlobeFile");
-        dataType    = cfg->retrieveString("dataType");
-        numChannels = cfg->retrieveValue<int>("numChannels");
-
-        std::istringstream nodataIss(cfg->retrieveString("nodata"));
-        nodataIss >> nodata;
-
-        polyhedronType = cfg->retrieveString("polyhedronType");
-
-        Point2i tileSizeInput = cfg->retrieveValue<Point2i>("tileSize");
-        tileSize[0] = tileSizeInput[0];
-        tileSize[1] = tileSizeInput[1];
-
-#if CONSTRUO_BUILD
-        if (dataType!=gd::typeName() ||
-            numChannels!=gd::numChannels() ||
-            tileSize[0]!=TILE_RESOLUTION || tileSize[1]!=TILE_RESOLUTION)
+    if (cfg)
+    {
+        try
         {
-            delete cfg;
-            cfg = NULL;
+            cfg->setCurrentSection("/CrustaGlobeFile");
+            dataType    = cfg->retrieveString("dataType");
+            numChannels = cfg->retrieveValue<int>("numChannels");
 
-            Misc::throwStdErr(
-                "Detected mismatch between desired data format:\n"
-                "data type: %s\nchannels: %d\ninternal tile size: %dx%d\n\n"
-                "and the format of the existing globe:\n"
-                "data type: %s\nchannels: %d\ninternal tile size: %dx%d",
-                gd::typeName().c_str(), gd::numChannels(),
-                TILE_RESOLUTION, TILE_RESOLUTION,
-                dataType.c_str(), numChannels, tileSize[0], tileSize[1]);
+            std::istringstream nodataIss(cfg->retrieveString("nodata"));
+            nodataIss >> nodata;
+
+            polyhedronType = cfg->retrieveString("polyhedronType");
+
+            Point2i tileSizeInput = cfg->retrieveValue<Point2i>("tileSize");
+            tileSize[0] = tileSizeInput[0];
+            tileSize[1] = tileSizeInput[1];
         }
-#else
+        catch (std::runtime_error e)
+        {
+            delete cfg;
+            cfg = NULL;
+            Misc::throwStdErr("Caught exception %s while reading the globe file "
+                              "metadata (%s)", e.what(), cfgName.c_str());
+        }
+
         if (dataType!=gd::typeName() ||
             numChannels!=gd::numChannels() ||
             tileSize[0]!=TILE_RESOLUTION || tileSize[1]!=TILE_RESOLUTION)
         {
             delete cfg;
             cfg = NULL;
-
             Misc::throwStdErr(
                 "Detected mismatch between desired data format (%s %dx%d, %d "
                 "channels) and the format of the existing globe file "
@@ -235,10 +229,9 @@ loadConfiguration(const std::string& cfgName)
                 TILE_RESOLUTION, TILE_RESOLUTION, gd::numChannels(),
                 dataType.c_str(), tileSize[0], tileSize[1], numChannels);
         }
-#endif //CONSTRUO_BUILD
     }
-#if CONSTRUO_BUILD
-    catch (Misc::File::OpenError e)
+
+    if (create)
     {
         //create the file
         delete new Misc::File(cfgName.c_str(), "wt");
@@ -269,19 +262,12 @@ loadConfiguration(const std::string& cfgName)
         cfg->storeString("polyhedronType", polyhedronType.c_str());
         cfg->storeValue<Point2i>("tileSize",Point2i(tileSize[0], tileSize[1]));
     }
-#endif //CONSTRUO_BUILD
-    catch (std::runtime_error e)
+
+    if (!create && cfg)
     {
         delete cfg;
         cfg = NULL;
-
-        Misc::throwStdErr("Caught exception %s while reading the globe file "
-                          "metadata (%s)", e.what(), cfgName.c_str());
     }
-
-#if !CONSTRUO_BUILD
-    delete cfg;
-#endif //!CONSTRUO_BUILD
 }
 
 template <typename PixelParam>

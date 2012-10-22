@@ -9,20 +9,34 @@
 #   VRUI_PLUGINHOSTLINKFLAGS
 #
 
+set( VRUI_VERSION 2.4 )
+
 # Find the Vrui makeinclude
 if( CMAKE_BUILD_TYPE STREQUAL "Debug" )
-    find_file( VRUI_MAKEINCLUDE Vrui.debug.makeinclude
-               PATHS $ENV{VRUI_MAKEINCLUDE} /opt /usr/local /usr
-               PATH_SUFFIXES Vrui-2.2/share)
-    if( NOT VRUI_MAKEINCLUDE )
-        message( WARNING "Debug build type but debug Vrui not found; using non-debug version" )
-    endif()
+    set( VRUI_MAKEINCLUDE_NAMES Vrui.debug.makeinclude Vrui.makeinclude )
+else()
+    set( VRUI_MAKEINCLUDE_NAMES Vrui.makeinclude Vrui.debug.makeinclude )
 endif()
 
 if( NOT VRUI_MAKEINCLUDE )
-    find_file( VRUI_MAKEINCLUDE Vrui.makeinclude
-               PATHS $ENV{VRUI_MAKEINCLUDE} /opt /usr/local /usr
-               PATH_SUFFIXES Vrui-2.2/share)
+    find_file( VRUI_MAKEINCLUDE
+               NAMES ${VRUI_MAKEINCLUDE_NAMES}
+               PATHS ${VRUI_DIR}
+                     $ENV{HOME}/Vrui-${VRUI_VERSION}
+                     /usr
+               PATH_SUFFIXES share share/Vrui-${VRUI_VERSION} )
+endif()
+
+if( VRUI_MAKEINCLUDE )
+    if( CMAKE_BUILD_TYPE STREQUAL "Debug" )
+        if( VRUI_MAKEINCLUDE MATCHES "Vrui.makeinclude$" )
+            message( WARNING "Debug build type but Vrui debug version not found; using non-debug version." )
+        endif()
+    else()
+        if( VRUI_MAKEINCLUDE MATCHES "Vrui.debug.makeinclude$" )
+            message( WARNING "Non-debug build type but Vrui non-debug version not found; using debug version." )
+        endif()
+    endif()
 endif()
 
 # Macro to extract the content from the makeinclude
@@ -94,7 +108,7 @@ if( VRUI_FOUND )
     endif()
 else()
     if( Vrui_FIND_REQUIRED )
-        message( FATAL_ERROR "Required package Vrui NOT FOUND; please specify the path to the Vrui.makeinclude in the VRUI_MAKEINCLUDE variable" )
+        message( FATAL_ERROR "Required package Vrui NOT FOUND.  Please give the path to to Vrui by setting the VRUI_DIR CMake variable, for example add -DVRUI_DIR=/path/to/Vrui-${VRUI_VERSION} to your cmake line." )
     endif()
 endif()
 
