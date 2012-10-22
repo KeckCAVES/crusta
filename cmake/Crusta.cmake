@@ -1,4 +1,4 @@
-add_executable(crusta ${CORE_FILES}
+add_executable(crusta
     include/crusta/CrustaApp.h
     source/crusta/CrustaApp.cpp
 )
@@ -7,7 +7,7 @@ set_property(TARGET crusta APPEND PROPERTY COMPILE_FLAGS ${VRUI_CFLAGS})
 set_property(TARGET crusta APPEND PROPERTY COMPILE_DEFINITIONS
              GLEW_MX;CRUSTA_VERSION=\"${PROJECT_VERSION}\")
 
-target_link_libraries(crusta ${VRUI_LINKFLAGS} ${GDAL_LIBRARY} ${X11_OPENGL_GLU_LIBRARIES})
+target_link_libraries(crusta crustacore ${VRUI_LINKFLAGS} ${GDAL_LIBRARY} ${X11_OPENGL_GLU_LIBRARIES})
 
 install(TARGETS crusta DESTINATION ${BIN_PATH})
 

@@ -54,9 +54,7 @@ public:
     public:
         Header();
         void read(Misc::LargeFile* quadtreeFile);
-#if CONSTRUO_BUILD
         void write(Misc::LargeFile* quadtreeFile);
-#endif //CONSTRUO_BUILD
 
         ///size of an individual image tile
         uint32 tileSize[2];
@@ -67,16 +65,14 @@ public:
     };
 
     ///opens an existing quadtree file for update or creates a new one
-    QuadtreeFile(const char* quadtreeFileName, const uint32 iTileSize[2]);
+    QuadtreeFile(const char* quadtreeFileName, const uint32 iTileSize[2], bool writable);
     ~QuadtreeFile();
 
     ///returns the file's meta data
     FileHeader& getCustomFileHeader() const;
 
-#if CONSTRUO_BUILD
     ///sets the default pixel value for out-of-bounds tiles
     void setDefaultPixelValue(const Pixel& newDefaultPixelValue);
-#endif //CONSTRUO_BUILD
     ///returns the pixel value for out-of-bounds tiles
     const Pixel& getDefaultPixelValue() const;
     ///returns size of an individual image tile
@@ -86,13 +82,11 @@ public:
 
     ///reads the quadtree file header from the file
     void readHeader();
-#if CONSTRUO_BUILD
     ///writes the quadtree file header to the file again
     void writeHeader();
 
     ///appends a new tile to the file (only reserves the space for it)
     TileIndex appendTile(const Pixel* const blank=NULL);
-#endif //CONSTRUO_BUILD
 
     ///reads the tile of given index into the given buffer
     bool readTile(TileIndex tileIndex, TileIndex childPointers[4],
@@ -104,7 +98,6 @@ public:
                   Pixel* tileBuffer=NULL);
 
     ///writes the tile in the given buffer to the given index
-#if CONSTRUO_BUILD
     void writeTile(TileIndex tileIndex, const TileIndex childPointers[4],
                    const TileHeader& tileHeader, const Pixel* tileBuffer=NULL);
     void writeTile(TileIndex tileIndex, const Pixel* tileBuffer);
@@ -112,7 +105,6 @@ public:
                    const Pixel* tileBuffer=NULL);
     void writeTile(TileIndex tileIndex, const TileHeader& tileHeader,
                    const Pixel* tileBuffer=NULL);
-#endif //CONSTRUO_BUILD
 
 protected:
 ///returns the last ignored tile child pointers
@@ -124,6 +116,8 @@ const TileHeader& getLastTileHeader() const;
 
     ///handle of the quadtree file for local quadtree files
     Misc::LargeFile* quadtreeFile;
+    ///is the file writable?
+    bool writable;
     ///Header containing the basic meta-data
     Header header;
     ///custom header meta data for the file scope

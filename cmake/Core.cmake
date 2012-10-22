@@ -1,4 +1,4 @@
-set(CORE_FILES
+add_library(crustacore STATIC
     include/GL/glew.h
     include/GL/GlProgram.h
     include/GL/glxew.h
@@ -156,3 +156,6 @@ set(CORE_FILES
     source/crusta/ViewLod.cpp
     source/crusta/Visualizer.cpp
 )
+
+set_property(TARGET crustacore APPEND PROPERTY COMPILE_FLAGS ${VRUI_CFLAGS})
+set_property(TARGET crustacore APPEND PROPERTY COMPILE_DEFINITIONS GLEW_MX;CRUSTA_VERSION=\"${PROJECT_VERSION}\")

@@ -28,20 +28,14 @@ struct GlobeData<TextureColor>
     public:
         void read(Misc::LargeFile*)        {}
         static size_t getSize()            {return 0;}
-
-#if CONSTRUO_BUILD
         void write(Misc::LargeFile*) const {}
-#endif //CONSTRUO_BUILD
     };
 
     struct TileHeader
     {
         void read(Misc::LargeFile*)        {}
         static size_t getSize()            {return 0;}
-
-#if CONSTRUO_BUILD
         void write(Misc::LargeFile*) const {}
-#endif //CONSTRUO_BUILD
     };
 
     static const std::string typeName()

@@ -116,7 +116,7 @@ for now just use the default polyhedron and no-data irrespective of sources */
             //only a single DEM is supported so check we haven't one already
             if (demFile == NULL)
             {
-                demFile = new DemFile;
+                demFile = new DemFile(false);
                 try
                 {
                     demFile->open(*it);
@@ -138,7 +138,7 @@ for now just use the default polyhedron and no-data irrespective of sources */
     //- load Color?
         else if (ColorFile::isCompatible(*it))
         {
-            ColorFile* file = new ColorFile;
+            ColorFile* file = new ColorFile(false);
             try
             {
                 file->open(*it);
@@ -160,7 +160,7 @@ for now just use the default polyhedron and no-data irrespective of sources */
     //- load Layerf?
         else if (LayerfFile::isCompatible(*it))
         {
-            LayerfFile* file = new LayerfFile;
+            LayerfFile* file = new LayerfFile(false);
             try
             {
                 file->open(*it);

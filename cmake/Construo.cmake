@@ -1,4 +1,4 @@
-add_executable(construo ${CORE_FILES}
+add_executable(construo
     include/construo/Builder.h
     include/construo/Builder.hpp
     include/construo/construoGlobals.h
@@ -42,8 +42,8 @@ add_executable(construo ${CORE_FILES}
 )
 
 set_property(TARGET construo APPEND PROPERTY COMPILE_FLAGS ${VRUI_CFLAGS})
-set_property(TARGET construo APPEND PROPERTY COMPILE_DEFINITIONS CONSTRUO_BUILD=1;GLEW_MX;CRUSTA_VERSION=\"${PROJECT_VERSION}\")
+set_property(TARGET construo APPEND PROPERTY COMPILE_DEFINITIONS GLEW_MX;CRUSTA_VERSION=\"${PROJECT_VERSION}\")
 
-target_link_libraries(construo ${VRUI_LINKFLAGS} ${GDAL_LIBRARY} ${X11_OPENGL_GLU_LIBRARIES})
+target_link_libraries(construo crustacore ${VRUI_LINKFLAGS} ${GDAL_LIBRARY} ${X11_OPENGL_GLU_LIBRARIES})
 
 install(TARGETS construo DESTINATION ${BIN_PATH})

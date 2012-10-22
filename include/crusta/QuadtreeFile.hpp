@@ -48,7 +48,6 @@ read(Misc::LargeFile* quadtreeFile)
     quadtreeFile->read(maxTileIndex);
 }
 
-#if CONSTRUO_BUILD
 template <class PixelType, class FileHeaderParam, class TileHeaderParam>
 void QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::Header::
 write(Misc::LargeFile* quadtreeFile)
@@ -58,7 +57,6 @@ write(Misc::LargeFile* quadtreeFile)
     quadtreeFile->write(defaultPixelValue);
     quadtreeFile->write(maxTileIndex);
 }
-#endif //CONSTRUO_BUILD
 
 /*****************************
 Methods of class QuadtreeFile:
@@ -66,17 +64,17 @@ Methods of class QuadtreeFile:
 
 template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
-QuadtreeFile(const char* quadtreeFileName, const uint32 iTileSize[2]) :
-    quadtreeFile(NULL)
+QuadtreeFile(const char* quadtreeFileName, const uint32 iTileSize[2], bool writable) :
+    quadtreeFile(NULL), writable(writable)
 {
     //open existing quadtree file or create a new one
     try
     {
-#if CONSTRUO_BUILD
-        quadtreeFile = new Misc::LargeFile(quadtreeFileName, "r+b");
-#else
-        quadtreeFile = new Misc::LargeFile(quadtreeFileName, "rb");
-#endif //CONSTRUO_BUILD
+        if (writable)
+            quadtreeFile = new Misc::LargeFile(quadtreeFileName, "r+b");
+        else
+            quadtreeFile = new Misc::LargeFile(quadtreeFileName, "rb");
+
         //read in the header and record tile data start location
         readHeader();
         firstTileOffset = quadtreeFile->tell();
@@ -95,20 +93,21 @@ QuadtreeFile(const char* quadtreeFileName, const uint32 iTileSize[2]) :
     }
     catch (Misc::LargeFile::OpenError openError)
     {
-#if CONSTRUO_BUILD
-        quadtreeFile = new Misc::LargeFile(quadtreeFileName, "w+b");
-        //set the tile size
-        for (int i=0; i<2; ++i)
-            header.tileSize[i] = iTileSize[i];
+        if (writable)
+        {
+            quadtreeFile = new Misc::LargeFile(quadtreeFileName, "w+b");
+            //set the tile size
+            for (int i=0; i<2; ++i)
+                header.tileSize[i] = iTileSize[i];
 ///\todo deprecated
-        header.defaultPixelValue = PixelType();
+            header.defaultPixelValue = PixelType();
 
-        //reserve header space and record tile data start location
-        writeHeader();
-        firstTileOffset = quadtreeFile->tell();
-#else
-        throw;
-#endif //CONSTRUO_BUILD
+            //reserve header space and record tile data start location
+            writeHeader();
+            firstTileOffset = quadtreeFile->tell();
+        } else {
+            throw;
+        }
     }
 
     //compute the file tile size
@@ -123,10 +122,11 @@ template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 ~QuadtreeFile()
 {
-#if CONSTRUO_BUILD
-    //make sure the latest header has been written to disk
-    writeHeader();
-#endif //CONSTRUO_BUILD
+    if (writable)
+    {
+        //make sure the latest header has been written to disk
+        writeHeader();
+    }
 
     //close the quadtree file
     delete quadtreeFile;
@@ -140,7 +140,6 @@ getCustomFileHeader() const
     return fileHeader;
 }
 
-#if CONSTRUO_BUILD
 template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 void
 QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
@@ -148,9 +147,10 @@ setDefaultPixelValue(
     const typename QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
     Pixel& newDefaultPixelValue)
 {
+    if (!writable)
+        Misc::throwStdErr("QuadtreeFile: Attempted write operation on non-writable instance.");
     header.defaultPixelValue = newDefaultPixelValue;
 }
-#endif //CONSTRUO_BUILD
 
 template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 const typename QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::Pixel&
@@ -186,12 +186,14 @@ readHeader()
     fileHeader.read(quadtreeFile);
 }
 
-#if CONSTRUO_BUILD
 template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 void
 QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 writeHeader()
 {
+    if(!writable)
+        Misc::throwStdErr("QuadtreeFile: Attempted write operation on non-writable instance.");
+
     if(quadtreeFile == NULL)
         return;
 
@@ -203,6 +205,9 @@ template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 TileIndex QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 appendTile(const Pixel* const blank)
 {
+    if(!writable)
+        Misc::throwStdErr("QuadtreeFile: Attempted write operation on non-writable instance.");
+
     static const TileIndex invalidChildren[4] = {
         INVALID_TILEINDEX, INVALID_TILEINDEX,
         INVALID_TILEINDEX, INVALID_TILEINDEX
@@ -213,7 +218,6 @@ appendTile(const Pixel* const blank)
 
     return header.maxTileIndex;
 }
-#endif //CONSTRUO_BUILD
 
 template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 bool
@@ -270,7 +274,6 @@ readTile(TileIndex tileIndex,TileHeader& tileHeader,Pixel* tileBuffer)
     return readTile(tileIndex,lastTileChildPointers,tileHeader,tileBuffer);
 }
 
-#if CONSTRUO_BUILD
 template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 void
 QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
@@ -280,6 +283,9 @@ writeTile(TileIndex tileIndex, const TileIndex childPointers[4],
     const typename QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
     Pixel* tileBuffer)
 {
+    if (!writable)
+        Misc::throwStdErr("QuadtreeFile: Attempted write operation on non-writable instance.");
+
     if (tileIndex>header.maxTileIndex || quadtreeFile==NULL)
         return;
 
@@ -313,6 +319,8 @@ void
 QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 writeTile(TileIndex tileIndex, const Pixel* tileBuffer)
 {
+    if (!writable)
+        Misc::throwStdErr("QuadtreeFile: Attempted write operation on non-writable instance.");
     writeTile(tileIndex,lastTileChildPointers,lastTileHeader,tileBuffer);
 }
 
@@ -322,6 +330,8 @@ QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 writeTile(TileIndex tileIndex, const TileIndex childPointers[4],
           const Pixel* tileBuffer)
 {
+    if (!writable)
+        Misc::throwStdErr("QuadtreeFile: Attempted write operation on non-writable instance.");
     writeTile(tileIndex,childPointers,lastTileHeader,tileBuffer);
 }
 
@@ -331,9 +341,10 @@ QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 writeTile(TileIndex tileIndex, const TileHeader& tileHeader,
           const Pixel* tileBuffer)
 {
+    if (!writable)
+        Misc::throwStdErr("QuadtreeFile: Attempted write operation on non-writable instance.");
     writeTile(tileIndex,lastTileChildPointers,tileHeader,tileBuffer);
 }
-#endif //CONSTRUO_BUILD
 
 template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 const TileIndex* QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
