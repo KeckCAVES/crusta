@@ -12,6 +12,14 @@ set( VRUI_DIR $ENV{HOME}/Vrui-2.4
 set( CMAKE_INSTALL_PREFIX $ENV{HOME}/Crusta
      CACHE PATH "Installation path prefix")
 
+#
+# Enable use of slicing tool.
+# This has potential performance overhead even if the tool is not in use.
+# (Can also set when calling cmake by using option -DCRUSTA_SLICING=1)
+#
+set( CRUSTA_SLICING OFF
+     CACHE BOOL "Enable the slicing tool")
+
 
 #####
 
@@ -69,6 +77,7 @@ add_definitions(-DCRUSTA_SHARE_PATH="${SHARE_PATH}")
 
 # Enable slicing tool code if requested
 if(CRUSTA_SLICING)
+    message(STATUS "Enabled slicing tool")
     add_definitions(-DCRUSTA_SLICING)
 endif()
 
