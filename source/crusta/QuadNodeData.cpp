@@ -5,7 +5,10 @@
 #include <crusta/checkGl.h>
 #include <crusta/Crusta.h>
 #include <crusta/DataManager.h>
+
+#ifdef CRUSTA_SLICING
 #include <crusta/SliceTool.h>
+#endif /* CRUSTA_SLICING */
 
 BEGIN_CRUSTA
 
@@ -64,10 +67,14 @@ computeBoundingSphere(Scalar radius, Scalar verticalScale)
     //stamp the current bounding specification
     boundingAge = CURRENT_FRAME;
 }
+
+#ifdef CRUSTA_SLICING
 Point3 NodeData::
 getEffectiveBoundingCenter() const {
     return Point3(SliceTool::getParameters().getLinearTranslation() + boundingCenter);
 }
+#endif /* CRUSTA_SLICING */
+
 void NodeData::
 init(Scalar radius, Scalar verticalScale)
 {

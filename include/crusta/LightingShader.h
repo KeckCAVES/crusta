@@ -71,7 +71,10 @@ class LightingShader
 
     int maxNumLights; // Maximum number of lights supported by local OpenGL
     LightState* lightStates; // Array of tracking states for each OpenGL light source
-    GLhandleARB vertexShader, fragmentShader, geometryShader; // Handle for the vertex, fragment and geometry shaders
+    GLhandleARB vertexShader,fragmentShader; // Handle for the vertex and fragment shaders
+#ifdef CRUSTA_SLICING
+    GLhandleARB geometryShader; // Handle for the geometry shader
+#endif /* CRUSTA_SLICING */
     GLhandleARB programObject; // Handle for the linked program object
 
     ShaderDecoratedLineRenderer decoratedLineRenderer;
@@ -83,6 +86,7 @@ class LightingShader
     GLint layerfNodataUniform;
     GLint demDefaultUniform;
 
+#ifdef CRUSTA_SLICING
     GLint numPlanesUniform;
     GLint slicePlanesUniform;
     GLint separatingPlanesUniform;
@@ -95,6 +99,7 @@ class LightingShader
     GLint sliceColoringUniform;
     GLint strikeDirectionsUniform;
     GLint dipDirectionsUniform;
+#endif /* CRUSTA_SLICING */
     FrameStamp colorMapperConfigurationStamp;
 
     /* Private methods: */
@@ -136,10 +141,12 @@ class LightingShader
         layerfNodataUniform = -2;
         demDefaultUniform   = -2;
 
+#ifdef CRUSTA_SLICING
         slicePlanesUniform = separatingPlanesUniform = strikeShiftAmountUniform = dipShiftAmountUniform = slopePlaneCentersUniform = -2;
         sliceFalloffUniform = -2;
         sliceColoringUniform = -2;
         strikeDirectionsUniform = dipDirectionsUniform = -2;
+#endif /* CRUSTA_SLICING */
     }
 
     void setTextureStep(float ts)
@@ -169,6 +176,7 @@ class LightingShader
         CHECK_GLA
     }
 
+#ifdef CRUSTA_SLICING
     // planes are stored as contiguous 4-tuples of (nx,ny,ny,distance_to_origin)
     // they are assumed to be relative the centroid of this tile
     void setSlicePlanes(int numPlanes, float strikeDirections[3*63], float dipDirections[3*63], float planes[4*63], float separatingPlanes[4*64], float slopePlanes[4*63], double strikeShiftAmount, double dipShiftAmount, Vector3 planeCenters[63], Vector3 faultCenter, double falloff, double coloring) {
@@ -203,6 +211,7 @@ class LightingShader
         glUniform1f(sliceColoringUniform, coloring);
         CHECK_GLA
     }
+#endif /* CRUSTA_SLICING */
 
 };
 

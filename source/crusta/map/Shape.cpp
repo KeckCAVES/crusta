@@ -267,7 +267,9 @@ setControlPoints(const Point3s& newControlPoints)
 Shape::ControlId Shape::
 addControlPoint(const Point3& pos, End end)
 {
+#ifdef CRUSTA_SLICING
     std::cout << "add control point: " << pos[0] << ", " << pos[1] << ", " << pos[2] << std::endl;
+#endif /* CRUSTA_SLICING */
 
     MapManager* mapMan  = crusta->getMapManager();
 

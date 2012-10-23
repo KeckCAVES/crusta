@@ -42,8 +42,11 @@ struct NodeData
     /** compute the bounding sphere. It is dependent on the vertical scale,
         so this method is a convinient API for such updates */
     void computeBoundingSphere(Scalar radius, Scalar verticalScale);
+
+#ifdef CRUSTA_SLICING
     /** get effective bounding radius considering translations by the slicing tool **/
     Point3 getEffectiveBoundingCenter() const;
+#endif /* CRUSTA_SLICING */
 
     /** compute the various "cached values" (e.g. bounding sphere, centroid,
         etc.) */

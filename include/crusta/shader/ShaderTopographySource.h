@@ -15,12 +15,12 @@ public:
                            ShaderDataSource* _heightSrc);
 
     void setCentroid(const Point3f& c);
+
 private:
     ShaderDataSource* geometrySrc;
     ShaderDataSource* heightSrc;
 
-    GLint centroidUniform;    
-
+    GLint centroidUniform;
     std::string centroidName;
 
 //- inherited from ShaderFragment

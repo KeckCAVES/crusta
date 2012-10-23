@@ -67,6 +67,11 @@ set_property(GLOBAL APPEND PROPERTY CMAKE_CXX_FLAGS "-Wall")
 # Report share path to source files
 add_definitions(-DCRUSTA_SHARE_PATH="${SHARE_PATH}")
 
+# Enable slicing tool code if requested
+if(CRUSTA_SLICING)
+    add_definitions(-DCRUSTA_SLICING)
+endif()
+
 ##-- Setup required external libraries
 
 if(CRUSTA_BUNDLE)

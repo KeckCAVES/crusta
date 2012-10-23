@@ -1,4 +1,4 @@
-add_library(crustacore STATIC
+set(CRUSTACORE_SOURCES
     include/GL/glew.h
     include/GL/GlProgram.h
     include/GL/glxew.h
@@ -72,7 +72,6 @@ add_library(crustacore STATIC
     include/crusta/shader/ShaderFragment.h
     include/crusta/shader/ShaderMultiDataSource.h
     include/crusta/shader/ShaderTopographySource.h
-    include/crusta/SliceTool.h
     include/crusta/Sphere.h
     include/crusta/StatsManager.h
     include/crusta/SurfaceApproximation.h
@@ -143,7 +142,6 @@ add_library(crustacore STATIC
     source/crusta/shader/ShaderFragment.cpp
     source/crusta/shader/ShaderMultiDataSource.cpp
     source/crusta/shader/ShaderTopographySource.cpp
-    source/crusta/SliceTool.cpp
     source/crusta/Sphere.cpp
     source/crusta/StatsManager.cpp
     source/crusta/SurfaceApproximation.cpp
@@ -158,5 +156,12 @@ add_library(crustacore STATIC
     source/crusta/Visualizer.cpp
 )
 
+if(CRUSTA_SLICING)
+    set(CRUSTACORE_SOURCES ${CRUSTACORE_SOURCES}
+        include/crusta/SliceTool.h
+        source/crusta/SliceTool.cpp)
+endif()
+
+add_library(crustacore STATIC ${CRUSTACORE_SOURCES})
 set_property(TARGET crustacore APPEND PROPERTY COMPILE_FLAGS ${VRUI_CFLAGS})
 set_property(TARGET crustacore APPEND PROPERTY COMPILE_DEFINITIONS GLEW_MX;CRUSTA_VERSION=\"${PROJECT_VERSION}\")

@@ -23,7 +23,9 @@
 #include <crusta/Triangle.h>
 #include <crusta/Section.h>
 #include <crusta/Sphere.h>
+#ifdef CRUSTA_SLICING
 #include <crusta/SliceTool.h>
+#endif /* CRUSTA_SLICING */
 
 #define DO_RELATIVE_LEAF_TRIANGLE_INTERSECTIONS 1
 
@@ -381,7 +383,7 @@ prepareDisplay(GLContextData& contextData, SurfaceApproximation& surface)
     DATAMANAGER->request(dataRequests);
 }
 
-
+#ifdef CRUSTA_SLICING
 void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* crustaGl, const Vector3 &center) {
     SliceTool::SliceParameters params = SliceTool::getParameters();
 
@@ -510,6 +512,7 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
 
   //  crustaGl->terrainShader.enable();
 }
+#endif /* CRUSTA_SLICING */
 
 void QuadTerrain::
 display(GLContextData& contextData, CrustaGlData* crustaGl,
@@ -584,8 +587,11 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
     //render the terrain nodes in batches
     DataManager::Batch batch;
     DATAMANAGER->startGpuBatch(contextData, surface, batch);
+
+#ifdef CRUSTA_SLICING
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glLineWidth(1.0);
+#endif /* CRUSTA_SLICING */
 
     while (!batch.empty())
     {
@@ -599,6 +605,8 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         //grab the next batch
         DATAMANAGER->nextGpuBatch(contextData, surface, batch);
     }
+
+#ifdef CRUSTA_SLICING
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 
@@ -761,6 +769,7 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         // float sepAlpha = acos(dot(normalize(p.xyz + center), rotPlaneSepPlaneISect));
     }
 */
+#endif /* CRUSTA_SLICING */
 
     //restore the GL transform as it was before
     glPopMatrix();
@@ -1336,9 +1345,10 @@ drawNode(GLContextData& contextData, CrustaGlData* crustaGl,
 
 //    glPolygonMode(GL_FRONT, GL_LINE);
 
-
+#ifdef CRUSTA_SLICING
     // setup uniforms
     initSlicingPlane(contextData, crustaGl, centroidTranslation);
+#endif /* CRUSTA_SLICING */
 
     glDrawRangeElements(GL_TRIANGLE_STRIP, 0,
                         (TILE_RESOLUTION*TILE_RESOLUTION) - 1,

@@ -67,8 +67,10 @@ public:
     void prepareDisplay(GLContextData& contextData,
                         SurfaceApproximation& surface);
 
+#ifdef CRUSTA_SLICING
     /** draw slicing plane and setup corresponding shader uniforms **/
     static void initSlicingPlane(GLContextData& contextData, CrustaGlData* crustaGl, const Vector3 &center);
+#endif /* CRUSTA_SLICING */
 
     /** issues the drawing commands for the render set */
     static void display(GLContextData& contextData, CrustaGlData* crustaGl,

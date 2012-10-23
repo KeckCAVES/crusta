@@ -293,7 +293,10 @@ LightingShader::LightingShader() :
     colorMaterial(false),
     linesDecorated(false),
     lightStates(0),
-    vertexShader(0),fragmentShader(0), geometryShader(0),
+    vertexShader(0),fragmentShader(0),
+#ifdef CRUSTA_SLICING
+    geometryShader(0),
+#endif /* CRUSTA_SLICING */
     programObject(0),
     decoratedLineRenderer(RESOURCELOCATOR.locateFile(
                           "shaders/decoratedRenderer.fp")),
@@ -307,19 +310,25 @@ LightingShader::LightingShader() :
     updateLightingState();
 
     /* Create the vertex and fragment shaders: */
-    vertexShader   = glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
-    fragmentShader = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
+    vertexShader=glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
+    fragmentShader=glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
+#ifdef CRUSTA_SLICING
     geometryShader = glCreateShaderObjectARB(GL_GEOMETRY_SHADER_ARB);
+#endif /* CRUSTA_SLICING */
 
     /* Create the program object: */
     programObject=glCreateProgramObjectARB();
     glAttachObjectARB(programObject,vertexShader);
     glAttachObjectARB(programObject,fragmentShader);
+
+#ifdef CRUSTA_SLICING
     glAttachObjectARB(programObject,geometryShader);
     glProgramParameteriEXT(programObject, GL_GEOMETRY_INPUT_TYPE_EXT, GL_TRIANGLES);
     glProgramParameteriEXT(programObject, GL_GEOMETRY_OUTPUT_TYPE_EXT, GL_TRIANGLE_STRIP);
     //glProgramParameteriEXT(programObject, GL_GEOMETRY_VERTICES_OUT_EXT, 15);
     glProgramParameteriEXT(programObject, GL_GEOMETRY_VERTICES_OUT_EXT, 15);
+#endif /* CRUSTA_SLICING */
+
     clearUniforms();
 }
 
@@ -328,7 +337,9 @@ LightingShader::~LightingShader()
     glDeleteObjectARB(programObject);
     glDeleteObjectARB(vertexShader);
     glDeleteObjectARB(fragmentShader);
+#ifdef CRUSTA_SLICING
     glDeleteObjectARB(geometryShader);
+#endif /* CRUSTA_SLICING */
 
     delete[] lightStates;
 }
@@ -445,6 +456,7 @@ initUniforms(GLContextData& contextData)
     layerfNodataUniform = glGetUniformLocation(programObject, "layerfNodata");
     demDefaultUniform   = glGetUniformLocation(programObject, "demDefault");
 
+#ifdef CRUSTA_SLICING
     numPlanesUniform =  glGetUniformLocation(programObject, "numPlanes");
     slicePlanesUniform = glGetUniformLocation(programObject, "slicePlanes");
     slopePlanesUniform = glGetUniformLocation(programObject, "slopePlanes");
@@ -457,6 +469,7 @@ initUniforms(GLContextData& contextData)
     sliceColoringUniform = glGetUniformLocation(programObject, "sliceColoring");
     strikeDirectionsUniform = glGetUniformLocation(programObject, "strikeDirections");
     dipDirectionsUniform = glGetUniformLocation(programObject, "dipDirections");
+#endif /* CRUSTA_SLICING */
 
     DataManager::SourceShaders& dataSources =
         DATAMANAGER->getSourceShaders(contextData);
@@ -511,7 +524,11 @@ compileShader(GLContextData& contextData)
         varying vec3 position;\n\
         varying vec3 normal;\n\
         varying vec2 texCoord;\n\
-        \n\
+    ";
+
+#ifdef CRUSTA_SLICING
+    vertexShaderUniforms +=
+    "\
         uniform int numPlanes;\n\
         uniform vec4 slicePlanes[63];\n\
         uniform vec4 separatingPlanes[64];\n\
@@ -526,6 +543,7 @@ compileShader(GLContextData& contextData)
         uniform float sliceFalloff;\n\
         uniform float sliceColoring;\n\
     ";
+#endif /* CRUSTA_SLICING */
 
     vertexShaderFunctions += dataSources.topography.getCode();
     vertexShaderFunctions += colorSource.getCode();
@@ -536,6 +554,11 @@ compileShader(GLContextData& contextData)
         {\n\
             return " + dataSources.topography.sample("coords") + ";\n\
         }\n\
+    ";
+
+#ifdef CRUSTA_SLICING
+    vertexShaderFunctions +=
+    "\
         void findClosestPlaneIdx(vec4 p) {\n\
            vtxShaderClosestPlaneIdx = -1;\n\
            float closestPlaneDst = 1e9;\n\
@@ -598,6 +621,7 @@ compileShader(GLContextData& contextData)
           vtxShaderTotalCompression *= getCompressionDistanceFactor(p);\n\
         }\n\
     ";
+#endif /* CRUSTA_SLICING */
 
     /* Create the main vertex shader starting boilerplate: */
     vertexShaderMain+=
@@ -719,11 +743,20 @@ compileShader(GLContextData& contextData)
             gl_FrontColor = vec4(color.rgb, gl_FrontMaterial.diffuse.a);\n\
             \n\
             /* Use finalize vertex transformation: */\n\
-            /* now happens in the geometry shader */\n\
-            //gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 1.0);\n\
+        "
+#ifndef CRUSTA_SLICING
+        "\
+            gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 1.0);\n\
+        "
+#else /* CRUSTA_SLICING */
+        "\
+            /* model-view projection happens in the geometry shader */\n\
             gl_Position = vec4(position, 1.0);\n\
             findClosestPlaneIdx(gl_Position);\n\
             shift(gl_Position);\n\
+        "
+#endif /* CRUSTA_SLICING */
+        "\
             \n\
             /* Pass the texture coordinates to the fragment program: */\n\
             texCoord = gl_Vertex.xy;\n\
@@ -780,6 +813,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
                                 "void main() { gl_FragColor=vec4(1.0); }");
     }
 
+#ifdef CRUSTA_SLICING
     /* Compile geometry shader (for slicing planes) */
     std::string geometryShaderSource;
 
@@ -1077,6 +1111,7 @@ CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << fragmentShaderSource << std::endl;)
     CRUSTA_DEBUG(80, CRUSTA_DEBUG_OUT << geometryShaderSource << std::endl;)
 
     compileShaderFromString(geometryShader, geometryShaderSource.c_str());
+#endif /* CRUSTA_SLICING */
 
     /* Link the program object: */
     glLinkProgramARB(programObject);
