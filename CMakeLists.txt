@@ -1,24 +1,26 @@
 #
-# Optionally set path to Vrui.
-# (Can also set when calling cmake by using option -DVRUI_DIR=/path/to/Vrui-2.4)
+# Optionally bypass CMake's normal variable caching mechanism and hardcode in
+# some common values, if that is the kind of thing you're in to.
 #
-set( VRUI_DIR $ENV{HOME}/Vrui-2.4
-     CACHE PATH "Path to Vrui")
+
+#
+# Give path to the Vrui.makeinclude makefile fragment
+# (Or, pass to cmake -DVRUI_MAKEINCLUDE=/path/to/Vrui-2.4/share/Vrui.makeinclude)
+#
+#set( VRUI_MAKEINCLUDE $ENV{HOME}/Vrui-2.4/share/Vrui.makeinclude )
 
 #
 # Set the installation path prefix.
-# (Can also set when calling cmake by using option -DCMAKE_INSTALL_PREFIX=/path/to/install)
+# (Or, pass to cmake -DCMAKE_INSTALL_PREFIX=/path/to/install)
 #
-set( CMAKE_INSTALL_PREFIX $ENV{HOME}/Crusta
-     CACHE PATH "Installation path prefix")
+#set( CMAKE_INSTALL_PREFIX $ENV{HOME}/Crusta )
 
 #
 # Enable use of slicing tool.
+# (Or, pass to cmake -DCRUSTA_SLICING=ON)
 # This has potential performance overhead even if the tool is not in use.
-# (Can also set when calling cmake by using option -DCRUSTA_SLICING=1)
 #
-set( CRUSTA_SLICING OFF
-     CACHE BOOL "Enable the slicing tool")
+#set( CRUSTA_SLICING ON )
 
 
 #####
@@ -46,10 +48,14 @@ set(PROJECT_VERSION "${PROJECT_MAJOR_VERSION}.${PROJECT_MINOR_VERSION}.${PROJECT
 
 ##-- Setup the defaults
 
+# Set the default build type
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
 
+# Disable use of slicing tool by default
+set( CRUSTA_SLICING OFF
+     CACHE BOOL "Enable the slicing tool. This will cause a performance overhead even when the tool is not in use.")
 
 if(CRUSTA_BUNDLE)
     set(BIN_PATH "${CRUSTA_BUNDLE}/Contents/MacOS")

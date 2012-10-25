@@ -18,14 +18,11 @@ else()
     set( VRUI_MAKEINCLUDE_NAMES Vrui.makeinclude Vrui.debug.makeinclude )
 endif()
 
-if( NOT VRUI_MAKEINCLUDE )
-    find_file( VRUI_MAKEINCLUDE
-               NAMES ${VRUI_MAKEINCLUDE_NAMES}
-               PATHS ${VRUI_DIR}
-                     $ENV{HOME}/Vrui-${VRUI_VERSION}
-                     /usr
-               PATH_SUFFIXES share share/Vrui-${VRUI_VERSION} )
-endif()
+find_file( VRUI_MAKEINCLUDE
+           PATHS $ENV{HOME}/Vrui-${VRUI_VERSION}
+           NAMES ${VRUI_MAKEINCLUDE_NAMES}
+           PATH_SUFFIXES share share/Vrui-${VRUI_VERSION}
+           DOC "Path to the Vrui.makeinclude makefile fragment, by default located under Vrui's share directory.")
 
 if( VRUI_MAKEINCLUDE )
     if( CMAKE_BUILD_TYPE STREQUAL "Debug" )
@@ -108,7 +105,7 @@ if( VRUI_FOUND )
     endif()
 else()
     if( Vrui_FIND_REQUIRED )
-        message( FATAL_ERROR "Required package Vrui NOT FOUND.  Please give the path to to Vrui by setting the VRUI_DIR CMake variable, for example add -DVRUI_DIR=/path/to/Vrui-${VRUI_VERSION} to your cmake line." )
+        message( FATAL_ERROR "Required package Vrui NOT FOUND." )
     endif()
 endif()
 
