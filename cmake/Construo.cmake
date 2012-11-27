@@ -1,4 +1,4 @@
-add_executable(construo
+add_crusta_exe(construo
     include/construo/Builder.h
     include/construo/Builder.hpp
     include/construo/construoGlobals.h
@@ -40,10 +40,3 @@ add_executable(construo
     source/construo/TpmFile.cpp
     source/construo/Tree.cpp
 )
-
-set_property(TARGET construo APPEND PROPERTY COMPILE_FLAGS ${VRUI_CFLAGS})
-set_property(TARGET construo APPEND PROPERTY COMPILE_DEFINITIONS GLEW_MX;CRUSTA_VERSION=\"${PROJECT_VERSION}\")
-
-target_link_libraries(construo crustacore ${VRUI_LINKFLAGS} ${GDAL_LIBRARY} ${X11_OPENGL_GLU_LIBRARIES})
-
-install(TARGETS construo DESTINATION ${BIN_PATH})

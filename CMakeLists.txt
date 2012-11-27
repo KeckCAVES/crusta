@@ -53,9 +53,9 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
 
-# Disable use of slicing tool by default
+# By deafult, disable building of crusta with the slicing tool
 set( CRUSTA_SLICING OFF
-     CACHE BOOL "Enable the slicing tool. This will cause a performance overhead even when the tool is not in use.")
+     CACHE BOOL "Enable the slicing tool. This will create another executable called crusta-slicing that has the slicing tool available, at the possible cost of speed and other features.")
 
 if(CRUSTA_BUNDLE)
     set(BIN_PATH "${CRUSTA_BUNDLE}/Contents/MacOS")
@@ -69,23 +69,6 @@ else()
     set(SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share/crusta")
 endif()
 
-
-##-- Setup compile properties
-
-# Add the Crusta include directory
-include_directories(include)
-
-# Show all warnings, don't complain about variadic macros
-set_property(GLOBAL APPEND PROPERTY CMAKE_CXX_FLAGS "-Wall")
-
-# Report share path to source files
-add_definitions(-DCRUSTA_SHARE_PATH="${SHARE_PATH}")
-
-# Enable slicing tool code if requested
-if(CRUSTA_SLICING)
-    message(STATUS "Enabled slicing tool")
-    add_definitions(-DCRUSTA_SLICING)
-endif()
 
 ##-- Setup required external libraries
 
@@ -108,11 +91,37 @@ endif()
 
 # Setup Vrui
 find_package(Vrui REQUIRED)
+add_definitions(${VRUI_CFLAGS})
 
 # Setup GLU
 find_library(X11_OPENGL_GLU_LIBRARIES
              NAMES GLU
              PATH_SUFFIXES X11)
+
+
+##-- Setup compile properties
+
+# Add the Crusta include directory
+include_directories(include)
+
+# Report Crusta version
+add_definitions(-DCRUSTA_VERSION=\"${PROJECT_VERSION}\")
+
+# Show all warnings, don't complain about variadic macros
+set_property(GLOBAL APPEND PROPERTY CMAKE_CXX_FLAGS "-Wall")
+
+# Report share path to source files
+add_definitions(-DCRUSTA_SHARE_PATH="${SHARE_PATH}")
+
+# Enable multi-context GLEW
+add_definitions(-DGLEW_MX)
+
+# Common setup for executables
+macro(add_crusta_exe)
+  add_executable(${ARGV})
+  target_link_libraries(${ARGV0} crustacore ${VRUI_LINKFLAGS} ${GDAL_LIBRARY} ${X11_OPENGL_GLU_LIBRARIES})
+  install(TARGETS ${ARGV0} DESTINATION ${BIN_PATH})
+endmacro()
 
 
 #-------------------
