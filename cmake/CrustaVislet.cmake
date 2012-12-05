@@ -1,7 +1,7 @@
 add_library(CrustaVislet MODULE
-    include/crusta/CrustaVislet.h
+    src/crusta/CrustaVislet.h
 
-    source/crusta/CrustaVislet.cpp
+    src/crusta/CrustaVislet.cpp
 )
 
 set_target_properties(CrustaVislet PROPERTIES

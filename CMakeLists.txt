@@ -101,8 +101,8 @@ find_library(X11_OPENGL_GLU_LIBRARIES
 
 ##-- Setup compile properties
 
-# Add the Crusta include directory
-include_directories(include)
+# Add Crusta src directory for includes
+include_directories(src)
 
 # Report Crusta version
 add_definitions(-DCRUSTA_VERSION=\"${PROJECT_VERSION}\")

@@ -1,88 +1,88 @@
 set(CRUSTA_SOURCES
-    include/crusta/QuadNodeData.h
-    include/crusta/QuadCache.hpp
-    include/crusta/LightingShader.h
-    include/crusta/FocusViewEvaluator.h
-    include/crusta/FrustumVisibility.h
-    include/crusta/map/MapTool.h
-    include/crusta/map/Polyline.h
-    include/crusta/map/PolylineTool.h
-    include/crusta/map/Shape.h
-    include/crusta/shader/ShaderAtlasDataSource.h
-    include/crusta/shader/ShaderColorMapper.h
-    include/crusta/shader/ShaderColorMixer.h
-    include/crusta/shader/ShaderColorMultiplier.h
-    include/crusta/shader/ShaderColorReader.h
-    include/crusta/shader/ShaderDataSource.h
-    include/crusta/shader/ShaderDecoratedLineRenderer.h
-    include/crusta/shader/ShaderFileFragment.h
-    include/crusta/shader/ShaderFragment.h
-    include/crusta/shader/ShaderMultiDataSource.h
-    include/crusta/shader/ShaderTopographySource.h
-    include/crusta/DebugTool.h
-    include/crusta/LodEvaluator.h
+    src/crusta/QuadNodeData.h
+    src/crusta/QuadCache.hpp
+    src/crusta/LightingShader.h
+    src/crusta/FocusViewEvaluator.h
+    src/crusta/FrustumVisibility.h
+    src/crusta/map/MapTool.h
+    src/crusta/map/Polyline.h
+    src/crusta/map/PolylineTool.h
+    src/crusta/map/Shape.h
+    src/crusta/shader/ShaderAtlasDataSource.h
+    src/crusta/shader/ShaderColorMapper.h
+    src/crusta/shader/ShaderColorMixer.h
+    src/crusta/shader/ShaderColorMultiplier.h
+    src/crusta/shader/ShaderColorReader.h
+    src/crusta/shader/ShaderDataSource.h
+    src/crusta/shader/ShaderDecoratedLineRenderer.h
+    src/crusta/shader/ShaderFileFragment.h
+    src/crusta/shader/ShaderFragment.h
+    src/crusta/shader/ShaderMultiDataSource.h
+    src/crusta/shader/ShaderTopographySource.h
+    src/crusta/DebugTool.h
+    src/crusta/LodEvaluator.h
     
-    source/crusta/ViewLod.cpp
-    source/crusta/FrustumVisibility.cpp
-    source/crusta/FocusViewEvaluator.cpp
-    source/crusta/shader/ShaderAtlasDataSource.cpp
-    source/crusta/shader/ShaderColorMixer.cpp
-    source/crusta/shader/ShaderColorMultiplier.cpp
-    source/crusta/shader/ShaderColorReader.cpp
-    source/crusta/shader/ShaderDataSource.cpp
-    source/crusta/shader/ShaderDecoratedLineRenderer.cpp
-    source/crusta/shader/ShaderFileFragment.cpp
-    source/crusta/shader/ShaderFragment.cpp
-    source/crusta/shader/ShaderMultiDataSource.cpp
-    source/crusta/shader/ShaderTopographySource.cpp
-    source/crusta/LodEvaluator.cpp
-    source/crusta/StatsManager.cpp
-    source/crusta/SurfacePoint.cpp
+    src/crusta/ViewLod.cpp
+    src/crusta/FrustumVisibility.cpp
+    src/crusta/FocusViewEvaluator.cpp
+    src/crusta/shader/ShaderAtlasDataSource.cpp
+    src/crusta/shader/ShaderColorMixer.cpp
+    src/crusta/shader/ShaderColorMultiplier.cpp
+    src/crusta/shader/ShaderColorReader.cpp
+    src/crusta/shader/ShaderDataSource.cpp
+    src/crusta/shader/ShaderDecoratedLineRenderer.cpp
+    src/crusta/shader/ShaderFileFragment.cpp
+    src/crusta/shader/ShaderFragment.cpp
+    src/crusta/shader/ShaderMultiDataSource.cpp
+    src/crusta/shader/ShaderTopographySource.cpp
+    src/crusta/LodEvaluator.cpp
+    src/crusta/StatsManager.cpp
+    src/crusta/SurfacePoint.cpp
 )
 
 # Sources that have different code paths depending on
 # whether the slicing tool is enabled or not.
 set(CRUSTA_HYBRID_SOURCES
-    include/crusta/CrustaApp.h
-    include/crusta/ColorMapper.h
-    include/crusta/Crusta.h
-    include/crusta/DataManager.h
-    include/crusta/QuadCache.h
-    include/crusta/QuadNodeDataBundles.h
-    include/crusta/QuadTerrain.h
-    include/crusta/StatsManager.h
-    include/crusta/SurfaceApproximation.h
-    include/crusta/map/MapManager.h
-    include/crusta/map/PolylineRenderer.h
+    src/crusta/CrustaApp.h
+    src/crusta/ColorMapper.h
+    src/crusta/Crusta.h
+    src/crusta/DataManager.h
+    src/crusta/QuadCache.h
+    src/crusta/QuadNodeDataBundles.h
+    src/crusta/QuadTerrain.h
+    src/crusta/StatsManager.h
+    src/crusta/SurfaceApproximation.h
+    src/crusta/map/MapManager.h
+    src/crusta/map/PolylineRenderer.h
     
-    source/crusta/ColorMapper.cpp
-    source/crusta/Crusta.cpp
-    source/crusta/CrustaApp.cpp
-    source/crusta/DataManager.cpp
-    source/crusta/DebugTool.cpp
-    source/crusta/LightingShader.cpp
-    source/crusta/QuadCache.cpp
-    source/crusta/QuadNodeData.cpp
-    source/crusta/QuadNodeDataBundles.cpp
-    source/crusta/QuadTerrain.cpp
-    source/crusta/StatsManager.cpp
-    source/crusta/SurfaceApproximation.cpp
-    source/crusta/SurfaceProbeTool.cpp
-    source/crusta/SurfaceProjector.cpp
-    source/crusta/SurfaceTool.cpp
-    source/crusta/map/MapManager.cpp
-    source/crusta/map/MapTool.cpp
-    source/crusta/map/Polyline.cpp
-    source/crusta/map/PolylineRenderer.cpp
-    source/crusta/map/PolylineTool.cpp
-    source/crusta/map/Shape.cpp
-    source/crusta/shader/ShaderColorMapper.cpp
+    src/crusta/ColorMapper.cpp
+    src/crusta/Crusta.cpp
+    src/crusta/CrustaApp.cpp
+    src/crusta/DataManager.cpp
+    src/crusta/DebugTool.cpp
+    src/crusta/LightingShader.cpp
+    src/crusta/QuadCache.cpp
+    src/crusta/QuadNodeData.cpp
+    src/crusta/QuadNodeDataBundles.cpp
+    src/crusta/QuadTerrain.cpp
+    src/crusta/StatsManager.cpp
+    src/crusta/SurfaceApproximation.cpp
+    src/crusta/SurfaceProbeTool.cpp
+    src/crusta/SurfaceProjector.cpp
+    src/crusta/SurfaceTool.cpp
+    src/crusta/map/MapManager.cpp
+    src/crusta/map/MapTool.cpp
+    src/crusta/map/Polyline.cpp
+    src/crusta/map/PolylineRenderer.cpp
+    src/crusta/map/PolylineTool.cpp
+    src/crusta/map/Shape.cpp
+    src/crusta/shader/ShaderColorMapper.cpp
 )
 
 # Sources applicable only to the slicing tool.
 set(CRUSTA_SLICING_SOURCES
-    include/crusta/SliceTool.h
-    source/crusta/SliceTool.cpp
+    src/crusta/SliceTool.h
+    src/crusta/SliceTool.cpp
 )
 
 add_library(crustacommon STATIC ${CRUSTA_SOURCES})
