@@ -80,15 +80,8 @@ if(CRUSTA_BUNDLE)
                  NO_DEFAULT_PATH)
 else()
     # Setup GDAL
-    if(APPLE)
-        find_library(GDAL_LIBRARY GDAL)
-        if(GDAL_NOT_FOUND)
-            message(FATAL_ERROR "Required GDAL library not found")
-        endif(GDAL_NOT_FOUND)
-    else(APPLE)
-        find_package(GDAL REQUIRED)
-        include_directories(${GDAL_INCLUDE_DIR})
-    endif(APPLE)
+    find_package(GDAL REQUIRED)
+    include_directories(${GDAL_INCLUDE_DIR})
 endif()
 
 # Setup Vrui
