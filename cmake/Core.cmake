@@ -1,7 +1,5 @@
 set(CRUSTACORE_SOURCES
-    src/GL/glew.h
     src/GL/GlProgram.h
-    src/GL/glxew.h
     src/GL/VruiGlew.h
     src/GLMotif/ColorHexagon.h
     src/GLMotif/ColorMapEditor.h
@@ -60,7 +58,6 @@ set(CRUSTACORE_SOURCES
     src/crusta/VisibilityEvaluator.h
     src/crusta/Visualizer.h
 
-    src/GL/glew.c
     src/GL/GlProgram.cpp
     src/GL/VruiGlew.cpp
     src/GLMotif/ColorHexagon.cpp

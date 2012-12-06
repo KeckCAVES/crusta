@@ -72,6 +72,8 @@ endif()
 
 ##-- Setup required external libraries
 
+include(FindPkgConfig)
+
 if(CRUSTA_BUNDLE)
     find_library(GDAL_LIBRARY GDAL
                  PATHS "${CRUSTA_BUNDLE}/Contents/Frameworks"
@@ -93,11 +95,13 @@ endif()
 find_package(Vrui REQUIRED)
 add_definitions(${VRUI_CFLAGS})
 
-# Setup GLU
-find_library(X11_OPENGL_GLU_LIBRARIES
-             NAMES GLU
-             PATH_SUFFIXES X11)
+# Setup GL
+find_package(OpenGL REQUIRED)
+include_directories(${OPENGL_INCLUDE_DIR})
 
+# Setup GLEW
+pkg_check_modules(GLEW REQUIRED glewmx glew)
+add_definitions(${GLEW_CFLAGS})
 
 ##-- Setup compile properties
 
@@ -113,13 +117,10 @@ set_property(GLOBAL APPEND PROPERTY CMAKE_CXX_FLAGS "-Wall")
 # Report share path to source files
 add_definitions(-DCRUSTA_SHARE_PATH="${SHARE_PATH}")
 
-# Enable multi-context GLEW
-add_definitions(-DGLEW_MX)
-
 # Common setup for executables
 macro(add_crusta_exe)
   add_executable(${ARGV})
-  target_link_libraries(${ARGV0} crustacore ${VRUI_LINKFLAGS} ${GDAL_LIBRARY} ${X11_OPENGL_GLU_LIBRARIES})
+  target_link_libraries(${ARGV0} crustacore ${VRUI_LINKFLAGS} ${GDAL_LIBRARY} ${OPENGL_LIBRARY} ${GLEW_LDFLAGS})
   install(TARGETS ${ARGV0} DESTINATION ${BIN_PATH})
 endmacro()
 
