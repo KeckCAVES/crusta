@@ -53,36 +53,21 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
 
-# By deafult, disable building of crusta with the slicing tool
+# By default, disable building of crusta with the slicing tool
 set( CRUSTA_SLICING OFF
      CACHE BOOL "Enable the slicing tool. This will create another executable called crusta-slicing that has the slicing tool available, at the possible cost of speed and other features.")
 
-if(CRUSTA_BUNDLE)
-    set(BIN_PATH "${CRUSTA_BUNDLE}/Contents/MacOS")
-    set(SHARE_PATH "${CRUSTA_BUNDLE}/Contents/Resources")
-
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};@loader_path/../Frameworks;@loader_path/../Libraries")
-
-    set(VRUI_MAKEINCLUDE "${CRUSTA_BUNDLE}/Contents/Libraries/Vrui-2.4/share/Vrui.makeinclude")
-else()
-    set(BIN_PATH "${CMAKE_INSTALL_PREFIX}/bin")
-    set(SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share/crusta")
-endif()
+set(BIN_PATH "${CMAKE_INSTALL_PREFIX}/bin")
+set(SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share/crusta")
 
 
 ##-- Setup required external libraries
 
 include(FindPkgConfig)
 
-if(CRUSTA_BUNDLE)
-    find_library(GDAL_LIBRARY GDAL
-                 PATHS "${CRUSTA_BUNDLE}/Contents/Frameworks"
-                 NO_DEFAULT_PATH)
-else()
-    # Setup GDAL
-    find_package(GDAL REQUIRED)
-    include_directories(${GDAL_INCLUDE_DIR})
-endif()
+# Setup GDAL
+find_package(GDAL REQUIRED)
+include_directories(${GDAL_INCLUDE_DIR})
 
 # Setup Vrui
 find_package(Vrui REQUIRED)
