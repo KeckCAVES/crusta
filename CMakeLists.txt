@@ -128,5 +128,3 @@ endmacro()
 include(Core)
 include(Crusta)
 include(Construo)
-
-include(Package)
