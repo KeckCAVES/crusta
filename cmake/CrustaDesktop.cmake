@@ -1,11 +1,18 @@
-set(CRUSTA_DESKTOP ${CMAKE_CURRENT_BINARY_DIR}/crustaDesktop)
-
-add_custom_command(
-    OUTPUT ${CRUSTA_DESKTOP}
-    COMMAND echo "#!/bin/sh\\ncrusta -mergeConfig ${CRUSTA_SHARE_PATH}/desktop.cfg \$@" > ${CRUSTA_DESKTOP}
-    COMMAND chmod +x ${CRUSTA_DESKTOP}
+macro(add_desktop_exe NAME)
+  set(OUTPUT ${NAME}-desktop)
+  add_custom_command(
+    OUTPUT ${OUTPUT}
+    COMMAND echo "#!/bin/sh" > ${OUTPUT}
+    COMMAND echo "${BIN_PATH}/${NAME} -mergeConfig ${SHARE_PATH}/mouse.cfg \"\$@\"" >> ${OUTPUT}
+    COMMAND chmod +x ${OUTPUT}
     VERBATIM
-)
+    DEPENDS ${NAME}
+  )
+  add_custom_target(create-${OUTPUT} ALL DEPENDS ${OUTPUT})
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT} DESTINATION ${BIN_PATH})
+endmacro()
 
-add_custom_target(produceCrustaDesktop DEPENDS ${CRUSTA_DESKTOP})
-add_dependencies(crusta produceCrustaDesktop)
+add_desktop_exe(crusta)
+if(CRUSTA_SLICING)
+  add_desktop_exe(crusta-slicing)
+endif()
