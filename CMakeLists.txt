@@ -4,10 +4,10 @@
 #
 
 #
-# Give path to the Vrui.makeinclude makefile fragment
-# (Or, pass to cmake -DVRUI_MAKEINCLUDE=/path/to/Vrui-2.4/share/Vrui.makeinclude)
+# Give path to Vrui, if CMake can't find it automatically.
+# (Or, pass to cmake -DCMAKE_PREFIX_PATH=/path/to/Vrui-2.4)
 #
-#set( VRUI_MAKEINCLUDE $ENV{HOME}/Vrui-2.4/share/Vrui.makeinclude )
+list( APPEND CMAKE_PREFIX_PATH $ENV{HOME}/Vrui-2.4 )
 
 #
 # Set the installation path prefix.
@@ -16,9 +16,8 @@
 #set( CMAKE_INSTALL_PREFIX $ENV{HOME}/Crusta )
 
 #
-# Enable use of slicing tool.
+# Enable creating another executable that has the slicing tool.
 # (Or, pass to cmake -DCRUSTA_SLICING=ON)
-# This has potential performance overhead even if the tool is not in use.
 #
 #set( CRUSTA_SLICING ON )
 
@@ -28,7 +27,7 @@
 # Version 2.8.3 or greater is required for packaging
 cmake_minimum_required(VERSION 2.8.3)
 
-# Add local cmake directory to the module search path (for FindVrui)
+# Add local cmake directory to the module search path
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 
@@ -63,14 +62,27 @@ set(SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share/crusta")
 
 ##-- Setup required external libraries
 
+# Setup pkg-config
 include(FindPkgConfig)
+macro(pkg_search_module_more PREFIX)
+  foreach(NAME ${ARGN})
+    if(NOT(NAME MATCHES "REQUIRED" OR NAME MATCHES "QUIET"))
+      find_path(${NAME}_PKG_CONFIG_DIR ${NAME}.pc PATH_SUFFIXES lib/pkgconfig lib64/pkgconfig)
+      if(${NAME}_PKG_CONFIG_DIR)
+        set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${${NAME}_PKG_CONFIG_DIR}")
+      endif()
+    endif()
+  endforeach()
+  pkg_search_module(${ARGV})
+endmacro()
 
 # Setup GDAL
 find_package(GDAL REQUIRED)
 include_directories(${GDAL_INCLUDE_DIR})
 
 # Setup Vrui
-find_package(Vrui REQUIRED)
+pkg_search_module_more(VRUI REQUIRED Vrui-2.4 Vrui)
+string(REPLACE "-framework;" "-framework " VRUI_LDFLAGS "${VRUI_LDFLAGS}")
 add_definitions(${VRUI_CFLAGS})
 
 # Setup GL
@@ -78,8 +90,9 @@ find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIR})
 
 # Setup GLEW
-pkg_check_modules(GLEW REQUIRED glewmx glew)
+pkg_search_module_more(GLEW REQUIRED glewmx glew)
 add_definitions(${GLEW_CFLAGS})
+
 
 ##-- Setup compile properties
 
@@ -98,7 +111,7 @@ add_definitions(-DCRUSTA_SHARE_PATH="${SHARE_PATH}")
 # Common setup for executables
 macro(add_crusta_exe)
   add_executable(${ARGV})
-  target_link_libraries(${ARGV0} crustacore ${VRUI_LINKFLAGS} ${GDAL_LIBRARY} ${OPENGL_LIBRARY} ${GLEW_LDFLAGS})
+  target_link_libraries(${ARGV0} crustacore ${VRUI_LDFLAGS} ${GDAL_LIBRARY} ${OPENGL_LIBRARY} ${GLEW_LDFLAGS})
   install(TARGETS ${ARGV0} DESTINATION ${BIN_PATH})
 endmacro()
 
@@ -106,9 +119,6 @@ endmacro()
 #-------------------
 # Target specifications
 #-------------------
-
-
-##-- Main Crusta components
 
 include(Core)
 include(Crusta)
