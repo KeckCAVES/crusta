@@ -3,13 +3,13 @@ macro(add_desktop_exe NAME)
   add_custom_command(
     OUTPUT ${OUTPUT}
     COMMAND echo "#!/bin/sh" > ${OUTPUT}
-    COMMAND echo "${BIN_PATH}/${NAME} -mergeConfig ${SHARE_PATH}/mouse.cfg \"\$@\"" >> ${OUTPUT}
+    COMMAND echo "${BIN_PATH}/${NAME} -mergeConfig ${SHARE_PATH}/config/mouse.cfg \"\$@\"" >> ${OUTPUT}
     COMMAND chmod +x ${OUTPUT}
     VERBATIM
     DEPENDS ${NAME}
   )
   add_custom_target(create-${OUTPUT} ALL DEPENDS ${OUTPUT})
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT} DESTINATION ${BIN_PATH})
+  install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT} DESTINATION ${BIN_PATH})
 endmacro()
 
 add_desktop_exe(crusta)
