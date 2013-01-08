@@ -5,9 +5,9 @@
 
 #
 # Give path to Vrui, if CMake can't find it automatically.
-# (Or, pass to cmake -DCMAKE_PREFIX_PATH=/path/to/Vrui-2.4)
+# (Or, pass to cmake -DCMAKE_PREFIX_PATH=/path/to/Vrui-2.6)
 #
-list( APPEND CMAKE_PREFIX_PATH $ENV{HOME}/Vrui-2.4 )
+list( APPEND CMAKE_PREFIX_PATH $ENV{HOME}/Vrui-2.6 )
 
 #
 # Set the installation path prefix.
@@ -81,7 +81,7 @@ find_package(GDAL REQUIRED)
 include_directories(${GDAL_INCLUDE_DIR})
 
 # Setup Vrui
-pkg_search_module_more(VRUI REQUIRED Vrui-2.4 Vrui)
+pkg_search_module_more(VRUI REQUIRED Vrui-2.6 Vrui)
 string(REPLACE "-framework;" "-framework " VRUI_LDFLAGS "${VRUI_LDFLAGS}")
 add_definitions(${VRUI_CFLAGS})
 
