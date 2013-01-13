@@ -13,6 +13,7 @@ init(const std::string& exePath, const std::string& resourcePath)
     if (!resourcePath.empty())
         addPath(resourcePath);
     addPathFromApplication(exePath);
+    addPath(CRUSTA_ETC_PATH);
     addPath(CRUSTA_SHARE_PATH);
 }
 

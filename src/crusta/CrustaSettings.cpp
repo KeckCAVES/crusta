@@ -16,18 +16,21 @@ BEGIN_CRUSTA
 
 
 CrustaSettings::CrustaSettings() :
-    globeName("Sphere_Earth"), globeRadius(6371000.0),
+    // /Crusta/Globe
+    globeName("Sphere_Earth"),
+    globeRadius(6371000.0),
 
+    // /Crusta/Terrain
     terrainDefaultHeight(0.0f),
     terrainDefaultColor(0.5f, 0.5f, 0.5f, 1.0f),
     terrainDefaultLayerfData(0.0f),
-
     terrainAmbientColor(0.4f, 0.4f, 0.4f, 1.0f),
     terrainDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f),
     terrainEmissiveColor(0.0f, 0.0f, 0.0f, 1.0f),
     terrainSpecularColor(0.3f, 0.3f, 0.3f, 1.0f),
     terrainShininess(55.0f),
 
+    // /Crusta/Cache
     cacheMainNodeSize(4096),
     cacheMainGeometrySize(4096),
     cacheMainColorSize(4096),
@@ -38,11 +41,14 @@ CrustaSettings::CrustaSettings() :
     cacheGpuCoverageSize(1024),
     cacheGpuLineDataSize(1024),
 
+    // /Crusta/DataManager
     dataManMaxDataLayers(32),
     dataManMaxFetchRequests(8),
 
+    // /Crusta/ColorMapper
     colorMapTexSize(1024),
 
+    // /Crusta/DecoratedArt
     lineDecorated(true),
     lineSymbolWidth(0.3f),
     lineSymbolLength(0.15f),
@@ -51,8 +57,10 @@ CrustaSettings::CrustaSettings() :
     lineDataStartCoord(0.5f * lineDataCoordStep),
     lineCoverageTexSize(TILE_RESOLUTION>>1),
 
+    // /Crusta/SurfaceProjector
     surfaceProjectorRayIntersect(true),
 
+    // /Crusta/SliceTool
     sliceToolEnable(false)
 {
 }
@@ -66,7 +74,7 @@ loadFromFiles(const Strings& cfgNames)
     try
     {
         std::string cfgFileName = RESOURCELOCATOR.locateFile(
-            "config/crustaSettings.cfg");
+            "crusta.cfg");
         cfgFile.merge(cfgFileName.c_str());
     }
     catch (Misc::File::OpenError e) {
@@ -125,7 +133,6 @@ loadFromFiles(const Strings& cfgNames)
         "defaultColor", terrainDefaultColor);
     terrainDefaultLayerfData = cfgFile.retrieveValue<float>(
         "defaultLayerfData", terrainDefaultLayerfData);
-
     terrainAmbientColor = cfgFile.retrieveValue<Color>(
         "ambientColor", terrainAmbientColor);
     terrainDiffuseColor = cfgFile.retrieveValue<Color>(
@@ -160,6 +167,8 @@ loadFromFiles(const Strings& cfgNames)
 
     //try to extract the data manager settings
     cfgFile.setCurrentSection("/Crusta/DataManager");
+    dataManMaxDataLayers = cfgFile.retrieveValue<int>(
+        "maxDataLayers", dataManMaxDataLayers);
     dataManMaxFetchRequests = cfgFile.retrieveValue<int>(
         "maxFetchRequests", dataManMaxFetchRequests);
 

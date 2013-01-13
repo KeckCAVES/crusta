@@ -826,7 +826,7 @@ produceMapSymbolSubMenu(GLMotif::Menu* mainMenu)
 
 //- parse the symbols definition file to create the symbols lists
     std::string cfgFileName =
-        RESOURCELOCATOR.locateFile("config/mapSymbols.cfg");
+        RESOURCELOCATOR.locateFile("map/mapSymbols.cfg");
     std::ifstream symbolsConfig(cfgFileName.c_str());
     if (!symbolsConfig.good())
         return;

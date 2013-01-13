@@ -77,13 +77,25 @@ set(CRUSTA_SOURCES
 
 add_crusta_exe(crusta ${CRUSTA_SOURCES})
 
-install(FILES share/mapSymbolAtlas.tga
-        DESTINATION ${SHARE_PATH}/images)
+install(DIRECTORY share/ DESTINATION ${SHARE_PATH})
+install(DIRECTORY etc/ DESTINATION ${ETC_PATH})
 
-install(FILES share/mapSymbols.cfg
-              share/mouse.cfg
-              share/trackpad.cfg
-        DESTINATION ${SHARE_PATH}/config)
+macro(add_baked_args_exe NAME)
+  set(OUTPUT ${NAME})
+  add_custom_command(
+    OUTPUT ${OUTPUT}
+    COMMAND echo "#!/bin/sh" > ${OUTPUT}
+    COMMAND echo "${BIN_PATH}/crusta" ${ARGN} \"\$@\" >> ${OUTPUT}
+    COMMAND chmod +x ${OUTPUT}
+    VERBATIM
+    DEPENDS crusta
+  )
+  add_custom_target(create-${OUTPUT} ALL DEPENDS ${OUTPUT})
+  install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT} DESTINATION ${BIN_PATH})
+endmacro()
 
-install(FILES share/decoratedRenderer.fp
-        DESTINATION ${SHARE_PATH}/shaders)
+set(desktopargs -mergeConfig ${SHARE_PATH}/vrui/mouse.cfg)
+set(slicetoolargs -settings ${SHARE_PATH}/etc/enableSliceTool.cfg)
+add_baked_args_exe(crusta-desktop ${desktopargs})
+add_baked_args_exe(crusta-slicing ${slicetoolargs})
+add_baked_args_exe(crusta-slicing-desktop ${slicetoolargs} ${desktopargs})

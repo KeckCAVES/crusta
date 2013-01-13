@@ -115,7 +115,7 @@ CrustaGlData() :
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     std::string imgFileName = RESOURCELOCATOR.locateFile(
-        "images/mapSymbolAtlas.tga");
+        "map/mapSymbolAtlas.tga");
     try
     {
         Misc::File imgFile(imgFileName.c_str(), "r");

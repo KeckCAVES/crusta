@@ -47,7 +47,13 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 
 set(BIN_PATH "${CMAKE_INSTALL_PREFIX}/bin")
-set(SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share/crusta")
+if(CMAKE_INSTALL_PREFIX STREQUAL "/usr")
+  set(ETC_PATH "/etc/crusta")
+  set(SHARE_PATH "/usr/share/crusta")
+else()
+  set(ETC_PATH "${CMAKE_INSTALL_PREFIX}/etc")
+  set(SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share")
+endif()
 
 
 ##-- Setup required external libraries
@@ -95,7 +101,8 @@ add_definitions(-DCRUSTA_VERSION=\"${PROJECT_VERSION}\")
 # Show all warnings, don't complain about variadic macros
 set_property(GLOBAL APPEND PROPERTY CMAKE_CXX_FLAGS "-Wall")
 
-# Report share path to source files
+# Report resource paths to source files
+add_definitions(-DCRUSTA_ETC_PATH="${ETC_PATH}")
 add_definitions(-DCRUSTA_SHARE_PATH="${SHARE_PATH}")
 
 # Common setup for executables
@@ -113,4 +120,3 @@ endmacro()
 include(Core)
 include(Crusta)
 include(Construo)
-include(CrustaDesktop)
