@@ -2,7 +2,7 @@
 #define _Crusta_SurfaceProbeTool_H_
 
 
-#include <GL/VruiGlew.h>
+#include <crusta/GL/VruiGlew.h>
 
 #include <Misc/CallbackData.h>
 #include <Misc/CallbackList.h>

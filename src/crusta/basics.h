@@ -1,7 +1,7 @@
 #ifndef _basics_H_
 #define _basics_H_
 
-#include <GL/VruiGlew.h> //must be included before gl.h
+#include <crusta/GL/VruiGlew.h> //must be included before gl.h
 
 #include <cstdlib>
 #include <cstdio>

@@ -1,15 +1,15 @@
 set(CRUSTACORE_SOURCES
-    src/GL/GlProgram.h
-    src/GL/VruiGlew.h
-    src/GLMotif/ColorHexagon.h
-    src/GLMotif/ColorMapEditor.h
-    src/GLMotif/ColorMapInOut.h
-    src/GLMotif/ColorPicker.h
-    src/GLMotif/ColorPickerWindow.h
-    src/GLMotif/PaletteEditor.h
-    src/GLMotif/RangeEditor.h
-    src/GLMotif/RelativeSlider.h
-    src/Misc/ColorMap.h
+    src/crusta/GL/GlProgram.h
+    src/crusta/GL/VruiGlew.h
+    src/crusta/GLMotif/ColorHexagon.h
+    src/crusta/GLMotif/ColorMapEditor.h
+    src/crusta/GLMotif/ColorMapInOut.h
+    src/crusta/GLMotif/ColorPicker.h
+    src/crusta/GLMotif/ColorPickerWindow.h
+    src/crusta/GLMotif/PaletteEditor.h
+    src/crusta/GLMotif/RangeEditor.h
+    src/crusta/GLMotif/RelativeSlider.h
+    src/crusta/Misc/ColorMap.h
 
     src/crusta/basics.h
     src/crusta/Cache.h
@@ -58,17 +58,17 @@ set(CRUSTACORE_SOURCES
     src/crusta/VisibilityEvaluator.h
     src/crusta/Visualizer.h
 
-    src/GL/GlProgram.cpp
-    src/GL/VruiGlew.cpp
-    src/GLMotif/ColorHexagon.cpp
-    src/GLMotif/ColorMapEditor.cpp
-    src/GLMotif/ColorMapInOut.cpp
-    src/GLMotif/ColorPicker.cpp
-    src/GLMotif/ColorPickerWindow.cpp
-    src/GLMotif/PaletteEditor.cpp
-    src/GLMotif/RangeEditor.cpp
-    src/GLMotif/RelativeSlider.cpp
-    src/Misc/ColorMap.cpp
+    src/crusta/GL/GlProgram.cpp
+    src/crusta/GL/VruiGlew.cpp
+    src/crusta/GLMotif/ColorHexagon.cpp
+    src/crusta/GLMotif/ColorMapEditor.cpp
+    src/crusta/GLMotif/ColorMapInOut.cpp
+    src/crusta/GLMotif/ColorPicker.cpp
+    src/crusta/GLMotif/ColorPickerWindow.cpp
+    src/crusta/GLMotif/PaletteEditor.cpp
+    src/crusta/GLMotif/RangeEditor.cpp
+    src/crusta/GLMotif/RelativeSlider.cpp
+    src/crusta/Misc/ColorMap.cpp
 
     src/crusta/CrustaSettings.cpp
     src/crusta/CrustaVisualizer.cpp

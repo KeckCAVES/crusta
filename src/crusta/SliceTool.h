@@ -2,13 +2,13 @@
 #define _Crusta_SliceTool_H_
 
 
-#include <GL/VruiGlew.h>
+#include <crusta/GL/VruiGlew.h>
 
 #include <Misc/CallbackData.h>
 #include <Misc/CallbackList.h>
 #include <GLMotif/Button.h>
 #include <GLMotif/RadioBox.h>
-#include <GLMotif/RelativeSlider.h>
+#include <crusta/GLMotif/RelativeSlider.h>
 #include <GLMotif/ToggleButton.h>
 #include <GLMotif/TextField.h>
 #include <Vrui/GenericToolFactory.h>

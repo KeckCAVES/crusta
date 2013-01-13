@@ -1,4 +1,4 @@
-#include <GLMotif/ColorMapEditor.h>
+#include <crusta/GLMotif/ColorMapEditor.h>
 
 
 #include <GL/GLColorTemplates.h>

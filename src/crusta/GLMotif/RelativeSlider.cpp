@@ -1,4 +1,4 @@
-#include <GLMotif/RelativeSlider.h>
+#include <crusta/GLMotif/RelativeSlider.h>
 
 
 #include <GLMotif/Event.h>

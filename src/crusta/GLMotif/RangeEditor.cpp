@@ -1,4 +1,4 @@
-#include <GLMotif/RangeEditor.h>
+#include <crusta/GLMotif/RangeEditor.h>
 
 
 #include <string>

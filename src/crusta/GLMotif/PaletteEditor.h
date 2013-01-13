@@ -6,10 +6,10 @@
 #include <GLMotif/FileSelectionDialog.h>
 #include <GLMotif/PopupWindow.h>
 
-#include <GLMotif/ColorMapEditor.h>
-#include <GLMotif/ColorMapInOut.h>
-#include <GLMotif/ColorPicker.h>
-#include <GLMotif/RangeEditor.h>
+#include <crusta/GLMotif/ColorMapEditor.h>
+#include <crusta/GLMotif/ColorMapInOut.h>
+#include <crusta/GLMotif/ColorPicker.h>
+#include <crusta/GLMotif/RangeEditor.h>
 
 
 namespace Misc {

@@ -1,7 +1,7 @@
 #ifndef _DataManager_H_
 #define _DataManager_H_
 
-#include <GL/VruiGlew.h> //must be included before gl.h
+#include <crusta/GL/VruiGlew.h> //must be included before gl.h
 #include <GL/GLContextData.h>
 #include <GL/GLObject.h>
 #include <Threads/Cond.h>

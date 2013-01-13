@@ -1,4 +1,4 @@
-#include <GLMotif/ColorHexagon.h>
+#include <crusta/GLMotif/ColorHexagon.h>
 
 #include <GL/GLColorTemplates.h>
 #include <GL/GLVertexTemplates.h>

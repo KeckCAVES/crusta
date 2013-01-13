@@ -4,8 +4,8 @@
 
 #include <Misc/CallbackData.h>
 #include <Misc/CallbackList.h>
-#include <Misc/ColorMap.h>
-#include <GLMotif/RelativeSlider.h>
+#include <crusta/Misc/ColorMap.h>
+#include <crusta/GLMotif/RelativeSlider.h>
 #include <GLMotif/RowColumn.h>
 
 

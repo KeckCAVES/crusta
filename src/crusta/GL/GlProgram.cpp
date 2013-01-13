@@ -1,4 +1,4 @@
-#include <GL/GlProgram.h>
+#include <crusta/GL/GlProgram.h>
 
 #include <fstream>
 #include <stdexcept>

@@ -7,7 +7,7 @@
 #include <Misc/CallbackList.h>
 #include <GL/gl.h>
 #include <GL/GLColor.h>
-#include <GLMotif/ColorHexagon.h>
+#include <crusta/GLMotif/ColorHexagon.h>
 #include <GLMotif/RowColumn.h>
 #include <GLMotif/Slider.h>
 #include <GLMotif/Types.h>

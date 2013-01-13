@@ -4,7 +4,7 @@
 
 #include <Misc/CallbackData.h>
 #include <Misc/CallbackList.h>
-#include <Misc/ColorMap.h>
+#include <crusta/Misc/ColorMap.h>
 #include <GLMotif/Types.h>
 #include <GLMotif/Widget.h>
 

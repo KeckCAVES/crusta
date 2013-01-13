@@ -3,7 +3,7 @@
 
 #include <map>
 
-#include <GL/VruiGlew.h> //must be included before gl.h
+#include <crusta/GL/VruiGlew.h> //must be included before gl.h
 #include <GL/GLVertex.h>
 
 #include <crusta/DemHeight.h>

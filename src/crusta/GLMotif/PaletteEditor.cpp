@@ -1,4 +1,4 @@
-#include <GLMotif/PaletteEditor.h>
+#include <crusta/GLMotif/PaletteEditor.h>
 
 
 #include <cstdio>

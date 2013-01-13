@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include <GL/VruiGlew.h> //must be included instead of gl.h
+#include <crusta/GL/VruiGlew.h> //must be included instead of gl.h
 #include <Misc/ThrowStdErr.h>
 
 #include <crusta/basics.h>

@@ -1,4 +1,4 @@
-#include <GL/VruiGlew.h> //must be included before gl.h
+#include <crusta/GL/VruiGlew.h> //must be included before gl.h
 
 #include <crusta/map/MapManager.h>
 

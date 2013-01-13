@@ -1,7 +1,7 @@
 #ifndef _ColorPickerWindow_H_
 
 
-#include <GLMotif/ColorPicker.h>
+#include <crusta/GLMotif/ColorPicker.h>
 #include <GLMotif/PopupWindow.h>
 
 

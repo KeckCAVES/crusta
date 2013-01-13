@@ -1,4 +1,4 @@
-#include <GL/VruiGlew.h>
+#include <crusta/GL/VruiGlew.h>
 
 
 #include <GL/GLContextData.h>

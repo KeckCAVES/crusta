@@ -4,10 +4,10 @@
 
 #include <vector>
 
-#include <GL/VruiGlew.h> //must include glew before any GL
+#include <crusta/GL/VruiGlew.h> //must include glew before any GL
 #include <GL/GLColorMap.h>
 #include <GL/GLObject.h>
-#include <Misc/ColorMap.h>
+#include <crusta/Misc/ColorMap.h>
 
 #include <crusta/QuadCache.h>
 #include <crusta/shader/ShaderColorMapper.h>

@@ -3,10 +3,10 @@
 
 
 #include <GLMotif/Button.h>
-#include <GLMotif/ColorMapEditor.h>
-#include <GLMotif/ColorPickerWindow.h>
+#include <crusta/GLMotif/ColorMapEditor.h>
+#include <crusta/GLMotif/ColorPickerWindow.h>
 #include <GLMotif/FileSelectionDialog.h>
-#include <GLMotif/RangeEditor.h>
+#include <crusta/GLMotif/RangeEditor.h>
 #include <GLMotif/Slider.h>
 #include <GLMotif/ToggleButton.h>
 

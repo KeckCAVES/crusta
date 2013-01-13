@@ -24,7 +24,7 @@
 
 #include <vector>
 
-#include <GL/VruiGlew.h> //must be included before gl.h
+#include <crusta/GL/VruiGlew.h> //must be included before gl.h
 
 #include <GL/GLContextData.h>
 #include <GLMotif/Button.h>

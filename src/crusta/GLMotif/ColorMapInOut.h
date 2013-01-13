@@ -3,7 +3,7 @@
 
 
 #include <GLMotif/Button.h>
-#include <Misc/ColorMap.h>
+#include <crusta/Misc/ColorMap.h>
 
 
 namespace GLMotif {

@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include <GL/VruiGlew.h>
+#include <crusta/GL/VruiGlew.h>
 #include <GL/GLObject.h>
 #include <Threads/Mutex.h>
 

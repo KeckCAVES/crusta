@@ -1,4 +1,4 @@
-#include <GLMotif/ColorPicker.h>
+#include <crusta/GLMotif/ColorPicker.h>
 
 #include <cstring>
 #include <iostream>
