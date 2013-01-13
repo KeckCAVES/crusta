@@ -1,4 +1,15 @@
 set(CRUSTA_SOURCES
+    src/crusta/CrustaApp.h
+    src/crusta/ColorMapper.h
+    src/crusta/Crusta.h
+    src/crusta/DataManager.h
+    src/crusta/QuadCache.h
+    src/crusta/QuadNodeDataBundles.h
+    src/crusta/QuadTerrain.h
+    src/crusta/StatsManager.h
+    src/crusta/SurfaceApproximation.h
+    src/crusta/map/MapManager.h
+    src/crusta/map/PolylineRenderer.h
     src/crusta/QuadNodeData.h
     src/crusta/QuadCache.hpp
     src/crusta/LightingShader.h
@@ -21,39 +32,7 @@ set(CRUSTA_SOURCES
     src/crusta/shader/ShaderTopographySource.h
     src/crusta/DebugTool.h
     src/crusta/LodEvaluator.h
-    
-    src/crusta/ViewLod.cpp
-    src/crusta/FrustumVisibility.cpp
-    src/crusta/FocusViewEvaluator.cpp
-    src/crusta/shader/ShaderAtlasDataSource.cpp
-    src/crusta/shader/ShaderColorMixer.cpp
-    src/crusta/shader/ShaderColorMultiplier.cpp
-    src/crusta/shader/ShaderColorReader.cpp
-    src/crusta/shader/ShaderDataSource.cpp
-    src/crusta/shader/ShaderDecoratedLineRenderer.cpp
-    src/crusta/shader/ShaderFileFragment.cpp
-    src/crusta/shader/ShaderFragment.cpp
-    src/crusta/shader/ShaderMultiDataSource.cpp
-    src/crusta/shader/ShaderTopographySource.cpp
-    src/crusta/LodEvaluator.cpp
-    src/crusta/StatsManager.cpp
-    src/crusta/SurfacePoint.cpp
-)
-
-# Sources that have different code paths depending on
-# whether the slicing tool is enabled or not.
-set(CRUSTA_HYBRID_SOURCES
-    src/crusta/CrustaApp.h
-    src/crusta/ColorMapper.h
-    src/crusta/Crusta.h
-    src/crusta/DataManager.h
-    src/crusta/QuadCache.h
-    src/crusta/QuadNodeDataBundles.h
-    src/crusta/QuadTerrain.h
-    src/crusta/StatsManager.h
-    src/crusta/SurfaceApproximation.h
-    src/crusta/map/MapManager.h
-    src/crusta/map/PolylineRenderer.h
+    src/crusta/SliceTool.h
     
     src/crusta/ColorMapper.cpp
     src/crusta/Crusta.cpp
@@ -77,25 +56,26 @@ set(CRUSTA_HYBRID_SOURCES
     src/crusta/map/PolylineTool.cpp
     src/crusta/map/Shape.cpp
     src/crusta/shader/ShaderColorMapper.cpp
-)
-
-# Sources applicable only to the slicing tool.
-set(CRUSTA_SLICING_SOURCES
-    src/crusta/SliceTool.h
+    src/crusta/ViewLod.cpp
+    src/crusta/FrustumVisibility.cpp
+    src/crusta/FocusViewEvaluator.cpp
+    src/crusta/shader/ShaderAtlasDataSource.cpp
+    src/crusta/shader/ShaderColorMixer.cpp
+    src/crusta/shader/ShaderColorMultiplier.cpp
+    src/crusta/shader/ShaderColorReader.cpp
+    src/crusta/shader/ShaderDataSource.cpp
+    src/crusta/shader/ShaderDecoratedLineRenderer.cpp
+    src/crusta/shader/ShaderFileFragment.cpp
+    src/crusta/shader/ShaderFragment.cpp
+    src/crusta/shader/ShaderMultiDataSource.cpp
+    src/crusta/shader/ShaderTopographySource.cpp
+    src/crusta/LodEvaluator.cpp
+    src/crusta/StatsManager.cpp
+    src/crusta/SurfacePoint.cpp
     src/crusta/SliceTool.cpp
 )
 
-add_library(crustacommon STATIC ${CRUSTA_SOURCES})
-
-add_crusta_exe(crusta ${CRUSTA_HYBRID_SOURCES})
-target_link_libraries(crusta crustacommon)
-
-if(CRUSTA_SLICING)
-    message(STATUS "Enabled building crusta-slicing")
-    add_crusta_exe(crusta-slicing ${CRUSTA_HYBRID_SOURCES} ${CRUSTA_SLICING_SOURCES})
-    set_property(TARGET crusta-slicing APPEND PROPERTY COMPILE_DEFINITIONS CRUSTA_SLICING)
-    target_link_libraries(crusta-slicing crustacommon)
-endif()
+add_crusta_exe(crusta ${CRUSTA_SOURCES})
 
 install(FILES share/mapSymbolAtlas.tga
         DESTINATION ${SHARE_PATH}/images)

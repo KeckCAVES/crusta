@@ -24,9 +24,7 @@
 #include <crusta/Section.h>
 #include <crusta/Sphere.h>
 #include <crusta/SurfaceProbeTool.h>
-#ifdef CRUSTA_SLICING
 #include <crusta/SliceTool.h>
-#endif /* CRUSTA_SLICING */
 #include <crusta/SurfaceTool.h>
 #include <crusta/Tool.h>
 #include <crusta/Triangle.h>
@@ -173,10 +171,11 @@ init(const std::string& exePath, const Strings& settingsFiles,
     SurfaceTool::init();
     //initialize the surface probing tool
     SurfaceProbeTool::init();
-#ifdef CRUSTA_SLICING
-    //initialize the slicing tool
-    SliceTool::init();
-#endif /* CRUSTA_SLICING */
+
+    if (SETTINGS->sliceToolEnable) {
+        //initialize the slicing tool
+        SliceTool::init();
+    }
 
     /* start the frame counting at 2 because initialization code uses unsigneds
     that are initialized with 0. Thus if crustaFrameNumber starts at 0, the

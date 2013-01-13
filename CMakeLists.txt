@@ -15,12 +15,6 @@ list( APPEND CMAKE_PREFIX_PATH $ENV{HOME}/Vrui-2.6 )
 #
 #set( CMAKE_INSTALL_PREFIX $ENV{HOME}/Crusta )
 
-#
-# Enable creating another executable that has the slicing tool.
-# (Or, pass to cmake -DCRUSTA_SLICING=ON)
-#
-#set( CRUSTA_SLICING ON )
-
 
 #####
 
@@ -51,10 +45,6 @@ set(PROJECT_VERSION "${PROJECT_MAJOR_VERSION}.${PROJECT_MINOR_VERSION}.${PROJECT
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
-
-# By default, disable building of crusta with the slicing tool
-set( CRUSTA_SLICING OFF
-     CACHE BOOL "Enable the slicing tool. This will create another executable called crusta-slicing that has the slicing tool available, at the possible cost of speed and other features.")
 
 set(BIN_PATH "${CMAKE_INSTALL_PREFIX}/bin")
 set(SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share/crusta")

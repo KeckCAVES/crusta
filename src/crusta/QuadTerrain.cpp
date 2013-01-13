@@ -23,9 +23,7 @@
 #include <crusta/Triangle.h>
 #include <crusta/Section.h>
 #include <crusta/Sphere.h>
-#ifdef CRUSTA_SLICING
 #include <crusta/SliceTool.h>
-#endif /* CRUSTA_SLICING */
 
 #define DO_RELATIVE_LEAF_TRIANGLE_INTERSECTIONS 1
 
@@ -383,7 +381,6 @@ prepareDisplay(GLContextData& contextData, SurfaceApproximation& surface)
     DATAMANAGER->request(dataRequests);
 }
 
-#ifdef CRUSTA_SLICING
 void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* crustaGl, const Vector3 &center) {
     SliceTool::SliceParameters params = SliceTool::getParameters();
 
@@ -458,8 +455,10 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
     //vec3 dipDir = (pos ? 1 : -1) * normalize(cross(slopePlanes[pIdx].xyz, strikeDir));\n
 
 
-    crustaGl->terrainShader.setSlicePlanes(params.faultPlanes.size(), &(strikeDirections[0]), &(dipDirections[0]), &(slopePlanes[0]), &(separatingPlanes[0]), &(slopePlanes[0]),
-                                           params.strikeAmount, params.dipAmount, &(planeCenters[0]), params.faultCenter - center, params.falloffFactor, params.coloring);
+    crustaGl->terrainShader.setSlicePlanes(params.faultPlanes.size(), &(strikeDirections[0]), &(dipDirections[0]),
+                                           &(slopePlanes[0]), &(separatingPlanes[0]), &(slopePlanes[0]),
+                                           params.strikeAmount, params.dipAmount, &(planeCenters[0]),
+                                           params.faultCenter - center, params.falloffFactor, params.coloring);
     //crustaGl->terrainShader.disable();
 
     // render slicing plane
@@ -512,7 +511,6 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
 
   //  crustaGl->terrainShader.enable();
 }
-#endif /* CRUSTA_SLICING */
 
 void QuadTerrain::
 display(GLContextData& contextData, CrustaGlData* crustaGl,
@@ -588,10 +586,7 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
     DataManager::Batch batch;
     DATAMANAGER->startGpuBatch(contextData, surface, batch);
 
-#ifdef CRUSTA_SLICING
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glLineWidth(1.0);
-#endif /* CRUSTA_SLICING */
+    // glLineWidth(1.0); // Needed for SliceTool?
 
     while (!batch.empty())
     {
@@ -605,171 +600,165 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         //grab the next batch
         DATAMANAGER->nextGpuBatch(contextData, surface, batch);
     }
+    
+    if (SETTINGS->sliceToolEnable)
+    {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-#ifdef CRUSTA_SLICING
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        crustaGl->terrainShader.disable();
 
+        SliceTool::SliceParameters params = SliceTool::getParameters();
 
+        std::vector<float> slicePlanes;
+        std::vector<Vector3> shiftVecs;
+        std::vector<Vector3> planeCenters;
 
-    crustaGl->terrainShader.disable();
+        /*
+        glBegin(GL_TRIANGLES);
+        glColor3f(0.6,0.6,1.0); // same blue color as in shader
+        // fill out corners at control points (with tris to centers)
+        if (params.controlPoints.size() > 1) {
+            for (size_t i=1; i < params.controlPoints.size()-1; ++i) {
+                Vector3 a = Vector3(params.controlPoints[i]);
+                Vector3 b = params.slopePlanes[i].getPlaneCenter();
+                Vector3 c = params.slopePlanes[i-1].getPlaneCenter();
 
-    SliceTool::SliceParameters params = SliceTool::getParameters();
+                glVertex3f(a[0], a[1], a[2]);
+                glVertex3f(b[0], b[1], b[2]);
+                glVertex3f(c[0], c[1], c[2]);
 
-    std::vector<float> slicePlanes;
-    std::vector<Vector3> shiftVecs;
-    std::vector<Vector3> planeCenters;
-
-
-
-
-    /*
-    glBegin(GL_TRIANGLES);
-    glColor3f(0.6,0.6,1.0); // same blue color as in shader
-    // fill out corners at control points (with tris to centers)
-
-    if (params.controlPoints.size() > 1) {
-        for (size_t i=1; i < params.controlPoints.size()-1; ++i) {
-            Vector3 a = Vector3(params.controlPoints[i]);
-            Vector3 b = params.slopePlanes[i].getPlaneCenter();
-            Vector3 c = params.slopePlanes[i-1].getPlaneCenter();
-
-            glVertex3f(a[0], a[1], a[2]);
-            glVertex3f(b[0], b[1], b[2]);
-            glVertex3f(c[0], c[1], c[2]);
-
+            }
         }
-    }
-    glEnd();
-*/
-
-    // render displacement approx for lod adaption
-    /*
-    if (params.controlPoints.size() >= 1) {
-        glColor3f(1,0,1);
-        glLineWidth(5.0);
-        glBegin(GL_LINES);
-        Vector3 p = Vector3(params.controlPoints[0]);
-        glVertex3f(p[0], p[1], p[2]);
-        p += params.getLinearTranslation();
-        glVertex3f(p[0], p[1], p[2]);
-
         glEnd();
-    }
-    */
-    /*
-    for (size_t i=0; i < params.faultPlanes.size(); ++i) {
-        const SliceTool::Plane &p = params.faultPlanes[i];
+        */
 
-        Vector3 c1(0.5 * (p.startPoint + p.endPoint));
-        Vector3 c2(c1 + 5e4 * p.normal);
+        // render displacement approx for lod adaption
+        /*
+        if (params.controlPoints.size() >= 1) {
+            glColor3f(1,0,1);
+            glLineWidth(5.0);
+            glBegin(GL_LINES);
+            Vector3 p = Vector3(params.controlPoints[0]);
+            glVertex3f(p[0], p[1], p[2]);
+            p += params.getLinearTranslation();
+            glVertex3f(p[0], p[1], p[2]);
 
-
-        glLineWidth(5.0);
-        glBegin(GL_LINES);
-        // line segment
-        glColor3f(0,0,1);
-        glVertex3f(p.startPoint[0], p.startPoint[1], p.startPoint[2]);
-        glVertex3f(p.endPoint[0], p.endPoint[1], p.endPoint[2]);
-        // normal
-        glColor3f(0,1,1);
-        glVertex3f(c1[0], c1[1], c1[2]);
-        glVertex3f(c2[0], c2[1], c2[2]);
-        glEnd();
-    }
-*/
-
-
-    /*
-    for (size_t i=0; i < params.separatingPlanes.size(); ++i) {
-        const SliceTool::Plane &p = params.separatingPlanes[i];
-
-        Vector3 c1(0.5 * (p.startPoint + p.endPoint));
-        Vector3 c2(c1 + 5e4 * p.normal);
-
-
-        glLineWidth(5.0);
-        glBegin(GL_LINES);
-        // line segment
-        glColor3f(1,0,1);
-        glVertex3f(p.startPoint[0], p.startPoint[1], p.startPoint[2]);
-        glVertex3f(p.endPoint[0], p.endPoint[1], p.endPoint[2]);
-        // normal
-        glColor3f(1,1,0);
-        glVertex3f(c1[0], c1[1], c1[2]);
-        glVertex3f(c2[0], c2[1], c2[2]);
-        glEnd();
-    }
-    */
-    // great circle test
-    /*
-    if (params.faultPlanes.size() > 1) {
-        const SliceTool::Plane &p = params.faultPlanes[0];
-
-        glLineWidth(5.0);
-        glColor3f(1,1,0);
-
-        glBegin(GL_LINE_STRIP);
-        // line segment
-        Vector3 A = p.startPoint;
-        Vector3 B = p.endPoint;
-        A.normalize();
-        B.normalize();
-
-        Vector3 rotAxis = B - A;
-        rotAxis.normalize();
-
-        // normal vector of plane containing segment and planet center
-        Vector3 n = cross(Vector3(params.controlPoints[0]), Vector3(params.controlPoints[1]));
-        n.normalize();
-
-        // the point we want to find the great arc for
-        Vector3 p1 = Vector3(params.controlPoints[2]);
-
-        // find the great arc as the plane which contains the planet center, p1 and a point offset from the center parallel to the segment dir
-        Vector3 newN = cross(p1, Vector3(params.controlPoints[1]) - Vector3(params.controlPoints[0]));
-        newN.normalize();
-
-        // determine the angle of rotation between the two great arcs (the angle between the plane normals)
-        double angle = acos(n * newN);
-
-
-        Vector3 p2 = p1 - (n * p1) * p1 / (p1.mag() * p1.mag());
-
-
-        glVertex3f(p1[0], p1[1], p1[2]);
-        glVertex3f(p2[0], p2[1], p2[2]);
-        p1.normalize();
-        p2.normalize();
-       // double angle = acos(p1 * p2);
-
-        double omega = acos(A * B);
-        glEnd();
-         glBegin(GL_LINE_STRIP);
-        for (size_t i=0; i < 64; ++i) {
-            double t = i / 63.0;
-            Vector3 pt = (1.0 / sin(omega)) * (sin((1-t)*omega) * p.startPoint + sin(t * omega) * p.endPoint);
-            pt = Vrui::Rotation::rotateAxis(rotAxis, -angle).transform(pt);
-            glVertex3f(pt[0], pt[1], pt[2]);
+            glEnd();
         }
+        */
+        /*
+        for (size_t i=0; i < params.faultPlanes.size(); ++i) {
+            const SliceTool::Plane &p = params.faultPlanes[i];
 
-        glEnd();
-
-        glColor3f(1,0,0);
-
-        Vector3 isectVec = cross(newN, -params.separatingPlanes[1].normal);
-        isectVec.normalize();
-        isectVec *= 1e8;
+            Vector3 c1(0.5 * (p.startPoint + p.endPoint));
+            Vector3 c2(c1 + 5e4 * p.normal);
 
 
-        //glBegin(GL_LINES);
-       // glVertex3f(0,0,0);
-        //glVertex3f(isectVec[0], isectVec[1], isectVec[2]);
-        //glEnd();
+            glLineWidth(5.0);
+            glBegin(GL_LINES);
+            // line segment
+            glColor3f(0,0,1);
+            glVertex3f(p.startPoint[0], p.startPoint[1], p.startPoint[2]);
+            glVertex3f(p.endPoint[0], p.endPoint[1], p.endPoint[2]);
+            // normal
+            glColor3f(0,1,1);
+            glVertex3f(c1[0], c1[1], c1[2]);
+            glVertex3f(c2[0], c2[1], c2[2]);
+            glEnd();
+        }
+        */
 
-        // float sepAlpha = acos(dot(normalize(p.xyz + center), rotPlaneSepPlaneISect));
+        /*
+        for (size_t i=0; i < params.separatingPlanes.size(); ++i) {
+            const SliceTool::Plane &p = params.separatingPlanes[i];
+
+            Vector3 c1(0.5 * (p.startPoint + p.endPoint));
+            Vector3 c2(c1 + 5e4 * p.normal);
+
+            glLineWidth(5.0);
+            glBegin(GL_LINES);
+            // line segment
+            glColor3f(1,0,1);
+            glVertex3f(p.startPoint[0], p.startPoint[1], p.startPoint[2]);
+            glVertex3f(p.endPoint[0], p.endPoint[1], p.endPoint[2]);
+            // normal
+            glColor3f(1,1,0);
+            glVertex3f(c1[0], c1[1], c1[2]);
+            glVertex3f(c2[0], c2[1], c2[2]);
+            glEnd();
+        }
+        */
+
+        // great circle test
+        /*
+        if (params.faultPlanes.size() > 1) {
+            const SliceTool::Plane &p = params.faultPlanes[0];
+
+            glLineWidth(5.0);
+            glColor3f(1,1,0);
+
+            glBegin(GL_LINE_STRIP);
+            // line segment
+            Vector3 A = p.startPoint;
+            Vector3 B = p.endPoint;
+            A.normalize();
+            B.normalize();
+
+            Vector3 rotAxis = B - A;
+            rotAxis.normalize();
+
+            // normal vector of plane containing segment and planet center
+            Vector3 n = cross(Vector3(params.controlPoints[0]), Vector3(params.controlPoints[1]));
+            n.normalize();
+
+            // the point we want to find the great arc for
+            Vector3 p1 = Vector3(params.controlPoints[2]);
+
+            // find the great arc as the plane which contains the planet center, p1 and a point offset from the center parallel to the segment dir
+            Vector3 newN = cross(p1, Vector3(params.controlPoints[1]) - Vector3(params.controlPoints[0]));
+            newN.normalize();
+
+            // determine the angle of rotation between the two great arcs (the angle between the plane normals)
+            double angle = acos(n * newN);
+
+
+            Vector3 p2 = p1 - (n * p1) * p1 / (p1.mag() * p1.mag());
+
+
+            glVertex3f(p1[0], p1[1], p1[2]);
+            glVertex3f(p2[0], p2[1], p2[2]);
+            p1.normalize();
+            p2.normalize();
+           // double angle = acos(p1 * p2);
+
+            double omega = acos(A * B);
+            glEnd();
+             glBegin(GL_LINE_STRIP);
+            for (size_t i=0; i < 64; ++i) {
+                double t = i / 63.0;
+                Vector3 pt = (1.0 / sin(omega)) * (sin((1-t)*omega) * p.startPoint + sin(t * omega) * p.endPoint);
+                pt = Vrui::Rotation::rotateAxis(rotAxis, -angle).transform(pt);
+                glVertex3f(pt[0], pt[1], pt[2]);
+            }
+
+            glEnd();
+
+            glColor3f(1,0,0);
+
+            Vector3 isectVec = cross(newN, -params.separatingPlanes[1].normal);
+            isectVec.normalize();
+            isectVec *= 1e8;
+
+
+            //glBegin(GL_LINES);
+           // glVertex3f(0,0,0);
+            //glVertex3f(isectVec[0], isectVec[1], isectVec[2]);
+            //glEnd();
+
+            // float sepAlpha = acos(dot(normalize(p.xyz + center), rotPlaneSepPlaneISect));
+        }
+        */
     }
-*/
-#endif /* CRUSTA_SLICING */
 
     //restore the GL transform as it was before
     glPopMatrix();
@@ -1345,10 +1334,10 @@ drawNode(GLContextData& contextData, CrustaGlData* crustaGl,
 
 //    glPolygonMode(GL_FRONT, GL_LINE);
 
-#ifdef CRUSTA_SLICING
-    // setup uniforms
-    initSlicingPlane(contextData, crustaGl, centroidTranslation);
-#endif /* CRUSTA_SLICING */
+    if (SETTINGS->sliceToolEnable) {
+        // setup uniforms
+        initSlicingPlane(contextData, crustaGl, centroidTranslation);
+    }
 
     glDrawRangeElements(GL_TRIANGLE_STRIP, 0,
                         (TILE_RESOLUTION*TILE_RESOLUTION) - 1,

@@ -13,6 +13,3 @@ macro(add_desktop_exe NAME)
 endmacro()
 
 add_desktop_exe(crusta)
-if(CRUSTA_SLICING)
-  add_desktop_exe(crusta-slicing)
-endif()

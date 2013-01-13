@@ -78,6 +78,10 @@ public:
     ///\{ surface projector settings
     bool surfaceProjectorRayIntersect;
     ///\}
+
+    ///\{ Slice tool settings
+    bool sliceToolEnable;
+    ///\}
 };
 
 

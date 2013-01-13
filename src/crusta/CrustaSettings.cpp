@@ -51,7 +51,9 @@ CrustaSettings::CrustaSettings() :
     lineDataStartCoord(0.5f * lineDataCoordStep),
     lineCoverageTexSize(TILE_RESOLUTION>>1),
 
-    surfaceProjectorRayIntersect(true)
+    surfaceProjectorRayIntersect(true),
+
+    sliceToolEnable(false)
 {
 }
 
@@ -182,6 +184,10 @@ loadFromFiles(const Strings& cfgNames)
     cfgFile.setCurrentSection("/Crusta/SurfaceProjector");
     surfaceProjectorRayIntersect = cfgFile.retrieveValue<bool>(
         "rayIntersect", surfaceProjectorRayIntersect);
+
+    //try to extract the slice tool settings
+    cfgFile.setCurrentSection("/Crusta/SliceTool");
+    sliceToolEnable = cfgFile.retrieveValue<bool>("enable", sliceToolEnable);
 }
 
 
