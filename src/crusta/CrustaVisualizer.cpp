@@ -1,7 +1,7 @@
 #include <crusta/CrustaVisualizer.h>
 
-#include <crusta/Scope.h>
-#include <crusta/Section.h>
+#include <crustacore/Scope.h>
+#include <crustacore/Section.h>
 #include <crusta/Triangle.h>
 
 

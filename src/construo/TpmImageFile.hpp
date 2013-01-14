@@ -23,7 +23,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <cstring>
 #include <Misc/ThrowStdErr.h>
 
-#include <crusta/Vector3ui8.h>
+#include <crustacore/Vector3ui8.h>
 
 
 BEGIN_CRUSTA

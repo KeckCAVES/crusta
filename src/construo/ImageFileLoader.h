@@ -26,7 +26,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #ifndef _ImageFileLoader_H_
 #define _ImageFileLoader_H_
 
-#include <crusta/basics.h>
+#include <crustacore/basics.h>
 
 
 BEGIN_CRUSTA

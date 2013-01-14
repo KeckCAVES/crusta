@@ -6,11 +6,13 @@
 
 #include <crusta/Crusta.h>
 #include <crusta/map/MapManager.h>
-#include <crusta/PixelOps.h>
-#include <crusta/PolyhedronLoader.h>
+#include <crustacore/PixelOps.h>
+#include <crustacore/PolyhedronLoader.h>
 #include <crusta/QuadCache.h>
 #include <crusta/QuadTerrain.h>
-#include <crusta/Triacontahedron.h>
+#include <crustacore/Triacontahedron.h>
+
+#include <Vrui/Vrui.h>
 
 
 BEGIN_CRUSTA

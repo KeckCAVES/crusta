@@ -5,7 +5,8 @@
 #include <string>
 #include <vector>
 
-#include <crusta/basics.h>
+#include <crustacore/basics.h>
+#include <crusta/glbasics.h>
 
 
 BEGIN_CRUSTA

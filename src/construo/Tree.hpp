@@ -6,8 +6,10 @@
 #include <construo/Converters.h>
 
 ///\todo remove
+#if CRUSTA_ENABLE_DEBUG
 #include <construo/ConstruoVisualizer.h>
 #include <iostream>
+#endif //CRUSTA_ENABLE_DEBUG
 
 
 BEGIN_CRUSTA
@@ -141,6 +143,7 @@ getKin(TreeNode<PixelParam>*& kin, int offsets[2], bool loadMissing,
     if (kinO != NULL)
         *kinO = 0;
 
+#if CRUSTA_ENABLE_DEBUG
 if (debugGetKin) {
 ConstruoVisualizer::show();
 ConstruoVisualizer::clear();
@@ -160,6 +163,7 @@ Point tt = Converter::cartesianToSpherical(t);
 target.resize(1, Point3(tt[0], 0.0, tt[1]));
 ConstruoVisualizer::addPrimitive(GL_POINTS, target);
 } //DEBUG_GETKIN
+#endif //CRUSTA_ENABLE_DEBUG
 
 //- walk up the tree until a parent node containing the requested location
     /* the kinCoord are updated to always be relative to the lower-left corner
@@ -167,10 +171,12 @@ ConstruoVisualizer::addPrimitive(GL_POINTS, target);
     while (kinCoord[0]<0 || kinCoord[0]>=nodeSize ||
            kinCoord[1]<0 || kinCoord[1]>=nodeSize)
     {
+#if CRUSTA_ENABLE_DEBUG
 if (debugGetKin) {
 ConstruoVisualizer::addSphereCoverage(kin->coverage);
 ConstruoVisualizer::show();
 } //DEBUG_GETKIN
+#endif //CRUSTA_ENABLE_DEBUG
         //in case we have explicit neighgors we can move sideways directly
         if (kin->isExplicitNeighborNode)
         {
@@ -251,10 +257,12 @@ ConstruoVisualizer::show();
     }
 
 //- walk down the tree honing in on the requested kin
+#if CRUSTA_ENABLE_DEBUG
 if (debugGetKin) {
 ConstruoVisualizer::addSphereCoverage(kin->coverage);
 ConstruoVisualizer::show();
 } //DEBUG_GETKIN
+#endif //CRUSTA_ENABLE_DEBUG
     //use offsets to store the kinCoords now so that these can be returned
     offsets[0] = kinCoord[0];
     offsets[1] = kinCoord[1];
@@ -281,10 +289,12 @@ ConstruoVisualizer::show();
         }
         //move on to the child node
         kin = &kin->children[childIndex];
+#if CRUSTA_ENABLE_DEBUG
 if (debugGetKin) {
 ConstruoVisualizer::addSphereCoverage(kin->coverage);
 ConstruoVisualizer::show();
 } //DEBUG_GETKIN
+#endif //CRUSTA_ENABLE_DEBUG
     }
 
     return true;

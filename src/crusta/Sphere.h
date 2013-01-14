@@ -1,7 +1,7 @@
 #ifndef _Sphere_H_
 #define _Sphere_H_
 
-#include <crusta/basics.h>
+#include <crustacore/basics.h>
 
 
 BEGIN_CRUSTA

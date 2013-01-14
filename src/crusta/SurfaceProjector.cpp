@@ -1,12 +1,12 @@
 #include <crusta/SurfaceProjector.h>
 
 
+#include <crusta/Crusta.h>
+#include <crusta/CrustaSettings.h>
+
 #include <Cluster/MulticastPipe.h>
 #include <Geometry/OrthogonalTransformation.h>
 #include <Vrui/Vrui.h>
-
-#include <crusta/Crusta.h>
-#include <crusta/CrustaSettings.h>
 
 
 BEGIN_CRUSTA

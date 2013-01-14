@@ -8,7 +8,7 @@
 #include <Geometry/Vector.h>
 
 #include <construo/GeometryTypes.h>
-#include <crusta/Scope.h>
+#include <crustacore/Scope.h>
 
 BEGIN_CRUSTA
 

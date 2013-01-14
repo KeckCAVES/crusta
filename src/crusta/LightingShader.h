@@ -30,7 +30,8 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 #include <crusta/GL/VruiGlew.h>
 
-#include <crusta/basics.h>
+#include <crustacore/basics.h>
+#include <crusta/glbasics.h>
 #include <crusta/checkGl.h>
 #include <crusta/QuadNodeData.h>
 #include <crusta/shader/ShaderDecoratedLineRenderer.h>

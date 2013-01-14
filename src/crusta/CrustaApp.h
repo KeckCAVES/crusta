@@ -15,7 +15,8 @@
 #include <Vrui/Geometry.h>
 #include <Vrui/Lightsource.h>
 
-#include <crusta/basics.h>
+#include <crustacore/basics.h>
+#include <crusta/glbasics.h>
 #include <crusta/CrustaComponent.h>
 #include <crusta/SurfaceProbeTool.h>
 

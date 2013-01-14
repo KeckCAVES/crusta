@@ -2,10 +2,10 @@
 #define _QuadCache_H_
 
 
-#include <GL/GLObject.h>
-
 #include <crusta/Cache.h>
 #include <crusta/QuadNodeData.h>
+
+#include <GL/GLObject.h>
 
 
 BEGIN_CRUSTA

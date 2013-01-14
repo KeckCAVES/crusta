@@ -2,7 +2,7 @@
 #define _Triangle_H_
 
 
-#include <crusta/basics.h>
+#include <crustacore/basics.h>
 
 
 BEGIN_CRUSTA

@@ -27,7 +27,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #define _ImageFile_H_
 
 
-#include <crusta/basics.h>
+#include <crustacore/basics.h>
 
 
 BEGIN_CRUSTA

@@ -16,7 +16,7 @@ GlobeFile<TextureColor>* TreeNode<TextureColor>::globeFile = NULL;
 template <>
 GlobeFile<LayerDataf>* TreeNode<LayerDataf>:: globeFile = NULL;
 
-
+#if CRUSTA_ENABLE_DEBUG
 template <>
 bool TreeNode<DemHeight>::debugGetKin    = false;
 
@@ -25,7 +25,7 @@ bool TreeNode<TextureColor>::debugGetKin = false;
 
 template <>
 bool TreeNode<LayerDataf>::debugGetKin = false;
-
+#endif //CRUSTA_ENABLE_DEBUG
 
 END_CRUSTA
 

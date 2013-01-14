@@ -2,7 +2,7 @@
 #define _Crusta_SurfacePoint_H_
 
 
-#include <crusta/TreeIndex.h>
+#include <crustacore/TreeIndex.h>
 
 
 BEGIN_CRUSTA

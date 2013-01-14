@@ -3,10 +3,11 @@
 #include <algorithm>
 
 #include <Geometry/OrthogonalTransformation.h>
-#include <Vrui/Vrui.h>
 
 #include <crusta/QuadNodeData.h>
 #include <crusta/CrustaSettings.h>
+
+#include <Vrui/Vrui.h>
 
 BEGIN_CRUSTA
 

@@ -8,7 +8,7 @@
 #include <Threads/Mutex.h>
 #include <Threads/Thread.h>
 
-#include <crusta/GlobeFile.h>
+#include <crustacore/GlobeFile.h>
 #include <crusta/QuadCache.h>
 #include <crusta/QuadNodeData.h>
 #include <crusta/shader/ShaderAtlasDataSource.h>

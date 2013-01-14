@@ -28,7 +28,7 @@
 
 #include <construo/Builder.h>
 
-#include <crusta/LayerData.h>
+#include <crustacore/LayerData.h>
 
 
 using namespace crusta;

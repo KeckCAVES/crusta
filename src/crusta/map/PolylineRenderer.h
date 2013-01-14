@@ -2,7 +2,7 @@
 #define _PolylineRenderer_H_
 
 
-#include <crusta/basics.h>
+#include <crustacore/basics.h>
 #include <crusta/CrustaComponent.h>
 #include <crusta/SurfaceApproximation.h>
 

@@ -3,12 +3,12 @@
 
 #include <iostream>
 
+#include <crusta/Crusta.h>
+#include <crusta/SurfacePoint.h>
+
 #include <Geometry/OrthogonalTransformation.h>
 #include <Vrui/ToolManager.h>
 #include <Vrui/Vrui.h>
-
-#include <crusta/Crusta.h>
-#include <crusta/SurfacePoint.h>
 
 
 BEGIN_CRUSTA

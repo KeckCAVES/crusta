@@ -3,10 +3,10 @@
 
 #include <construo/SphereCoverage.h>
 
-#include <crusta/GlobeFile.h>
-#include <crusta/Scope.h>
-#include <crusta/TileIndex.h>
-#include <crusta/TreeIndex.h>
+#include <crustacore/GlobeFile.h>
+#include <crustacore/Scope.h>
+#include <crustacore/TileIndex.h>
+#include <crustacore/TreeIndex.h>
 
 
 BEGIN_CRUSTA
@@ -86,8 +86,10 @@ protected:
     bool isExplicitNeighborNode;
 
 ///\todo remove
+#if CRUSTA_ENABLE_DEBUG
 public:
 static bool debugGetKin;
+#endif //CRUSTA_ENABLE_DEBUG
 };
 
 

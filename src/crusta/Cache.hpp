@@ -4,7 +4,6 @@
 
 #include <Math/Constants.h>
 #include <Misc/ThrowStdErr.h>
-#include <Vrui/Vrui.h>
 
 BEGIN_CRUSTA
 

@@ -1,3 +1,4 @@
+#if CRUSTA_ENABLE_DEBUG
 #include <construo/ConstruoVisualizer.h>
 
 #include <construo/Converters.h>
@@ -53,3 +54,4 @@ addScopeRefinement(int resolution, Scope::Scalar* s, int temp,
 
 
 END_CRUSTA
+#endif //CRUSTA_ENABLE_DEBUG

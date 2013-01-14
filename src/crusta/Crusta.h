@@ -8,7 +8,8 @@
 #include <GL/GLObject.h>
 #include <Threads/Mutex.h>
 
-#include <crusta/basics.h>
+#include <crustacore/basics.h>
+#include <crusta/glbasics.h>
 #include <crusta/CrustaSettings.h>
 #include <crusta/LightingShader.h>
 #include <crusta/map/Shape.h>

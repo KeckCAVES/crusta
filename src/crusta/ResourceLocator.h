@@ -5,7 +5,7 @@
 #include <Misc/FileLocator.h>
 #include <IO/Directory.h>
 
-#include <crusta/basics.h>
+#include <crustacore/basics.h>
 
 
 BEGIN_CRUSTA

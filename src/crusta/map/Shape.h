@@ -4,6 +4,7 @@
 #include <iostream>
 #include <list>
 
+#include <crusta/glbasics.h>
 #include <crusta/CrustaComponent.h>
 #include <crusta/IdGenerator.h>
 

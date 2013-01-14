@@ -1,12 +1,12 @@
 #include <crusta/SurfaceTool.h>
 
 
+#include <crusta/Crusta.h>
+
 #include <Geometry/OrthogonalTransformation.h>
 #include <Vrui/InputGraphManager.h>
 #include <Vrui/ToolManager.h>
 #include <Vrui/Vrui.h>
-
-#include <crusta/Crusta.h>
 
 
 BEGIN_CRUSTA

@@ -4,7 +4,7 @@
 #include <Geometry/Point.h>
 #include <Math/Constants.h>
 
-#include <crusta/basics.h>
+#include <crustacore/basics.h>
 
 BEGIN_CRUSTA
 

@@ -105,18 +105,49 @@ set_property(GLOBAL APPEND PROPERTY CMAKE_CXX_FLAGS "-Wall")
 add_definitions(-DCRUSTA_ETC_PATH="${ETC_PATH}")
 add_definitions(-DCRUSTA_SHARE_PATH="${SHARE_PATH}")
 
-# Common setup for executables
-macro(add_crusta_exe)
-  add_executable(${ARGV})
-  target_link_libraries(${ARGV0} crustacore ${VRUI_LDFLAGS} ${GDAL_LIBRARY} ${OPENGL_LIBRARY} ${GLEW_LDFLAGS})
-  install(TARGETS ${ARGV0} DESTINATION ${BIN_PATH})
-endmacro()
+
+##-- Install data and configs
+
+install(DIRECTORY share/ DESTINATION ${SHARE_PATH})
+install(DIRECTORY etc/ DESTINATION ${ETC_PATH})
 
 
 #-------------------
 # Target specifications
 #-------------------
 
-include(Core)
-include(Crusta)
-include(Construo)
+file(GLOB_RECURSE CRUSTACORE_SOURCES src/crustacore/*)
+add_library(crustacore STATIC ${CRUSTACORE_SOURCES})
+
+macro(add_crusta_exe)
+  add_executable(${ARGV})
+  target_link_libraries(${ARGV0} crustacore ${VRUI_LDFLAGS} ${GDAL_LIBRARY} ${OPENGL_LIBRARY} ${GLEW_LDFLAGS})
+  install(TARGETS ${ARGV0} DESTINATION ${BIN_PATH})
+endmacro()
+
+file(GLOB_RECURSE CONSTRUO_SOURCES src/construo/*)
+add_crusta_exe(construo ${CONSTRUO_SOURCES})
+
+file(GLOB_RECURSE CRUSTA_SOURCES src/crusta/*)
+add_crusta_exe(crusta ${CRUSTA_SOURCES})
+
+macro(add_baked_args_exe NAME)
+  set(OUTPUT ${NAME})
+  add_custom_command(
+    OUTPUT ${OUTPUT}
+    COMMAND echo "#!/bin/sh" > ${OUTPUT}
+    COMMAND echo "${BIN_PATH}/crusta" ${ARGN} \"\$@\" >> ${OUTPUT}
+    COMMAND chmod +x ${OUTPUT}
+    VERBATIM
+    DEPENDS crusta
+  )
+  add_custom_target(create-${OUTPUT} ALL DEPENDS ${OUTPUT})
+  install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT} DESTINATION ${BIN_PATH})
+endmacro()
+
+set(desktopargs -mergeConfig ${SHARE_PATH}/vrui/mouse.cfg)
+set(slicetoolargs -settings ${SHARE_PATH}/etc/enableSliceTool.cfg)
+add_baked_args_exe(crusta-desktop ${desktopargs})
+add_baked_args_exe(crusta-slicing ${slicetoolargs})
+add_baked_args_exe(crusta-slicing-desktop ${slicetoolargs} ${desktopargs})
+

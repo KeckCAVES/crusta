@@ -1,7 +1,7 @@
 #include <construo/ImageFileLoader.h>
 #include <construo/GdalTransform.h>
 
-#include <crusta/Vector3ui8.h>
+#include <crustacore/Vector3ui8.h>
 
 
 BEGIN_CRUSTA

@@ -5,8 +5,8 @@
 #include <construo/ImageFileLoader.h>
 #include <construo/ImagePatch.h>
 #include <construo/SubsampleFilter.h>
-#include <crusta/GlobeData.h>
-#include <crusta/PixelOps.h>
+#include <crustacore/GlobeData.h>
+#include <crustacore/PixelOps.h>
 
 
 #define DYNAMIC_FILTER_TYPE SUBSAMPLEFILTER_PYRAMID
@@ -14,6 +14,7 @@
 
 
 ///\todo remove
+#if CRUSTA_ENABLE_DEBUG
 #define USE_NEAREST_FILTERING 0
 #define DEBUG_PREPARESUBSAMPLINGDOMAIN 0
 #define DEBUG_SOURCEFINEST 0
@@ -23,6 +24,7 @@
 static float flagAncestorsForUpdateColor[3];
 #endif //DEBUG_FLAGANCESTORSFORUPDATE
 #include <construo/ConstruoVisualizer.h>
+#endif //CRUSTA_ENABLE_DEBUG
 
 BEGIN_CRUSTA
 

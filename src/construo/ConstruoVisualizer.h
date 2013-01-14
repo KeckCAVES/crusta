@@ -1,9 +1,11 @@
 #ifndef _ConstruoVisualizer_H_
 #define _ConstruoVisualizer_H_
 
+#if CRUSTA_ENABLE_DEBUG
+
 #include <crusta/Visualizer.h>
 
-#include <crusta/Scope.h>
+#include <crustacore/Scope.h>
 
 
 BEGIN_CRUSTA
@@ -22,5 +24,6 @@ public:
 
 END_CRUSTA
 
+#endif //CRUSTA_ENABLE_DEBUG
 
 #endif //_ConstruoVisualizer_H_

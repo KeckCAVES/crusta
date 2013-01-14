@@ -7,7 +7,7 @@
 #include <crusta/GL/VruiGlew.h> //must be included instead of gl.h
 #include <Misc/ThrowStdErr.h>
 
-#include <crusta/basics.h>
+#include <crustacore/basics.h>
 
 BEGIN_CRUSTA
 

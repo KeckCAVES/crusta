@@ -3,7 +3,7 @@
 
 
 #include <Geometry/ProjectiveTransformation.h>
-#include <crusta/basics.h>
+#include <crustacore/basics.h>
 
 
 BEGIN_CRUSTA

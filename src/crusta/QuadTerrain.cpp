@@ -21,7 +21,7 @@
 #include <crusta/map/Polyline.h>
 #include <crusta/QuadCache.h>
 #include <crusta/Triangle.h>
-#include <crusta/Section.h>
+#include <crustacore/Section.h>
 #include <crusta/Sphere.h>
 #include <crusta/SliceTool.h>
 

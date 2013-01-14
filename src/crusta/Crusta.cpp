@@ -21,7 +21,7 @@
 #include <crusta/QuadCache.h>
 #include <crusta/QuadTerrain.h>
 #include <crusta/ResourceLocator.h>
-#include <crusta/Section.h>
+#include <crustacore/Section.h>
 #include <crusta/Sphere.h>
 #include <crusta/SurfaceProbeTool.h>
 #include <crusta/SliceTool.h>

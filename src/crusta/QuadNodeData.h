@@ -3,16 +3,16 @@
 
 #include <map>
 
-#include <crusta/GL/VruiGlew.h> //must be included before gl.h
-#include <GL/GLVertex.h>
-
-#include <crusta/DemHeight.h>
-#include <crusta/LayerData.h>
+#include <crustacore/DemHeight.h>
+#include <crustacore/LayerData.h>
 #include <crusta/map/Shape.h>
-#include <crusta/TextureColor.h>
-#include <crusta/TileIndex.h>
-#include <crusta/TreeIndex.h>
-#include <crusta/Scope.h>
+#include <crustacore/TextureColor.h>
+#include <crustacore/TileIndex.h>
+#include <crustacore/TreeIndex.h>
+#include <crustacore/Scope.h>
+
+#include <crusta/glbasics.h>
+#include <GL/GLVertex.h>
 
 
 BEGIN_CRUSTA
