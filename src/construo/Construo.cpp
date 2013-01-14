@@ -198,9 +198,11 @@ int main(int argc, char* argv[])
                 return 1;
             }
         }
-		else if (strcasecmp(argv[i], "-version") == 0)
+		else if (strcasecmp(argv[i], "-version") == 0 ||
+		         strcasecmp(argv[i], "-v") == 0)
 		{
 			std::cout << "Construo version: " << CRUSTA_VERSION << std::endl;
+      return 0;
 		}
         else
         {

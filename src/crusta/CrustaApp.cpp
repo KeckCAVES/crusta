@@ -79,8 +79,6 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
         std::string token = std::string(argv[i]);
         if (token == std::string("-settings"))
             settingsNames.push_back(argv[++i]);
-        else if (token == std::string("-version"))
-            std::cout << "Crusta version: " << CRUSTA_VERSION << std::endl;
         else if (token == std::string("-resourcePath"))
             resourcePath = argv[++i];
         else
@@ -1077,6 +1075,15 @@ END_CRUSTA
 
 int main(int argc, char* argv[])
 {
+    for (int i=1; i<argc; ++i)
+    {
+      if (strcasecmp(argv[i], "-version") == 0 || strcasecmp(argv[i], "-v") == 0)
+      {
+        std::cout << "Crusta version: " << CRUSTA_VERSION << std::endl;
+        return 0;
+      }
+    }
+
     char** appDefaults = 0; // This is an additional parameter no one ever uses
     crusta::CrustaApp app(argc, argv, appDefaults);
 

@@ -18,11 +18,7 @@ list( APPEND CMAKE_PREFIX_PATH $ENV{HOME}/Vrui-2.6 )
 
 #####
 
-# Version 2.8.3 or greater is required for packaging
-cmake_minimum_required(VERSION 2.8.3)
-
-# Add local cmake directory to the module search path
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+cmake_minimum_required(VERSION 2.8)
 
 
 #-------------------
@@ -33,18 +29,31 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 ##-- Set project name and target version
 
 project(crusta)
-set(PROJECT_MAJOR_VERSION 1)
-set(PROJECT_MINOR_VERSION 0)
-set(PROJECT_PATCH_VERSION 0)
-set(PROJECT_VERSION "${PROJECT_MAJOR_VERSION}.${PROJECT_MINOR_VERSION}.${PROJECT_PATCH_VERSION}")
+
+if(NOT PROJECT_VERSION)
+  execute_process(COMMAND git describe --match v*
+                  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                  RESULT_VARIABLE GIT_RESULT
+                  OUTPUT_VARIABLE PROJECT_VERSION_RAW
+                  OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(GIT_RESULT EQUAL 0)
+    string(SUBSTRING ${PROJECT_VERSION_RAW} 1 -1 PROJECT_VERSION)
+  endif()
+endif()
+if(NOT PROJECT_VERSION)
+  file(STRINGS VERSION PROJECT_VERSION LIMIT_COUNT 1)
+endif()
+if(NOT PROJECT_VERSION)
+  message(FATAL_ERROR "Unable to determine PROJECT_VERSION. Please set manually.")
+endif()
 
 
 ##-- Setup the defaults
 
 # Set the default build type
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
-endif(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 
 set(BIN_PATH "${CMAKE_INSTALL_PREFIX}/bin")
 if(CMAKE_INSTALL_PREFIX STREQUAL "/usr")
@@ -98,7 +107,7 @@ include_directories(src)
 # Report Crusta version
 add_definitions(-DCRUSTA_VERSION=\"${PROJECT_VERSION}\")
 
-# Show all warnings, don't complain about variadic macros
+# Show all warnings
 set_property(GLOBAL APPEND PROPERTY CMAKE_CXX_FLAGS "-Wall")
 
 # Report resource paths to source files
