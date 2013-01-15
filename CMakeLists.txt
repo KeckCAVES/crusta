@@ -30,7 +30,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(crusta)
 
-if(NOT PROJECT_VERSION)
+if(NOT PROJECT_VERSION AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
   execute_process(COMMAND git describe --match v*
                   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
                   RESULT_VARIABLE GIT_RESULT
@@ -40,8 +40,11 @@ if(NOT PROJECT_VERSION)
     string(SUBSTRING ${PROJECT_VERSION_RAW} 1 -1 PROJECT_VERSION)
   endif()
 endif()
-if(NOT PROJECT_VERSION)
+if(NOT PROJECT_VERSION AND EXISTS "${CMAKE_SOURCE_DIR}/VERSION")
   file(STRINGS VERSION PROJECT_VERSION LIMIT_COUNT 1)
+endif()
+if(NOT PROJECT_VERSION AND CMAKE_SOURCE_DIR MATCHES "^.*/[^-]*-([0-9].*)$")
+  set(PROJECT_VERSION ${CMAKE_MATCH_1})
 endif()
 if(NOT PROJECT_VERSION)
   message(FATAL_ERROR "Unable to determine PROJECT_VERSION. Please set manually.")
