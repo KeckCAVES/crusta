@@ -85,8 +85,13 @@ macro(pkg_search_module_more PREFIX)
 endmacro()
 
 # Setup GDAL
-find_package(GDAL REQUIRED)
-include_directories(${GDAL_INCLUDE_DIR})
+find_program(GDAL_CONFIG gdal-config)
+if(NOT GDAL_CONFIG)
+  message(FATAL_ERROR "Unable to find gdal-config program.")
+endif()
+execute_process(COMMAND ${GDAL_CONFIG} --libs OUTPUT_VARIABLE GDAL_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND ${GDAL_CONFIG} --cflags OUTPUT_VARIABLE GDAL_CFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
+add_definitions(${GDAL_CFLAGS})
 
 # Setup Vrui
 pkg_search_module_more(VRUI REQUIRED Vrui-2.6 Vrui)
@@ -133,7 +138,7 @@ add_library(crustacore STATIC ${CRUSTACORE_SOURCES})
 
 macro(add_crusta_exe)
   add_executable(${ARGV})
-  target_link_libraries(${ARGV0} crustacore ${VRUI_LDFLAGS} ${GDAL_LIBRARY} ${OPENGL_LIBRARY} ${GLEW_LDFLAGS})
+  target_link_libraries(${ARGV0} crustacore ${VRUI_LDFLAGS} ${GDAL_LIBS} ${OPENGL_LIBRARY} ${GLEW_LDFLAGS})
   install(TARGETS ${ARGV0} DESTINATION ${BIN_PATH})
 endmacro()
 
