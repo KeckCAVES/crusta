@@ -90,17 +90,6 @@ get_filename_component(SHARE_ABSPATH "${CMAKE_INSTALL_PREFIX}/${SHARE_PATH}" ABS
 
 # Setup pkg-config
 include(FindPkgConfig)
-macro(pkg_search_module_more PREFIX)
-  foreach(NAME ${ARGN})
-    if(NOT(NAME MATCHES "REQUIRED" OR NAME MATCHES "QUIET"))
-      find_path(${NAME}_PKG_CONFIG_DIR ${NAME}.pc PATH_SUFFIXES lib/pkgconfig lib64/pkgconfig)
-      if(${NAME}_PKG_CONFIG_DIR)
-        set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${${NAME}_PKG_CONFIG_DIR}")
-      endif()
-    endif()
-  endforeach()
-  pkg_search_module(${ARGV})
-endmacro()
 
 # Setup GDAL
 find_program(GDAL_CONFIG gdal-config)
@@ -112,7 +101,7 @@ execute_process(COMMAND ${GDAL_CONFIG} --cflags OUTPUT_VARIABLE GDAL_CFLAGS OUTP
 add_definitions(${GDAL_CFLAGS})
 
 # Setup Vrui
-pkg_search_module_more(VRUI REQUIRED Vrui-2.6 Vrui)
+pkg_search_module(VRUI REQUIRED Vrui-2.6 Vrui)
 string(REPLACE "-framework;" "-framework " VRUI_LDFLAGS "${VRUI_LDFLAGS}")
 add_definitions(${VRUI_CFLAGS})
 
@@ -121,7 +110,7 @@ find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIR})
 
 # Setup GLEW
-pkg_search_module_more(GLEW REQUIRED glewmx glew)
+pkg_search_module(GLEW REQUIRED glewmx glew)
 add_definitions(${GLEW_CFLAGS})
 
 
