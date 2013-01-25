@@ -4,10 +4,10 @@
 #
 
 #
-# Give path to Vrui, if CMake can't find it automatically.
-# (Or, pass to cmake -DCMAKE_PREFIX_PATH=/path/to/Vrui-2.6)
+# Give path to directory of Vrui.pc, if CMake can't find it automatically.
+# (Or, prepend PKG_CONFIG_PATH=/path/to/Vrui/pkgconfig to cmake)
 #
-list( APPEND CMAKE_PREFIX_PATH $ENV{HOME}/Vrui-2.6 )
+#set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:$ENV{HOME}/Vrui-2.6/lib64/pkgconfig" )
 
 #
 # Set the installation path prefix.
