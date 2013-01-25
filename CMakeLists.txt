@@ -53,19 +53,37 @@ endif()
 
 ##-- Setup the defaults
 
-# Set the default build type
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-set(BIN_PATH "${CMAKE_INSTALL_PREFIX}/bin")
-if(CMAKE_INSTALL_PREFIX STREQUAL "/usr")
-  set(ETC_PATH "/etc/crusta")
-  set(SHARE_PATH "/usr/share/crusta")
-else()
-  set(ETC_PATH "${CMAKE_INSTALL_PREFIX}/etc")
-  set(SHARE_PATH "${CMAKE_INSTALL_PREFIX}/share")
+if(NOT INSTALL_TYPE)
+  if(CMAKE_INSTALL_PREFIX STREQUAL "/usr")
+    set(INSTALL_TYPE "FHS")
+  else()
+    set(INSTALL_TYPE "Private")
+  endif()
 endif()
+
+
+##-- Setup install paths
+
+set(BIN_PATH "bin")
+if(INSTALL_TYPE STREQUAL "Private")
+  set(ETC_PATH "etc")
+  set(SHARE_PATH "share")
+elseif(INSTALL_TYPE STREQUAL "Shared")
+  set(ETC_PATH "etc/crusta")
+  set(SHARE_PATH "share/crusta")
+elseif(INSTALL_TYPE STREQUAL "FHS")
+  set(ETC_PATH "../etc/crusta")
+  set(SHARE_PATH "share/crusta")
+else()
+  message(FATAL_ERROR "Unknown INSTALL_TYPE ${INSTALL_TYPE}; Must be Private, Shared, or FHS.")
+endif()
+get_filename_component(BIN_ABSPATH "${CMAKE_INSTALL_PREFIX}/${BIN_PATH}" ABSOLUTE)
+get_filename_component(ETC_ABSPATH "${CMAKE_INSTALL_PREFIX}/${ETC_PATH}" ABSOLUTE)
+get_filename_component(SHARE_ABSPATH "${CMAKE_INSTALL_PREFIX}/${SHARE_PATH}" ABSOLUTE)
 
 
 ##-- Setup required external libraries
@@ -119,8 +137,8 @@ add_definitions(-DCRUSTA_VERSION=\"${PROJECT_VERSION}\")
 set_property(GLOBAL APPEND PROPERTY CMAKE_CXX_FLAGS "-Wall")
 
 # Report resource paths to source files
-add_definitions(-DCRUSTA_ETC_PATH="${ETC_PATH}")
-add_definitions(-DCRUSTA_SHARE_PATH="${SHARE_PATH}")
+add_definitions(-DCRUSTA_ETC_PATH="${ETC_ABSPATH}")
+add_definitions(-DCRUSTA_SHARE_PATH="${SHARE_ABSPATH}")
 
 
 ##-- Install data and configs
@@ -153,7 +171,7 @@ macro(add_baked_args_exe NAME)
   add_custom_command(
     OUTPUT ${OUTPUT}
     COMMAND echo "#!/bin/sh" > ${OUTPUT}
-    COMMAND echo "${BIN_PATH}/crusta" ${ARGN} \"\$@\" >> ${OUTPUT}
+    COMMAND echo "${BIN_ABSPATH}/crusta" ${ARGN} \"\$@\" >> ${OUTPUT}
     COMMAND chmod +x ${OUTPUT}
     VERBATIM
     DEPENDS crusta
@@ -162,8 +180,8 @@ macro(add_baked_args_exe NAME)
   install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT} DESTINATION ${BIN_PATH})
 endmacro()
 
-set(desktopargs -mergeConfig ${SHARE_PATH}/vrui/mouse.cfg)
-set(slicetoolargs -settings ${SHARE_PATH}/etc/enableSliceTool.cfg)
+set(desktopargs -mergeConfig ${SHARE_ABSPATH}/vrui/mouse.cfg)
+set(slicetoolargs -settings ${SHARE_ABSPATH}/etc/enableSliceTool.cfg)
 add_baked_args_exe(crusta-desktop ${desktopargs})
 add_baked_args_exe(crusta-slicing ${slicetoolargs})
 add_baked_args_exe(crusta-slicing-desktop ${slicetoolargs} ${desktopargs})
