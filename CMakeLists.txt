@@ -13,7 +13,7 @@
 # Set the installation path prefix.
 # (Or, pass to cmake -DCMAKE_INSTALL_PREFIX=/path/to/install)
 #
-#set( CMAKE_INSTALL_PREFIX $ENV{HOME}/Crusta )
+#set( CMAKE_INSTALL_PREFIX  $ENV{HOME}/Crusta  CACHE PATH "Install prefix" )
 
 
 #####
