@@ -59,31 +59,28 @@ endif()
 
 if(NOT INSTALL_TYPE)
   if(CMAKE_INSTALL_PREFIX STREQUAL "/usr")
-    set(INSTALL_TYPE "FHS")
+    set(INSTALL_TYPE "System")
   else()
-    set(INSTALL_TYPE "Private")
+    set(INSTALL_TYPE "Simple")
   endif()
 endif()
 
 
 ##-- Setup install paths
 
-set(BIN_PATH "bin")
-if(INSTALL_TYPE STREQUAL "Private")
-  set(ETC_PATH "etc")
-  set(SHARE_PATH "share")
-elseif(INSTALL_TYPE STREQUAL "Shared")
-  set(ETC_PATH "etc/crusta")
-  set(SHARE_PATH "share/crusta")
-elseif(INSTALL_TYPE STREQUAL "FHS")
-  set(ETC_PATH "../etc/crusta")
-  set(SHARE_PATH "share/crusta")
+get_filename_component(BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" ABSOLUTE CACHE)
+if(INSTALL_TYPE STREQUAL "Simple")
+  get_filename_component(ETC_DIR "${CMAKE_INSTALL_PREFIX}/etc" ABSOLUTE CACHE)
+  get_filename_component(SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share" ABSOLUTE CACHE)
+elseif(INSTALL_TYPE STREQUAL "Local")
+  get_filename_component(ETC_DIR "${CMAKE_INSTALL_PREFIX}/etc/${PROJECT_NAME}" ABSOLUTE CACHE)
+  get_filename_component(SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}" ABSOLUTE CACHE)
+elseif(INSTALL_TYPE STREQUAL "System")
+  get_filename_component(ETC_DIR "${CMAKE_INSTALL_PREFIX}/../etc/${PROJECT_NAME}" ABSOLUTE CACHE)
+  get_filename_component(SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}" ABSOLUTE CACHE)
 else()
-  message(FATAL_ERROR "Unknown INSTALL_TYPE ${INSTALL_TYPE}; Must be Private, Shared, or FHS.")
+  message(FATAL_ERROR "Unknown INSTALL_TYPE ${INSTALL_TYPE}; Must be Simple, Local, or System.")
 endif()
-get_filename_component(BIN_ABSPATH "${CMAKE_INSTALL_PREFIX}/${BIN_PATH}" ABSOLUTE)
-get_filename_component(ETC_ABSPATH "${CMAKE_INSTALL_PREFIX}/${ETC_PATH}" ABSOLUTE)
-get_filename_component(SHARE_ABSPATH "${CMAKE_INSTALL_PREFIX}/${SHARE_PATH}" ABSOLUTE)
 
 
 ##-- Setup required external libraries
@@ -126,14 +123,14 @@ add_definitions(-DCRUSTA_VERSION=\"${PROJECT_VERSION}\")
 set_property(GLOBAL APPEND PROPERTY CMAKE_CXX_FLAGS "-Wall")
 
 # Report resource paths to source files
-add_definitions(-DCRUSTA_ETC_PATH="${ETC_ABSPATH}")
-add_definitions(-DCRUSTA_SHARE_PATH="${SHARE_ABSPATH}")
+add_definitions(-DCRUSTA_ETC_PATH="${ETC_DIR}")
+add_definitions(-DCRUSTA_SHARE_PATH="${SHARE_DIR}")
 
 
 ##-- Install data and configs
 
-install(DIRECTORY share/ DESTINATION ${SHARE_PATH})
-install(DIRECTORY etc/ DESTINATION ${ETC_PATH})
+install(DIRECTORY share/ DESTINATION ${SHARE_DIR})
+install(DIRECTORY etc/ DESTINATION ${ETC_DIR})
 
 
 #-------------------
@@ -146,7 +143,7 @@ add_library(crustacore STATIC ${CRUSTACORE_SOURCES})
 macro(add_crusta_exe)
   add_executable(${ARGV})
   target_link_libraries(${ARGV0} crustacore ${VRUI_LDFLAGS} ${GDAL_LIBS} ${OPENGL_LIBRARY} ${GLEW_LDFLAGS})
-  install(TARGETS ${ARGV0} DESTINATION ${BIN_PATH})
+  install(TARGETS ${ARGV0} DESTINATION ${BIN_DIR})
 endmacro()
 
 file(GLOB_RECURSE CONSTRUO_SOURCES src/construo/*)
@@ -160,17 +157,17 @@ macro(add_baked_args_exe NAME)
   add_custom_command(
     OUTPUT ${OUTPUT}
     COMMAND echo "#!/bin/sh" > ${OUTPUT}
-    COMMAND echo "${BIN_ABSPATH}/crusta" ${ARGN} \"\$@\" >> ${OUTPUT}
+    COMMAND echo "${BIN_DIR}/crusta" ${ARGN} \"\$@\" >> ${OUTPUT}
     COMMAND chmod +x ${OUTPUT}
     VERBATIM
     DEPENDS crusta
   )
   add_custom_target(create-${OUTPUT} ALL DEPENDS ${OUTPUT})
-  install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT} DESTINATION ${BIN_PATH})
+  install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT} DESTINATION ${BIN_DIR})
 endmacro()
 
-set(desktopargs -mergeConfig ${SHARE_ABSPATH}/vrui/mouse.cfg)
-set(slicetoolargs -settings ${SHARE_ABSPATH}/etc/enableSliceTool.cfg)
+set(desktopargs -mergeConfig ${SHARE_DIR}/vrui/mouse.cfg)
+set(slicetoolargs -settings ${SHARE_DIR}/etc/enableSliceTool.cfg)
 add_baked_args_exe(crusta-desktop ${desktopargs})
 add_baked_args_exe(crusta-slicing ${slicetoolargs})
 add_baked_args_exe(crusta-slicing-desktop ${slicetoolargs} ${desktopargs})
