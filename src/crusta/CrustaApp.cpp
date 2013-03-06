@@ -38,6 +38,7 @@
 #include <crusta/QuadTerrain.h>
 #include <crusta/SurfaceProbeTool.h>
 #include <crusta/SurfaceTool.h>
+#include <crusta/VruiCoordinateTransform.h>
 
 
 #include <Geometry/Geoid.h>
@@ -95,7 +96,13 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     /* Set the navigational coordinate system unit: */
     Vrui::getCoordinateManager()->setUnit(
         Geometry::LinearUnit(Geometry::LinearUnit::METER, 1));
-	
+
+    /* Register a geodetic coordinate transformer with Vrui's coordinate manager: */
+    VruiCoordinateTransform* userTransform;
+    userTransform=new VruiCoordinateTransform;
+    userTransform->setupComponent(crusta);
+    Vrui::getCoordinateManager()->setCoordinateTransform(userTransform); // coordinate manager owns userTransform
+
     resetNavigationCallback(NULL);
 
 #if CRUSTA_ENABLE_DEBUG
