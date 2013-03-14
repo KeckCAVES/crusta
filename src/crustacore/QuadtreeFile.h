@@ -57,7 +57,7 @@ public:
         void write(Misc::LargeFile* quadtreeFile);
 
         ///size of an individual image tile
-        uint32 tileSize[2];
+        uint32_t tileSize[2];
         ///default pixel value to use for out-of-bounds tiles
         Pixel defaultPixelValue;
         ///the biggest tile index (relates to the number of tiles stored)
@@ -65,7 +65,7 @@ public:
     };
 
     ///opens an existing quadtree file for update or creates a new one
-    QuadtreeFile(const char* quadtreeFileName, const uint32 iTileSize[2], bool writable);
+    QuadtreeFile(const char* quadtreeFileName, const uint32_t iTileSize[2], bool writable);
     ~QuadtreeFile();
 
     ///returns the file's meta data
@@ -76,7 +76,7 @@ public:
     ///returns the pixel value for out-of-bounds tiles
     const Pixel& getDefaultPixelValue() const;
     ///returns size of an individual image tile
-    const uint32* getTileSize() const;
+    const uint32_t* getTileSize() const;
     ///return the number of tiles stored in the hierarchy
     TileIndex getNumTiles() const;
 

@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
     std::string nodata;
 
     //the tile size should only be an internal parameter
-    static const crusta::uint tileSize[2] = {TILE_RESOLUTION, TILE_RESOLUTION};
+    static const size_t tileSize[2] = {TILE_RESOLUTION, TILE_RESOLUTION};
 
     std::string                    globeFileName;
     std::string                    settingsFileName;

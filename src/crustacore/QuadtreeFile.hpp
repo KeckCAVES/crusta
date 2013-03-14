@@ -64,7 +64,7 @@ Methods of class QuadtreeFile:
 
 template <class PixelType,class FileHeaderParam,class TileHeaderParam>
 QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
-QuadtreeFile(const char* quadtreeFileName, const uint32 iTileSize[2], bool writable) :
+QuadtreeFile(const char* quadtreeFileName, const uint32_t iTileSize[2], bool writable) :
     quadtreeFile(NULL), writable(writable)
 {
     //open existing quadtree file or create a new one
@@ -161,7 +161,7 @@ getDefaultPixelValue(void) const
 }
 
 template <class PixelType,class FileHeaderParam,class TileHeaderParam>
-const uint32* QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
+const uint32_t* QuadtreeFile<PixelType,FileHeaderParam,TileHeaderParam>::
 getTileSize() const
 {
     return header.tileSize;

@@ -71,7 +71,7 @@ public:
         {
             case 8:
             {
-                int8* imgData = new int8[rectSize[0]*rectSize[1]];
+                int8_t* imgData = new int8_t[rectSize[0]*rectSize[1]];
                 tpmFile.readRectangle(ro, rs, imgData);
 
                 for (int i=0; i<rectSize[0]*rectSize[1]; ++i)
@@ -82,7 +82,7 @@ public:
 
             case 16:
             {
-                int16* imgData = new int16[rectSize[0]*rectSize[1]];
+                int16_t* imgData = new int16_t[rectSize[0]*rectSize[1]];
                 tpmFile.readRectangle(ro, rs, imgData);
 
                 for (int i=0; i<rectSize[0]*rectSize[1]; ++i)
@@ -93,7 +93,7 @@ public:
 
             case 32:
             {
-                int32* imgData = new int32[rectSize[0]*rectSize[1]];
+                int32_t* imgData = new int32_t[rectSize[0]*rectSize[1]];
                 tpmFile.readRectangle(ro, rs, imgData);
 
                 for (int i=0; i<rectSize[0]*rectSize[1]; ++i)
@@ -156,7 +156,7 @@ public:
         {
             case 8:
             {
-                int8* imgData = new int8[numElements];
+                int8_t* imgData = new int8_t[numElements];
                 tpmFile.readRectangle(ro, rs, imgData);
 
                 for (int p=0, e=0; p<numPixels; ++p)
@@ -170,7 +170,7 @@ public:
 
             case 16:
             {
-                int16* imgData = new int16[numElements];
+                int16_t* imgData = new int16_t[numElements];
                 tpmFile.readRectangle(ro, rs, imgData);
 
                 for (int p=0, e=0; p<numPixels; ++p)
@@ -184,7 +184,7 @@ public:
 
             case 32:
             {
-                int32* imgData = new int32[numElements];
+                int32_t* imgData = new int32_t[numElements];
                 tpmFile.readRectangle(ro, rs, imgData);
 
                 for (int p=0, e=0; p<numPixels; ++p)

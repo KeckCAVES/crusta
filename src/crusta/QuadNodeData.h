@@ -28,7 +28,7 @@ struct NodeData
     struct Tile
     {
         Tile();
-        uint8     dataId;
+        uint8_t     dataId;
         TileIndex node;
         TileIndex children[4];
     };

@@ -17,14 +17,14 @@ BEGIN_CRUSTA
 class Polyhedron
 {
 public:
-    typedef uint Connectivity[2];
+    typedef size_t Connectivity[2];
 
     virtual ~Polyhedron() {}
 
     virtual std::string getType() const = 0;
-    virtual uint        getNumPatches() const = 0;
-    virtual Scope       getScope(uint patchId) const = 0;
-    virtual void        getConnectivity(uint patchId,
+    virtual size_t        getNumPatches() const = 0;
+    virtual Scope       getScope(size_t patchId) const = 0;
+    virtual void        getConnectivity(size_t patchId,
                                         Connectivity connectivity[4]) const = 0;
 };
 

@@ -10,7 +10,7 @@
 BEGIN_CRUSTA
 
 
-typedef Geometry::Vector<uint8, 3> Vector3ui8;
+typedef Geometry::Vector<uint8_t, 3> Vector3ui8;
 
 
 inline
@@ -38,7 +38,7 @@ Vector3ui8 operator*(double d, const Vector3ui8& tc)
 inline
 std::ostream& operator<<(std::ostream& oss, Vector3ui8& tc)
 {
-    /* uint8 is seen as a char not an integer; must, therefore, cast to int
+    /* uint8_t is seen as a char not an integer; must, therefore, cast to int
        otherwise '\0' will be generated */
     for (int i=0; i<Vector3ui8::dimension-1; ++i)
         oss << (int)tc[i] << " ";
@@ -49,7 +49,7 @@ std::ostream& operator<<(std::ostream& oss, Vector3ui8& tc)
 inline
 std::istream& operator>>(std::istream& iss, Vector3ui8& tc)
 {
-    /* uint8 is seen as a char not an integer; must, therefore, buffer to int
+    /* uint8_t is seen as a char not an integer; must, therefore, buffer to int
        otherwise 48 (ascii number for '0') will be generated */
     int temp;
     for (int i=0; i<Vector3ui8::dimension; ++i)

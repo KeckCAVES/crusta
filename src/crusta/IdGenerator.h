@@ -62,8 +62,8 @@ protected:
 };
 
 
-typedef IdGeneratorTemplate<uint32> IdGenerator32;
-typedef IdGeneratorTemplate<uint64> IdGenerator64;
+typedef IdGeneratorTemplate<uint32_t> IdGenerator32;
+typedef IdGeneratorTemplate<uint64_t> IdGenerator64;
 
 
 END_CRUSTA

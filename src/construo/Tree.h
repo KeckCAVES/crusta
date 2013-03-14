@@ -48,7 +48,7 @@ public:
         traversal. By default such parts will be loaded from file if possible,
         but the behaviour can be altered through 'loadMissing'. */
     bool getKin(TreeNode<PixelParam>*& kin, int offsets[2],
-                bool loadMissing=true, int down=0, uint* orientation=NULL);
+                bool loadMissing=true, int down=0, size_t* orientation=NULL);
 
     /** create in-memory storage for the children nodes with the most basic
         properties (i.e. parent link-up, treeState, treeIndex, scope and
@@ -100,12 +100,12 @@ class ExplicitNeighborNode : public TreeNode<PixelParam>
 public:
     ExplicitNeighborNode();
     void setNeighbors(ExplicitNeighborNode* nodes[4],
-                      const uint orientations[4]);
+                      const size_t orientations[4]);
 
     ///pointers to the neighboring nodes
     ExplicitNeighborNode* neighbors[4];
     ///orientations of the neighboring nodes
-    uint orientations[4];
+    size_t orientations[4];
 };
 
 template <typename PixelParam>
@@ -115,7 +115,7 @@ public:
     typedef ExplicitNeighborNode<PixelParam> BaseNode;
     typedef std::vector<BaseNode>            BaseNodes;
 
-    Spheroid(const std::string& baseName, const uint tileResolution[2]);
+    Spheroid(const std::string& baseName, const size_t tileResolution[2]);
 
     BaseNodes             baseNodes;
     GlobeFile<PixelParam> globeFile;

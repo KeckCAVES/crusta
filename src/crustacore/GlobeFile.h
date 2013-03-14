@@ -33,7 +33,7 @@ public:
     void close();
 
     /** get access to a specific patch of the globe file */
-    File* getPatch(uint8 patch);
+    File* getPatch(uint8_t patch);
 
     /** retrieve the nodata value filled data buffer */
     const PixelType* getBlank() const;

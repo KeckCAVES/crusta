@@ -60,9 +60,9 @@ protected:
 
     struct State
     {
-        uint8 grabbed : 1;
-        uint8 valid   : 1;
-        uint8 pinned  : 6;
+        uint8_t grabbed : 1;
+        uint8_t valid   : 1;
+        uint8_t pinned  : 6;
     };
 
     /** state of the buffer */

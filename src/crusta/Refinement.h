@@ -12,13 +12,13 @@ public:
     /** retrieve a refinement of the scope for given edge resolution */
     template <typename ScalarParam>
     static void refine(const Ellipsoid& ellipse, const Scope& scope,
-                       uint resolution,
+                       size_t resolution,
                        Geometry::Point<ScalarParam, 3>* vertices);
     /** retrieve a refinement of the scope where the coordiantes are relative
      to the centroid for given edge resolution */
     template <typename ScalarParam>
     static void centroidRefine(const Ellipsoid& ellipse, const Scope& scope,
-                               uint resolution,
+                               size_t resolution,
                                Geometry::Point<ScalarParam, 3>* vertices);
     
     /** generate the next refinement of the scope */
@@ -27,11 +27,11 @@ public:
 
 protected:
     template <typename ScalarParam>
-    void mid(const Ellipsoid& ellipse, uint oneIndex, uint twoIndex,
+    void mid(const Ellipsoid& ellipse, size_t oneIndex, size_t twoIndex,
              Geometry::Point<ScalarParam, 3>* vertices) const;
     template <typename ScalarParam>
-    void centroid(const Ellipsoid& ellipse, uint oneIndex, uint twoIndex,
-                  uint threeIndex, uint fourIndex,
+    void centroid(const Ellipsoid& ellipse, size_t oneIndex, size_t twoIndex,
+                  size_t threeIndex, size_t fourIndex,
                   Geometry::Point<ScalarParam, 3>* vertices) const;
 };
 

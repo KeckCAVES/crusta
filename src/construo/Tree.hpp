@@ -122,7 +122,7 @@ translate(int p[2], int t[2])
     p[1] += t[1];
 }
 inline void
-rotate(int p[2], uint o, const int rotations[4][2][2])
+rotate(int p[2], size_t o, const int rotations[4][2][2])
 {
     int r[2];
     r[0] = p[0]*rotations[o][0][0] + p[1]*rotations[o][0][1];
@@ -134,7 +134,7 @@ rotate(int p[2], uint o, const int rotations[4][2][2])
 template <typename PixelParam>
 bool TreeNode<PixelParam>::
 getKin(TreeNode<PixelParam>*& kin, int offsets[2], bool loadMissing,
-       int down, uint* kinO)
+       int down, size_t* kinO)
 {
     kin              = this;
     int nodeSize     = pow(2, down);
@@ -183,15 +183,15 @@ ConstruoVisualizer::show();
             ExplicitNeighborNode<PixelParam>* self =
                 reinterpret_cast<ExplicitNeighborNode<PixelParam>*>(kin);
             //neighbor id depending on horizontal/vertical and neg/pos direction
-            static const uint neighborIds[2][2] = { {1, 3}, {2, 0} };
+            static const size_t neighborIds[2][2] = { {1, 3}, {2, 0} };
 
             //determine the most important direction and corresponding neighbor
-            uint horizontal = Math::abs(kinCoord[0])>Math::abs(kinCoord[1]) ?
+            size_t horizontal = Math::abs(kinCoord[0])>Math::abs(kinCoord[1]) ?
                               0 : 1;
             if (kinCoord[horizontal]>=0 && kinCoord[horizontal]<nodeSize)
                 horizontal = 1 - horizontal;
-            uint direction  = kinCoord[horizontal]<0 ? 0 : 1;
-            uint neighbor   = neighborIds[horizontal][direction];
+            size_t direction  = kinCoord[horizontal]<0 ? 0 : 1;
+            size_t neighbor   = neighborIds[horizontal][direction];
 
             kin = self->neighbors[neighbor];
             assert(kin != NULL);
@@ -278,8 +278,8 @@ ConstruoVisualizer::show();
         nodeSize >>= 1;
         /* determine the child node to proceed with by comparing the offsets
            to the node center (nodeSize, nodeSize) */
-        uint childIndex = 0x0;
-        for (uint i=0; i<2; ++i)
+        size_t childIndex = 0x0;
+        for (size_t i=0; i<2; ++i)
         {
             if (offsets[i] >= nodeSize)
             {
@@ -310,7 +310,7 @@ createChildren()
 
     //allocate and initialize the children
     children = new TreeNode<PixelParam>[4];
-    for (uint i=0; i<4; ++i)
+    for (size_t i=0; i<4; ++i)
     {
         TreeNode<PixelParam>& child = children[i];
         child.parent    = this;
@@ -340,7 +340,7 @@ loadMissingChildren()
     //create the new in-memory representations
     createChildren();
     //assign the child tile indices
-    for (uint i=0; i<4; ++i)
+    for (size_t i=0; i<4; ++i)
         children[i].tileIndex = childIndices[i];
 }
 
@@ -350,13 +350,13 @@ mid(const Scope::Vertex& one, const Scope::Vertex& two,
 {
     Scope::Vertex mid;
     Scope::Scalar len = Scope::Scalar(0);
-    for (uint i=0; i<3; ++i)
+    for (size_t i=0; i<3; ++i)
     {
         mid[i] = (one[i] + two[i]) * Scope::Scalar(0.5);
         len   += mid[i] * mid[i];
     }
     len = radius / sqrt(len);
-    for (uint i=0; i<3; ++i)
+    for (size_t i=0; i<3; ++i)
         mid[i] *= len;
 
     return mid;
@@ -384,7 +384,7 @@ ExplicitNeighborNode<PixelParam>::
 ExplicitNeighborNode()
 {
     TreeNode<PixelParam>::isExplicitNeighborNode = true;
-    for (uint i=0; i<4; ++i)
+    for (size_t i=0; i<4; ++i)
     {
         neighbors[i]    = NULL;
         orientations[i] = 0; //corresponds to facing up
@@ -393,9 +393,9 @@ ExplicitNeighborNode()
 
 template <typename PixelParam>
 void ExplicitNeighborNode<PixelParam>::
-setNeighbors(ExplicitNeighborNode* nodes[4], const uint orients[4])
+setNeighbors(ExplicitNeighborNode* nodes[4], const size_t orients[4])
 {
-    for (uint i=0; i<4; ++i)
+    for (size_t i=0; i<4; ++i)
     {
         neighbors[i]    = nodes[i];
         orientations[i] = orients[i];
@@ -404,7 +404,7 @@ setNeighbors(ExplicitNeighborNode* nodes[4], const uint orients[4])
 
 template <typename PixelParam>
 Spheroid<PixelParam>::
-Spheroid(const std::string& baseName, const uint tileResolution[2]):
+Spheroid(const std::string& baseName, const size_t tileResolution[2]):
     globeFile(true) // Request a writable globe file that is created if it
         // doesn't exist already. TODO: Better way to do this?
 {
@@ -426,7 +426,7 @@ Spheroid(const std::string& baseName, const uint tileResolution[2]):
     //initialize the geometry of the base nodes and link them
     Polyhedron* polyhedron = PolyhedronLoader::load(
         globeFile.getPolyhedronType(), CONSTRUO_SETTINGS.globeRadius);
-    uint orientations[4];
+    size_t orientations[4];
     BaseNode* neighbors[4];
     typename Polyhedron::Connectivity connectivity[4];
     for (int i=0; i<numPatches; ++i)
@@ -438,7 +438,7 @@ Spheroid(const std::string& baseName, const uint tileResolution[2]):
         node.computeResolution();
 
         polyhedron->getConnectivity(i, connectivity);
-        for (uint n=0; n<4; ++n)
+        for (size_t n=0; n<4; ++n)
         {
             neighbors[n]    = &baseNodes[connectivity[n][0]];
             orientations[n] = connectivity[n][1];

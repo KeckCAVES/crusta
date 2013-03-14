@@ -15,13 +15,13 @@ struct DataIndex : public TreeIndex
     };
 
     DataIndex();
-    DataIndex(uint8 dataId, const TreeIndex& treeIndex);
+    DataIndex(uint8_t dataId, const TreeIndex& treeIndex);
     DataIndex(const DataIndex& i);
     
     DataIndex& operator=(const DataIndex& other);
     bool operator==(const DataIndex& other) const;    
     
-    uint8 getDataId() const;
+    uint8_t getDataId() const;
     TreeIndex getTreeIndex() const;
 
     static const DataIndex invalid;

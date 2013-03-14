@@ -81,7 +81,7 @@ public:
     public:
         Request();
         Request(Crusta* iCrusta, float iLod, const NodeMainBuffer& iParent,
-                uint8 iChild);
+                uint8_t iChild);
 
         bool operator ==(const Request& other) const;
         bool operator >(const Request& other) const;
@@ -94,7 +94,7 @@ public:
         /** parent of the requested */
         NodeMainBuffer parent;
         /** index of the child to be loaded */
-        uint8 child;
+        uint8_t child;
     };
     typedef std::vector<Request> Requests;
 
@@ -202,7 +202,7 @@ protected:
                        NodeGpuBuffer& gpuBuf);
 
     /** load the data required for the child of the specified node */
-    void loadChild(Crusta* crusta, NodeMainData& parent, uint8 which,
+    void loadChild(Crusta* crusta, NodeMainData& parent, uint8_t which,
                    NodeMainData& child);
 
     /** produce the flat sphere cartesian space coordinates for a node */
@@ -214,12 +214,12 @@ protected:
     /** source the color data for a node */
     void sourceColor(const NodeData* const parent,
                      const TextureColor::Type* const parentColor,
-                     NodeData* child, uint8 layer,
+                     NodeData* child, uint8_t layer,
                      TextureColor::Type* childColor);
     /** source the layerf data for a node */
     void sourceLayerf(const NodeData* const parent,
                       const LayerDataf::Type* const parentLayerf,
-                      NodeData* child, uint8 layer,
+                      NodeData* child, uint8_t layer,
                       LayerDataf::Type* childLayerf);
 
     /** merge a new request into the pending list */

@@ -51,7 +51,7 @@ class Builder : public BuilderBase
 {
 public:
     ///opens a spheroid file to which new additions are to be made
-    Builder(const std::string& spheroidName, const uint tileSize[2]);
+    Builder(const std::string& spheroidName, const size_t tileSize[2]);
     ///closes the spheroid file and cleans up scratch data
     ~Builder();
 
@@ -70,7 +70,7 @@ protected:
     ///flags all the ancestors for an update
     void flagAncestorsForUpdate(Node* node);
     ///sources the data for a node from an image patch and commits it to file
-    void sourceFinest(Node* node, Patch* imgPatch, uint overlap);
+    void sourceFinest(Node* node, Patch* imgPatch, size_t overlap);
     ///traverse the tree to update it for given patch
     int updateFiner(Node* node, Patch* imgPatch, Point::Scalar imgResolution);
     /** sources new patches to create new finer levels or update existing ones.
@@ -98,11 +98,11 @@ protected:
     ///temporary buffer to hold node data that needs to be sampled before use
     PixelType* nodeDataSampleBuf;
     ///size of the tiles to be generated/updated
-    uint tileSize[2];
+    size_t tileSize[2];
     ///temporary buffer to hold the subsampling domain
     PixelType* domainBuf;
     ///size of the temporary subsampling domain
-    uint domainSize[2];
+    size_t domainSize[2];
 
 //- Inherited from BuilderBase
 public:

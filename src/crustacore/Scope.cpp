@@ -33,7 +33,7 @@ getCentroid(Scalar radius) const
     radius = radius==0.0 ? getRadius() : radius;
 
     Vertex centroid(0,0,0);
-    for (uint i=0; i<4; ++i)
+    for (size_t i=0; i<4; ++i)
     {
         centroid[0] += corners[i][0];
         centroid[1] += corners[i][1];
@@ -57,32 +57,32 @@ split(Scope scopes[4]) const
 
     //compute the scope edge mid-points
     Vertex mids[4];
-    static const uint cornerIndices[5] = {3, 2, 0, 1, 3};
-    for (uint i=0; i<4; ++i)
+    static const size_t cornerIndices[5] = {3, 2, 0, 1, 3};
+    for (size_t i=0; i<4; ++i)
     {
         const Vertex& one = corners[cornerIndices[i]];
         const Vertex& two = corners[cornerIndices[i+1]];
         Scalar len = Scalar(0);
-        for (uint j=0; j<3; ++j)
+        for (size_t j=0; j<3; ++j)
         {
             mids[i][j] = (one[j] + two[j]) * Scalar(0.5);
             len       += mids[i][j] * mids[i][j];
         }
         len = radius / sqrt(len);
-        for (uint j=0; j<3; ++j)
+        for (size_t j=0; j<3; ++j)
             mids[i][j] *= len;
     }
 
     //compute the centroid point
     Vertex centroid;
     Scalar len = Scalar(0);
-    for (uint i=0; i<3; ++i)
+    for (size_t i=0; i<3; ++i)
     {
         centroid[i] = (mids[0][i] + mids[2][i]) * Scalar(0.5);
         len        += centroid[i] * centroid[i];
     }
     len = radius / sqrt(len);
-    for (uint i=0; i<3; ++i)
+    for (size_t i=0; i<3; ++i)
         centroid[i] *= len;
 
     //assemble the split scopes

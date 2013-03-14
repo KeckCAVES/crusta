@@ -41,7 +41,7 @@ static const Scope::Vertex baseVertices[] = {
 };
 
 //mirrored-Z indices
-static const uint baseIndices[] = {
+static const size_t baseIndices[] = {
 10,  1, 28, 31,    31,  1, 16, 23,    23,  1, 26, 24,    24,  1, 18, 32,
 32,  1, 30, 10,    31, 16, 28, 12,    23, 26, 16,  7,    24, 18, 26,  9,
 32, 30, 18, 14,    10, 28, 30, 20,    20, 28, 19, 27,    12, 11, 28, 27,
@@ -103,27 +103,27 @@ getType() const
     return "Triacontahedron";
 }
 
-uint Triacontahedron::
+size_t Triacontahedron::
 getNumPatches() const
 {
     return 30;
 }
 
 Scope Triacontahedron::
-getScope(uint patchId) const
+getScope(size_t patchId) const
 {
     assert(patchId<30);
-    const uint* index = &baseIndices[patchId*4];
+    const size_t* index = &baseIndices[patchId*4];
     Scope scope;
-    for (uint i=0; i<4; ++i)
+    for (size_t i=0; i<4; ++i)
     {
         Scope::Vertex sv = baseVertices[index[i]];
 
         Scope::Scalar len = 0;
-        for (uint j=0; j<3; ++j)
+        for (size_t j=0; j<3; ++j)
             len += sv[j]*sv[j];
         len = radius / sqrt(len);
-        for (uint j=0; j<3; ++j)
+        for (size_t j=0; j<3; ++j)
             sv[j] *= len;
 
         scope.corners[i] = sv;
@@ -132,13 +132,13 @@ getScope(uint patchId) const
 }
 
 void  Triacontahedron::
-getConnectivity(uint patchId, Connectivity connectivity[4]) const
+getConnectivity(size_t patchId, Connectivity connectivity[4]) const
 {
     assert(patchId<30);
     const Connectivity* base = &baseConnectivity[patchId][0];
-    for (uint i=0; i<4; ++i)
+    for (size_t i=0; i<4; ++i)
     {
-        for (uint j=0; j<2; ++j)
+        for (size_t j=0; j<2; ++j)
             connectivity[i][j] = base[i][j];
     }
 }

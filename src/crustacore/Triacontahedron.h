@@ -18,9 +18,9 @@ public:
     Triacontahedron(Scope::Scalar sphereRadius);
 
     virtual std::string getType() const;
-    virtual uint        getNumPatches() const;
-    virtual Scope       getScope(uint patchId) const;
-    virtual void        getConnectivity(uint patchId,
+    virtual size_t        getNumPatches() const;
+    virtual Scope       getScope(size_t patchId) const;
+    virtual void        getConnectivity(size_t patchId,
                                         Connectivity connectivity[4]) const;
 
 protected:

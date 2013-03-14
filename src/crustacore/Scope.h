@@ -42,20 +42,20 @@ public:
     Vertex getCentroid(Scalar radius=0.0) const;
     /** retrieve a refinement of the scope for given edge resolution */
     template <typename ScalarParam>
-    void getRefinement(uint resolution, ScalarParam* vertices) const;
+    void getRefinement(size_t resolution, ScalarParam* vertices) const;
     /** retrieve a refinement of the scope where the coordiantes are relative
         to the centroid for given edge resolution */
     template <typename ScalarParam>
-    void getCentroidRefinement(uint resolution, ScalarParam* vertices) const;
+    void getCentroidRefinement(size_t resolution, ScalarParam* vertices) const;
     /** retrieve a refinement of the scope for given edge resolution on a sphere
         of given radius */
     template <typename ScalarParam>
-    void getRefinement(ScalarParam radius, uint resolution,
+    void getRefinement(ScalarParam radius, size_t resolution,
                        ScalarParam* vertices) const;
     /** retrieve a refinement of the scope where the coordiantes are relative
         to the centroid for given edge resolution on a sphere of given radius */
     template <typename ScalarParam>
-    void getCentroidRefinement(ScalarParam radius, uint resolution,
+    void getCentroidRefinement(ScalarParam radius, size_t resolution,
                                ScalarParam* vertices) const;
 
     /** generate the next refinement of the scope */
@@ -74,10 +74,10 @@ public:
 
 protected:
     template <typename ScalarParam>
-    void mid(uint oneIndex, uint twoIndex, ScalarParam* vertices,
+    void mid(size_t oneIndex, size_t twoIndex, ScalarParam* vertices,
              ScalarParam radius) const;
     template <typename ScalarParam>
-    void centroid(uint oneIndex, uint twoIndex, uint threeIndex, uint fourIndex,
+    void centroid(size_t oneIndex, size_t twoIndex, size_t threeIndex, size_t fourIndex,
              ScalarParam* vertices, ScalarParam radius) const;
 };
 

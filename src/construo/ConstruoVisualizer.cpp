@@ -43,7 +43,7 @@ addScopeRefinement(int resolution, Scope::Scalar* s, int temp,
     int numSamples = resolution*resolution;
     verts.reserve(numSamples);
 
-    uint numScopeSamples = numSamples*3;
+    size_t numScopeSamples = numSamples*3;
     for (const Scope::Scalar* in=s; in<s+numScopeSamples; in+=3)
     {
         verts.push_back(Point3(in[0], in[1], in[2]));

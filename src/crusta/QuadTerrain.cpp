@@ -44,7 +44,7 @@
 BEGIN_CRUSTA
 
 
-static const uint NUM_GEOMETRY_INDICES =
+static const size_t NUM_GEOMETRY_INDICES =
     (TILE_RESOLUTION-1)*(TILE_RESOLUTION*2 + 2) - 2;
 static const float TEXTURE_COORD_START = TILE_TEXTURE_COORD_STEP * 0.5;
 static const float TEXTURE_COORD_END   = 1.0 - TEXTURE_COORD_START;
@@ -106,7 +106,7 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 }
 
 QuadTerrain::
-QuadTerrain(uint8 patch, const Scope& scope, Crusta* iCrusta) :
+QuadTerrain(uint8_t patch, const Scope& scope, Crusta* iCrusta) :
     CrustaComponent(iCrusta), rootIndex(patch)
 {
     DATAMANAGER->loadRoot(crusta, rootIndex, scope);
@@ -837,7 +837,7 @@ generateVertexAttributeTemplate(GLuint& vertexAttributeTemplate)
 {
     /** allocate some temporary main memory to store the vertex attributes
         before they are streamed to the GPU */
-    uint numTexCoords = TILE_RESOLUTION*TILE_RESOLUTION*2;
+    size_t numTexCoords = TILE_RESOLUTION*TILE_RESOLUTION*2;
     float* positionsInMemory = new float[numTexCoords];
     float* positions = positionsInMemory;
 
@@ -879,7 +879,7 @@ generateIndexTemplate(GLuint& indexTemplate)
 {
     /* allocate some temporary main memory to store the indices before they are
         streamed to the GPU */
-    uint16* indicesInMemory = new uint16[NUM_GEOMETRY_INDICES];
+    uint16_t* indicesInMemory = new uint16_t[NUM_GEOMETRY_INDICES];
 
     /* generate a sequence of indices that describe a single triangle strip that
         zizag through the geometry a row at a time: e.g.
@@ -893,13 +893,13 @@ generateIndexTemplate(GLuint& indexTemplate)
         |  / |
         1  - 2             */
     int  inc        = 1;
-    uint alt        = 1;
-    uint index[2]   = {0, TILE_RESOLUTION};
-    uint16* indices = indicesInMemory;
-    for (uint b=0; b<TILE_RESOLUTION-1; ++b, inc=-inc, alt=1-alt,
+    size_t alt        = 1;
+    size_t index[2]   = {0, TILE_RESOLUTION};
+    uint16_t* indices = indicesInMemory;
+    for (size_t b=0; b<TILE_RESOLUTION-1; ++b, inc=-inc, alt=1-alt,
          index[0]+=TILE_RESOLUTION, index[1]+=TILE_RESOLUTION)
     {
-        for (uint i=0; i<TILE_RESOLUTION*2;
+        for (size_t i=0; i<TILE_RESOLUTION*2;
              ++i, index[alt]+=inc, alt=1-alt, ++indices)
         {
             *indices = index[alt];
@@ -907,7 +907,7 @@ generateIndexTemplate(GLuint& indexTemplate)
         index[0]-=inc; index[1]-=inc;
         if (b != TILE_RESOLUTION-2)
         {
-            for (uint i=0; i<2; ++i, ++indices)
+            for (size_t i=0; i<2; ++i, ++indices)
                 *indices = index[1];
         }
     }
@@ -920,7 +920,7 @@ generateIndexTemplate(GLuint& indexTemplate)
 
     glGenBuffers(1, &indexTemplate);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexTemplate);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, NUM_GEOMETRY_INDICES*sizeof(uint16),
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, NUM_GEOMETRY_INDICES*sizeof(uint16_t),
                  indicesInMemory, GL_STATIC_DRAW);
 
     CHECK_GL_THROW_ERROR;

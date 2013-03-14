@@ -30,7 +30,7 @@ BEGIN_CRUSTA
 
 template <typename PixelParam>
 Builder<PixelParam>::
-Builder(const std::string& spheroidName, const uint size[2])
+Builder(const std::string& spheroidName, const size_t size[2])
 {
 ///\todo Frak this is retarded. Reason so far is the getRefinement from scope
 assert(size[0]==size[1]);
@@ -136,7 +136,7 @@ refine(Node* node)
     {
         node->createChildren();
         TileIndex childIndices[4];
-        for (uint i=0; i<4; ++i)
+        for (size_t i=0; i<4; ++i)
         {
             Node* child      = &node->children[i];
             child->tileIndex = file->appendTile(node->globeFile->getBlank());
@@ -209,7 +209,7 @@ typedef std::vector<ImgBox> ImgBoxes;
 ///\todo overlap is apparently unused here
 template <typename PixelParam>
 void Builder<PixelParam>::
-sourceFinest(Node* node, Patch* imgPatch, uint overlap)
+sourceFinest(Node* node, Patch* imgPatch, size_t overlap)
 {
     typedef GlobeData<PixelParam> gd;
 
@@ -346,7 +346,7 @@ to adjust getKin and its API to allow this */
         };
         int off[2];
         Node* kin;
-        for (uint i=0; i<3; ++i)
+        for (size_t i=0; i<3; ++i)
         {
             off[0] = offsets[node->treeIndex.child][i][0];
             off[1] = offsets[node->treeIndex.child][i][1];
@@ -372,7 +372,7 @@ ConstruoVisualizer::peek();
 #endif
 
     //check for an overlap
-    uint overlap = node->coverage.overlaps(*(imgPatch->sphereCoverage));
+    size_t overlap = node->coverage.overlaps(*(imgPatch->sphereCoverage));
     ///\todo HACK: For some reason if we test coverage at the root nodes it can
     //  mess up when the patch only 'slightly' goes into a given root node, so
     //  here we make sure we always go down at least a level.
@@ -386,7 +386,7 @@ ConstruoVisualizer::peek();
     {
         int depth = 0;
         refine(node);
-        for (uint i=0; i<4; ++i)
+        for (size_t i=0; i<4; ++i)
         {
             depth = std::max(updateFiner(&node->children[i], imgPatch,
                                          imgResolution), depth);
@@ -438,7 +438,7 @@ for (int y=0; y<size[1]; ++y)
         corners[3] = patch.transform->imageToWorld(Point(x-0.5, y+0.5));
         Point origin = patch.transform->imageToWorld(Point(x, y));
 
-        for (uint i=0; i<4; ++i, e+=6)
+        for (size_t i=0; i<4; ++i, e+=6)
         {
             int end = (i+1)%4;
             e[0] = corners[i][0];   e[1] = 0.0; e[2] = corners[i][1];
@@ -511,7 +511,7 @@ ConstruoVisualizer::show();
 
         int domainOff[2] = {offsets[i][0], offsets[i][1]};
         int nodeOff[2]   = {offsets[i][0], offsets[i][1]};
-        uint kinO;
+        size_t kinO;
         node->getKin(kin, nodeOff, true, 1, &kinO);
 #if DEBUG_PREPARESUBSAMPLINGDOMAIN
 const static float scopeRefColor[3] = { 0.3f, 0.8f, 0.3f };
@@ -548,7 +548,7 @@ Note: getKin across patches seem to be broken: e.g. offset==3 returned. */
                 file->readTile(kin->tileIndex, nodeDataSampleBuf);
                 //determine the resample step size
                 double scale = 1;
-                for (uint i=kin->treeIndex.level();
+                for (size_t i=kin->treeIndex.level();
                      i<node->treeIndex.level()+1U; ++i)
                 {
                     scale *= 0.5;
@@ -563,11 +563,11 @@ Note: getKin across patches seem to be broken: e.g. offset==3 returned. */
 
 //                #pragma omp parallel for
                 typedef SubsampleFilter<PixelType, DYNAMIC_FILTER_TYPE> Filter;
-                for (uint ny=0; ny<tileSize[1]; ++ny)
+                for (size_t ny=0; ny<tileSize[1]; ++ny)
                 {
                     at[1] = nodeOff[1]*scale + ny*step[1];
                     at[0] = nodeOff[0]*scale;
-                    for (uint nx=0; nx<tileSize[0]; ++nx,at[0]+=step[0],++wbase)
+                    for (size_t nx=0; nx<tileSize[0]; ++nx,at[0]+=step[0],++wbase)
                     {
                         *wbase = Filter::sample(nodeDataSampleBuf, rectOrigin,
                                                 at, rectSize, nodata, nodata,
@@ -591,12 +591,12 @@ kinO = 0;
         int startX[4] = { 0, 0, tileSize[0]-1, tileSize[0]-1 };
         int stepX[4]  = { 1,  -tileSize[1], -1, tileSize[0]};
 //        #pragma omp parallel for
-        for (uint y=0; y<tileSize[1]; ++y)
+        for (size_t y=0; y<tileSize[1]; ++y)
         {
             PixelType* to         = base + y*domainSize[0];
             const PixelType* from = data + startY[kinO] + y*stepY[kinO] +
                                      startX[kinO];
-            for (uint x=0; x<tileSize[0]; ++x, ++to, from+=stepX[kinO])
+            for (size_t x=0; x<tileSize[0]; ++x, ++to, from+=stepX[kinO])
                 *to = *from;
         }
     }
@@ -617,10 +617,10 @@ ConstruoVisualizer::peek();
         return;
 
 //- recurse until we've hit the requested level
-    if (node->treeIndex.level()!=static_cast<uint8>(level) &&
+    if (node->treeIndex.level()!=static_cast<uint8_t>(level) &&
         node->children!=NULL)
     {
-        for (uint i=0; i<4; ++i)
+        for (size_t i=0; i<4; ++i)
             updateCoarser(&(node->children[i]), level);
         return;
     }
@@ -640,7 +640,7 @@ ConstruoVisualizer::peek();
          domain<= domainBuf + 3*(tileSize[1]-1)*domainSize[0]+3*(tileSize[0]-1);
          domain+= 2*domainSize[0] - 2*tileSize[0])
     {
-        for (uint i=0; i<tileSize[0]; ++i, domain+=2, ++data)
+        for (size_t i=0; i<tileSize[0]; ++i, domain+=2, ++data)
             *data  = Filter::sample(domain, domainSize[0], globeNodata);
     }
 
@@ -726,13 +726,13 @@ verifyQuadtreeNode(Node* node)
 
     if (node->children == NULL)
     {
-        for (uint i=0; i<4; ++i)
+        for (size_t i=0; i<4; ++i)
             assert(childIndices[i] == INVALID_TILEINDEX);
         return;
     }
-    for (uint i=0; i<4; ++i)
+    for (size_t i=0; i<4; ++i)
         assert(childIndices[i] == node->children[i].tileIndex);
-    for (uint i=0; i<4; ++i)
+    for (size_t i=0; i<4; ++i)
         verifyQuadtreeNode(&node->children[i]);
 }
 template <typename PixelParam>

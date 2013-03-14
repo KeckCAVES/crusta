@@ -120,8 +120,8 @@ CrustaGlData() :
     {
         Misc::File imgFile(imgFileName.c_str(), "r");
         Images::TargaImageFileReader<Misc::File> imgFileReader(imgFile);
-        Images::Image<uint8,4> img =
-            imgFileReader.readImage<Images::Image<uint8,4> >();
+        Images::Image<uint8_t,4> img =
+            imgFileReader.readImage<Images::Image<uint8_t,4> >();
 
         glBindTexture(GL_TEXTURE_2D, symbolTex);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.getWidth(), img.getHeight(),
@@ -235,9 +235,9 @@ load(Strings& dataBases)
 
     const Polyhedron* const polyhedron = DATAMANAGER->getPolyhedron();
 
-    uint numPatches = polyhedron->getNumPatches();
+    size_t numPatches = polyhedron->getNumPatches();
     renderPatches.resize(numPatches);
-    for (uint i=0; i<numPatches; ++i)
+    for (size_t i=0; i<numPatches; ++i)
     {
         renderPatches[i] = new QuadTerrain(i, polyhedron->getScope(i), this);
         const NodeData& root = *renderPatches[i]->getRootNode().node;
@@ -318,7 +318,7 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     assert(nodeData.node != NULL);
 
     NodeData* node = nodeData.node;
-    assert(node->index.patch() < static_cast<uint>(renderPatches.size()));
+    assert(node->index.patch() < static_cast<size_t>(renderPatches.size()));
 
 //- grab the finest level data possible
     const Vector3 vpos(pos);

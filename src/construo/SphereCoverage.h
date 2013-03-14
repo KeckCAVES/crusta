@@ -40,9 +40,9 @@ public:
         coverage region */
     bool contains(const Point& v) const;
     /** checks if a given bounding box overlaps the coverage region */
-    uint overlaps(const Box& box) const;
+    size_t overlaps(const Box& box) const;
     /** checks if a given spherical coverage overlaps the coverage region */
-    uint overlaps(const SphereCoverage& coverage) const;
+    size_t overlaps(const SphereCoverage& coverage) const;
 
     /** shift the coverage */
     void shift(const Vector& vec);
@@ -52,22 +52,22 @@ protected:
     Box box;
 
     void addVertex(Point& vertex);
-    uint checkOverlap(const SphereCoverage& coverage) const;
+    size_t checkOverlap(const SphereCoverage& coverage) const;
 };
 
 class StaticSphereCoverage : public SphereCoverage
 {
 public:
-    StaticSphereCoverage(uint subdivisions, const Scope& scope);
-    StaticSphereCoverage(uint subdivisions, const ImageCoverage* coverage,
+    StaticSphereCoverage(size_t subdivisions, const Scope& scope);
+    StaticSphereCoverage(size_t subdivisions, const ImageCoverage* coverage,
                          const ImageTransform* transform);
 };
 
 class AdaptiveSphereCoverage : public SphereCoverage
 {
 public:
-    AdaptiveSphereCoverage(uint maxAngle, const Scope& scope);
-    AdaptiveSphereCoverage(uint maxAngle, const ImageCoverage* coverage,
+    AdaptiveSphereCoverage(size_t maxAngle, const Scope& scope);
+    AdaptiveSphereCoverage(size_t maxAngle, const ImageCoverage* coverage,
                            const ImageTransform* transform);
 };
 

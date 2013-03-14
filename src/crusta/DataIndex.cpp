@@ -12,7 +12,7 @@ operator() (const DataIndex& i) const
 {
     //taken from http://www.concentric.net/~Ttwang/tech/inthash.htm
 
-    uint64 key = i.raw;
+    uint64_t key = i.raw;
     key = (~key) + (key << 18); // key = (key << 18) - key - 1;
     key = key ^ (key >> 31);
     key = key * 21; // key = (key + (key << 2)) + (key << 4);
@@ -20,7 +20,7 @@ operator() (const DataIndex& i) const
     key = key + (key << 6);
     key = key ^ (key >> 22);
 
-    return static_cast<size_t>(static_cast<uint32>(key));
+    return static_cast<size_t>(static_cast<uint32_t>(key));
 }
 
 DataIndex::
@@ -30,7 +30,7 @@ DataIndex()
 }
 
 DataIndex::
-DataIndex(uint8 dataId, const TreeIndex& treeIndex) :
+DataIndex(uint8_t dataId, const TreeIndex& treeIndex) :
     TreeIndex(treeIndex)
 {
     reserved(dataId);
@@ -61,7 +61,7 @@ operator==(const DataIndex& other) const
 }
 
 
-uint8 DataIndex::
+uint8_t DataIndex::
 getDataId() const
 {
     return reserved();

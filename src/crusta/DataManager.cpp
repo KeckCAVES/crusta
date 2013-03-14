@@ -59,7 +59,7 @@ Request() :
 
 DataManager::Request::
 Request(Crusta* iCrusta, float iLod, const NodeMainBuffer& iParent,
-        uint8 iChild) :
+        uint8_t iChild) :
     crusta(iCrusta), lod(iLod), parent(iParent), child(iChild)
 {
 }
@@ -994,7 +994,7 @@ streamGpuData(GLContextData& contextData, BatchElement& batchel,
 
 void DataManager::
 loadChild(Crusta* crusta, NodeMainData& parent,
-          uint8 which,    NodeMainData& child)
+          uint8_t which,    NodeMainData& child)
 {
     NodeData& parentNode = *parent.node;
     NodeData& childNode  = *child.node;
@@ -1199,7 +1199,7 @@ sourceDem(const NodeData* const parent,
         {
             range[0] =  Math::Constants<DemHeight::Type>::max;
             range[1] = -Math::Constants<DemHeight::Type>::max;
-            for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
+            for (size_t i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
                 childHeight[i] = demNodata;
         }
     }
@@ -1208,7 +1208,7 @@ sourceDem(const NodeData* const parent,
 void DataManager::
 sourceColor(const NodeData* const parent,
             const TextureColor::Type* const parentColor,
-            NodeData* child, uint8 layer,
+            NodeData* child, uint8_t layer,
             TextureColor::Type* childColor)
 {
     typedef ColorFile::File File;
@@ -1235,7 +1235,7 @@ sourceColor(const NodeData* const parent,
         }
         else
         {
-            for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
+            for (size_t i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
                 childColor[i] = colorNodata;
         }
     }
@@ -1244,7 +1244,7 @@ sourceColor(const NodeData* const parent,
 void DataManager::
 sourceLayerf(const NodeData* const parent,
                   const LayerDataf::Type* const parentLayerf,
-                  NodeData* child, uint8 layer, LayerDataf::Type* childLayerf)
+                  NodeData* child, uint8_t layer, LayerDataf::Type* childLayerf)
 {
     typedef LayerfFile::File File;
 
@@ -1270,7 +1270,7 @@ sourceLayerf(const NodeData* const parent,
         }
         else
         {
-            for (uint i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
+            for (size_t i=0; i<TILE_RESOLUTION*TILE_RESOLUTION; ++i)
                 childLayerf[i] = layerfNodata;
         }
     }

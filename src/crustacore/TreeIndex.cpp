@@ -14,7 +14,7 @@ const TreeIndex TreeIndex::invalid(~0,~0,~0,~0);
 
 
 TreeIndex::
-TreeIndex(uint8 iPatch, uint8 iChild, uint8 iLevel, uint64 iIndex)
+TreeIndex(uint8_t iPatch, uint8_t iChild, uint8_t iLevel, uint64_t iIndex)
 {
     reserved(~0);
     patch(iPatch);
@@ -56,66 +56,66 @@ operator!=(const TreeIndex& other) const
     return this->raw != other.raw;
 }
 
-uint8 TreeIndex::
+uint8_t TreeIndex::
 reserved() const
 {
-    return static_cast<uint8>(raw&0x1F);
+    return static_cast<uint8_t>(raw&0x1F);
 }
 
 void TreeIndex::
-reserved(const uint8 v)
+reserved(const uint8_t v)
 {
-    raw &= ~static_cast<uint64>(0x1F);
-    raw |=  static_cast<uint64>(v&0x1F);
+    raw &= ~static_cast<uint64_t>(0x1F);
+    raw |=  static_cast<uint64_t>(v&0x1F);
 }
 
-uint8 TreeIndex::
+uint8_t TreeIndex::
 patch() const
 {
-    return static_cast<uint8>((raw&0x3E0)>>5);
+    return static_cast<uint8_t>((raw&0x3E0)>>5);
 }
 
 void TreeIndex::
-patch(const uint8 v)
+patch(const uint8_t v)
 {
-    raw &= ~static_cast<uint64>(0x3E0);
-    raw |=  static_cast<uint64>((v&0x1F)<<5);
+    raw &= ~static_cast<uint64_t>(0x3E0);
+    raw |=  static_cast<uint64_t>((v&0x1F)<<5);
 }
 
-uint8 TreeIndex::
+uint8_t TreeIndex::
 child() const
 {
-    return static_cast<uint8>((raw&0xC00)>>10);
+    return static_cast<uint8_t>((raw&0xC00)>>10);
 }
 
 void TreeIndex::
-child(const uint8 v)
+child(const uint8_t v)
 {
-    raw &= ~static_cast<uint64>(0xC00);
-    raw |=  static_cast<uint64>((v&0x3)<<10);
+    raw &= ~static_cast<uint64_t>(0xC00);
+    raw |=  static_cast<uint64_t>((v&0x3)<<10);
 }
 
-uint8 TreeIndex::
+uint8_t TreeIndex::
 level() const
 {
-    return static_cast<uint8>((raw&0x3F000)>>12);
+    return static_cast<uint8_t>((raw&0x3F000)>>12);
 }
 
 void TreeIndex::
-level(const uint8 v)
+level(const uint8_t v)
 {
-    raw &= ~static_cast<uint64>(0x3F000);
-    raw |=  static_cast<uint64>((v&0x3F)<<12);
+    raw &= ~static_cast<uint64_t>(0x3F000);
+    raw |=  static_cast<uint64_t>((v&0x3F)<<12);
 }
 
-uint64 TreeIndex::
+uint64_t TreeIndex::
 index() const
 {
     return (raw&0xFFFFFFFFFFFC0000)>>18;
 }
 
 void TreeIndex::
-index(const uint64 v)
+index(const uint64_t v)
 {
     raw &= ~0xFFFFFFFFFFFC0000;
     raw |=  (v&0x3FFFFFFFFFFF)<<18;
@@ -132,17 +132,17 @@ up() const
         return TreeIndex(patch(), 0, 0, 0);
     else
     {
-        uint8  newChild = static_cast<uint8>(((index())>>((level()-2)*2))&0x3);
-        uint64 newIndex = index();
-        newIndex = newIndex & ~(((uint64)(0x3)) << ((level()-1) * 2));
+        uint8_t  newChild = static_cast<uint8_t>(((index())>>((level()-2)*2))&0x3);
+        uint64_t newIndex = index();
+        newIndex = newIndex & ~(((uint64_t)(0x3)) << ((level()-1) * 2));
         return TreeIndex(patch(), newChild, level()-1, newIndex);
     }
 }
 
 TreeIndex TreeIndex::
-down(uint8 which) const
+down(uint8_t which) const
 {
-    uint64 newIndex = index() | (static_cast<uint64>(which) << (level()*2));
+    uint64_t newIndex = index() | (static_cast<uint64_t>(which) << (level()*2));
     return TreeIndex(patch(), which, level()+1, newIndex);
 }
 
@@ -157,8 +157,8 @@ str() const
     if (level() == 0)
         return "r";
 
-    uint64 i = index();
-    for (uint j=0; j<level(); ++j, i>>=2)
+    uint64_t i = index();
+    for (size_t j=0; j<level(); ++j, i>>=2)
         os << (i&0x3);
 
     return os.str();
@@ -188,8 +188,8 @@ med_str() const
         return os.str();
     }
 
-    uint64 i = index();
-    for (uint j=0; j<level(); ++j, i>>=2)
+    uint64_t i = index();
+    for (size_t j=0; j<level(); ++j, i>>=2)
         os << (i&0x3);
 
     return os.str();
@@ -203,8 +203,8 @@ operator<<(std::ostream& os, const TreeIndex& ti)
     if (ti.level() == 0)
         return os << std::string("r");
 
-    uint64 i = ti.index();
-    for (uint j=0; j<ti.level(); ++j, i>>=2)
+    uint64_t i = ti.index();
+    for (size_t j=0; j<ti.level(); ++j, i>>=2)
         os << (i&0x3);
 
     return os;
@@ -218,13 +218,13 @@ TreePath(TreeIndex i) :
     level(i.level()==0?0:i.level()+1), index(i.index())
 {}
 
-uint8 TreePath::
+uint8_t TreePath::
 pop()
 {
     if (level==0)
         return END;
 
-    uint8 retVal = index & 0x3;
+    uint8_t retVal = index & 0x3;
     index >>= 2;
 
     return retVal;

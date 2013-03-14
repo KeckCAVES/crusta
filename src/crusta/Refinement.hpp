@@ -4,7 +4,7 @@ BEGIN_CRUSTA
 
 template <typename ScalarParam>
 void Refinement::
-mid(const Ellipsoid& ellipse, uint oneIndex, uint twoIndex,
+mid(const Ellipsoid& ellipse, size_t oneIndex, size_t twoIndex,
     Geometry::Point<ScalarParam, 3>* vertices) const
 {
     ScalarParam* one = &vertices[oneIndex * 3];
@@ -20,8 +20,8 @@ mid(const Ellipsoid& ellipse, uint oneIndex, uint twoIndex,
 
 template <typename ScalarParam>
 void Refinement::
-centroid(const Ellipsoid& ellipse, uint oneIndex, uint twoIndex,
-         uint threeIndex, uint fourIndex, ScalarParam* vertices) const
+centroid(const Ellipsoid& ellipse, size_t oneIndex, size_t twoIndex,
+         size_t threeIndex, size_t fourIndex, ScalarParam* vertices) const
 {
     mid((oneIndex+twoIndex)>>1, (threeIndex+fourIndex)>>1, vertices);
 }

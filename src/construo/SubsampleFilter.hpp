@@ -28,7 +28,7 @@ struct SubsampleFilter<float, SUBSAMPLEFILTER_POINT>
                         const float&)
     {
         int ip[2];
-        for (uint i=0; i<2; ++i)
+        for (size_t i=0; i<2; ++i)
         {
             double pFloor = Math::floor(at[i] + double(0.5));
             ip[i]         = static_cast<int>(pFloor) - origin[i];
@@ -58,7 +58,7 @@ struct SubsampleFilter<float, SUBSAMPLEFILTER_PYRAMID>
     {
         int ip[2];
         double d[2];
-        for(uint i=0; i<2; ++i)
+        for(size_t i=0; i<2; ++i)
         {
             double pFloor = Math::floor(at[i]);
             d[i]          = at[i] - pFloor;
@@ -193,7 +193,7 @@ struct SubsampleFilter<Vector3ui8, SUBSAMPLEFILTER_POINT>
                              const Vector3ui8& defaultValue, const Vector3ui8&)
     {
         int ip[2];
-        for (uint i=0; i<2; ++i)
+        for (size_t i=0; i<2; ++i)
         {
             double pFloor = Math::floor(at[i] + double(0.5));
             ip[i]         = static_cast<int>(pFloor) - origin[i];
@@ -225,7 +225,7 @@ struct SubsampleFilter<Vector3ui8, SUBSAMPLEFILTER_PYRAMID>
     {
         int ip[2];
         double d[2];
-        for(uint i=0; i<2; ++i)
+        for(size_t i=0; i<2; ++i)
         {
             double pFloor = Math::floor(at[i]);
             d[i]          = at[i] - pFloor;

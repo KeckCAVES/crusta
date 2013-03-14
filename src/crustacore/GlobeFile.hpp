@@ -77,7 +77,7 @@ open(const std::string& path)
     {
         std::ostringstream oss;
         oss << path << "/patch_" << i << ".qtf";
-        uint32 utileSize[2] = {tileSize[0], tileSize[1]};
+        uint32_t utileSize[2] = {tileSize[0], tileSize[1]};
         patches.push_back(new File(oss.str().c_str(), utileSize, writable));
 
         if (writable)
@@ -119,9 +119,9 @@ close()
 
 template <typename PixelParam>
 typename GlobeFile<PixelParam>::File* GlobeFile<PixelParam>::
-getPatch(uint8 patch)
+getPatch(uint8_t patch)
 {
-    assert(patch < static_cast<uint8>(patches.size()));
+    assert(patch < static_cast<uint8_t>(patches.size()));
     return patches[patch];
 }
 

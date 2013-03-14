@@ -42,7 +42,7 @@ public:
     typedef NodeGpuData          GpuData;
     typedef NodeGpuDatas         GpuDatas;
 
-    QuadTerrain(uint8 patch, const Scope& scope, Crusta* iCrusta);
+    QuadTerrain(uint8_t patch, const Scope& scope, Crusta* iCrusta);
 
     /** query the patch's root node buffer */
     const MainBuffer getRootBuffer() const;
