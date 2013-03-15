@@ -29,7 +29,7 @@ evaluate(const NodeData& node)
         /*
         const SliceTool::SliceParameters &params = SliceTool::getParameters();
         for (size_t i=0; i < params.faultPlanes.size(); ++i) {
-            Vector3 shiftVector(params.getShiftVector(params.faultPlanes[i]));
+            Geometry::Vector<double,3> shiftVector(params.getShiftVector(params.faultPlanes[i]));
             if (frustum.doesSphereIntersect(node.boundingCenter + shiftVector, node.getEffectiveBoundingRadius()))
                 return true;
         }

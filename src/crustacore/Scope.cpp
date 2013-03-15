@@ -110,19 +110,19 @@ split(Scope scopes[4]) const
 bool Scope::
 contains(const Scope::Vertex& point) const
 {
-    Vector3 p(point);
+    Geometry::Vector<double,3> p(point);
 
     //compute face normals
     static const int remap[4][2] = {{3,2}, {2,0}, {0,1}, {1,3}};
     for (int i=0; i<4; ++i)
     {
-        Vector3 one(corners[remap[i][0]]);
-        Vector3 toP = p - one;
-        Vector3 two(corners[remap[i][1]]);
+        Geometry::Vector<double,3> one(corners[remap[i][0]]);
+        Geometry::Vector<double,3> toP = p - one;
+        Geometry::Vector<double,3> two(corners[remap[i][1]]);
         two -= one;
         one.normalize();
         two.normalize();
-        Vector3 normal = Geometry::cross(one, two);
+        Geometry::Vector<double,3> normal = Geometry::cross(one, two);
         normal.normalize();
 
         if (toP*normal < 0)
@@ -133,9 +133,9 @@ contains(const Scope::Vertex& point) const
 }
 
 bool Scope::
-intersects(const Point3& start, const Point3& end)
+intersects(const Geometry::Point<double,3>& start, const Geometry::Point<double,3>& end)
 {
-    Ray ray(start, end);
+    Geometry::Ray<double,3> ray(start, end);
 
     static const int remap[4][2] = {{3,2}, {2,0}, {0,1}, {1,3}};
     //check all the edge sections
@@ -144,7 +144,7 @@ intersects(const Point3& start, const Point3& end)
     for (int i=0; i<4; ++i)
     {
         Section section(corners[remap[i][0]], corners[remap[i][1]]);
-        HitResult hit   = section.intersect(ray, false);
+        Geometry::HitResult<double> hit   = section.intersect(ray, false);
         double hitParam = hit.getParameter();
         if (hit.isValid())
         {

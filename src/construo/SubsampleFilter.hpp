@@ -180,17 +180,17 @@ struct SubsampleFilter<float, SUBSAMPLEFILTER_LANCZOS5>
 //- 3-channel unit8 ------------------------------------------------------------
 
 template <>
-struct SubsampleFilter<Vector3ui8, SUBSAMPLEFILTER_POINT>
+struct SubsampleFilter<Geometry::Vector<uint8_t,3>, SUBSAMPLEFILTER_POINT>
 {
     static int width()
     {
         return 0;
     }
 
-    static Vector3ui8 sample(const Vector3ui8* img, const int origin[2],
+    static Geometry::Vector<uint8_t,3> sample(const Geometry::Vector<uint8_t,3>* img, const int origin[2],
                              const double at[2], const int size[2],
-                             const Vector3ui8& imgNodata,
-                             const Vector3ui8& defaultValue, const Vector3ui8&)
+                             const Geometry::Vector<uint8_t,3>& imgNodata,
+                             const Geometry::Vector<uint8_t,3>& defaultValue, const Geometry::Vector<uint8_t,3>&)
     {
         int ip[2];
         for (size_t i=0; i<2; ++i)
@@ -198,30 +198,30 @@ struct SubsampleFilter<Vector3ui8, SUBSAMPLEFILTER_POINT>
             double pFloor = Math::floor(at[i] + double(0.5));
             ip[i]         = static_cast<int>(pFloor) - origin[i];
         }
-        Vector3ui8 imgValue = img[ip[1]*size[0] + ip[0]];
+        Geometry::Vector<uint8_t,3> imgValue = img[ip[1]*size[0] + ip[0]];
         return imgValue==imgNodata ? defaultValue : imgValue;
     }
 
-    static Vector3ui8 sample(Vector3ui8* at, int rowLen,
-                             const Vector3ui8&)
+    static Geometry::Vector<uint8_t,3> sample(Geometry::Vector<uint8_t,3>* at, int rowLen,
+                             const Geometry::Vector<uint8_t,3>&)
     {
         return *at;
     }
 };
 
 template <>
-struct SubsampleFilter<Vector3ui8, SUBSAMPLEFILTER_PYRAMID>
+struct SubsampleFilter<Geometry::Vector<uint8_t,3>, SUBSAMPLEFILTER_PYRAMID>
 {
     static int width()
     {
         return 1;
     }
 
-    static Vector3ui8 sample(const Vector3ui8* img, const int origin[2],
+    static Geometry::Vector<uint8_t,3> sample(const Geometry::Vector<uint8_t,3>* img, const int origin[2],
                              const double at[2], const int size[2],
-                             const Vector3ui8& imgNodata,
-                             const Vector3ui8& defaultValue,
-                             const Vector3ui8& globeNodata)
+                             const Geometry::Vector<uint8_t,3>& imgNodata,
+                             const Geometry::Vector<uint8_t,3>& defaultValue,
+                             const Geometry::Vector<uint8_t,3>& globeNodata)
     {
         int ip[2];
         double d[2];
@@ -236,8 +236,8 @@ struct SubsampleFilter<Vector3ui8, SUBSAMPLEFILTER_PYRAMID>
                 d[i] = 1.0;
             }
         }
-        const Vector3ui8* base = img + (ip[1]*size[0] + ip[0]);
-        Vector3ui8 v[4];
+        const Geometry::Vector<uint8_t,3>* base = img + (ip[1]*size[0] + ip[0]);
+        Geometry::Vector<uint8_t,3> v[4];
         v[0] = base[0]         == imgNodata ? defaultValue : base[0];
         v[1] = base[1]         == imgNodata ? defaultValue : base[1];
         v[2] = base[size[0]]   == imgNodata ? defaultValue : base[size[0]];
@@ -246,13 +246,13 @@ struct SubsampleFilter<Vector3ui8, SUBSAMPLEFILTER_PYRAMID>
         double weights[4] = { (1-d[1])*(1-d[0]), (1-d[1])*d[0],
                               d[1]*(1-d[0]), d[1]*d[0] };
 
-        Geometry::Vector<double, Vector3ui8::dimension> sum(0);
+        Geometry::Vector<double, Geometry::Vector<uint8_t,3>::dimension> sum(0);
         double sumWeights(0.0);
         for (int i=0; i<4; ++i)
         {
             if (v[i] != globeNodata)
             {
-                for (int j=0; j<Vector3ui8::dimension; ++j)
+                for (int j=0; j<Geometry::Vector<uint8_t,3>::dimension; ++j)
                     sum[j] += v[i][j] * weights[i];
                 sumWeights += weights[i];
             }
@@ -262,38 +262,38 @@ struct SubsampleFilter<Vector3ui8, SUBSAMPLEFILTER_PYRAMID>
             return globeNodata;
 
         //snap to nearest integer and clamp
-        Vector3ui8 returnValue;
-        for (int i=0; i<Vector3ui8::dimension; ++i)
+        Geometry::Vector<uint8_t,3> returnValue;
+        for (int i=0; i<Geometry::Vector<uint8_t,3>::dimension; ++i)
         {
             sum[i] /= sumWeights;
             sum[i]  = std::max(sum[i], 0.0);
             sum[i]  = std::min(sum[i], 255.0);
 
-            returnValue[i] = Vector3ui8::Scalar(sum[i]+0.5);
+            returnValue[i] = Geometry::Vector<uint8_t,3>::Scalar(sum[i]+0.5);
         }
 
         return returnValue;
     }
 
-    static Vector3ui8 sample(Vector3ui8* at, int rowLen,
-                             const Vector3ui8& globeNodata)
+    static Geometry::Vector<uint8_t,3> sample(Geometry::Vector<uint8_t,3>* at, int rowLen,
+                             const Geometry::Vector<uint8_t,3>& globeNodata)
     {
         static double weightStorage[3] = {0.25, 0.50, 0.25};
         double* weights = &weightStorage[1];
 
-        Geometry::Vector<double, Vector3ui8::dimension> sum(0);
+        Geometry::Vector<double, Geometry::Vector<uint8_t,3>::dimension> sum(0);
         double sumWeights = 0.0;
 
         for (int y=-1; y<=1; ++y)
         {
-            Vector3ui8* atY = at + y*rowLen;
+            Geometry::Vector<uint8_t,3>* atY = at + y*rowLen;
             for (int x=-1; x<=1; ++x)
             {
-                Vector3ui8* atYX = atY + x;
+                Geometry::Vector<uint8_t,3>* atYX = atY + x;
                 if (*atYX != globeNodata)
                 {
                     double weight = weights[y]*weights[x];
-                    for (int i=0; i<Vector3ui8::dimension; ++i)
+                    for (int i=0; i<Geometry::Vector<uint8_t,3>::dimension; ++i)
                         sum[i] += double((*atYX)[i]) * weight;
                     sumWeights += weight;
                 }
@@ -304,14 +304,14 @@ struct SubsampleFilter<Vector3ui8, SUBSAMPLEFILTER_PYRAMID>
             return globeNodata;
 
         //snap to nearest integer and clamp
-        Vector3ui8 returnValue;
-        for (int i=0; i<Vector3ui8::dimension; ++i)
+        Geometry::Vector<uint8_t,3> returnValue;
+        for (int i=0; i<Geometry::Vector<uint8_t,3>::dimension; ++i)
         {
             sum[i] /= sumWeights;
             sum[i]  = std::max(sum[i], 0.0);
             sum[i]  = std::min(sum[i], 255.0);
 
-            returnValue[i] = Vector3ui8::Scalar(sum[i]+0.5);
+            returnValue[i] = Geometry::Vector<uint8_t,3>::Scalar(sum[i]+0.5);
         }
 
         return returnValue;
@@ -319,7 +319,7 @@ struct SubsampleFilter<Vector3ui8, SUBSAMPLEFILTER_PYRAMID>
 };
 
 template <>
-struct SubsampleFilter<Vector3ui8, SUBSAMPLEFILTER_LANCZOS5>
+struct SubsampleFilter<Geometry::Vector<uint8_t,3>, SUBSAMPLEFILTER_LANCZOS5>
 {
     static int width()
     {
@@ -328,8 +328,8 @@ struct SubsampleFilter<Vector3ui8, SUBSAMPLEFILTER_LANCZOS5>
 
     //no dynamic sampling
 
-    static Vector3ui8 sample(Vector3ui8* at, int rowLen,
-                             const Vector3ui8& globeNodata)
+    static Geometry::Vector<uint8_t,3> sample(Geometry::Vector<uint8_t,3>* at, int rowLen,
+                             const Geometry::Vector<uint8_t,3>& globeNodata)
     {
         static const double weightStorage[21] = {
              7.60213661720011e-34,  0.00386785330198227,  -4.5610817871754e-18,
@@ -341,19 +341,19 @@ struct SubsampleFilter<Vector3ui8, SUBSAMPLEFILTER_LANCZOS5>
              -4.5610817871754e-18,  0.00386785330198227,  7.60213661720011e-34};
         const double* weights = &weightStorage[10];
 
-        Geometry::Vector<double, Vector3ui8::dimension> sum(0);
+        Geometry::Vector<double, Geometry::Vector<uint8_t,3>::dimension> sum(0);
         double sumWeights = 0.0;
 
         for (int y=-10; y<=10; ++y)
         {
-            Vector3ui8* atY = at + y*rowLen;
+            Geometry::Vector<uint8_t,3>* atY = at + y*rowLen;
             for (int x=-10; x<=10; ++x)
             {
-                Vector3ui8* atYX = atY + x;
+                Geometry::Vector<uint8_t,3>* atYX = atY + x;
                 if (*atYX != globeNodata)
                 {
                     double weight = weights[y]*weights[x];
-                    for (int i=0; i<Vector3ui8::dimension; ++i)
+                    for (int i=0; i<Geometry::Vector<uint8_t,3>::dimension; ++i)
                         sum[i] += double((*atYX)[i]) * weight;
                     sumWeights += weight;
                 }
@@ -364,14 +364,14 @@ struct SubsampleFilter<Vector3ui8, SUBSAMPLEFILTER_LANCZOS5>
             return globeNodata;
 
         //snap to nearest integer and clamp
-        Vector3ui8 returnValue;
-        for (int i=0; i<Vector3ui8::dimension; ++i)
+        Geometry::Vector<uint8_t,3> returnValue;
+        for (int i=0; i<Geometry::Vector<uint8_t,3>::dimension; ++i)
         {
             sum[i] /= sumWeights;
             sum[i]  = std::max(sum[i], 0.0);
             sum[i]  = std::min(sum[i], 255.0);
 
-            returnValue[i] = Vector3ui8::Scalar(sum[i]+0.5);
+            returnValue[i] = Geometry::Vector<uint8_t,3>::Scalar(sum[i]+0.5);
         }
 
         return returnValue;

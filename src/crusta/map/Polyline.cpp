@@ -23,7 +23,7 @@ recomputeCoords(ControlPointHandle cur)
     assert(cur != controlPoints.end());
     FrameStamp curStamp = CURRENT_FRAME;
 
-    Point3 prevP, curP;
+    Geometry::Point<double,3> prevP, curP;
     ControlPointHandle prev = cur;
     if (prev != controlPoints.begin())
         --prev;
@@ -43,14 +43,14 @@ recomputeCoords(ControlPointHandle cur)
 }
 
 void Polyline::
-setControlPoints(const Point3s& newControlPoints)
+setControlPoints(const std::vector<Geometry::Point<double,3> >& newControlPoints)
 {
     Shape::setControlPoints(newControlPoints);
     recomputeCoords(controlPoints.begin());
 }
 
 Shape::ControlId Polyline::
-addControlPoint(const Point3& pos, End end)
+addControlPoint(const Geometry::Point<double,3>& pos, End end)
 {
     Shape::ControlId ret = Shape::addControlPoint(pos, end);
     assert(ret.isValid());
@@ -59,7 +59,7 @@ addControlPoint(const Point3& pos, End end)
 }
 
 void Polyline::
-moveControlPoint(const ControlId& id, const Point3& pos)
+moveControlPoint(const ControlId& id, const Geometry::Point<double,3>& pos)
 {
     Shape::moveControlPoint(id, pos);
     recomputeCoords(id.handle);
@@ -84,7 +84,7 @@ removeControlPoint(const ControlId& id)
 }
 
 Shape::ControlId Polyline::
-refine(const ControlId& id, const Point3& pos)
+refine(const ControlId& id, const Geometry::Point<double,3>& pos)
 {
     Shape::ControlId ret = Shape::refine(id, pos);
     assert(ret.isValid());

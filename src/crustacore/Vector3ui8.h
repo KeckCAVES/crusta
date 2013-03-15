@@ -10,49 +10,46 @@
 BEGIN_CRUSTA
 
 
-typedef Geometry::Vector<uint8_t, 3> Vector3ui8;
-
-
 inline
-Vector3ui8 operator+(const Vector3ui8& tc, double d)
+Geometry::Vector<uint8_t,3> operator+(const Geometry::Vector<uint8_t,3>& tc, double d)
 {
-    return Vector3ui8(tc[0]+d, tc[1]+d, tc[2]+d);
+    return Geometry::Vector<uint8_t,3>(tc[0]+d, tc[1]+d, tc[2]+d);
 }
 inline
-Vector3ui8 operator+(double d, const Vector3ui8& tc)
+Geometry::Vector<uint8_t,3> operator+(double d, const Geometry::Vector<uint8_t,3>& tc)
 {
     return tc + d;
 }
 
 inline
-Vector3ui8 operator*(const Vector3ui8& tc, double d)
+Geometry::Vector<uint8_t,3> operator*(const Geometry::Vector<uint8_t,3>& tc, double d)
 {
-    return Vector3ui8(tc[0]*d, tc[1]*d, tc[2]*d);
+    return Geometry::Vector<uint8_t,3>(tc[0]*d, tc[1]*d, tc[2]*d);
 }
 inline
-Vector3ui8 operator*(double d, const Vector3ui8& tc)
+Geometry::Vector<uint8_t,3> operator*(double d, const Geometry::Vector<uint8_t,3>& tc)
 {
     return tc * d;
 }
 
 inline
-std::ostream& operator<<(std::ostream& oss, Vector3ui8& tc)
+std::ostream& operator<<(std::ostream& oss, Geometry::Vector<uint8_t,3>& tc)
 {
     /* uint8_t is seen as a char not an integer; must, therefore, cast to int
        otherwise '\0' will be generated */
-    for (int i=0; i<Vector3ui8::dimension-1; ++i)
+    for (int i=0; i<Geometry::Vector<uint8_t,3>::dimension-1; ++i)
         oss << (int)tc[i] << " ";
-    oss << (int)tc[Vector3ui8::dimension-1];
+    oss << (int)tc[Geometry::Vector<uint8_t,3>::dimension-1];
     return oss;
 }
 
 inline
-std::istream& operator>>(std::istream& iss, Vector3ui8& tc)
+std::istream& operator>>(std::istream& iss, Geometry::Vector<uint8_t,3>& tc)
 {
     /* uint8_t is seen as a char not an integer; must, therefore, buffer to int
        otherwise 48 (ascii number for '0') will be generated */
     int temp;
-    for (int i=0; i<Vector3ui8::dimension; ++i)
+    for (int i=0; i<Geometry::Vector<uint8_t,3>::dimension; ++i)
     {
         iss >> temp;
         tc[i] = temp;

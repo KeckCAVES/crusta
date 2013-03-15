@@ -198,10 +198,10 @@ assert(rectOrigin[i]+rectSize[i]-1 < size[i]);
 //- 3-channel unit8 ------------------------------------------------------------
 
 template <>
-class GdalImageFile<Vector3ui8> : public GdalImageFileBase<Vector3ui8>
+class GdalImageFile<Geometry::Vector<uint8_t,3> > : public GdalImageFileBase<Geometry::Vector<uint8_t,3> >
 {
 public:
-    typedef GdalImageFileBase<Vector3ui8> Base;
+    typedef GdalImageFileBase<Geometry::Vector<uint8_t,3> > Base;
 
     GdalImageFile(const std::string& imageFileName) :
         Base(imageFileName)
@@ -217,14 +217,14 @@ public:
         std::vector<GDALRasterBand*> bands;
         bands.push_back(dataset->GetRasterBand(1));
 
-        for (int i=1; i<Vector3ui8::dimension; ++i)
+        for (int i=1; i<Geometry::Vector<uint8_t,3>::dimension; ++i)
         {
             bands.push_back(numBands<i+1 ? bands[i-1] :
                                            dataset->GetRasterBand(i+1));
         }
 
-        for (int i=0; i<Vector3ui8::dimension; ++i)
-            nodata[i] = Vector3ui8::Scalar(bands[i]->GetNoDataValue());
+        for (int i=0; i<Geometry::Vector<uint8_t,3>::dimension; ++i)
+            nodata[i] = Geometry::Vector<uint8_t,3>::Scalar(bands[i]->GetNoDataValue());
 
         //output the no-data value
         std::cout << "Internal nodata value:\n(" << nodata << ")\n";
@@ -233,7 +233,7 @@ public:
 
 public:
     virtual void readRectangle(const int rectOrigin[2], const int rectSize[2],
-                               Vector3ui8* rectBuffer) const
+                               Geometry::Vector<uint8_t,3>* rectBuffer) const
     {
         //retrieve raster bands from the data set
         int numBands = dataset->GetRasterCount();
@@ -246,7 +246,7 @@ public:
         std::vector<GDALRasterBand*> bands;
         bands.push_back(dataset->GetRasterBand(1));
 
-        for (int i=1; i<Vector3ui8::dimension; ++i)
+        for (int i=1; i<Geometry::Vector<uint8_t,3>::dimension; ++i)
         {
             bands.push_back(numBands<i+1 ? bands[i-1] :
                                            dataset->GetRasterBand(i+1));
@@ -265,21 +265,21 @@ assert(rectOrigin[i]+rectSize[i]-1 < size[i]);
         }
 
         int readSize[2] = { max[0] - min[0], max[1] - min[1] };
-        int rowWidth  = rectSize[0] * sizeof(Vector3ui8);
-        Vector3ui8* dst = rectBuffer + ( (min[1]-rectOrigin[1])*rectSize[0] +
+        int rowWidth  = rectSize[0] * sizeof(Geometry::Vector<uint8_t,3>);
+        Geometry::Vector<uint8_t,3>* dst = rectBuffer + ( (min[1]-rectOrigin[1])*rectSize[0] +
                                          (min[0]-rectOrigin[0]) );
 
-        for (int i=0; i<Vector3ui8::dimension; ++i)
+        for (int i=0; i<Geometry::Vector<uint8_t,3>::dimension; ++i)
         {
             bands[i]->RasterIO(GF_Read, min[0], min[1], readSize[0],readSize[1],
                                &dst[0][i], readSize[0], readSize[1], GDT_Byte,
-                               sizeof(Vector3ui8), rowWidth);
+                               sizeof(Geometry::Vector<uint8_t,3>), rowWidth);
         }
 
         //scale the pixel values
         if (pixelOffset!=0.0 || pixelScale!=1.0)
         {
-            for (Vector3ui8* p=rectBuffer;
+            for (Geometry::Vector<uint8_t,3>* p=rectBuffer;
                  p < (rectBuffer + rectSize[0]*rectSize[1]); ++p)
             {
                 if (*p != nodata)

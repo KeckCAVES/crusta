@@ -44,7 +44,7 @@ struct NodeData
     void computeBoundingSphere(Scalar radius, Scalar verticalScale);
 
     /** get effective bounding radius considering translations by the slicing tool **/
-    Point3 getEffectiveBoundingCenter() const;
+    Geometry::Point<double,3> getEffectiveBoundingCenter() const;
 
     /** compute the various "cached values" (e.g. bounding sphere, centroid,
         etc.) */
@@ -81,7 +81,7 @@ Colors           lineData;
     Scope::Scalar boundingRadius;
 
     /** centroid of the node geometry on the average elevation shell */
-    Point3f centroid;
+    Geometry::Point<float,3> centroid;
     /** the range of the elevation values */
     DemHeight::Type elevationRange[2];
 
@@ -98,9 +98,9 @@ Colors           lineData;
 struct SubRegion
 {
     SubRegion();
-    SubRegion(const Point3f& iOffset, const Vector2f& iSize);
-    Point3f  offset;
-    Vector2f size;
+    SubRegion(const Geometry::Point<float,3>& iOffset, const Geometry::Vector<float,2>& iSize);
+    Geometry::Point<float,3>  offset;
+    Geometry::Vector<float,2> size;
 };
 
 ///\todo Vis2010 integrate this into the system better
@@ -108,7 +108,7 @@ struct SubRegion
 struct StampedSubRegion : SubRegion
 {
     StampedSubRegion();
-    StampedSubRegion(const Point3f& iOffset, const Vector2f& iSize);
+    StampedSubRegion(const Geometry::Point<float,3>& iOffset, const Geometry::Vector<float,2>& iSize);
     FrameStamp age;
 };
 

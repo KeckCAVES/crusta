@@ -14,7 +14,7 @@ public:
     ShaderTopographySource(ShaderDataSource* _geometrySrc,
                            ShaderDataSource* _heightSrc);
 
-    void setCentroid(const Point3f& c);
+    void setCentroid(const Geometry::Point<float,3>& c);
 
 private:
     ShaderDataSource* geometrySrc;

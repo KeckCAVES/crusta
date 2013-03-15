@@ -76,27 +76,27 @@ struct PixelOps<float>
 //- 3-channel unit8 ------------------------------------------------------------
 
 template <>
-struct PixelOps<Vector3ui8>
+struct PixelOps<Geometry::Vector<uint8_t,3> >
 {
-    static Vector3ui8 average(const Vector3ui8& a, const Vector3ui8& b,
-                              const Vector3ui8& nodata)
+    static Geometry::Vector<uint8_t,3> average(const Geometry::Vector<uint8_t,3>& a, const Geometry::Vector<uint8_t,3>& b,
+                              const Geometry::Vector<uint8_t,3>& nodata)
     {
         if (a==nodata)
             return b;
         else if (b==nodata)
             return a;
 
-        Vector3ui8 res(0,0,0);
-        for (int i=0; i<Vector3ui8::dimension; ++i)
+        Geometry::Vector<uint8_t,3> res(0,0,0);
+        for (int i=0; i<Geometry::Vector<uint8_t,3>::dimension; ++i)
             res[i] = (((float)a[i] + (float)b[i]) * 0.5f) + 0.5f;
         return res;
     }
 
-    static Vector3ui8 average(const Vector3ui8& a, const Vector3ui8& b,
-                              const Vector3ui8& c, const Vector3ui8& d,
-                              const Vector3ui8& nodata)
+    static Geometry::Vector<uint8_t,3> average(const Geometry::Vector<uint8_t,3>& a, const Geometry::Vector<uint8_t,3>& b,
+                              const Geometry::Vector<uint8_t,3>& c, const Geometry::Vector<uint8_t,3>& d,
+                              const Geometry::Vector<uint8_t,3>& nodata)
     {
-        const Vector3ui8 p[4] = {a,b,c,d};
+        const Geometry::Vector<uint8_t,3> p[4] = {a,b,c,d};
 
         float res[3] = {0.0f, 0.0f, 0.0f};
         float sumWeights = 0.0f;
@@ -104,7 +104,7 @@ struct PixelOps<Vector3ui8>
         {
             if (p[i] != nodata)
             {
-                for (int j=0; j<Vector3ui8::dimension; ++j)
+                for (int j=0; j<Geometry::Vector<uint8_t,3>::dimension; ++j)
                     res[j] += (float)p[i][j] * 0.25f;
                 sumWeights += 0.25f;
             }
@@ -113,37 +113,37 @@ struct PixelOps<Vector3ui8>
         if (sumWeights == 0.0f)
             return nodata;
 
-        Vector3ui8 ret;
-        for (int i=0; i<Vector3ui8::dimension; ++i)
+        Geometry::Vector<uint8_t,3> ret;
+        for (int i=0; i<Geometry::Vector<uint8_t,3>::dimension; ++i)
             ret[i] = (res[i] / sumWeights) + 0.5f;
 
         return ret;
     }
 
-    static Vector3ui8 minimum(const Vector3ui8& a, const Vector3ui8& b,
-                              const Vector3ui8& nodata)
+    static Geometry::Vector<uint8_t,3> minimum(const Geometry::Vector<uint8_t,3>& a, const Geometry::Vector<uint8_t,3>& b,
+                              const Geometry::Vector<uint8_t,3>& nodata)
     {
         if (a==nodata)
             return b;
         else if (b==nodata)
             return a;
 
-        Vector3ui8 res(0,0,0);
-        for (int i=0; i<Vector3ui8::dimension; ++i)
+        Geometry::Vector<uint8_t,3> res(0,0,0);
+        for (int i=0; i<Geometry::Vector<uint8_t,3>::dimension; ++i)
             res[i] = std::min(a[i], b[i]);
         return res;
     }
 
-    static Vector3ui8 maximum(const Vector3ui8& a, const Vector3ui8& b,
-                              const Vector3ui8& nodata)
+    static Geometry::Vector<uint8_t,3> maximum(const Geometry::Vector<uint8_t,3>& a, const Geometry::Vector<uint8_t,3>& b,
+                              const Geometry::Vector<uint8_t,3>& nodata)
     {
         if (a==nodata)
             return b;
         else if (b==nodata)
             return a;
 
-        Vector3ui8 res(0,0,0);
-        for (int i=0; i<Vector3ui8::dimension; ++i)
+        Geometry::Vector<uint8_t,3> res(0,0,0);
+        for (int i=0; i<Geometry::Vector<uint8_t,3>::dimension; ++i)
             res[i] = std::max(a[i], b[i]);
         return res;
     }

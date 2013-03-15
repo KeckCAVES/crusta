@@ -292,7 +292,7 @@ unload()
 
 
 SurfacePoint Crusta::
-snapToSurface(const Point3& pos, Scalar elevationOffset)
+snapToSurface(const Geometry::Point<double,3>& pos, Scalar elevationOffset)
 {
     SurfacePoint surfacePoint;
     if (renderPatches.empty())
@@ -321,19 +321,19 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     assert(node->index.patch() < static_cast<size_t>(renderPatches.size()));
 
 //- grab the finest level data possible
-    const Vector3 vpos(pos);
+    const Geometry::Vector<double,3> vpos(pos);
     while (true)
     {
         //figure out the appropriate child by comparing against the mid-planes
-        Point3 mid1, mid2;
+        Geometry::Point<double,3> mid1, mid2;
         mid1 = Geometry::mid(node->scope.corners[0], node->scope.corners[1]);
         mid2 = Geometry::mid(node->scope.corners[2], node->scope.corners[3]);
-        Vector3 vertical = Geometry::cross(Vector3(mid1), Vector3(mid2));
+        Geometry::Vector<double,3> vertical = Geometry::cross(Geometry::Vector<double,3>(mid1), Geometry::Vector<double,3>(mid2));
         vertical.normalize();
 
         mid1 = Geometry::mid(node->scope.corners[1], node->scope.corners[3]);
         mid2 = Geometry::mid(node->scope.corners[0], node->scope.corners[2]);
-        Vector3 horizontal = Geometry::cross(Vector3(mid1), Vector3(mid2));
+        Geometry::Vector<double,3> horizontal = Geometry::cross(Geometry::Vector<double,3>(mid1), Geometry::Vector<double,3>(mid2));
         horizontal.normalize();
 
         int childId = vpos*vertical   < 0 ? 0x1 : 0x0;
@@ -365,14 +365,14 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     surfacePoint.nodeIndex = node->index;
 
 #if 0
-    Point3 centroid = node->scope.getCentroid(node->scope.getRadius());
-    Vector3 ups[4];
+    Geometry::Point<double,3> centroid = node->scope.getCentroid(node->scope.getRadius());
+    Geometry::Vector<double,3> ups[4];
     for (int i=0; i<4; ++i)
     {
-        ups[i] = Vector3(node->scope.corners[i]);
+        ups[i] = Geometry::Vector<double,3>(node->scope.corners[i]);
         ups[i].normalize();
     }
-    Point3 relativeCorners[4];
+    Geometry::Point<double,3> relativeCorners[4];
     for (int i=0; i<4; ++i)
     {
         for (int j=0; j<3; ++j)
@@ -383,11 +383,11 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     static const int tileRes = TILE_RESOLUTION;
     Homography toNormalized;
     //destinations are fll, flr, ful, bll, bur
-    toNormalized.setDestination(Point3(        0,         0, -1),
-                                Point3(tileRes-1,         0, -1),
-                                Point3(        0, tileRes-1, -1),
-                                Point3(        0,         0,  1),
-                                Point3(tileRes-1, tileRes-1,  1));
+    toNormalized.setDestination(Geometry::Point<double,3>(        0,         0, -1),
+                                Geometry::Point<double,3>(tileRes-1,         0, -1),
+                                Geometry::Point<double,3>(        0, tileRes-1, -1),
+                                Geometry::Point<double,3>(        0,         0,  1),
+                                Geometry::Point<double,3>(tileRes-1, tileRes-1,  1));
     //compute corresponding sources
     toNormalized.setSource(relativeCorners[0] - ups[0],
                            relativeCorners[1] - ups[1],
@@ -398,20 +398,20 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     toNormalized.computeProjective();
 
 //- transform the test point
-    Point3 relativePos(pos[0]-centroid[0],
+    Geometry::Point<double,3> relativePos(pos[0]-centroid[0],
                        pos[1]-centroid[1],
                        pos[2]-centroid[2]);
 
-    typedef Geometry::HVector<Point3::Scalar,Point3::dimension> HPoint;
+    typedef Geometry::HVector<Geometry::Point<double,3>::Scalar,Geometry::Point<double,3>::dimension> HPoint;
 
     const Homography::Projective& p = toNormalized.getProjective();
 
-    Point3 projectedPos = p.transform(HPoint(relativePos)).toPoint();
+    Geometry::Point<double,3> projectedPos = p.transform(HPoint(relativePos)).toPoint();
 
 //- determine the containing cell and the position within it
-    Point2i& cellIndex    = surfacePoint.cellIndex;
-    Point2&  cellPosition = surfacePoint.cellPosition;
-    cellIndex = Point2i(projectedPos[0], projectedPos[1]);
+    Geometry::Point<int,2>& cellIndex    = surfacePoint.cellIndex;
+    Geometry::Point<double,2>&  cellPosition = surfacePoint.cellPosition;
+    cellIndex = Geometry::Point<int,2>(projectedPos[0], projectedPos[1]);
     for (int i=0; i<2; ++i)
     {
 ///\todo negative or greater than TILE_RESOLUTION-1 shouldn't happen
@@ -445,12 +445,12 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
         node->getHeight(*(cellH+tileRes)), node->getHeight(*(cellH+tileRes+1))
     };
     //construct the properly extruded corners of the current cell
-    Vector3 cellCorners[4];
+    Geometry::Vector<double,3> cellCorners[4];
     for (int i=0; i<4; ++i)
     {
         for (int j=0; j<3; ++j)
             cellCorners[i][j] = (*(positions[i]))[j] + node->centroid[j];
-        Vector3 extrude(cellCorners[i]);
+        Geometry::Vector<double,3> extrude(cellCorners[i]);
         extrude.normalize();
         extrude *= (heights[i] + elevationOffset) * getVerticalScale();
         cellCorners[i] += extrude;
@@ -459,22 +459,22 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
 #if 1
 ///\todo get rid of all the renaming of the same things c0, v0...
 //barycentric per triangle
-    Vector2 v[3];
-    Vector3 c[3];
-    v[0] = Vector2(0.0, 0.0);
+    Geometry::Vector<double,2> v[3];
+    Geometry::Vector<double,3> c[3];
+    v[0] = Geometry::Vector<double,2>(0.0, 0.0);
     c[0] = cellCorners[0];
     if (cellPosition[0]>cellPosition[1])
     {
-        v[1] = Vector2(1.0, 0.0);
+        v[1] = Geometry::Vector<double,2>(1.0, 0.0);
         c[1] = cellCorners[1];
-        v[2] = Vector2(1.0, 1.0);
+        v[2] = Geometry::Vector<double,2>(1.0, 1.0);
         c[2] = cellCorners[3];
     }
     else
     {
-        v[1] = Vector2(1.0, 1.0);
+        v[1] = Geometry::Vector<double,2>(1.0, 1.0);
         c[1] = cellCorners[3];
-        v[2] = Vector2(0.0, 1.0);
+        v[2] = Geometry::Vector<double,2>(0.0, 1.0);
         c[2] = cellCorners[2];
     }
     //see http://en.wikipedia.org/wiki/Barycentric_coordinates_(mathematics)
@@ -495,14 +495,14 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     w[2] = 1.0 - w[0] - w[1];
     assert(w[2]>=0.0);
 
-    surfacePoint.position = Point3(w[0]*c[0] + w[1]*c[1] + w[2]*c[2]);
+    surfacePoint.position = Geometry::Point<double,3>(w[0]*c[0] + w[1]*c[1] + w[2]*c[2]);
 #else
 //bi-linear
-    Vector3 lower = cellCorners[0] +
+    Geometry::Vector<double,3> lower = cellCorners[0] +
                     cellPosition[0]*(cellCorners[1]-cellCorners[0]);
-    Vector3 upper = cellCorners[2] +
+    Geometry::Vector<double,3> upper = cellCorners[2] +
                     cellPosition[0]*(cellCorners[3]-cellCorners[2]);
-    surfacePoint.position = Point3(lower + cellPosition[1]*(upper-lower));
+    surfacePoint.position = Geometry::Point<double,3>(lower + cellPosition[1]*(upper-lower));
 #endif
 #else
 //- locate the cell of the refinement containing the point
@@ -515,7 +515,7 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     }
 
 ///\todo optimize the containement checks as above by using vert/horiz split
-    Point2i offset(0.0, 0.0);
+    Geometry::Point<int,2> offset(0.0, 0.0);
     Scope scope = node->scope;
     int shift   = (TILE_RESOLUTION-1) >> 1;
     for (int level=1; level<numLevels; ++level)
@@ -543,7 +543,7 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     surfacePoint.cellIndex = offset;
 
 ///\todo record the proper cell position
-    surfacePoint.cellPosition = Point2(0.0, 0.0);
+    surfacePoint.cellPosition = Geometry::Point<double,2>(0.0, 0.0);
 
 //- sample the cell
     static const int tileRes = TILE_RESOLUTION;
@@ -560,7 +560,7 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
         node->getHeight(*(cellH+tileRes)), node->getHeight(*(cellH+tileRes+1))
     };
     //construct the corners of the current cell
-    Vector3 cellCorners[4];
+    Geometry::Vector<double,3> cellCorners[4];
     for (int i=0; i<4; ++i)
     {
         for (int j=0; j<3; ++j)
@@ -568,7 +568,7 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
             cellCorners[i][j] = double((*(positions[i]))[j]) +
                                 double(node->centroid[j]);
         }
-        Vector3 extrude(cellCorners[i]);
+        Geometry::Vector<double,3> extrude(cellCorners[i]);
         extrude.normalize();
         extrude *= (heights[i] + elevationOffset) * getVerticalScale();
         cellCorners[i] += extrude;
@@ -578,8 +578,8 @@ snapToSurface(const Point3& pos, Scalar elevationOffset)
     Triangle t0(cellCorners[0], cellCorners[3], cellCorners[2]);
     Triangle t1(cellCorners[0], cellCorners[1], cellCorners[3]);
 
-    Ray ray(pos, (-Vector3(pos)).normalize());
-    HitResult hit = t0.intersectRay(ray);
+    Geometry::Ray<double,3> ray(pos, (-Geometry::Vector<double,3>(pos)).normalize());
+    Geometry::HitResult<double> hit = t0.intersectRay(ray);
     if (!hit.isValid())
     {
         hit = t1.intersectRay(ray);
@@ -594,10 +594,10 @@ CRUSTA_DEBUG(70, CRUSTA_DEBUG_OUT <<
             height       *= getVerticalScale();
             height       += SETTINGS->globeRadius ;
 
-            Vector3 toPos = Vector3(pos);
+            Geometry::Vector<double,3> toPos = Geometry::Vector<double,3>(pos);
             toPos.normalize();
             toPos *= height;
-            surfacePoint.position = Point3(toPos[0], toPos[1], toPos[2]);
+            surfacePoint.position = Geometry::Point<double,3>(toPos[0], toPos[1], toPos[2]);
         }
         else
             surfacePoint.position = ray(hit.getParameter());
@@ -619,7 +619,7 @@ std::cerr << "\n" << std::setprecision(std::numeric_limits<double>::digits10) <<
 }
 
 SurfacePoint Crusta::
-intersect(const Ray& ray) const
+intersect(const Geometry::Ray<double,3>& ray) const
 {
     if (renderPatches.empty())
         return SurfacePoint();
@@ -628,7 +628,7 @@ intersect(const Ray& ray) const
 
     Scalar gin, gout;
     //make sure the ray even intersects the outer shell of the globe
-    Sphere shell(Point3(0), SETTINGS->globeRadius +
+    Sphere shell(Geometry::Point<double,3>(0), SETTINGS->globeRadius +
                  verticalScale*globalElevationRange[1]);
     if (!shell.intersectRay(ray, gin, gout))
         return SurfacePoint();
@@ -643,7 +643,7 @@ intersect(const Ray& ray) const
         gout = minShellIn;
 
     //find the patch containing the entry point
-    Point3 entry = ray(gin);
+    Geometry::Point<double,3> entry = ray(gin);
     const QuadTerrain* patch = NULL;
     NodeData*          node  = NULL;
     NodeMainData nodeData;
@@ -696,7 +696,7 @@ Still this should be handled more robustly */
 
 
 void Crusta::
-segmentCoverage(const Point3& start, const Point3& end,
+segmentCoverage(const Geometry::Point<double,3>& start, const Geometry::Point<double,3>& end,
                 Shape::IntersectionFunctor& callback) const
 {
     //explicitely check all the base render patches
@@ -727,32 +727,32 @@ getVerticalScale() const
 }
 
 
-Point3 Crusta::
-mapToScaledGlobe(const Point3& pos)
+Geometry::Point<double,3> Crusta::
+mapToScaledGlobe(const Geometry::Point<double,3>& pos)
 {
-    Vector3 toPoint(pos[0], pos[1], pos[2]);
-    Vector3 onSurface(toPoint);
+    Geometry::Vector<double,3> toPoint(pos[0], pos[1], pos[2]);
+    Geometry::Vector<double,3> onSurface(toPoint);
     onSurface.normalize();
     onSurface *= SETTINGS->globeRadius;
     toPoint   -= onSurface;
     toPoint   *= verticalScale;
     toPoint   += onSurface;
 
-    return Point3(toPoint[0], toPoint[1], toPoint[2]);
+    return Geometry::Point<double,3>(toPoint[0], toPoint[1], toPoint[2]);
 }
 
-Point3 Crusta::
-mapToUnscaledGlobe(const Point3& pos)
+Geometry::Point<double,3> Crusta::
+mapToUnscaledGlobe(const Geometry::Point<double,3>& pos)
 {
-    Vector3 toPoint(pos[0], pos[1], pos[2]);
-    Vector3 onSurface(toPoint);
+    Geometry::Vector<double,3> toPoint(pos[0], pos[1], pos[2]);
+    Geometry::Vector<double,3> onSurface(toPoint);
     onSurface.normalize();
     onSurface *= SETTINGS->globeRadius;
     toPoint   -= onSurface;
     toPoint   /= verticalScale;
     toPoint   += onSurface;
 
-    return Point3(toPoint[0], toPoint[1], toPoint[2]);
+    return Geometry::Point<double,3>(toPoint[0], toPoint[1], toPoint[2]);
 }
 
 MapManager* Crusta::
@@ -811,17 +811,17 @@ CRUSTA_DEBUG(8, CRUSTA_DEBUG_OUT <<
     if (changedVerticalScale  != newVerticalScale)
     {
         //compute the translation the scale change implies on the navigation
-        Point3 physicalCenter = Vrui::getDisplayCenter();
+        Geometry::Point<double,3> physicalCenter = Vrui::getDisplayCenter();
         const Vrui::NavTransform& navXform =
             Vrui::getNavigationTransformation();
-        Point3 navCenter = navXform.inverseTransform(physicalCenter);
+        Geometry::Point<double,3> navCenter = navXform.inverseTransform(physicalCenter);
 
-        Vector3 toCenter(navCenter[0], navCenter[1], navCenter[2]);
+        Geometry::Vector<double,3> toCenter(navCenter[0], navCenter[1], navCenter[2]);
         Scalar height       = toCenter.mag();
         Scalar altitude     = (height - SETTINGS->globeRadius) / verticalScale;
         Scalar newHeight    = altitude*newVerticalScale + SETTINGS->globeRadius;
-        Vector3 newToCenter = toCenter * (newHeight / height);
-        Vector3 translation = toCenter - newToCenter;
+        Geometry::Vector<double,3> newToCenter = toCenter * (newHeight / height);
+        Geometry::Vector<double,3> translation = toCenter - newToCenter;
         Vrui::setNavigationTransformation(navXform*
             Vrui::NavTransform::translate(translation));
 
@@ -836,7 +836,7 @@ CRUSTA_DEBUG(8, CRUSTA_DEBUG_OUT <<
 
 struct DistanceToEyeSorter
 {
-    DistanceToEyeSorter(SurfaceApproximation* approx, const Point3& eye) :
+    DistanceToEyeSorter(SurfaceApproximation* approx, const Geometry::Point<double,3>& eye) :
         surface(approx), eyePosition(eye)
     {}
     void sortVisibles()
@@ -853,7 +853,7 @@ struct DistanceToEyeSorter
         return distI > distJ;
     }
     SurfaceApproximation* surface;
-    Point3 eyePosition;
+    Geometry::Point<double,3> eyePosition;
 };
 
 void Crusta::
@@ -883,7 +883,7 @@ display(GLContextData& contextData)
     }
 
     //sort the visible tiles with respect to the distance to the camera
-    Point3 eyePosition =
+    Geometry::Point<double,3> eyePosition =
         Vrui::getDisplayState(contextData).viewer->getHeadPosition();
     eyePosition =
         Vrui::getInverseNavigationTransformation().transform(eyePosition);

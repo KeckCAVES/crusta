@@ -137,10 +137,10 @@ int numFeature = 0;
             int numPoints = in->getNumPoints();
 
 ///\todo figure out how to extract the shapes without the MapManager having to know all the shapes
-            Point3s cps;
+            std::vector<Geometry::Point<double,3> > cps;
             for (int i=0; i<numPoints; ++i)
             {
-                Point3 pos;
+                Geometry::Point<double,3> pos;
                 pos[0] = Math::rad(in->getX(i));
                 pos[1] = Math::rad(in->getY(i));
                 pos[2] = in->getZ(i);
@@ -254,7 +254,7 @@ save(const char* fileName, const char* format)
         for (Shape::ControlPointHandle cp=controlPoints.begin();
              cp!=controlPoints.end(); ++cp)
          {
-            Point3 lle = sphere.cartesianToGeodetic(cp->pos);
+            Geometry::Point<double,3> lle = sphere.cartesianToGeodetic(cp->pos);
             out.addPoint(Math::deg(lle[0]), Math::deg(lle[1]), lle[2]);
          }
 
@@ -571,12 +571,12 @@ coverage << "\n\n";)
                 Handle cur  = *hit;
                 Handle next = cur; ++cur;
 
-                Point3 curP  = crusta->mapToScaledGlobe(cur->pos);
-                Point3 nextP = crusta->mapToScaledGlobe(next->pos);
-                Point3f curPf(curP[0] - node.centroid[0],
+                Geometry::Point<double,3> curP  = crusta->mapToScaledGlobe(cur->pos);
+                Geometry::Point<double,3> nextP = crusta->mapToScaledGlobe(next->pos);
+                Geometry::Point<float,3> curPf(curP[0] - node.centroid[0],
                               curP[1] - node.centroid[1],
                               curP[2] - node.centroid[2]);
-                Point3f nextPf(nextP[0] - node.centroid[0],
+                Geometry::Point<float,3> nextPf(nextP[0] - node.centroid[0],
                                nextP[1] - node.centroid[1],
                                nextP[2] - node.centroid[2]);
 
@@ -597,7 +597,7 @@ coverage << "\n\n";)
                 ++curOff;
 
                 //section normal
-                Vector3 normal = Geometry::cross(Vector3(curP), Vector3(nextP));
+                Geometry::Vector<double,3> normal = Geometry::cross(Geometry::Vector<double,3>(curP), Geometry::Vector<double,3>(nextP));
                 normal.normalize();
                 data.push_back(Color(normal[0], normal[1], normal[2], 0.0));
                 ++curOff;

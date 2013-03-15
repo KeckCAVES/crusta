@@ -49,7 +49,7 @@ display(GLContextData& contextData, const SurfaceApproximation& surface) const
     {
         const NodeData&                node     = *surface.visible(i).node;
         const NodeData::ShapeCoverage& coverage = node.lineCoverage;
-        const Point3&                  centroid = node.centroid;
+        const Geometry::Point<double,3>&                  centroid = node.centroid;
 
         //setup the transformation for the given node
         glPushMatrix();
@@ -81,11 +81,11 @@ display(GLContextData& contextData, const SurfaceApproximation& surface) const
                 Handle next = cur; ++cur;
 
                 //generate proper coordinates for the fragment
-                const Point3 curP  = crusta->mapToScaledGlobe(cur->pos);
-                const Point3 nextP = crusta->mapToScaledGlobe(next->pos);
-                Point3f curPf(curP[0]-centroid[0], curP[1]-centroid[1],
+                const Geometry::Point<double,3> curP  = crusta->mapToScaledGlobe(cur->pos);
+                const Geometry::Point<double,3> nextP = crusta->mapToScaledGlobe(next->pos);
+                Geometry::Point<float,3> curPf(curP[0]-centroid[0], curP[1]-centroid[1],
                               curP[2]-centroid[2]);
-                Point3f nextPf(nextP[0]-centroid[0], nextP[1]-centroid[1],
+                Geometry::Point<float,3> nextPf(nextP[0]-centroid[0], nextP[1]-centroid[1],
                                nextP[2]-centroid[2]);
 
                 //draw visible fragment

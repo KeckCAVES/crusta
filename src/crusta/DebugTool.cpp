@@ -98,7 +98,7 @@ frame()
             rayDir);
         rayDir.normalize();
 
-        Ray ray(modelFrame.getOrigin(), rayDir);
+        Geometry::Ray<double,3> ray(modelFrame.getOrigin(), rayDir);
         surfacePoint = crusta->intersect(ray);
 
         if (surfacePoint.isValid())

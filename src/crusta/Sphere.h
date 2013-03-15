@@ -11,18 +11,18 @@ BEGIN_CRUSTA
 class Sphere
 {
 public:
-    Sphere(const Point3& iCenter, Scalar iRadius);
+    Sphere(const Geometry::Point<double,3>& iCenter, Scalar iRadius);
 
-    Point3 getCenter();
-    void setCenter(const Point3& nCenter);
+    Geometry::Point<double,3> getCenter();
+    void setCenter(const Geometry::Point<double,3>& nCenter);
     Scalar getRadius();
     void setRadius(const Scalar nRadius);
 
-    HitResult intersectRay(const Ray& ray) const;
-    bool intersectRay(const Ray& ray, Scalar& first, Scalar& second) const;
+    Geometry::HitResult<double> intersectRay(const Geometry::Ray<double,3>& ray) const;
+    bool intersectRay(const Geometry::Ray<double,3>& ray, Scalar& first, Scalar& second) const;
 
 protected:
-    Point3 center;
+    Geometry::Point<double,3> center;
     Scalar radius;
     Scalar sqrRadius;
 };

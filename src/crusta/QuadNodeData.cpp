@@ -65,9 +65,9 @@ computeBoundingSphere(Scalar radius, Scalar verticalScale)
     boundingAge = CURRENT_FRAME;
 }
 
-Point3 NodeData::
+Geometry::Point<double,3> NodeData::
 getEffectiveBoundingCenter() const {
-    return Point3(SliceTool::getParameters().getLinearTranslation() + boundingCenter);
+    return Geometry::Point<double,3>(SliceTool::getParameters().getLinearTranslation() + boundingCenter);
 }
 
 void NodeData::
@@ -136,7 +136,7 @@ SubRegion()
 }
 
 SubRegion::
-SubRegion(const Point3f& iOffset, const Vector2f& iSize) :
+SubRegion(const Geometry::Point<float,3>& iOffset, const Geometry::Vector<float,2>& iSize) :
     offset(iOffset), size(iSize)
 {
 }
@@ -148,7 +148,7 @@ StampedSubRegion()
 }
 
 StampedSubRegion::
-StampedSubRegion(const Point3f& iOffset, const Vector2f& iSize) :
+StampedSubRegion(const Geometry::Point<float,3>& iOffset, const Geometry::Vector<float,2>& iSize) :
     SubRegion(iOffset, iSize), age(0)
 {
 }

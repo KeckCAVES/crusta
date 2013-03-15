@@ -124,19 +124,19 @@ public:
 
     struct Plane {
         // fault line (segment) between points a and b with given slope
-        Plane(const Vector3 &a, const Vector3 &b, double slopeAngleDegrees);
+        Plane(const Geometry::Vector<double,3> &a, const Geometry::Vector<double,3> &b, double slopeAngleDegrees);
         // plane through 2 points and planet center (intersection with planet is great circle)
-        Plane(const Vector3 &a, const Vector3 &b);
-        double getPointDistance(const Vector3 &point) const;
-        Vector3 getPlaneCenter() const;
+        Plane(const Geometry::Vector<double,3> &a, const Geometry::Vector<double,3> &b);
+        double getPointDistance(const Geometry::Vector<double,3> &point) const;
+        Geometry::Vector<double,3> getPlaneCenter() const;
 
-        Vector3 strikeDirection;
-        Vector3 dipDirection;
+        Geometry::Vector<double,3> strikeDirection;
+        Geometry::Vector<double,3> dipDirection;
 
         // for drawing lines on surface etc.
-        Vector3 startPoint, endPoint;
+        Geometry::Vector<double,3> startPoint, endPoint;
         // hessian normal form
-        Vector3 normal;
+        Geometry::Vector<double,3> normal;
         double distance;
     };
 
@@ -150,9 +150,9 @@ public:
         double falloffFactor;
 
         /** the tool's marker locations (control points of fault line) */
-        std::vector<Point3> controlPoints;
+        std::vector<Geometry::Point<double,3> > controlPoints;
 
-        Vector3 faultCenter; // center of mass of control points
+        Geometry::Vector<double,3> faultCenter; // center of mass of control points
 
         std::vector<Plane> faultPlanes;
         std::vector<Plane> separatingPlanes;
@@ -161,9 +161,9 @@ public:
         SliceParameters();
         // plane equations parameters (recalculated when values above change)
         void updatePlaneParameters();
-        Vector3 getShiftVector(const Plane &p) const;
+        Geometry::Vector<double,3> getShiftVector(const Plane &p) const;
 
-        Vector3 getLinearTranslation() const;
+        Geometry::Vector<double,3> getLinearTranslation() const;
     };
 
     static SliceParameters _sliceParameters;

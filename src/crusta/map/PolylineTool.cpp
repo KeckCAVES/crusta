@@ -46,7 +46,7 @@ init(Vrui::ToolFactory* parent)
 
 
 void PolylineTool::
-createShape(Shape*& shape, Shape::ControlId& control, const Point3& pos)
+createShape(Shape*& shape, Shape::ControlId& control, const Geometry::Point<double,3>& pos)
 {
     MapManager* mapMan   = crusta->getMapManager();
     Polyline*   newLine  = mapMan->createPolyline();

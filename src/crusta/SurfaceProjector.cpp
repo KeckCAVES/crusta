@@ -37,7 +37,7 @@ project(Vrui::InputDevice* device, bool mapBackToDevice)
                 rayDir);
             rayDir.normalize();
 
-            Ray ray(modelFrame.getOrigin(), rayDir);
+            Geometry::Ray<double,3> ray(modelFrame.getOrigin(), rayDir);
             surfacePoint = crusta->intersect(ray);
         }
         else
@@ -87,12 +87,12 @@ display(GLContextData&,
         glLineWidth(3.0);
         glColor3f(0.5f, 0.2f, 0.1f);
 
-        Point3 o = transformed.getOrigin();
+        Geometry::Point<double,3> o = transformed.getOrigin();
         //slightly offset the origin (mouse on near plane)
         o += 0.001 * transformed.getDirection(1);
 
-        Vector3 x = 0.005*transformed.getDirection(0);
-        Vector3 z = 0.005*transformed.getDirection(2);
+        Geometry::Vector<double,3> x = 0.005*transformed.getDirection(0);
+        Geometry::Vector<double,3> z = 0.005*transformed.getDirection(2);
 
         glBegin(GL_LINES);
             glVertex3dv((o-x+z).getComponents());
@@ -105,8 +105,8 @@ display(GLContextData&,
     }
     else
     {
-        Point3 oPos = original.getOrigin();
-        Point3 tPos = transformed.getOrigin();
+        Geometry::Point<double,3> oPos = original.getOrigin();
+        Geometry::Point<double,3> tPos = transformed.getOrigin();
 
         glPushAttrib(GL_ENABLE_BIT);
         glDisable(GL_LIGHTING);

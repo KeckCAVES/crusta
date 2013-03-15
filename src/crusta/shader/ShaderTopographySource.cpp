@@ -19,7 +19,7 @@ ShaderTopographySource(ShaderDataSource* _geometrySrc,
 }
 
 void ShaderTopographySource::
-setCentroid(const Point3f& c)
+setCentroid(const Geometry::Point<float,3>& c)
 {
 CRUSTA_DEBUG(80, assert(centroidUniform>=0);)
     if (centroidUniform >= 0)

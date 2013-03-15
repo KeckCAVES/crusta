@@ -56,12 +56,12 @@ public:
         Primitive();
         Primitive(const Primitive& other);
         void clear();
-        void setVertices(const Point3s& verts);
+        void setVertices(const std::vector<Geometry::Point<double,3> >& verts);
 
         GLenum  mode;
         Color   color;
-        Point3  centroid;
-        Point3s vertices;
+        Geometry::Point<double,3>  centroid;
+        std::vector<Geometry::Point<double,3> > vertices;
     };
     typedef std::vector<Primitive> Primitives;
 
@@ -78,7 +78,7 @@ public:
     static void clear(int temp=-1);
     static void clearAll();
 
-    static void addPrimitive(GLenum drawMode, const Point3s& verts,
+    static void addPrimitive(GLenum drawMode, const std::vector<Geometry::Point<double,3> >& verts,
                              int temp=-1, const Color& color=defaultColor);
 
     static void peek();

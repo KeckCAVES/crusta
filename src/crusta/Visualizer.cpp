@@ -34,16 +34,16 @@ clear()
 {
     mode     = 0;
     color    = Visualizer::defaultColor;
-    centroid = Point3(0);
+    centroid = Geometry::Point<double,3>(0);
     vertices.clear();
 }
 
 void Visualizer::Primitive::
-setVertices(const Point3s& verts)
+setVertices(const std::vector<Geometry::Point<double,3> >& verts)
 {
     int numVertices = static_cast<int>(verts.size());
     //compute the centroid
-    centroid = Point3(0);
+    centroid = Geometry::Point<double,3>(0);
     for (int i=0; i<numVertices; ++i)
     {
         for (int j=0; j<3; ++j)
@@ -152,7 +152,7 @@ clear(int temp)
 }
 
 void Visualizer::
-addPrimitive(GLenum drawMode, const Point3s& verts, int temp,
+addPrimitive(GLenum drawMode, const std::vector<Geometry::Point<double,3> >& verts, int temp,
              const Color& color)
 {
     Primitive& newPrim = vis->getNewPrimitive(temp);

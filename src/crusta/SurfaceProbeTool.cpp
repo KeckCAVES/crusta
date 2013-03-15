@@ -116,7 +116,7 @@ resetMarkers()
 void SurfaceProbeTool::
 frameMinMax()
 {
-    const Point3& pos = surfacePoint.position;
+    const Geometry::Point<double,3>& pos = surfacePoint.position;
 
     if (Vrui::isMaster())
     {
@@ -232,10 +232,10 @@ display(GLContextData& contextData) const
 //- render the surface projector stuff
     //transform the position back to physical space
     const Vrui::NavTransform& navXform = Vrui::getNavigationTransformation();
-    Point3 position = navXform.transform(surfacePoint.position);
+    Geometry::Point<double,3> position = navXform.transform(surfacePoint.position);
 
     Vrui::NavTransform devXform = getButtonDevice(0)->getTransformation();
-    Vrui::NavTransform projXform(Vector3(position), devXform.getRotation(),
+    Vrui::NavTransform projXform(Geometry::Vector<double,3>(position), devXform.getRotation(),
                                  devXform.getScaling());
 
     SurfaceProjector::display(contextData, projXform, devXform);
@@ -251,13 +251,13 @@ display(GLContextData& contextData) const
     glDisable(GL_LIGHTING);
 
     //go to navigational coordinates
-    std::vector<Point3> markerPos(markersSet);
+    std::vector<Geometry::Point<double,3> > markerPos(markersSet);
     for (int i=0; i<markersSet; ++i)
         markerPos[i] = crusta->mapToScaledGlobe(markers[i]);
 
-    Vector3 centroid(0.0, 0.0, 0.0);
+    Geometry::Vector<double,3> centroid(0.0, 0.0, 0.0);
     for (int i=0; i<markersSet; ++i)
-        centroid += Vector3(markerPos[i]);
+        centroid += Geometry::Vector<double,3>(markerPos[i]);
     centroid /= markersSet;
 
     //load the centroid relative translated navigation transformation
@@ -287,7 +287,7 @@ display(GLContextData& contextData) const
             glLineWidth(1.0f);
         }
 
-        markerPos[i] = Point3(Vector3(markerPos[i])-centroid);
+        markerPos[i] = Geometry::Point<double,3>(Geometry::Vector<double,3>(markerPos[i])-centroid);
         glBegin(GL_LINES);
             glVertex3f(markerPos[i][0]-size, markerPos[i][1], markerPos[i][2]);
             glVertex3f(markerPos[i][0]+size, markerPos[i][1], markerPos[i][2]);

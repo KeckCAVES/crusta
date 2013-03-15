@@ -28,9 +28,9 @@ public:
                            const Color& color=defaultSectionColor);
     static void addTriangle(const Triangle& t, int temp=-1,
                             const Color& color=defaultTriangleColor);
-    static void addRay(const Ray& r, int temp=-1,
+    static void addRay(const Geometry::Ray<double,3>& r, int temp=-1,
                        const Color& color=defaultRayColor);
-    static void addHit(const Ray& r, const HitResult& h, int temp=-1,
+    static void addHit(const Geometry::Ray<double,3>& r, const Geometry::HitResult<double>& h, int temp=-1,
                        const Color& color=defaultHitColor);
 
     static void addSideIn(const int sideIn, const Scope& s, int temp=-1,

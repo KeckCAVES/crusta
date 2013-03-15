@@ -78,7 +78,7 @@ frame()
     SurfacePoint p = project(dev);
     if (!projectionFailed)
     {
-        Vector3 translation(p.position[0], p.position[1], p.position[2]);
+        Geometry::Vector<double,3> translation(p.position[0], p.position[1], p.position[2]);
         transformedDevice->setTransformation(Vrui::TrackerState(
             translation, dev->getTransformation().getRotation()));
         transformedDevice->setDeviceRayDirection(

@@ -36,25 +36,25 @@ protected:
     };
 
     virtual void createShape(Shape*& shape, Shape::ControlId& control,
-                             const Point3& pos);
+                             const Geometry::Point<double,3>& pos);
     virtual void deleteShape(Shape*& shape, Shape::ControlId& control);
     virtual void addControlPoint(Shape*& shape, Shape::ControlId& control,
-                                 const Point3& pos);
+                                 const Geometry::Point<double,3>& pos);
     virtual void removeControl(Shape*& shape, Shape::ControlId& control);
     virtual void unselectShape(Shape*& shape, Shape::ControlId& control);
 
     virtual ShapePtrs getShapes();
 
-    Point3 getPosition();
-    void   selectShape   (const Point3& pos);
-    void   selectControl (const Point3& pos);
-    void   addPointAtEnds(const Point3& pos);
+    Geometry::Point<double,3> getPosition();
+    void   selectShape   (const Geometry::Point<double,3>& pos);
+    void   selectControl (const Geometry::Point<double,3>& pos);
+    void   addPointAtEnds(const Geometry::Point<double,3>& pos);
 
     int              toolId;
     Mode             mode;
     Shape::ControlId curControl;
 
-    Point3 prevPosition;
+    Geometry::Point<double,3> prevPosition;
 
 private:
     static Factory* factory;

@@ -204,7 +204,7 @@ loadConfiguration(const std::string& cfgName)
 
             polyhedronType = cfg->retrieveString("polyhedronType");
 
-            Point2i tileSizeInput = cfg->retrieveValue<Point2i>("tileSize");
+            Geometry::Point<int,2> tileSizeInput = cfg->retrieveValue<Geometry::Point<int,2> >("tileSize");
             tileSize[0] = tileSizeInput[0];
             tileSize[1] = tileSizeInput[1];
         }
@@ -260,7 +260,7 @@ loadConfiguration(const std::string& cfgName)
         cfg->storeValue<int>("numChannels", numChannels);
         cfg->storeString("nodata", oss.str().c_str());
         cfg->storeString("polyhedronType", polyhedronType.c_str());
-        cfg->storeValue<Point2i>("tileSize",Point2i(tileSize[0], tileSize[1]));
+        cfg->storeValue<Geometry::Point<int,2> >("tileSize",Geometry::Point<int,2>(tileSize[0], tileSize[1]));
     }
 
     if (!create && cfg)

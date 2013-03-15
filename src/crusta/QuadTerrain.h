@@ -50,11 +50,11 @@ public:
     const MainData getRootNode() const;
 
     /** ray patch intersection */
-    SurfacePoint intersect(const Ray& ray, Scalar tin, int sin,
+    SurfacePoint intersect(const Geometry::Ray<double,3>& ray, Scalar tin, int sin,
                         Scalar& tout, int& sout, const Scalar gout) const;
 
     /** traverse the cached representation for nodes that overlap a segment */
-    void segmentCoverage(const Point3& start, const Point3& end,
+    void segmentCoverage(const Geometry::Point<double,3>& start, const Geometry::Point<double,3>& end,
                          Shape::IntersectionFunctor& callback) const;
 
     /** render the coverage map for the given node */
@@ -68,7 +68,7 @@ public:
                         SurfaceApproximation& surface);
 
     /** draw slicing plane and setup corresponding shader uniforms **/
-    static void initSlicingPlane(GLContextData& contextData, CrustaGlData* crustaGl, const Vector3 &center);
+    static void initSlicingPlane(GLContextData& contextData, CrustaGlData* crustaGl, const Geometry::Vector<double,3> &center);
 
     /** issues the drawing commands for the render set */
     static void display(GLContextData& contextData, CrustaGlData* crustaGl,
@@ -135,17 +135,17 @@ protected:
     static void generateIndexTemplate(GLuint& indexTemplate);
 
     /** ray patch traversal function for inner nodes of the quadtree */
-    SurfacePoint intersectNode(const MainBuffer& nodeBuf, const Ray& ray,
+    SurfacePoint intersectNode(const MainBuffer& nodeBuf, const Geometry::Ray<double,3>& ray,
                             Scalar tin, int sin, Scalar& tout, int& sout,
                             const Scalar gout) const;
     /** ray patch traversal function for leaf nodes of the quadtree */
-    SurfacePoint intersectLeaf(const MainData& leaf, const Ray& ray,
+    SurfacePoint intersectLeaf(const MainData& leaf, const Geometry::Ray<double,3>& ray,
                             Scalar param, int side, const Scalar gout) const;
 
     /** traverse the cached representation starting at the given node for nodes
         that overlap a segment */
     void segmentCoverage(const MainBuffer& nodeBuf,
-                         const Point3& start, const Point3& end,
+                         const Geometry::Point<double,3>& start, const Geometry::Point<double,3>& end,
                          Shape::IntersectionFunctor& callback) const;
 
     /** issue the drawing commands for displaying a node. The video cache

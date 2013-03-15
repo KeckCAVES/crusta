@@ -115,7 +115,7 @@ protected:
 //- 3-channel unit8 ------------------------------------------------------------
 
 template <>
-class TpmImageFile<Vector3ui8> : public ImageFile<Vector3ui8>
+class TpmImageFile<Geometry::Vector<uint8_t,3> > : public ImageFile<Geometry::Vector<uint8_t,3> >
 {
 public:
     TpmImageFile(const char* imageFileName) :
@@ -125,7 +125,7 @@ public:
         {
             Misc::throwStdErr("TpmImageFile: mismatching pixel type. Expecting "
                               "%d channel, got %d channels",
-                              Vector3ui8::dimension, tpmFile.getNumChannels());
+                              Geometry::Vector<uint8_t,3>::dimension, tpmFile.getNumChannels());
         }
         /* Read the image size: */
         this->size[0] = tpmFile.getSize(0);
@@ -134,7 +134,7 @@ public:
 
 public:
     void readRectangle(const int rectOrigin[2], const int rectSize[2],
-                       Vector3ui8* rectBuffer) const
+                       Geometry::Vector<uint8_t,3>* rectBuffer) const
     {
         /* Lock the image file (no sense in multithreading at this point): */
         Threads::Mutex::Lock lock(tpmFileMutex);
@@ -161,7 +161,7 @@ public:
 
                 for (int p=0, e=0; p<numPixels; ++p)
                 {
-                    for (int c=0; c<Vector3ui8::dimension; ++c, ++e)
+                    for (int c=0; c<Geometry::Vector<uint8_t,3>::dimension; ++c, ++e)
                         rectBuffer[p][c] = imgData[e];
                 }
 
@@ -175,7 +175,7 @@ public:
 
                 for (int p=0, e=0; p<numPixels; ++p)
                 {
-                    for (int c=0; c<Vector3ui8::dimension; ++c, ++e)
+                    for (int c=0; c<Geometry::Vector<uint8_t,3>::dimension; ++c, ++e)
                         rectBuffer[p][c] = imgData[e];
                 }
 
@@ -189,7 +189,7 @@ public:
 
                 for (int p=0, e=0; p<numPixels; ++p)
                 {
-                    for (int c=0; c<Vector3ui8::dimension; ++c, ++e)
+                    for (int c=0; c<Geometry::Vector<uint8_t,3>::dimension; ++c, ++e)
                         rectBuffer[p][c] = imgData[e];
                 }
 

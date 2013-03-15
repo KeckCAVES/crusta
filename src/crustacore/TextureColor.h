@@ -14,7 +14,7 @@ BEGIN_CRUSTA
 struct TextureColor
 {
     /// data type for values of a color texture stored in the globe file
-    typedef Vector3ui8 Type;
+    typedef Geometry::Vector<uint8_t,3> Type;
 };
 
 

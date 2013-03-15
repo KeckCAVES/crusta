@@ -147,7 +147,7 @@ getKin(TreeNode<PixelParam>*& kin, int offsets[2], bool loadMissing,
 if (debugGetKin) {
 ConstruoVisualizer::show();
 ConstruoVisualizer::clear();
-Point3s target;
+std::vector<Geometry::Point<double,3> > target;
 Scope::Vertex v0(kin->scope.corners[1][0] - kin->scope.corners[0][0],
                  kin->scope.corners[1][1] - kin->scope.corners[0][1],
                  kin->scope.corners[1][2] - kin->scope.corners[0][2]);
@@ -160,7 +160,7 @@ kin->scope.corners[0][0] + s*(0.5+offsets[0])*v0[0] + s*(0.5+offsets[1])*v1[0],
 kin->scope.corners[0][1] + s*(0.5+offsets[0])*v0[1] + s*(0.5+offsets[1])*v1[1],
 kin->scope.corners[0][2] + s*(0.5+offsets[0])*v0[2] + s*(0.5+offsets[1])*v1[2]);
 Point tt = Converter::cartesianToSpherical(t);
-target.resize(1, Point3(tt[0], 0.0, tt[1]));
+target.resize(1, Geometry::Point<double,3>(tt[0], 0.0, tt[1]));
 ConstruoVisualizer::addPrimitive(GL_POINTS, target);
 } //DEBUG_GETKIN
 #endif //CRUSTA_ENABLE_DEBUG

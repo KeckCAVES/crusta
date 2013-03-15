@@ -25,7 +25,7 @@ addScope(const Scope& s, int temp, const Color& color)
     newPrim.mode  = GL_LINE_STRIP;
     newPrim.color = color;
 
-    Point3s verts;
+    std::vector<Geometry::Point<double,3> > verts;
     verts.resize(5);
     verts[0] = s.corners[0];
     verts[1] = s.corners[1];
@@ -45,11 +45,11 @@ addSection(const Section& s, int temp, const Color& color)
     newPrim.color = color;
 
     Scalar x = 1.002;
-    Point3s verts;
+    std::vector<Geometry::Point<double,3> > verts;
     verts.resize(3);
-    verts[0] = Point3(0);
-    verts[1] = Point3(x*s.getStart()[0], x*s.getStart()[1], x*s.getStart()[2]);
-    verts[2] = Point3(x*s.getEnd()[0], x*s.getEnd()[1], x*s.getEnd()[2]);
+    verts[0] = Geometry::Point<double,3>(0);
+    verts[1] = Geometry::Point<double,3>(x*s.getStart()[0], x*s.getStart()[1], x*s.getStart()[2]);
+    verts[2] = Geometry::Point<double,3>(x*s.getEnd()[0], x*s.getEnd()[1], x*s.getEnd()[2]);
 
     newPrim.setVertices(verts);
 }
@@ -63,7 +63,7 @@ addTriangle(const Triangle& t, int temp, const Color& color)
     newPrim.mode  = GL_TRIANGLES;
     newPrim.color = color;
 
-    Point3s verts;
+    std::vector<Geometry::Point<double,3> > verts;
     verts.resize(3);
     verts[0] = t.getVert0();
     verts[1] = verts[0] + t.getEdge1();
@@ -73,14 +73,14 @@ addTriangle(const Triangle& t, int temp, const Color& color)
 }
 
 void CrustaVisualizer::
-addRay(const Ray& r, int temp, const Color& color)
+addRay(const Geometry::Ray<double,3>& r, int temp, const Color& color)
 {
     Primitive& newPrim = vis->getNewPrimitive(temp);
 
     newPrim.mode  = GL_LINES;
     newPrim.color = color;
 
-    Point3s verts;
+    std::vector<Geometry::Point<double,3> > verts;
     verts.resize(2);
     verts[0] = r.getOrigin();
     verts[1] = r(0.00001 * 6371000); //hardcoded earth radius
@@ -89,7 +89,7 @@ addRay(const Ray& r, int temp, const Color& color)
 }
 
 void CrustaVisualizer::
-addHit(const Ray& r, const HitResult& h, int temp, const Color& color)
+addHit(const Geometry::Ray<double,3>& r, const Geometry::HitResult<double>& h, int temp, const Color& color)
 {
     if (!h.isValid())
         return;
@@ -99,7 +99,7 @@ addHit(const Ray& r, const HitResult& h, int temp, const Color& color)
     newPrim.mode  = GL_POINTS;
     newPrim.color = color;
 
-    Point3s verts;
+    std::vector<Geometry::Point<double,3> > verts;
     verts.resize(1);
     verts[0] = r(h.getParameter());
 
@@ -110,7 +110,7 @@ addHit(const Ray& r, const HitResult& h, int temp, const Color& color)
 void CrustaVisualizer::
 addSideIn(const int sideIn, const Scope& s, int temp, const Color& color)
 {
-    const Point3* corners[4][2] = {
+    const Geometry::Point<double,3>* corners[4][2] = {
         {&s.corners[3], &s.corners[2]},
         {&s.corners[2], &s.corners[0]},
         {&s.corners[0], &s.corners[1]},
@@ -118,7 +118,7 @@ addSideIn(const int sideIn, const Scope& s, int temp, const Color& color)
 
     if (sideIn!=-1)
     {
-        Point3s verts;
+        std::vector<Geometry::Point<double,3> > verts;
         verts.resize(2);
         verts[0] = *(corners[sideIn][0]);
         verts[1] = *(corners[sideIn][1]);

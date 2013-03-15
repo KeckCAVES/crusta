@@ -43,9 +43,9 @@ protected:
     int texSize;
     int texLayers;
 
-    Point3f  subOffset;
-    Vector2f subSize;
-    Vector2f pixSize;
+    Geometry::Point<float,3>  subOffset;
+    Geometry::Vector<float,2> subSize;
+    Geometry::Vector<float,2> pixSize;
 };
 
 template <typename BufferParam>
@@ -89,9 +89,9 @@ protected:
     int texWidth;
     int texHeight;
 
-    Point3f  subOffset;
-    Vector2f subSize;
-    Vector2f pixSize;
+    Geometry::Point<float,3>  subOffset;
+    Geometry::Vector<float,2> subSize;
+    Geometry::Vector<float,2> pixSize;
 };
 
 

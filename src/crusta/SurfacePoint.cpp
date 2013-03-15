@@ -11,8 +11,8 @@ SurfacePoint() :
 }
 
 SurfacePoint::
-SurfacePoint(const Point3& position_, const TreeIndex& nodeIndex_,
-             const Point2i& cellIndex_, const Point2& cellPosition_) :
+SurfacePoint(const Geometry::Point<double,3>& position_, const TreeIndex& nodeIndex_,
+             const Geometry::Point<int,2>& cellIndex_, const Geometry::Point<double,2>& cellPosition_) :
     position(position_), nodeIndex(nodeIndex_),
     cellIndex(cellIndex_), cellPosition(cellPosition_)
 {

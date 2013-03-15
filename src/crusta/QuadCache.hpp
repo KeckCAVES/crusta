@@ -68,9 +68,9 @@ init(const std::string& iName, int size, int tileSize,
     texSize   = bestNum*tileSize;
     texLayers = int(Math::ceil(float(size)/float(bestNum*bestNum)));
 
-    pixSize   = Vector2f(1.0f / texSize, 1.0f / texSize);
-    subSize   = Vector2f(tileSize*pixSize[0], tileSize*pixSize[1]);
-    subOffset = Point3f(0.0f, 0.0f, 0.0f);
+    pixSize   = Geometry::Vector<float,2>(1.0f / texSize, 1.0f / texSize);
+    subSize   = Geometry::Vector<float,2>(tileSize*pixSize[0], tileSize*pixSize[1]);
+    subOffset = Geometry::Point<float,3>(0.0f, 0.0f, 0.0f);
 
 //- initialize the buffers
     size = texLayers*bestNum*bestNum;
@@ -269,9 +269,9 @@ init(const std::string& iName, int size, int tileSize,
     texWidth  = bestNum*tileSize;
     texHeight = int(Math::ceil(float(size)/float(bestNum)));
 
-    pixSize   = Vector2f(1.0f / texWidth, 1.0f / texHeight);
-    subSize   = Vector2f(tileSize*pixSize[0], pixSize[1]);
-    subOffset = Point3f(0.0f, 0.0f, 0.0f);
+    pixSize   = Geometry::Vector<float,2>(1.0f / texWidth, 1.0f / texHeight);
+    subSize   = Geometry::Vector<float,2>(tileSize*pixSize[0], pixSize[1]);
+    subOffset = Geometry::Point<float,3>(0.0f, 0.0f, 0.0f);
 
 //- initialize the buffers
     size = texHeight*bestNum;

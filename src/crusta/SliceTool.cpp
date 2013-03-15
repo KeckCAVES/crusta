@@ -187,8 +187,8 @@ SliceTool::
 Vrui::ToolFactory* SliceTool::
 init()
 {
-    //_sliceParameters.controlPoints.push_back(Point3(6371000,0,0));
-    //_sliceParameters.controlPoints.push_back(Point3(0,6371000,0));
+    //_sliceParameters.controlPoints.push_back(Geometry::Point<double,3>(6371000,0,0));
+    //_sliceParameters.controlPoints.push_back(Geometry::Point<double,3>(0,6371000,0));
 
     _sliceParameters.strikeAmount = 0.0;
     _sliceParameters.dipAmount = 0.0;
@@ -246,7 +246,7 @@ frame()
     if (projectionFailed)
         return;
 
-    const Point3& pos = surfacePoint.position;
+    const Geometry::Point<double,3>& pos = surfacePoint.position;
 
     if (Vrui::isMaster())
     {
@@ -285,10 +285,10 @@ display(GLContextData& contextData) const
 //- render the surface projector stuff
     //transform the position back to physical space
     const Vrui::NavTransform& navXform = Vrui::getNavigationTransformation();
-    Point3 position = navXform.transform(surfacePoint.position);
+    Geometry::Point<double,3> position = navXform.transform(surfacePoint.position);
 
     Vrui::NavTransform devXform = getButtonDevice(0)->getTransformation();
-    Vrui::NavTransform projXform(Vector3(position), devXform.getRotation(),
+    Vrui::NavTransform projXform(Geometry::Vector<double,3>(position), devXform.getRotation(),
                                  devXform.getScaling());
 
     SurfaceProjector::display(contextData, projXform, devXform);
@@ -304,13 +304,13 @@ display(GLContextData& contextData) const
     glDisable(GL_LIGHTING);
 
     //go to navigational coordinates
-    std::vector<Point3> markerPos;
+    std::vector<Geometry::Point<double,3> > markerPos;
     for (size_t i=0; i< _sliceParameters.controlPoints.size(); ++i)
         markerPos.push_back(crusta->mapToScaledGlobe(_sliceParameters.controlPoints[i]));
 
-    Vector3 centroid(0.0, 0.0, 0.0);
+    Geometry::Vector<double,3> centroid(0.0, 0.0, 0.0);
     for (size_t i=0; i < _sliceParameters.controlPoints.size(); ++i)
-        centroid += Vector3(markerPos[i]);
+        centroid += Geometry::Vector<double,3>(markerPos[i]);
     centroid /= _sliceParameters.controlPoints.size();
 
     //load the centroid relative translated navigation transformation
@@ -326,7 +326,7 @@ display(GLContextData& contextData) const
     Scalar size     = markerSize/scaleFac;
 
     for (size_t i=0; i < _sliceParameters.controlPoints.size(); ++i)
-        markerPos[i] = Point3(Vector3(markerPos[i])-centroid);
+        markerPos[i] = Geometry::Point<double,3>(Geometry::Vector<double,3>(markerPos[i])-centroid);
 
     CHECK_GLA
     //draw the control points
@@ -375,16 +375,16 @@ display(GLContextData& contextData) const
         for (size_t i=0; i < _sliceParameters.faultPlanes.size(); ++i) {
            // std::cout << "controlpoint0 = " << params.controlPoints[0][0] << ", " << params.controlPoints[0][1] << ", " << params.controlPoints[0][2] << std::endl;
 
-            Vector3 a = Vector3(markerPos[i]);
-            Vector3 b = Vector3(markerPos[i+1]);
+            Geometry::Vector<double,3> a = Geometry::Vector<double,3>(markerPos[i]);
+            Geometry::Vector<double,3> b = Geometry::Vector<double,3>(markerPos[i+1]);
 
             if (i == 0) {
                 glColor3f(1,1,1);
             } else {
-                Vector3 upDir = Vector3(_sliceParameters.controlPoints[i]);
+                Geometry::Vector<double,3> upDir = Geometry::Vector<double,3>(_sliceParameters.controlPoints[i]);
                 upDir.normalize();
-                Vector3 faultLine = Vector3(b - a);
-                Vector3 strikeDir = faultLine - (upDir * faultLine) * upDir;
+                Geometry::Vector<double,3> faultLine = Geometry::Vector<double,3>(b - a);
+                Geometry::Vector<double,3> strikeDir = faultLine - (upDir * faultLine) * upDir;
                 strikeDir.normalize();
                 double compression = _sliceParameters.slopePlanes[0].normal * strikeDir;
                 double sign = compression > 0 ? 1 : -1;
@@ -407,11 +407,11 @@ display(GLContextData& contextData) const
             glVertex3d(b[0], b[1], b[2]);
 
             /*
-            double omega = acos(Vector3(a).normalize() * Vector3(b).normalize());
+            double omega = acos(Geometry::Vector<double,3>(a).normalize() * Geometry::Vector<double,3>(b).normalize());
 
             for (size_t i=0; i < 2; ++i) {
                 double t = i / 1.0;
-                Vector3 pt = (1.0 / sin(omega)) * (sin((1-t)*omega) * a + sin(t * omega) * b);
+                Geometry::Vector<double,3> pt = (1.0 / sin(omega)) * (sin((1-t)*omega) * a + sin(t * omega) * b);
                 glVertex3d(pt[0], pt[1], pt[2]);
             }
 */
@@ -479,7 +479,7 @@ setupComponent(Crusta* crusta)
         navXform.transform(Vrui::getDisplayCenter()));
 }
 
-SliceTool::Plane::Plane(const Vector3 &a, const Vector3 &b, double slopeAngleDegrees) : startPoint(a), endPoint(b) {
+SliceTool::Plane::Plane(const Geometry::Vector<double,3> &a, const Geometry::Vector<double,3> &b, double slopeAngleDegrees) : startPoint(a), endPoint(b) {
     strikeDirection = endPoint - startPoint;
     strikeDirection.normalize();
 
@@ -502,7 +502,7 @@ SliceTool::Plane::Plane(const Vector3 &a, const Vector3 &b, double slopeAngleDeg
     distance = -startPoint * normal;
 }
 
-SliceTool::Plane::Plane(const Vector3 &a, const Vector3 &b) : startPoint(a), endPoint(b) {
+SliceTool::Plane::Plane(const Geometry::Vector<double,3> &a, const Geometry::Vector<double,3> &b) : startPoint(a), endPoint(b) {
     strikeDirection = endPoint - startPoint;
     strikeDirection.normalize();
 
@@ -510,18 +510,18 @@ SliceTool::Plane::Plane(const Vector3 &a, const Vector3 &b) : startPoint(a), end
     normal.normalize();
 
     // dip vector
-    dipDirection = Vector3(-0.5 * (a+b));
+    dipDirection = Geometry::Vector<double,3>(-0.5 * (a+b));
     dipDirection.normalize();
 
     distance = 0;
 }
 
-double SliceTool::Plane::getPointDistance(const Vector3 &point) const {
+double SliceTool::Plane::getPointDistance(const Geometry::Vector<double,3> &point) const {
     return normal * point - distance;
 }
 
-Vector3 SliceTool::Plane::getPlaneCenter() const {
-    return getPointDistance(Vector3(0,0,0)) * normal;
+Geometry::Vector<double,3> SliceTool::Plane::getPlaneCenter() const {
+    return getPointDistance(Geometry::Vector<double,3>(0,0,0)) * normal;
 }
 
 SliceTool::SliceParameters::SliceParameters() {
@@ -540,24 +540,24 @@ void SliceTool::SliceParameters::updatePlaneParameters() {
     if (controlPoints.size() < 2)
         return;
 
-    std::vector<Vector3> pts;
+    std::vector<Geometry::Vector<double,3> > pts;
     // project all points to average sphere
     double radius = 0.0;
     for (size_t i=0; i < controlPoints.size(); ++i)
-        radius += Vector3(controlPoints[i]).mag();
+        radius += Geometry::Vector<double,3>(controlPoints[i]).mag();
 
     radius /= controlPoints.size();
     for (size_t i=0; i < controlPoints.size(); ++i) {
-        Vector3 v = Vector3(controlPoints[i]);
+        Geometry::Vector<double,3> v = Geometry::Vector<double,3>(controlPoints[i]);
         v.normalize();
         pts.push_back(radius * v);
     }
 
 
-    faultCenter = Vector3(0,0,0);
+    faultCenter = Geometry::Vector<double,3>(0,0,0);
     if (!pts.empty()) {
         for (size_t i=0; i < pts.size(); ++i)
-            faultCenter += Vector3(pts[i]);
+            faultCenter += Geometry::Vector<double,3>(pts[i]);
         faultCenter *= 1.0 / pts.size();
     }
 
@@ -565,12 +565,12 @@ void SliceTool::SliceParameters::updatePlaneParameters() {
     size_t nPlanes = pts.size() - 1;
 
     for (size_t i=0; i < nPlanes; ++i) {
-        faultPlanes.push_back(Plane(Vector3(pts[i]), Vector3(pts[i+1]), 90));
-        slopePlanes.push_back(Plane(Vector3(pts[i]), Vector3(pts[i+1]), slopeAngleDegrees));
+        faultPlanes.push_back(Plane(Geometry::Vector<double,3>(pts[i]), Geometry::Vector<double,3>(pts[i+1]), 90));
+        slopePlanes.push_back(Plane(Geometry::Vector<double,3>(pts[i]), Geometry::Vector<double,3>(pts[i+1]), slopeAngleDegrees));
     }
 
     for (size_t i=0; i < pts.size(); ++i) {
-        Vector3 n(0,0,0);
+        Geometry::Vector<double,3> n(0,0,0);
         if (i == 0)
             n = faultPlanes[i].normal;
         else if (i == pts.size() - 1)
@@ -579,24 +579,24 @@ void SliceTool::SliceParameters::updatePlaneParameters() {
             n = 0.5 * (faultPlanes[i-1].normal + faultPlanes[i].normal);
         n.normalize();
 
-        separatingPlanes.push_back(Plane(Vector3(pts[i]), Vector3(pts[i]) + 1e6 * n));
+        separatingPlanes.push_back(Plane(Geometry::Vector<double,3>(pts[i]), Geometry::Vector<double,3>(pts[i]) + 1e6 * n));
     }
 }
 
 
-Vector3 SliceTool::SliceParameters::getShiftVector(const Plane &p) const {
-    return Vector3(strikeAmount * p.strikeDirection +
+Geometry::Vector<double,3> SliceTool::SliceParameters::getShiftVector(const Plane &p) const {
+    return Geometry::Vector<double,3>(strikeAmount * p.strikeDirection +
                    dipAmount * p.dipDirection);
 }
 
-Vector3 SliceTool::SliceParameters::getLinearTranslation() const {
+Geometry::Vector<double,3> SliceTool::SliceParameters::getLinearTranslation() const {
     if (controlPoints.size() <= 1)
-        return Vector3(0,0,0);
+        return Geometry::Vector<double,3>(0,0,0);
 
-    Vector3 a = Vector3(controlPoints.front());
-    Vector3 b = Vector3(controlPoints.back());
+    Geometry::Vector<double,3> a = Geometry::Vector<double,3>(controlPoints.front());
+    Geometry::Vector<double,3> b = Geometry::Vector<double,3>(controlPoints.back());
 
-    Vector3 delta = b - a;
+    Geometry::Vector<double,3> delta = b - a;
     delta.normalize();
 
     return strikeAmount * delta;

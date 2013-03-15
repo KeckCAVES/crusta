@@ -18,12 +18,12 @@ public:
 
 //- Inherited from Shape
 public:
-    virtual void setControlPoints(const Point3s& newControlPoints);
+    virtual void setControlPoints(const std::vector<Geometry::Point<double,3> >& newControlPoints);
 
-    virtual ControlId addControlPoint(const Point3& pos, End end=END_BACK);
-    virtual void moveControlPoint(const ControlId& id, const Point3& pos);
+    virtual ControlId addControlPoint(const Geometry::Point<double,3>& pos, End end=END_BACK);
+    virtual void moveControlPoint(const ControlId& id, const Geometry::Point<double,3>& pos);
     virtual void removeControlPoint(const ControlId& id);
-    virtual ControlId refine(const ControlId& id, const Point3& pos);
+    virtual ControlId refine(const ControlId& id, const Geometry::Point<double,3>& pos);
 };
 
 

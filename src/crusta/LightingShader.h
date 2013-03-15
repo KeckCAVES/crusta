@@ -181,8 +181,8 @@ class LightingShader
     // they are assumed to be relative the centroid of this tile
     void setSlicePlanes(int numPlanes, float strikeDirections[3*63], float dipDirections[3*63],
                         float planes[4*63], float separatingPlanes[4*64], float slopePlanes[4*63],
-                        double strikeShiftAmount, double dipShiftAmount, Vector3 planeCenters[63],
-                        Vector3 faultCenter, double falloff, double coloring)
+                        double strikeShiftAmount, double dipShiftAmount, Geometry::Vector<double,3> planeCenters[63],
+                        Geometry::Vector<double,3> faultCenter, double falloff, double coloring)
     {
         CHECK_GLA
 

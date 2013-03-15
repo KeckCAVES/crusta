@@ -69,28 +69,9 @@ extern bool DEBUG_INTERSECT;
 
 ///\todo turn this into a simple class with comparators and a stamp() method
 typedef double                  FrameStamp;
-typedef std::vector<FrameStamp> FrameStamps;
 
 ///\todo deprecate Scalar
 typedef double Scalar;
-
-typedef Geometry::Point<int, 2>     Point2i;
-typedef Geometry::Point<double, 2>  Point2;
-typedef Geometry::Point<double, 3>  Point3;
-typedef Geometry::Point<float, 3>   Point3f;
-typedef std::vector<Point3>         Point3s;
-typedef std::vector<Point3f>        Point3fs;
-typedef Geometry::Vector<float, 2>  Vector2f;
-typedef Geometry::Vector<double, 2> Vector2;
-typedef Geometry::Vector<double, 3> Vector3;
-typedef Geometry::Vector<float, 3>  Vector3f;
-typedef std::vector<Vector2f>       Vector2fs;
-typedef std::vector<Vector3>        Vector3s;
-typedef std::vector<Vector3f>       Vector3fs;
-
-typedef Geometry::HitResult<double> HitResult;
-typedef Geometry::Ray<double, 3>    Ray;
-
 
 static const int    TILE_RESOLUTION          = 65;
 static const float  TILE_TEXTURE_COORD_STEP  = 1.0 / TILE_RESOLUTION;

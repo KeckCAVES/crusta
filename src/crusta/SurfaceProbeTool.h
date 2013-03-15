@@ -104,7 +104,7 @@ protected:
     int markersSelected;
 
     /** the tool's marker locations */
-    Point3 markers[2];
+    Geometry::Point<double,3> markers[2];
 
     /** the size of the markers */
     static const Scalar markerSize;

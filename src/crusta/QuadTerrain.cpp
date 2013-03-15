@@ -58,7 +58,7 @@ QuadTerrain::GlData* QuadTerrain::glData = 0;
 
 
 static int
-computeContainingChild(const Point3& pos, const Scope& scope)
+computeContainingChild(const Geometry::Point<double,3>& pos, const Scope& scope)
 {
     Section horizontal(Geometry::mid(scope.corners[2], scope.corners[3]),
                        Geometry::mid(scope.corners[0], scope.corners[1]));
@@ -72,10 +72,10 @@ computeContainingChild(const Point3& pos, const Scope& scope)
 }
 
 static void
-computeExit(const Ray& ray, const double oldParam, const Scope& scope,
+computeExit(const Geometry::Ray<double,3>& ray, const double oldParam, const Scope& scope,
             double& param, int& side)
 {
-    const Point3* edgeCorners[4][2] = {
+    const Geometry::Point<double,3>* edgeCorners[4][2] = {
         {&scope.corners[3], &scope.corners[2]},
         {&scope.corners[2], &scope.corners[0]},
         {&scope.corners[0], &scope.corners[1]},
@@ -88,7 +88,7 @@ computeExit(const Ray& ray, const double oldParam, const Scope& scope,
 CRUSTA_DEBUG(96,
 CrustaVisualizer::addSection(section, 5);
 CrustaVisualizer::show("Exit Side Search");)
-        HitResult hit   = section.intersectPlane(ray);
+        Geometry::HitResult<double> hit   = section.intersectPlane(ray);
         double hitParam = hit.getParameter();
         if (hit.isValid() && hitParam>=oldParam && hitParam<=param)
         {
@@ -129,16 +129,16 @@ getRootNode() const
 }
 
 SurfacePoint QuadTerrain::
-intersect(const Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout,
+intersect(const Geometry::Ray<double,3>& ray, Scalar tin, int sin, Scalar& tout, int& sout,
           const Scalar gout) const
 {
-CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "\n\nIntersecting Ray with Globe:\n\n";)
+CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "\n\nIntersecting Geometry::Ray<double,3> with Globe:\n\n";)
     return intersectNode(getRootBuffer(), ray, tin, sin, tout, sout, gout);
 }
 
 
 void QuadTerrain::
-segmentCoverage(const Point3& start, const Point3& end,
+segmentCoverage(const Geometry::Point<double,3>& start, const Geometry::Point<double,3>& end,
                 Shape::IntersectionFunctor& callback) const
 {
     segmentCoverage(getRootBuffer(), start, end, callback);
@@ -173,7 +173,7 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
         elevationRange[1] = midElevation + sideLen;
     }
 
-    Point3 srcs[5];
+    Geometry::Point<double,3> srcs[5];
     srcs[0] = node.scope.corners[0];
     srcs[1] = node.scope.corners[1];
     srcs[2] = node.scope.corners[2];
@@ -181,26 +181,26 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
     srcs[4] = node.scope.corners[3];
 
     //map the source points to planes
-    Vector3 normal(node.centroid);
+    Geometry::Vector<double,3> normal(node.centroid);
     normal.normalize();
 
     Geometry::Plane<Scalar,3> plane;
     plane.setNormal(-normal);
-    plane.setPoint(Point3(normal*(SETTINGS->globeRadius +
+    plane.setPoint(Geometry::Point<double,3>(normal*(SETTINGS->globeRadius +
                                   elevationRange[0])));
     for (int i=0; i<3; ++i)
     {
-        Ray ray(Point3(0), srcs[i]);
-        HitResult hit = plane.intersectRay(ray);
+        Geometry::Ray<double,3> ray(Geometry::Point<double,3>(0), srcs[i]);
+        Geometry::HitResult<double> hit = plane.intersectRay(ray);
         assert(hit.isValid());
         srcs[i]    = ray(hit.getParameter());
     }
-    plane.setPoint(Point3(normal*(SETTINGS->globeRadius +
+    plane.setPoint(Geometry::Point<double,3>(normal*(SETTINGS->globeRadius +
                                   elevationRange[1])));
     for (int i=3; i<5; ++i)
     {
-        Ray ray(Point3(0), srcs[i]);
-        HitResult hit = plane.intersectRay(ray);
+        Geometry::Ray<double,3> ray(Geometry::Point<double,3>(0), srcs[i]);
+        Geometry::HitResult<double> hit = plane.intersectRay(ray);
         assert(hit.isValid());
         srcs[i] = ray(hit.getParameter());
     }
@@ -250,10 +250,10 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
     glEnable(GL_BLEND);
 
 #if 0
-    Point3 geo0(nodeData.geometry[0].position[0],
+    Geometry::Point<double,3> geo0(nodeData.geometry[0].position[0],
                 nodeData.geometry[0].position[1],
                 nodeData.geometry[0].position[2]);
-    Point3 geo1(nodeData.geometry[1].position[0],
+    Geometry::Point<double,3> geo1(nodeData.geometry[1].position[0],
                 nodeData.geometry[1].position[1],
                 nodeData.geometry[1].position[2]);
     double cellSize = Geometry::dist(geo0, geo1);
@@ -316,12 +316,12 @@ getFrustumFromVrui(GLContextData& contextData)
         frustum.setFrustumVertex(i,inv.transform(viewSpec.getFrustumVertex(i)));
 
     /* Calculate the six frustum face planes: */
-    Vector3 fv10 = frustum.getFrustumVertex(1) - frustum.getFrustumVertex(0);
-    Vector3 fv20 = frustum.getFrustumVertex(2) - frustum.getFrustumVertex(0);
-    Vector3 fv40 = frustum.getFrustumVertex(4) - frustum.getFrustumVertex(0);
-    Vector3 fv67 = frustum.getFrustumVertex(6) - frustum.getFrustumVertex(7);
-    Vector3 fv57 = frustum.getFrustumVertex(5) - frustum.getFrustumVertex(7);
-    Vector3 fv37 = frustum.getFrustumVertex(3) - frustum.getFrustumVertex(7);
+    Geometry::Vector<double,3> fv10 = frustum.getFrustumVertex(1) - frustum.getFrustumVertex(0);
+    Geometry::Vector<double,3> fv20 = frustum.getFrustumVertex(2) - frustum.getFrustumVertex(0);
+    Geometry::Vector<double,3> fv40 = frustum.getFrustumVertex(4) - frustum.getFrustumVertex(0);
+    Geometry::Vector<double,3> fv67 = frustum.getFrustumVertex(6) - frustum.getFrustumVertex(7);
+    Geometry::Vector<double,3> fv57 = frustum.getFrustumVertex(5) - frustum.getFrustumVertex(7);
+    Geometry::Vector<double,3> fv37 = frustum.getFrustumVertex(3) - frustum.getFrustumVertex(7);
 
     Vrui::Plane planes[8];
     planes[0] = Vrui::Plane(Geometry::cross(fv40,fv20),
@@ -381,14 +381,14 @@ prepareDisplay(GLContextData& contextData, SurfaceApproximation& surface)
     DATAMANAGER->request(dataRequests);
 }
 
-void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* crustaGl, const Vector3 &center) {
+void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* crustaGl, const Geometry::Vector<double,3> &center) {
     SliceTool::SliceParameters params = SliceTool::getParameters();
 
     std::vector<float> slicePlanes;
     std::vector<float> separatingPlanes;
     std::vector<float> slopePlanes;
-    //std::vector<Vector3> shiftVecs;
-    std::vector<Vector3> planeCenters;
+    //std::vector<Geometry::Vector<double,3> > shiftVecs;
+    std::vector<Geometry::Vector<double,3> > planeCenters;
 
     std::vector<float> strikeDirections;
     std::vector<float> dipDirections;
@@ -413,17 +413,17 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
 
         planeCenters.push_back(slopePlane.getPlaneCenter() - center);
 
-        Vector3 upDir = Vector3(Vector3(params.controlPoints[i]));
+        Geometry::Vector<double,3> upDir = Geometry::Vector<double,3>(Geometry::Vector<double,3>(params.controlPoints[i]));
         upDir.normalize();
-        Vector3 faultLine = Vector3(params.controlPoints[i+1]) - Vector3(params.controlPoints[i]);
-        Vector3 strikeDir = faultLine - (upDir * faultLine) * upDir;
+        Geometry::Vector<double,3> faultLine = Geometry::Vector<double,3>(params.controlPoints[i+1]) - Geometry::Vector<double,3>(params.controlPoints[i]);
+        Geometry::Vector<double,3> strikeDir = faultLine - (upDir * faultLine) * upDir;
         strikeDir.normalize();
 
         strikeDirections.push_back(strikeDir[0]);
         strikeDirections.push_back(strikeDir[1]);
         strikeDirections.push_back(strikeDir[2]);
 
-        Vector3 dipDir = cross(slopePlane.normal, strikeDir);
+        Geometry::Vector<double,3> dipDir = cross(slopePlane.normal, strikeDir);
         dipDir.normalize();
 
         dipDirections.push_back(dipDir[0]);
@@ -481,8 +481,8 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
     glVertex3d(pA[0], pA[1], pA[2]);
     glVertex3d(pB[0], pB[1], pB[2]);
 
-    Vector3f tmp1(mid - v);
-    Vector3f tmp2(mid + v);
+    Geometry::Vector<float,3> tmp1(mid - v);
+    Geometry::Vector<float,3> tmp2(mid + v);
 
     glVertex3f(tmp1[0], tmp1[1], tmp1[2]);
     glVertex3f(tmp2[0], tmp2[1], tmp2[2]);
@@ -492,10 +492,10 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
 
     /*
     glBegin(GL_QUADS);
-    Vector3f a(mid - v - u);
-    Vector3f b(mid + v - u);
-    Vector3f c(mid + v + u);
-    Vector3f d(mid - v + u);
+    Geometry::Vector<float,3> a(mid - v - u);
+    Geometry::Vector<float,3> b(mid + v - u);
+    Geometry::Vector<float,3> c(mid + v + u);
+    Geometry::Vector<float,3> d(mid - v + u);
 
     glVertex3d(a[0], a[1], a[2]);
     glVertex3d(b[0], b[1], b[2]);
@@ -610,8 +610,8 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         SliceTool::SliceParameters params = SliceTool::getParameters();
 
         std::vector<float> slicePlanes;
-        std::vector<Vector3> shiftVecs;
-        std::vector<Vector3> planeCenters;
+        std::vector<Geometry::Vector<double,3> > shiftVecs;
+        std::vector<Geometry::Vector<double,3> > planeCenters;
 
         /*
         glBegin(GL_TRIANGLES);
@@ -619,9 +619,9 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         // fill out corners at control points (with tris to centers)
         if (params.controlPoints.size() > 1) {
             for (size_t i=1; i < params.controlPoints.size()-1; ++i) {
-                Vector3 a = Vector3(params.controlPoints[i]);
-                Vector3 b = params.slopePlanes[i].getPlaneCenter();
-                Vector3 c = params.slopePlanes[i-1].getPlaneCenter();
+                Geometry::Vector<double,3> a = Geometry::Vector<double,3>(params.controlPoints[i]);
+                Geometry::Vector<double,3> b = params.slopePlanes[i].getPlaneCenter();
+                Geometry::Vector<double,3> c = params.slopePlanes[i-1].getPlaneCenter();
 
                 glVertex3f(a[0], a[1], a[2]);
                 glVertex3f(b[0], b[1], b[2]);
@@ -638,7 +638,7 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
             glColor3f(1,0,1);
             glLineWidth(5.0);
             glBegin(GL_LINES);
-            Vector3 p = Vector3(params.controlPoints[0]);
+            Geometry::Vector<double,3> p = Geometry::Vector<double,3>(params.controlPoints[0]);
             glVertex3f(p[0], p[1], p[2]);
             p += params.getLinearTranslation();
             glVertex3f(p[0], p[1], p[2]);
@@ -650,8 +650,8 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         for (size_t i=0; i < params.faultPlanes.size(); ++i) {
             const SliceTool::Plane &p = params.faultPlanes[i];
 
-            Vector3 c1(0.5 * (p.startPoint + p.endPoint));
-            Vector3 c2(c1 + 5e4 * p.normal);
+            Geometry::Vector<double,3> c1(0.5 * (p.startPoint + p.endPoint));
+            Geometry::Vector<double,3> c2(c1 + 5e4 * p.normal);
 
 
             glLineWidth(5.0);
@@ -672,8 +672,8 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
         for (size_t i=0; i < params.separatingPlanes.size(); ++i) {
             const SliceTool::Plane &p = params.separatingPlanes[i];
 
-            Vector3 c1(0.5 * (p.startPoint + p.endPoint));
-            Vector3 c2(c1 + 5e4 * p.normal);
+            Geometry::Vector<double,3> c1(0.5 * (p.startPoint + p.endPoint));
+            Geometry::Vector<double,3> c2(c1 + 5e4 * p.normal);
 
             glLineWidth(5.0);
             glBegin(GL_LINES);
@@ -699,30 +699,30 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
 
             glBegin(GL_LINE_STRIP);
             // line segment
-            Vector3 A = p.startPoint;
-            Vector3 B = p.endPoint;
+            Geometry::Vector<double,3> A = p.startPoint;
+            Geometry::Vector<double,3> B = p.endPoint;
             A.normalize();
             B.normalize();
 
-            Vector3 rotAxis = B - A;
+            Geometry::Vector<double,3> rotAxis = B - A;
             rotAxis.normalize();
 
             // normal vector of plane containing segment and planet center
-            Vector3 n = cross(Vector3(params.controlPoints[0]), Vector3(params.controlPoints[1]));
+            Geometry::Vector<double,3> n = cross(Geometry::Vector<double,3>(params.controlPoints[0]), Geometry::Vector<double,3>(params.controlPoints[1]));
             n.normalize();
 
             // the point we want to find the great arc for
-            Vector3 p1 = Vector3(params.controlPoints[2]);
+            Geometry::Vector<double,3> p1 = Geometry::Vector<double,3>(params.controlPoints[2]);
 
             // find the great arc as the plane which contains the planet center, p1 and a point offset from the center parallel to the segment dir
-            Vector3 newN = cross(p1, Vector3(params.controlPoints[1]) - Vector3(params.controlPoints[0]));
+            Geometry::Vector<double,3> newN = cross(p1, Geometry::Vector<double,3>(params.controlPoints[1]) - Geometry::Vector<double,3>(params.controlPoints[0]));
             newN.normalize();
 
             // determine the angle of rotation between the two great arcs (the angle between the plane normals)
             double angle = acos(n * newN);
 
 
-            Vector3 p2 = p1 - (n * p1) * p1 / (p1.mag() * p1.mag());
+            Geometry::Vector<double,3> p2 = p1 - (n * p1) * p1 / (p1.mag() * p1.mag());
 
 
             glVertex3f(p1[0], p1[1], p1[2]);
@@ -736,7 +736,7 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
              glBegin(GL_LINE_STRIP);
             for (size_t i=0; i < 64; ++i) {
                 double t = i / 63.0;
-                Vector3 pt = (1.0 / sin(omega)) * (sin((1-t)*omega) * p.startPoint + sin(t * omega) * p.endPoint);
+                Geometry::Vector<double,3> pt = (1.0 / sin(omega)) * (sin((1-t)*omega) * p.startPoint + sin(t * omega) * p.endPoint);
                 pt = Vrui::Rotation::rotateAxis(rotAxis, -angle).transform(pt);
                 glVertex3f(pt[0], pt[1], pt[2]);
             }
@@ -745,7 +745,7 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
 
             glColor3f(1,0,0);
 
-            Vector3 isectVec = cross(newN, -params.separatingPlanes[1].normal);
+            Geometry::Vector<double,3> isectVec = cross(newN, -params.separatingPlanes[1].normal);
             isectVec.normalize();
             isectVec *= 1e8;
 
@@ -931,7 +931,7 @@ generateIndexTemplate(GLuint& indexTemplate)
 
 
 SurfacePoint QuadTerrain::
-intersectNode(const MainBuffer& nodeBuf, const Ray& ray,
+intersectNode(const MainBuffer& nodeBuf, const Geometry::Ray<double,3>& ray,
               double tin, int sin, double& tout, int& sout,
               const double gout) const
 {
@@ -945,7 +945,7 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 CRUSTA_DEBUG(94, CrustaVisualizer::addScope(node.scope);)
 CRUSTA_DEBUG(94, CrustaVisualizer::addScope(node.scope, 3, Color(1,0,0,1));)
 CRUSTA_DEBUG(95,
-Ray blarg(ray.getOrigin(), ray(300000000.0));
+(Geometry::Ray<double,3>) blarg(ray.getOrigin(), ray(300000000.0));
 CrustaVisualizer::addRay(blarg,3);
 CrustaVisualizer::addHit(ray, tin, 4);)
 
@@ -961,7 +961,7 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "------------------------\n";)
     DemHeight::Type elevationRange[2];
     node.getElevationRange(elevationRange);
 
-    Sphere shell(Point3(0), SETTINGS->globeRadius +
+    Sphere shell(Geometry::Point<double,3>(0), SETTINGS->globeRadius +
                  verticalScale*elevationRange[1]);
     double t0, t1;
     bool intersects = shell.intersectRay(ray, t0, t1);
@@ -1064,7 +1064,7 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "------------------------\n";)
 }
 
 SurfacePoint QuadTerrain::
-intersectLeaf(const MainData& leafData, const Ray& ray,
+intersectLeaf(const MainData& leafData, const Geometry::Ray<double,3>& ray,
               double param, int side, const double gout) const
 {
     NodeData& leaf = *leafData.node;
@@ -1118,13 +1118,13 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 
 //- traverse cells
 #if DO_RELATIVE_LEAF_TRIANGLE_INTERSECTIONS
-    Ray relativeRay(Point3(Vector3(ray.getOrigin())-Vector3(leaf.centroid)),
+    Geometry::Ray<double,3> relativeRay(Geometry::Point<double,3>(Geometry::Vector<double,3>(ray.getOrigin())-Geometry::Vector<double,3>(leaf.centroid)),
                     ray.getDirection());
 #else
-    Ray relativeRay(ray);
+    Geometry::Ray<double,3> relativeRay(ray);
 #endif //DO_RELATIVE_LEAF_TRIANGLE_INTERSECTIONS
 CRUSTA_DEBUG(96,
-Ray blarg(relativeRay.getOrigin(), relativeRay(300000000.0));
+(Geometry::Ray<double,3>) blarg(relativeRay.getOrigin(), relativeRay(300000000.0));
 CrustaVisualizer::addRay(blarg, 1);
 CrustaVisualizer::peek();)
 
@@ -1143,8 +1143,8 @@ CrustaVisualizer::peek();)
         };
 
         //construct the corners of the current cell
-        Vector3 cellCorners[4];
-        Vector3 relativeCellCorners[4];
+        Geometry::Vector<double,3> cellCorners[4];
+        Geometry::Vector<double,3> relativeCellCorners[4];
         for (int i=0; i<4; ++i)
         {
             for (int j=0; j<3; ++j)
@@ -1152,14 +1152,14 @@ CrustaVisualizer::peek();)
                 cellCorners[i][j] = double((*(positions[i]))[j]) +
                                     double(leaf.centroid[j]);
             }
-            Vector3 extrude(cellCorners[i]);
+            Geometry::Vector<double,3> extrude(cellCorners[i]);
             extrude.normalize();
             extrude        *= double(heights[i]) * verticalScale;
             cellCorners[i] += extrude;
 
             relativeCellCorners[i] = cellCorners[i];
 #if DO_RELATIVE_LEAF_TRIANGLE_INTERSECTIONS
-            relativeCellCorners[i]-= Vector3(leaf.centroid);
+            relativeCellCorners[i]-= Geometry::Vector<double,3>(leaf.centroid);
 #endif //DO_RELATIVE_LEAF_TRIANGLE_INTERSECTIONS
         }
 
@@ -1177,12 +1177,12 @@ CrustaVisualizer::addTriangle(t1, -1, Color(0.7, 0.6, 0.9, 1.0));
 //CrustaVisualizer::peek();
 CrustaVisualizer::show("Intersecting triangles");)
 
-        HitResult hit = t0.intersectRay(relativeRay);
+        Geometry::HitResult<double> hit = t0.intersectRay(relativeRay);
         if (hit.isValid())
         {
-            surfacePoint.cellIndex = Point2i(cellX, cellY);
+            surfacePoint.cellIndex = Geometry::Point<int,2>(cellX, cellY);
 ///\todo compute the proper cell position
-            surfacePoint.cellPosition = Point2(0.0, 0.0);
+            surfacePoint.cellPosition = Geometry::Point<double,2>(0.0, 0.0);
             surfacePoint.position = ray(hit.getParameter());
 CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "HIT! t0 \n";)
 
@@ -1191,9 +1191,9 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "HIT! t0 \n";)
         hit = t1.intersectRay(relativeRay);
         if (hit.isValid())
         {
-            surfacePoint.cellIndex = Point2i(cellX, cellY);
+            surfacePoint.cellIndex = Geometry::Point<int,2>(cellX, cellY);
 ///\todo compute the proper cell position
-            surfacePoint.cellPosition = Point2(0.0, 0.0);
+            surfacePoint.cellPosition = Geometry::Point<double,2>(0.0, 0.0);
             surfacePoint.position = ray(hit.getParameter());
 CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "HIT! t0 \n";)
 
@@ -1202,8 +1202,8 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "HIT! t0 \n";)
 
         //determine the exit point and side
         computeExit(ray, param,
-                    Scope(Point3(cellCorners[0]), Point3(cellCorners[1]),
-                          Point3(cellCorners[2]), Point3(cellCorners[3])),
+                    Scope(Geometry::Point<double,3>(cellCorners[0]), Geometry::Point<double,3>(cellCorners[1]),
+                          Geometry::Point<double,3>(cellCorners[2]), Geometry::Point<double,3>(cellCorners[3])),
                     param, side);
 
         //end traversal if we did not find an exit point from the current cell
@@ -1240,7 +1240,7 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 
 void QuadTerrain::
 segmentCoverage(const MainBuffer& nodeBuf,
-                const Point3& start, const Point3& end,
+                const Geometry::Point<double,3>& start, const Geometry::Point<double,3>& end,
                 Shape::IntersectionFunctor& callback) const
 {
     MainData  nodeData = DATAMANAGER->getData(nodeBuf);
@@ -1384,7 +1384,7 @@ crustaGl->terrainShader.disable();
     glDisable(GL_TEXTURE_2D);
 
     CHECK_GLA
-    Point3* c = main.scope.corners;
+    Geometry::Point<double,3>* c = main.scope.corners;
     glBegin(GL_LINE_STRIP);
         glColor3f(1.0f, 0.0f, 0.0f);
         glVertex3f(c[0][0], c[0][1], c[0][2]);

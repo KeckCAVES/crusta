@@ -28,12 +28,12 @@ ControlPoint(const ControlPoint& other) :
 {}
 
 Shape::ControlPoint::
-ControlPoint(const Point3& iPos) :
+ControlPoint(const Geometry::Point<double,3>& iPos) :
     stamp(Math::Constants<FrameStamp>::max), pos(iPos), coord(0)
 {}
 
 Shape::ControlPoint::
-ControlPoint(const FrameStamp& iStamp, const Point3& iPos) :
+ControlPoint(const FrameStamp& iStamp, const Geometry::Point<double,3>& iPos) :
     stamp(iStamp), pos(iPos), coord(0)
 {}
 
@@ -141,7 +141,7 @@ Shape::
 
 
 Shape::ControlId Shape::
-select(const Point3& pos, double& dist, double pointBias)
+select(const Geometry::Point<double,3>& pos, double& dist, double pointBias)
 {
     double pointDist;
     ControlId pointId = selectPoint(pos, pointDist);
@@ -161,7 +161,7 @@ select(const Point3& pos, double& dist, double pointBias)
 }
 
 Shape::ControlId Shape::
-selectPoint(const Point3& pos, double& dist)
+selectPoint(const Geometry::Point<double,3>& pos, double& dist)
 {
     ControlId retId = BAD_ID;
     dist            = Math::Constants<double>::max;
@@ -182,7 +182,7 @@ selectPoint(const Point3& pos, double& dist)
 }
 
 Shape::ControlId Shape::
-selectSegment(const Point3& pos, double& dist)
+selectSegment(const Geometry::Point<double,3>& pos, double& dist)
 {
     ControlId retId = BAD_ID;
     dist            = Math::Constants<double>::max;
@@ -193,11 +193,11 @@ selectSegment(const Point3& pos, double& dist)
         ControlPointHandle nit = it;
         ++nit;
 
-        const Point3& start = it->pos;
-        const Point3& end   = nit->pos;
+        const Geometry::Point<double,3>& start = it->pos;
+        const Geometry::Point<double,3>& end   = nit->pos;
 
-        Vector3 seg   = end - start;
-        Vector3 toPos = pos - start;
+        Geometry::Vector<double,3> seg   = end - start;
+        Geometry::Vector<double,3> toPos = pos - start;
 
         double segSqrLen = seg*seg;
         double u = (toPos * seg) / segSqrLen;
@@ -205,12 +205,12 @@ selectSegment(const Point3& pos, double& dist)
             continue;
 
         //assumes the center of the sphere is at the origin
-        Vector3 toStart(start);
+        Geometry::Vector<double,3> toStart(start);
         toStart.normalize();
         seg           /= Math::sqrt(segSqrLen);
-        Vector3 normal = Geometry::cross(toStart, seg);
+        Geometry::Vector<double,3> normal = Geometry::cross(toStart, seg);
 
-        double newDist = Math::abs(Vector3(pos) * normal);
+        double newDist = Math::abs(Geometry::Vector<double,3>(pos) * normal);
         if (newDist < dist)
         {
             retId.type   = CONTROL_SEGMENT;
@@ -223,7 +223,7 @@ selectSegment(const Point3& pos, double& dist)
 }
 
 Shape::ControlId Shape::
-selectExtremity(const Point3& pos, double& dist, End& end)
+selectExtremity(const Geometry::Point<double,3>& pos, double& dist, End& end)
 {
     assert(controlPoints.size()>0);
     double frontDist = Geometry::dist(pos, controlPoints.front().pos);
@@ -245,7 +245,7 @@ selectExtremity(const Point3& pos, double& dist, End& end)
 
 
 void Shape::
-setControlPoints(const Point3s& newControlPoints)
+setControlPoints(const std::vector<Geometry::Point<double,3> >& newControlPoints)
 {
     MapManager* mapMan  = crusta->getMapManager();
 
@@ -254,7 +254,7 @@ setControlPoints(const Point3s& newControlPoints)
     controlPoints.clear();
 
     //assign the new control point positions
-    for (Point3s::const_iterator it=newControlPoints.begin();
+    for (std::vector<Geometry::Point<double,3> >::const_iterator it=newControlPoints.begin();
          it!=newControlPoints.end(); ++it)
     {
         controlPoints.push_back(ControlPoint(*it));
@@ -265,7 +265,7 @@ setControlPoints(const Point3s& newControlPoints)
 }
 
 Shape::ControlId Shape::
-addControlPoint(const Point3& pos, End end)
+addControlPoint(const Geometry::Point<double,3>& pos, End end)
 {
     MapManager* mapMan  = crusta->getMapManager();
 
@@ -298,7 +298,7 @@ CRUSTA_DEBUG(40, std::cerr << "----added " <<
 }
 
 void Shape::
-moveControlPoint(const ControlId& id, const Point3& pos)
+moveControlPoint(const ControlId& id, const Geometry::Point<double,3>& pos)
 {
 ///\todo only works for single map tool: ids can't be invalidated outside tool
     assert(isValid(id));
@@ -359,7 +359,7 @@ CRUSTA_DEBUG(40, std::cerr << "----deleted.\n\n\n";)
 }
 
 Shape::ControlId Shape::
-refine(const ControlId& id, const Point3& pos)
+refine(const ControlId& id, const Geometry::Point<double,3>& pos)
 {
 ///\todo only works for single map tool: ids can't be invalidated outside tool
     assert(isValid(id));

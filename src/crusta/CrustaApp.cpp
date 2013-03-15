@@ -51,7 +51,7 @@
 #endif //CRUSTA_ENABLE_DEBUG
 
 
-static const crusta::Point2i DATALISTBOX_SIZE(30, 8);
+static const Geometry::Point<int,2> DATALISTBOX_SIZE(30, 8);
 
 using namespace GLMotif;
 
@@ -897,15 +897,15 @@ void CrustaApp::
 alignSurfaceFrame(Vrui::SurfaceNavigationTool::AlignmentData& alignmentData)
 {
 /* Do whatever to the surface frame, but don't change its scale factor: */
-    Point3 origin = alignmentData.surfaceFrame.getOrigin();
-    if (origin == Point3::origin)
-        origin = Point3(0.0, 1.0, 0.0);
+    Geometry::Point<double,3> origin = alignmentData.surfaceFrame.getOrigin();
+    if (origin == Geometry::Point<double,3>::origin)
+        origin = Geometry::Point<double,3>(0.0, 1.0, 0.0);
 
     SurfacePoint surfacePoint = crusta->snapToSurface(origin);
 
     //misuse the Geoid just to build a surface tangent frame
     Geometry::Geoid<double> geoid(SETTINGS->globeRadius, 0.0);
-    Point3 lonLatEle = geoid.cartesianToGeodetic(surfacePoint.position);
+    Geometry::Point<double,3> lonLatEle = geoid.cartesianToGeodetic(surfacePoint.position);
     Geometry::Geoid<double>::Frame frame =
         geoid.geodeticToCartesianFrame(lonLatEle);
     alignmentData.surfaceFrame = Vrui::NavTransform(

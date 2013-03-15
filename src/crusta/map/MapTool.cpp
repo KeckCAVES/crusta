@@ -25,7 +25,7 @@ MapTool::
 MapTool(const Vrui::ToolFactory* iFactory,
         const Vrui::ToolInputAssignment& inputAssignment) :
     Tool(iFactory, inputAssignment), toolId(MapManager::BAD_TOOLID),
-    mode(MODE_IDLE), prevPosition(Math::Constants<Point3::Scalar>::max)
+    mode(MODE_IDLE), prevPosition(Math::Constants<Geometry::Point<double,3>::Scalar>::max)
 {
 }
 
@@ -59,7 +59,7 @@ init(Vrui::ToolFactory* parent)
 
 
 void MapTool::
-createShape(Shape*& shape, Shape::ControlId& control, const Point3&)
+createShape(Shape*& shape, Shape::ControlId& control, const Geometry::Point<double,3>&)
 {
     shape   = NULL;
     control = Shape::BAD_ID;
@@ -71,7 +71,7 @@ deleteShape(Shape*& shape, Shape::ControlId& control)
     control = Shape::BAD_ID;
 }
 void MapTool::
-addControlPoint(Shape*& shape, Shape::ControlId& control, const Point3& pos)
+addControlPoint(Shape*& shape, Shape::ControlId& control, const Geometry::Point<double,3>& pos)
 {
     assert(shape != NULL);
 
@@ -123,16 +123,16 @@ getShapes()
 }
 
 
-Point3 MapTool::
+Geometry::Point<double,3> MapTool::
 getPosition()
 {
     Vrui::NavTrackerState nav = Vrui::getDeviceTransformation(getButtonDevice(0));
     Vrui::NavTrackerState::Vector trans = nav.getTranslation();
-    return Point3(trans[0], trans[1], trans[2]);
+    return Geometry::Point<double,3>(trans[0], trans[1], trans[2]);
 }
 
 void MapTool::
-selectShape(const Point3& pos)
+selectShape(const Geometry::Point<double,3>& pos)
 {
     MapManager* mapMan = crusta->getMapManager();
     Shape*& curShape = mapMan->getActiveShape(toolId);
@@ -165,7 +165,7 @@ selectShape(const Point3& pos)
 }
 
 void MapTool::
-selectControl(const Point3& pos)
+selectControl(const Geometry::Point<double,3>& pos)
 {
     MapManager* mapMan = crusta->getMapManager();
     Shape*& curShape   = mapMan->getActiveShape(toolId);
@@ -190,7 +190,7 @@ selectControl(const Point3& pos)
 
 #if 0
 void MapTool::
-addPointAtEnds(const Point3& pos)
+addPointAtEnds(const Geometry::Point<double,3>& pos)
 {
     double distance;
     Shape::End end;
@@ -219,7 +219,7 @@ if (PROJECTION_FAILED)
 statsMan.start(StatsManager::EDITLINE);
 
     //handle motion
-    Point3 pos = getPosition();
+    Geometry::Point<double,3> pos = getPosition();
     pos = crusta->mapToUnscaledGlobe(pos);
     if (pos == prevPosition)
         return;
@@ -291,14 +291,14 @@ display(GLContextData& contextData) const
     glDepthRange(0.0, 0.0);
 
     //compute the centroids
-    Point3 centroid(0);
+    Geometry::Point<double,3> centroid(0);
     const Shape::ControlPointList& controlPoints = curShape->getControlPoints();
-    Point3s cps;
+    std::vector<Geometry::Point<double,3> > cps;
     for (Shape::ControlPointList::const_iterator it=controlPoints.begin();
          it!=controlPoints.end(); ++it)
     {
         cps.push_back(crusta->mapToScaledGlobe(it->pos));
-        const Point3& cp = cps.back();
+        const Geometry::Point<double,3>& cp = cps.back();
         for (int i=0; i<3; ++i)
             centroid[i] += cp[i];
     }
@@ -338,7 +338,7 @@ display(GLContextData& contextData) const
         {
             case Shape::CONTROL_POINT:
             {
-                Point3 p = curControl.handle->pos;
+                Geometry::Point<double,3> p = curControl.handle->pos;
                 p        = crusta->mapToScaledGlobe(p);
 
                 glColor3f(0.3f, 0.9f, 0.5f);
@@ -352,10 +352,10 @@ display(GLContextData& contextData) const
             case Shape::CONTROL_SEGMENT:
             {
                 Shape::ControlId si = curShape->previousControl(curControl);
-                Point3 s            = si.handle->pos;
+                Geometry::Point<double,3> s            = si.handle->pos;
                 s                   = crusta->mapToScaledGlobe(s);
                 Shape::ControlId ei = curShape->nextControl(curControl);
-                Point3 e            = ei.handle->pos;
+                Geometry::Point<double,3> e            = ei.handle->pos;
                 e                   = crusta->mapToScaledGlobe(e);
 
                 glColor3f(0.3f, 0.9f, 0.5f);
@@ -384,7 +384,7 @@ buttonCallback(int buttonSlotIndex,
 {
 statsMan.start(StatsManager::EDITLINE);
 
-    Point3 pos = getPosition();
+    Geometry::Point<double,3> pos = getPosition();
     pos        = crusta->mapToUnscaledGlobe(pos);
 
     Shape*& curShape = crusta->getMapManager()->getActiveShape(toolId);

@@ -71,12 +71,12 @@ public:
 ///\todo potentially deprecate
     /** snap the given cartesian point to the surface of the terrain (at an
         optional offset) */
-    SurfacePoint snapToSurface(const Point3& pos, Scalar offset=Scalar(0));
+    SurfacePoint snapToSurface(const Geometry::Point<double,3>& pos, Scalar offset=Scalar(0));
     /** intersect a ray with the crusta globe */
-    SurfacePoint intersect(const Ray& ray) const;
+    SurfacePoint intersect(const Geometry::Ray<double,3>& ray) const;
 
     /** determine the coverage of a single segment with the global hierarchy */
-    void segmentCoverage(const Point3& start, const Point3& end,
+    void segmentCoverage(const Geometry::Point<double,3>& start, const Geometry::Point<double,3>& end,
                    Shape::IntersectionFunctor& callback) const;
 
     const FrameStamp& getLastScaleStamp() const;
@@ -89,10 +89,10 @@ public:
 
     /** map a 3D cartesian point specified wrt an unscaled globe representation
         to the corresponding point in a scaled representation */
-    Point3 mapToScaledGlobe(const Point3& pos);
+    Geometry::Point<double,3> mapToScaledGlobe(const Geometry::Point<double,3>& pos);
     /** map a 3D cartesian point specified on a scaled globe representation to
         the corresponding point in an unscaled representation */
-    Point3 mapToUnscaledGlobe(const Point3& pos);
+    Geometry::Point<double,3> mapToUnscaledGlobe(const Geometry::Point<double,3>& pos);
 
     MapManager* getMapManager()  const;
 

@@ -28,8 +28,8 @@ public:
     {
         ControlPoint();
         ControlPoint(const ControlPoint& other);
-        ControlPoint(const Point3& position);
-        ControlPoint(const FrameStamp& attributeStamp, const Point3& iPos);
+        ControlPoint(const Geometry::Point<double,3>& position);
+        ControlPoint(const FrameStamp& attributeStamp, const Geometry::Point<double,3>& iPos);
 
         /** stamp used to age parts of the line segment. In particular, the line
             data needs to be regenerated if its stamp is older than this stamp.
@@ -38,7 +38,7 @@ public:
             of a shape is a case where all the overlaped node's line data must
             be updated. */
         FrameStamp stamp;
-        Point3     pos;
+        Geometry::Point<double,3>     pos;
         Scalar     coord;
     };
     typedef std::list<ControlPoint>          ControlPointList;
@@ -102,17 +102,17 @@ friend std::ostream& operator<<(std::ostream& os, const ControlId& cid);
     Shape(Crusta* iCrusta);
     virtual ~Shape();
 
-    ControlId select(const Point3& pos, double& dist, double pointBias=1.0);
-    ControlId selectPoint(const Point3& pos, double& dist);
-    ControlId selectSegment(const Point3& pos, double& dist);
-    ControlId selectExtremity(const Point3& pos, double& dist, End& end);
+    ControlId select(const Geometry::Point<double,3>& pos, double& dist, double pointBias=1.0);
+    ControlId selectPoint(const Geometry::Point<double,3>& pos, double& dist);
+    ControlId selectSegment(const Geometry::Point<double,3>& pos, double& dist);
+    ControlId selectExtremity(const Geometry::Point<double,3>& pos, double& dist, End& end);
 
-    virtual void setControlPoints(const Point3s& newControlPoints);
+    virtual void setControlPoints(const std::vector<Geometry::Point<double,3> >& newControlPoints);
 
-    virtual ControlId addControlPoint(const Point3& pos, End end=END_BACK);
-    virtual void moveControlPoint(const ControlId& id, const Point3& pos);
+    virtual ControlId addControlPoint(const Geometry::Point<double,3>& pos, End end=END_BACK);
+    virtual void moveControlPoint(const ControlId& id, const Geometry::Point<double,3>& pos);
     virtual void removeControlPoint(const ControlId& id);
-    virtual ControlId refine(const ControlId& id, const Point3& pos);
+    virtual ControlId refine(const ControlId& id, const Geometry::Point<double,3>& pos);
 
     ControlId previousControl(const ControlId& id) const;
     ControlId nextControl(const ControlId& id) const;

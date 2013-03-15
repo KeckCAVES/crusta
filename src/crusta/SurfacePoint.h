@@ -11,15 +11,15 @@ BEGIN_CRUSTA
 struct SurfacePoint
 {
     SurfacePoint();
-    SurfacePoint(const Point3& position_, const TreeIndex& nodeIndex_,
-                 const Point2i& cellIndex_, const Point2& cellPosition_);
+    SurfacePoint(const Geometry::Point<double,3>& position_, const TreeIndex& nodeIndex_,
+                 const Geometry::Point<int,2>& cellIndex_, const Geometry::Point<double,2>& cellPosition_);
 
     bool isValid() const;
 
-    Point3    position;
+    Geometry::Point<double,3>    position;
     TreeIndex nodeIndex;
-    Point2i   cellIndex;
-    Point2    cellPosition;
+    Geometry::Point<int,2>   cellIndex;
+    Geometry::Point<double,2>    cellPosition;
 };
 
 
