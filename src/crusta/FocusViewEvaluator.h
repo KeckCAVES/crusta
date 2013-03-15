@@ -5,7 +5,7 @@
 
 #include <GL/GLFrustum.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 /**
     Specialized evaluator that considers coverage of the screen projection and
@@ -30,6 +30,6 @@ public:
     virtual float compute(const NodeData& node);
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_FocusViewEvaluator_H_

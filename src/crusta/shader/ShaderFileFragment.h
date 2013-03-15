@@ -9,7 +9,7 @@
 #include <crusta/shader/ShaderFragment.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class ShaderFileFragment : public ShaderFragment
@@ -47,7 +47,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Crusta_ShaderFileFragment_H_

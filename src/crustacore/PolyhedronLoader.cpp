@@ -3,7 +3,7 @@
 #include <crustacore/Triacontahedron.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 Polyhedron* PolyhedronLoader::
@@ -16,4 +16,4 @@ load(const std::string polyhedronDescriptor, double radius)
 }
 
 
-END_CRUSTA
+} //namespace crusta

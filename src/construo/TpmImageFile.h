@@ -30,7 +30,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <construo/TpmFile.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename PixelType>
@@ -52,7 +52,7 @@ protected:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #include <construo/TpmImageFile.hpp>

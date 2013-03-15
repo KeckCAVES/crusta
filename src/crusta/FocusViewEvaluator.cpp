@@ -9,7 +9,7 @@
 
 #include <Vrui/Vrui.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 void FocusViewEvaluator::
 setFocusFromDisplay()
@@ -55,4 +55,4 @@ compute(const NodeData& node)
     return lod;
 }
 
-END_CRUSTA
+} //namespace crusta

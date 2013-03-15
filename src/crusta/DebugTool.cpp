@@ -11,7 +11,7 @@
 #include <Vrui/Vrui.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 DebugTool::Factory* DebugTool::factory = NULL;
@@ -120,4 +120,4 @@ buttonCallback(int buttonSlotIndex,
 }
 
 
-END_CRUSTA
+} //namespace crusta

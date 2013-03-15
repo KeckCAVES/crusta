@@ -12,10 +12,7 @@
 #include <Geometry/Vector.h>
 
 
-#define BEGIN_CRUSTA namespace crusta {
-#define END_CRUSTA   } //namespace crusta
-
-BEGIN_CRUSTA
+namespace crusta {
 
 #ifndef CRUSTA_ENABLE_DEBUG
 #define CRUSTA_ENABLE_DEBUG !NDEBUG
@@ -82,7 +79,7 @@ extern FrameStamp CURRENT_FRAME;
 extern FrameStamp LAST_FRAME;
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_basics_H_

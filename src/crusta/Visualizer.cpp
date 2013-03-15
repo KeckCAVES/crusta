@@ -13,7 +13,7 @@
 #include <crusta/checkGl.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 Visualizer* Visualizer::vis          = NULL;
@@ -353,4 +353,4 @@ runWrapper()
     return NULL;
 }
 
-END_CRUSTA
+} //namespace crusta

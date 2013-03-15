@@ -40,7 +40,7 @@
 #include <crusta/glbasics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class Scope;
@@ -113,7 +113,7 @@ protected:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Visualizer_H_

@@ -10,7 +10,7 @@
 #define CRUSTA_RECORD_STATS 0
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class StatsManager
@@ -50,7 +50,7 @@ protected:
 extern StatsManager statsMan;
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_StatsManager_H_

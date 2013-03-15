@@ -9,7 +9,7 @@
 #include <crustacore/LayerData.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename TypeParam>
@@ -61,7 +61,7 @@ struct GlobeData< LayerData<TypeParam> >
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_LayerDataGlobeData_H_

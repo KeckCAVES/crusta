@@ -17,7 +17,7 @@
 #include <crusta/Crusta.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 SurfaceProbeTool::Factory* SurfaceProbeTool::factory = NULL;
@@ -398,4 +398,4 @@ setupComponent(Crusta* crusta)
 }
 
 
-END_CRUSTA
+} //namespace crusta

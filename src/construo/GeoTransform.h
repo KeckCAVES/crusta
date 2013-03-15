@@ -31,7 +31,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 #include <construo/ImageTransform.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 class GeoTransform : public ImageTransform
 {
@@ -49,6 +49,6 @@ public:
 	virtual bool isCompatible(const ImageTransform& other) const;
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_GeoTransform_H_

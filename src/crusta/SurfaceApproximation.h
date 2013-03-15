@@ -5,7 +5,7 @@
 #include <crusta/QuadNodeDataBundles.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 /** stores all the elements needed to reconstruct and display an approximation
@@ -46,6 +46,6 @@ neighbors*/
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_SurfaceApproximation_H_

@@ -6,7 +6,7 @@
 #include <crusta/CrustaComponent.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class DebugTool : public Vrui::Tool, public CrustaComponent
@@ -47,7 +47,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_DebugTool_H_

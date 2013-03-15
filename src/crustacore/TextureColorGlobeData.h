@@ -9,7 +9,7 @@
 #include <crustacore/TextureColor.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <>
@@ -60,7 +60,7 @@ struct GlobeData<TextureColor>
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_TextureColorGlobeData_H_

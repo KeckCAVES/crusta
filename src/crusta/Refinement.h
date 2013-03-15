@@ -1,7 +1,7 @@
 #ifndef _Refinement_H_
 #define _Refinement_H_
 
-BEGIN_CRUSTA
+namespace crusta {
 
 class Ellipsoid;
 class Scope;
@@ -35,7 +35,7 @@ protected:
                   Geometry::Point<ScalarParam, 3>* vertices) const;
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #include <crusta/Refinement.hpp>
 

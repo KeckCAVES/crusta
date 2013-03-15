@@ -6,7 +6,7 @@
 
 #include <crustacore/basics.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 namespace Converter
 {
@@ -64,6 +64,6 @@ haversineDist(const Geometry::Point<ScalarParam, 2>& one,
 
 } //namespace Converter
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_Converters_H_

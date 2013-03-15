@@ -1,7 +1,7 @@
 #include <crusta/shader/ShaderDataSource.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 std::string ShaderDataSource::
@@ -11,4 +11,4 @@ sample(const std::string& params) const
 }
 
 
-END_CRUSTA
+} //namespace crusta

@@ -4,7 +4,7 @@
 #include <crustacore/Section.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 Scope::
@@ -159,4 +159,4 @@ intersects(const Geometry::Point<double,3>& start, const Geometry::Point<double,
 }
 
 
-END_CRUSTA
+} //namespace crusta

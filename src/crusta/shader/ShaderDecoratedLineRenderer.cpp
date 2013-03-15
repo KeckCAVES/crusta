@@ -7,7 +7,7 @@
 #include <crusta/CrustaSettings.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ShaderDecoratedLineRenderer::
@@ -120,4 +120,4 @@ initUniforms(GLuint programObj)
     symbolWidthUniform  = glGetUniformLocation(programObj,  "lineSymbolWidth");
 }
 
-END_CRUSTA
+} //namespace crusta

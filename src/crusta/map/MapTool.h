@@ -5,7 +5,7 @@
 #include <crusta/Tool.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class Shape;
@@ -75,7 +75,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_MapTool_H_

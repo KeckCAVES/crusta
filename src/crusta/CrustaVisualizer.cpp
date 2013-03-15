@@ -5,7 +5,7 @@
 #include <crusta/Triangle.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 Color CrustaVisualizer::defaultScopeColor(1,1,1,1);
@@ -135,4 +135,4 @@ resetNavigationCallback(Misc::CallbackData* cbData)
 }
 
 
-END_CRUSTA
+} //namespace crusta

@@ -6,7 +6,7 @@
 #include <crustacore/basics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class Homography
@@ -32,7 +32,7 @@ protected:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Homography_H_

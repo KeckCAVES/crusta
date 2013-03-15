@@ -32,7 +32,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <crustacore/TreeIndex.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename PixelType,
@@ -136,7 +136,7 @@ const TileHeader& getLastTileHeader() const;
     TileHeader lastTileHeader;
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #include <crustacore/QuadtreeFile.hpp>
 

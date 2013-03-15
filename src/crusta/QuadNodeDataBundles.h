@@ -5,7 +5,7 @@
 #include <crusta/QuadCache.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 /** contains all the buffers needed to define a node's main memory
@@ -75,7 +75,7 @@ struct NodeGpuData
 typedef std::vector<NodeGpuData> NodeGpuDatas;
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_QuadNodeDataBundles_H_

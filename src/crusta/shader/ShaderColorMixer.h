@@ -5,7 +5,7 @@
 #include <crusta/shader/ShaderMultiDataSource.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ///\todo abstract out the multi-source
@@ -17,7 +17,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_ShaderColorMixer_H_

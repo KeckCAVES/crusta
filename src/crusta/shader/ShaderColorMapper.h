@@ -7,7 +7,7 @@
 #include <crusta/shader/ShaderAtlasDataSource.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class ShaderColorMapper : public ShaderDataSource
@@ -39,7 +39,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_ShaderColorMapper_H_

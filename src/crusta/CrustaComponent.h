@@ -5,7 +5,7 @@
 #include <crustacore/basics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 class Crusta;
 
@@ -21,7 +21,7 @@ protected:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_CrustaComponent_H_

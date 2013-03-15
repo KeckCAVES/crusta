@@ -9,7 +9,7 @@
 #include <crusta/SurfacePoint.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class SurfaceProjector : public CrustaComponent
@@ -28,7 +28,7 @@ protected:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Crusta_SurfaceProjector_H_

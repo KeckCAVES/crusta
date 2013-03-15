@@ -4,7 +4,7 @@
 #include <construo/Tree.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <>
@@ -27,6 +27,6 @@ template <>
 bool TreeNode<LayerDataf>::debugGetKin = false;
 #endif //CRUSTA_ENABLE_DEBUG
 
-END_CRUSTA
+} //namespace crusta
 
 #include <construo/Tree.hpp>

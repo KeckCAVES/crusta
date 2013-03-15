@@ -7,7 +7,7 @@
 #include <crustacore/basics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 inline
@@ -58,7 +58,7 @@ std::istream& operator>>(std::istream& iss, Geometry::Vector<uint8_t,3>& tc)
 }
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Vector3ui8_H_

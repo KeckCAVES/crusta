@@ -7,7 +7,7 @@
 #include <crusta/DataManager.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 Cache::
@@ -98,4 +98,4 @@ initContext(GLContextData& contextData) const
 Cache* CACHE;
 
 
-END_CRUSTA
+} //namespace crusta

@@ -11,7 +11,7 @@
 #include <crustacore/TileIndex.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename PixelParam>
@@ -74,7 +74,7 @@ protected:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #include <crustacore/GlobeFile.hpp>

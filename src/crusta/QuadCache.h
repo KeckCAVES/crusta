@@ -8,7 +8,7 @@
 #include <GL/GLObject.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename BufferParam>
@@ -95,9 +95,9 @@ protected:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 #include <crusta/QuadCache.hpp>
-BEGIN_CRUSTA
+namespace crusta {
 
 
 typedef CacheBuffer<NodeData>  NodeBuffer;
@@ -179,7 +179,7 @@ protected:
 extern Cache* CACHE;
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_QuadCache_H_

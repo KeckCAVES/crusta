@@ -28,7 +28,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <construo/Converters.h>
 #include <construo/GeoTransform.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 Point::Scalar GeoTransform::
 getFinestResolution(const int size[2]) const
@@ -159,4 +159,4 @@ isCompatible(const ImageTransform& other) const
     return isSystemCompatible(other);
 }
 
-END_CRUSTA
+} //namespace crusta

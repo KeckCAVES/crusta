@@ -7,7 +7,7 @@
 #include <crusta/Crusta.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 Polyline::
@@ -92,4 +92,4 @@ refine(const ControlId& id, const Geometry::Point<double,3>& pos)
     return ret;
 }
 
-END_CRUSTA
+} //namespace crusta

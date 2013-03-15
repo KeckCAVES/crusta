@@ -38,7 +38,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <crusta/CrustaSettings.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class LightingShader
@@ -219,7 +219,7 @@ class LightingShader
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_LightingShader_H_

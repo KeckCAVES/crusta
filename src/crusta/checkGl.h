@@ -9,7 +9,7 @@
 
 #include <crustacore/basics.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 class CheckGlBase
 {
@@ -65,7 +65,7 @@ public:
     }
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #ifndef NDEBUG
 #define CHECK_GL crusta::CheckGl::print(__LINE__, __FILE__)

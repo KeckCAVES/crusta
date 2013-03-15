@@ -30,11 +30,11 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 #include <crustacore/basics.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 typedef Geometry::Point<double,      2> Point;
 typedef Geometry::Box<Point::Scalar, 2> Box;
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_GeometryTypes_H_

@@ -5,7 +5,7 @@
 #include <crustacore/basics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 /** type of an index to a tile within the data pyramid.
@@ -17,7 +17,7 @@ typedef unsigned int TileIndex;
 static const TileIndex INVALID_TILEINDEX = ~0x0U;
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_TileIndex_H_

@@ -38,7 +38,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <fstream>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 /*************************************************
@@ -1186,4 +1186,4 @@ void LightingShader::disable()
     }
 
 
-END_CRUSTA
+} //namespace crusta

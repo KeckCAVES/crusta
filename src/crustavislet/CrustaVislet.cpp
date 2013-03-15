@@ -4,7 +4,7 @@
 
 #include <crusta/Crusta.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 //- CrustaVisletFactory --------------------------------------------------------
 
@@ -107,4 +107,4 @@ display(GLContextData& contextData) const
 }
 
 
-END_CRUSTA
+} //namespace crusta

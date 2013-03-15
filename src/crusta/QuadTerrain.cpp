@@ -41,7 +41,7 @@
 #include <Geometry/ProjectiveTransformation.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 static const size_t NUM_GEOMETRY_INDICES =
@@ -1619,4 +1619,4 @@ validateLineCoverage(const MainData& nodeData)
 }
 
 
-END_CRUSTA
+} //namespace crusta

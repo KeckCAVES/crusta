@@ -5,7 +5,7 @@
 #include <crustacore/basics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename UnsignedInteger>
@@ -66,7 +66,7 @@ typedef IdGeneratorTemplate<uint32_t> IdGenerator32;
 typedef IdGeneratorTemplate<uint64_t> IdGenerator64;
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_IdGenerator_H_

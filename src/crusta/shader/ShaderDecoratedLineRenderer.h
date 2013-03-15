@@ -6,7 +6,7 @@
 #include <crusta/shader/ShaderFileFragment.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class ShaderDecoratedLineRenderer : public ShaderFileFragment
@@ -43,7 +43,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Crusta_ShaderDecoratedLineRenderer_H_

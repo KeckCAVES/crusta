@@ -7,7 +7,7 @@
 #include <crustacore/basics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 /// serves as a container for the semantics of a data layer value
@@ -43,7 +43,7 @@ struct LayerData<float>
 typedef LayerData<float> LayerDataf;
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_LayerData_H_

@@ -5,7 +5,7 @@
 #include <crusta/CrustaSettings.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ColorMapper::MainLayer::
@@ -454,4 +454,4 @@ initContext(GLContextData& contextData) const
 ColorMapper* COLORMAPPER = NULL;
 
 
-END_CRUSTA
+} //namespace crusta

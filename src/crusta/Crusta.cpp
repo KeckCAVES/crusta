@@ -36,7 +36,7 @@
 #define CV(x) CrustaVisualizer::x
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 ///\todo debug remove
 bool PROJECTION_FAILED = false;
@@ -1005,4 +1005,4 @@ validateLineCoverage()
 }
 
 
-END_CRUSTA
+} //namespace crusta

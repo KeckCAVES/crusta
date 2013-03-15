@@ -5,7 +5,7 @@
 #include <Math/Constants.h>
 #include <Misc/ThrowStdErr.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename DataParam>
@@ -382,4 +382,4 @@ if (name != std::string("GpuGeometry"))
 }
 
 
-END_CRUSTA
+} //namespace crusta

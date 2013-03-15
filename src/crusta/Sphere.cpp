@@ -1,7 +1,7 @@
 #include <crusta/Sphere.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 Sphere::
@@ -78,4 +78,4 @@ intersectRay(const Geometry::Ray<double,3>& ray, Scalar& first, Scalar& second) 
 }
 
 
-END_CRUSTA
+} //namespace crusta

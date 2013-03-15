@@ -8,7 +8,7 @@
 #include <crustacore/basics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 /**\todo hide corners behind getters, setters to add an explicitely stored
@@ -82,7 +82,7 @@ protected:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #include <crustacore/Scope.hpp>

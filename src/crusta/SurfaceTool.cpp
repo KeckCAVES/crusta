@@ -9,7 +9,7 @@
 #include <Vrui/Vrui.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 SurfaceTool::Factory* SurfaceTool::factory = NULL;
@@ -112,4 +112,4 @@ buttonCallback(int buttonSlotIndex,
 }
 
 
-END_CRUSTA
+} //namespace crusta

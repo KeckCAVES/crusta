@@ -5,7 +5,7 @@
 
 #include <Misc/ThrowStdErr.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ShaderFileFragment::
@@ -126,4 +126,4 @@ getCode()
 }
 
 
-END_CRUSTA
+} //namespace crusta

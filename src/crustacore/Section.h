@@ -4,7 +4,7 @@
 
 #include <crustacore/basics.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ///\todo deprecate & remove unused stuff
@@ -51,7 +51,7 @@ protected:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Section_H_

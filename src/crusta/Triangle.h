@@ -5,7 +5,7 @@
 #include <crustacore/basics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 /** A triangle, used for intersection */
@@ -81,7 +81,7 @@ protected:
     const Geometry::Vector<double,3> edge2;
 };
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Triangle_H_

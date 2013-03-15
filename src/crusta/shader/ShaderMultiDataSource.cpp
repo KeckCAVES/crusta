@@ -4,7 +4,7 @@
 #include <sstream>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 void ShaderMultiDataSource::
@@ -73,4 +73,4 @@ getCode()
 }
 
 
-END_CRUSTA
+} //namespace crusta

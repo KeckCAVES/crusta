@@ -1,7 +1,7 @@
 #include <crusta/SurfacePoint.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 SurfacePoint::
@@ -26,4 +26,4 @@ isValid() const
 }
 
 
-END_CRUSTA
+} //namespace crusta

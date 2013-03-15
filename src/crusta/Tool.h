@@ -7,7 +7,7 @@
 #include <crusta/CrustaComponent.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class Tool;
@@ -34,7 +34,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Tool_H_

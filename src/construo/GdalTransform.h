@@ -33,7 +33,7 @@
 
 #include <construo/ImageTransform.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 class GdalTransform : public ImageTransform
 {
@@ -80,6 +80,6 @@ private:
     OGRCoordinateTransformation* worldToGeo;
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_UtmTransfrom_H_

@@ -5,7 +5,7 @@
 #include <construo/SphereCoverage.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 void ConstruoVisualizer::
@@ -53,5 +53,5 @@ addScopeRefinement(int resolution, Scope::Scalar* s, int temp,
 }
 
 
-END_CRUSTA
+} //namespace crusta
 #endif //CRUSTA_ENABLE_DEBUG

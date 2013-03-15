@@ -2,7 +2,7 @@
 
 #include <construo/ImageTransform.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 ImageTransform::
 ImageTransform() :
@@ -210,4 +210,4 @@ isSystemCompatible(const ImageTransform& other) const
     return true;
 }
 
-END_CRUSTA
+} //namespace crusta

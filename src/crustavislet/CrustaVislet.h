@@ -10,7 +10,7 @@ namespace Vrui {
 }
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class Crusta;
@@ -60,7 +60,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_CrustaVislet_H_

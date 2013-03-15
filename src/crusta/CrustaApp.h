@@ -40,7 +40,7 @@ class Lightsource;
 }
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class Crusta;
@@ -220,6 +220,6 @@ public:
         Vrui::ToolManager::ToolDestructionCallbackData* cbData);
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_CrustaApp_H_

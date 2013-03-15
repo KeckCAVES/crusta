@@ -19,7 +19,7 @@
 #include <crusta/Crusta.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 SliceTool::Factory* SliceTool::factory = NULL;
@@ -602,4 +602,4 @@ Geometry::Vector<double,3> SliceTool::SliceParameters::getLinearTranslation() co
     return strikeAmount * delta;
 }
 
-END_CRUSTA
+} //namespace crusta

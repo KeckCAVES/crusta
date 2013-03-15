@@ -29,7 +29,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <crustacore/basics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 /* Forward declarations: */
@@ -45,7 +45,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #include <construo/ImageFileLoader.hpp>

@@ -9,7 +9,7 @@
 #include <crustacore/TreeIndex.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename PixelParam>
@@ -121,7 +121,7 @@ public:
     GlobeFile<PixelParam> globeFile;
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #ifndef _ConstruoTree_nohpp_
 #include <construo/Tree.hpp>

@@ -3,7 +3,7 @@
 
 #include <crustacore/basics.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 class NodeData;
 
@@ -48,6 +48,6 @@ protected:
     virtual float compute(const NodeData& node) = 0;
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_LodEvaluator_H_

@@ -29,7 +29,7 @@
 #include <construo/ImageFile.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 extern bool GdalAllRegisteredCalled;
@@ -61,7 +61,7 @@ public:
                                PixelType* rectBuffer) const;
 };
 
-END_CRUSTA
+} //namespace crusta
 
 
 #include <construo/GdalImageFile.hpp>

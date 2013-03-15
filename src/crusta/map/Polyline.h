@@ -4,7 +4,7 @@
 #include <crusta/map/Shape.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class Polyline : public Shape
@@ -27,7 +27,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Polyline_H_

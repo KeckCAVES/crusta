@@ -8,7 +8,7 @@
 
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 #define EPSILON (0.000000000001)
 
@@ -189,4 +189,4 @@ computeNormal()
     normal.normalize();
 }
 
-END_CRUSTA
+} //namespace crusta

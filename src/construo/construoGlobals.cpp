@@ -1,10 +1,10 @@
 #include <construo/construoGlobals.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ConstruoSettings CONSTRUO_SETTINGS;
 
 
-END_CRUSTA
+} //namespace crusta

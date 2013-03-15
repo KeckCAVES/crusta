@@ -23,7 +23,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 02111-1307 USA
 ***********************************************************************/
 
-BEGIN_CRUSTA
+namespace crusta {
 
 template <class PixelType>
 inline
@@ -97,4 +97,4 @@ getSize() const
     return size;
 }
 
-END_CRUSTA
+} //namespace crusta

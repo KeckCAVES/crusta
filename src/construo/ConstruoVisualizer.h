@@ -8,7 +8,7 @@
 #include <crustacore/Scope.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class ConstruoVisualizer : public Visualizer
@@ -22,7 +22,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //CRUSTA_ENABLE_DEBUG
 

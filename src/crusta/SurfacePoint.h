@@ -5,7 +5,7 @@
 #include <crustacore/TreeIndex.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 struct SurfacePoint
@@ -23,7 +23,7 @@ struct SurfacePoint
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Crusta_SurfacePoint_H_

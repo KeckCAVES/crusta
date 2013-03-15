@@ -7,7 +7,7 @@
 #include <crustacore/Scope.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 /**
@@ -29,7 +29,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Polyhedron_H_

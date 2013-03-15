@@ -28,7 +28,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 #include <construo/GeometryTypes.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 ///\todo conform to the style of SphereCoverage.
 class ImageCoverage
@@ -75,6 +75,6 @@ private:
 	Box bbox;
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_ImageCoverage_H_

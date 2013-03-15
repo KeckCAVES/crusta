@@ -4,7 +4,7 @@
 #include <crusta/Visualizer.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class Scope;
@@ -42,7 +42,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_CrustaVisualizer_H_

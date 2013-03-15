@@ -5,7 +5,7 @@
 #include <crusta/shader/ShaderDataSource.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class ShaderMultiDataSource : public ShaderDataSource
@@ -26,7 +26,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Crusta_ShaderMultiDataSource_H_

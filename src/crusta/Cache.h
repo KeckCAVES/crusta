@@ -32,7 +32,7 @@
 #endif
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename BufferParam>
@@ -187,7 +187,7 @@ protected:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #include <crusta/Cache.hpp>

@@ -9,7 +9,7 @@
 #include <crustacore/Vector3ui8.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename PixelType>
@@ -291,4 +291,4 @@ assert(rectOrigin[i]+rectSize[i]-1 < size[i]);
 };
 
 
-END_CRUSTA
+} //namespace crusta

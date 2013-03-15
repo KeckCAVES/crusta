@@ -9,7 +9,7 @@
 #include <crusta/map/MapManager.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
       Shape::Symbol    Shape::DEFAULT_SYMBOL;
 const Shape::ControlId Shape::BAD_ID(CONTROL_INVALID, ControlPointHandle());
@@ -501,4 +501,4 @@ isValid(const ControlId& control) const
 }
 
 
-END_CRUSTA
+} //namespace crusta

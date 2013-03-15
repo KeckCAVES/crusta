@@ -5,7 +5,7 @@
 #include <crusta/shader/ShaderDataSource.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ///\todo comment!!
@@ -68,7 +68,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_ShaderAtlasDataSource_H_

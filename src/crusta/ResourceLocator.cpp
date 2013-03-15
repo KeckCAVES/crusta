@@ -4,7 +4,7 @@
 #include <crusta/CrustaSettings.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 void ResourceLocator::
@@ -21,4 +21,4 @@ ResourceLocator RESOURCELOCATOR;
 IO::DirectoryPtr CURRENTDIRECTORY;
 
 
-END_CRUSTA
+} //namespace crusta

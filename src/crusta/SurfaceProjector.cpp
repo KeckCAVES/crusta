@@ -9,7 +9,7 @@
 #include <Vrui/Vrui.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 SurfaceProjector::
@@ -127,4 +127,4 @@ display(GLContextData&,
 }
 
 
-END_CRUSTA
+} //namespace crusta

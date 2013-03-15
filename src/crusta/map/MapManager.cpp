@@ -46,7 +46,7 @@
 #include <crusta/StatsManager.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 MapManager::
@@ -994,4 +994,4 @@ loadMapFileCancelCallback(
 }
 
 
-END_CRUSTA
+} //namespace crusta

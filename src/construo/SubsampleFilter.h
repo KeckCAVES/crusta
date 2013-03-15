@@ -5,7 +5,7 @@
 #include <crustacore/basics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 /*- fixed filtered lookups into two dimensional pixel domains. The lookups must
@@ -39,7 +39,7 @@ struct SubsampleFilter
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #include <construo/SubsampleFilter.hpp>

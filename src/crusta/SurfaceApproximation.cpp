@@ -1,7 +1,7 @@
 #include <crusta/SurfaceApproximation.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 void SurfaceApproximation::
@@ -41,4 +41,4 @@ processNeighborhood()
 }
 
 
-END_CRUSTA
+} //namespace crusta

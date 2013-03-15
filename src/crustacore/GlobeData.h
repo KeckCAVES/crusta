@@ -7,7 +7,7 @@
 #include <crustacore/QuadtreeFile.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename PixelParam>
@@ -50,7 +50,7 @@ struct GlobeData
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #include <crustacore/DemHeightGlobeData.h>

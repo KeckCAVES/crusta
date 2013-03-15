@@ -9,7 +9,7 @@
 #include <crusta/QuadNodeData.h> // for SubRegion
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ///\todo comment!!
@@ -36,7 +36,7 @@ private:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_ShaderFragment_H_

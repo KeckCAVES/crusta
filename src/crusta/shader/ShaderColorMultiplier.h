@@ -7,7 +7,7 @@
 #include <crusta/shader/ShaderMultiDataSource.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 ///\todo abstract out the multi-source
 class ShaderColorMultiplier : public ShaderMultiDataSource
@@ -18,7 +18,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Crusta_ShaderColorMultiplier_H_

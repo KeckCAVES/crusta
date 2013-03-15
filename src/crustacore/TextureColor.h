@@ -7,7 +7,7 @@
 #include <crustacore/Vector3ui8.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 /// serves as a container for the semantics of a 3-channel byte image value
@@ -18,7 +18,7 @@ struct TextureColor
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_TextureColor_H_

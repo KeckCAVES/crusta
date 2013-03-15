@@ -12,7 +12,7 @@
 #include <crusta/ResourceLocator.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 CrustaSettings::CrustaSettings() :
@@ -203,4 +203,4 @@ loadFromFiles(const Strings& cfgNames)
 CrustaSettings* SETTINGS;
 
 
-END_CRUSTA
+} //namespace crusta

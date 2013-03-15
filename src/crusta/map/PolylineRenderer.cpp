@@ -15,7 +15,7 @@
 #include <crusta/QuadNodeData.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 PolylineRenderer::
@@ -119,4 +119,4 @@ display(GLContextData& contextData, const SurfaceApproximation& surface) const
 }
 
 
-END_CRUSTA
+} //namespace crusta

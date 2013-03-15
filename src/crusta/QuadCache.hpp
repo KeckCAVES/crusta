@@ -4,7 +4,7 @@
 #include <crusta/checkGl.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename BufferParam>
@@ -363,4 +363,4 @@ subStream(const SubRegion& sub, GLint xoff, GLsizei width,
 }
 
 
-END_CRUSTA
+} //namespace crusta

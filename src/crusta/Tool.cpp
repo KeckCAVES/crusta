@@ -3,7 +3,7 @@
 #include <Vrui/ToolManager.h>
 #include <Vrui/Vrui.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 Tool::Factory* Tool::factory = NULL;
@@ -39,4 +39,4 @@ getFactory() const
 }
 
 
-END_CRUSTA
+} //namespace crusta

@@ -10,7 +10,7 @@
 #include <construo/GeometryTypes.h>
 #include <crustacore/Scope.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 class ImageCoverage;
 class ImageTransform;
@@ -71,6 +71,6 @@ public:
                            const ImageTransform* transform);
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_SphereCoverage_H_

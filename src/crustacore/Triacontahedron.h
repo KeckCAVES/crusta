@@ -5,7 +5,7 @@
 #include <crustacore/Polyhedron.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 /**
@@ -28,7 +28,7 @@ protected:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Triacontahedron_H_

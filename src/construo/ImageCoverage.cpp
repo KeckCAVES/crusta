@@ -28,7 +28,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <Misc/File.h>
 #include <Misc/ThrowStdErr.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 ImageCoverage::
 ImageCoverage(void) :
@@ -272,4 +272,4 @@ overlaps(const Box& box) const
 	return (numRegionChanges&0x1)!=0x0?2:0;
 }
 
-END_CRUSTA
+} //namespace crusta

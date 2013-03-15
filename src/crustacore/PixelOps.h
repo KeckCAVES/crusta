@@ -5,7 +5,7 @@
 #include <crustacore/basics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename PixelType>
@@ -27,7 +27,7 @@ struct PixelOps
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #include <crustacore/PixelOps.hpp>

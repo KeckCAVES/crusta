@@ -8,7 +8,7 @@
 #include <crusta/SurfaceProjector.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class SurfaceTool : public Vrui::TransformTool, public SurfaceProjector
@@ -39,7 +39,7 @@ public:
                                 Vrui::InputDevice::ButtonCallbackData* cbData);
 };
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_SurfaceTool_H_

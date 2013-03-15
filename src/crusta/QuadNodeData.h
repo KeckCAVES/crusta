@@ -15,7 +15,7 @@
 #include <GL/GLVertex.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ///\todo change name to more appropriate NodeDynamicData
@@ -118,7 +118,7 @@ std::ostream& operator<<(std::ostream&os, const SubRegion& sub);
 std::ostream& operator<<(std::ostream& os, const NodeData::ShapeCoverage& cov);
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_QuadNodeData_H_

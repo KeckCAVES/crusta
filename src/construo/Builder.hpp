@@ -26,7 +26,7 @@ static float flagAncestorsForUpdateColor[3];
 #include <construo/ConstruoVisualizer.h>
 #endif //CRUSTA_ENABLE_DEBUG
 
-BEGIN_CRUSTA
+namespace crusta {
 
 template <typename PixelParam>
 Builder<PixelParam>::
@@ -748,4 +748,4 @@ verifyQuadtreeFile(Node* node)
 #endif //VERIFYQUADTREEFILE
 }
 
-END_CRUSTA
+} //namespace crusta

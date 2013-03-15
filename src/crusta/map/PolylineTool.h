@@ -4,7 +4,7 @@
 #include <crusta/map/MapTool.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class PolylineTool : public MapTool
@@ -39,7 +39,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_PolylineTool_H_

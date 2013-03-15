@@ -16,7 +16,7 @@
 #include <crusta/shader/ShaderColorReader.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 /**\todo separate color mapper from a layer manager */
 class ColorMapper : public GLObject
@@ -144,7 +144,7 @@ public:
 
 extern ColorMapper* COLORMAPPER;
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_ColorMapper_H_

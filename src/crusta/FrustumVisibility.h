@@ -5,7 +5,7 @@
 
 #include <GL/GLFrustum.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 /**
     Specialization of the VisibilityEvaluator that considers a viewing frustum
@@ -22,6 +22,6 @@ public:
     virtual bool evaluate(const NodeData& node);
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_FrustumVisibility_H_

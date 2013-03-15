@@ -26,7 +26,7 @@ namespace Vrui {
 }
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class Polyline;
@@ -159,7 +159,7 @@ protected:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_MapManager_H_

@@ -1,7 +1,7 @@
 #include <crusta/VruiCoordinateTransform.h>
 #include <crusta/Crusta.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 VruiCoordinateTransform::VruiCoordinateTransform():
   CrustaComponent(NULL), geoid(SETTINGS->globeRadius, 0.0)
@@ -54,4 +54,4 @@ Vrui::Point VruiCoordinateTransform::inverseTransform(const Vrui::Point& userPoi
   return crusta->mapToScaledGlobe(geoid.geodeticToCartesian(pos));
 }
 
-END_CRUSTA
+} //namespace crusta

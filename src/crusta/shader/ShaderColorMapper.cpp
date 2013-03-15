@@ -7,7 +7,7 @@
 #include <crusta/CrustaSettings.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ShaderColorMapper::
@@ -101,4 +101,4 @@ texStep       *= 0.5f;
 }
 
 
-END_CRUSTA
+} //namespace crusta

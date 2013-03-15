@@ -6,7 +6,7 @@
 #include <crusta/checkGl.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ShaderTopographySource::
@@ -86,4 +86,4 @@ getCode()
 }
 
 
-END_CRUSTA
+} //namespace crusta

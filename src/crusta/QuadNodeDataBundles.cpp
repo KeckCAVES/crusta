@@ -1,7 +1,7 @@
 #include <crusta/QuadNodeDataBundles.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 NodeMainBuffer::
@@ -30,4 +30,4 @@ NodeGpuData() :
 }
 
 
-END_CRUSTA
+} //namespace crusta

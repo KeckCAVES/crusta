@@ -10,7 +10,7 @@
 class GLContextData;
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class PolylineRenderer : public CrustaComponent
@@ -23,7 +23,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_PolylineRenderer_H_

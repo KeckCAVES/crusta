@@ -3,7 +3,7 @@
 using namespace std;
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 StatsManager statsMan;
 
@@ -102,4 +102,4 @@ incrementDataUpdated()
 #endif //CRUSTA_RECORD_STATS
 }
 
-END_CRUSTA
+} //namespace crusta

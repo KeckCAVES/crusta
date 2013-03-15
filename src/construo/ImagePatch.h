@@ -9,7 +9,7 @@
 #include <construo/SphereCoverage.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 /**
@@ -38,7 +38,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #include <construo/ImagePatch.hpp>

@@ -31,7 +31,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <construo/TpmImageFile.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename PixelType>
@@ -49,4 +49,4 @@ loadImageFile(const char* fileName)
 }
 
 
-END_CRUSTA
+} //namespace crusta

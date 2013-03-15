@@ -9,7 +9,7 @@
 #include <crustacore/DemHeight.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <>
@@ -80,7 +80,7 @@ struct GlobeData<DemHeight>
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_DemHeightGlobeData_H_

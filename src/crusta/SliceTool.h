@@ -22,7 +22,7 @@ namespace GLMotif {
 }
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ///\todo rename all the minMax to dual and all the shift to single
@@ -171,7 +171,7 @@ public:
 
 };
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Crusta_SliceTool_H_

@@ -9,7 +9,7 @@
 #include <crustacore/Vector3ui8.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 //- single channel float -------------------------------------------------------
@@ -379,7 +379,7 @@ struct SubsampleFilter<Geometry::Vector<uint8_t,3>, SUBSAMPLEFILTER_LANCZOS5>
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_SubsamplingFilter_HPP_

@@ -8,7 +8,7 @@
 #include <crustacore/basics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class ResourceLocator : public Misc::FileLocator
@@ -20,7 +20,7 @@ public:
 extern ResourceLocator RESOURCELOCATOR;
 extern IO::DirectoryPtr CURRENTDIRECTORY;
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_ResourceLocator_H_

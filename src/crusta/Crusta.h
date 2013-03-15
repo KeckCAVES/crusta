@@ -25,7 +25,7 @@
 class GLColorMap;
 class GLContextData;
 
-BEGIN_CRUSTA
+namespace crusta {
 
 template <typename NodeDataType>
 class CacheBuffer;
@@ -147,6 +147,6 @@ public:
     virtual void initContext(GLContextData& contextData) const;
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_Crusta_H_

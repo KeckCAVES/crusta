@@ -3,7 +3,7 @@
 
 #include <sstream>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 std::string ShaderColorMixer::
@@ -40,4 +40,4 @@ getCode()
 }
 
 
-END_CRUSTA
+} //namespace crusta

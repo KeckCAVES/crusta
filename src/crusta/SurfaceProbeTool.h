@@ -19,7 +19,7 @@ namespace GLMotif {
 }
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ///\todo rename all the minMax to dual and all the shift to single
@@ -135,7 +135,7 @@ public:
     virtual void setupComponent(Crusta* crusta);
 };
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Crusta_SurfaceProbeTool_H_

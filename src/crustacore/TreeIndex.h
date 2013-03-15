@@ -5,7 +5,7 @@
 
 #include <crustacore/basics.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 /** uniquely specifies a node in the quadtree hierarchy */
 struct TreeIndex
@@ -71,6 +71,6 @@ struct TreePath
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_TreeIndex_H_

@@ -12,7 +12,7 @@
 #endif //CRUSTA_ENABLE_DEBUG
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename PixelParam> inline
@@ -449,4 +449,4 @@ Spheroid(const std::string& baseName, const size_t tileResolution[2]):
 }
 
 
-END_CRUSTA
+} //namespace crusta

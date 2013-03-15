@@ -1,4 +1,4 @@
-BEGIN_CRUSTA
+namespace crusta {
 
 template <typename ScalarParam>
 void Scope::
@@ -131,4 +131,4 @@ getCentroidRefinement(ScalarParam radius, size_t resolution,
     }
 }
 
-END_CRUSTA
+} //namespace crusta

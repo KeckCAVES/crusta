@@ -7,7 +7,7 @@
 #include <iostream>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 const TreeIndex TreeIndex::invalid(~0,~0,~0,~0);
@@ -230,4 +230,4 @@ pop()
     return retVal;
 }
 
-END_CRUSTA
+} //namespace crusta

@@ -4,7 +4,7 @@
 #include <crustacore/basics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 /** Extends the Sphere object from Vrui to provide both intersection points with
     a ray (if there is intersection). */
@@ -27,7 +27,7 @@ protected:
     Scalar sqrRadius;
 };
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Sphere_H_

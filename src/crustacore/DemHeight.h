@@ -5,7 +5,7 @@
 #include <crustacore/basics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 /// serves as a container for the semantics of a topography value
@@ -16,7 +16,7 @@ struct DemHeight
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_DemHeight_H_

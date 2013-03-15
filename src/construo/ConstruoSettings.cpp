@@ -8,7 +8,7 @@
 #include <Misc/StandardValueCoders.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ConstruoSettings::
@@ -57,4 +57,4 @@ loadFromFile(std::string configurationFileName, bool merge)
     globeRadius = cfgFile.retrieveValue<double>("./radius", globeRadius);
 }
 
-END_CRUSTA
+} //namespace crusta

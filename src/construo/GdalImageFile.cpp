@@ -1,10 +1,10 @@
 #include <construo/GdalImageFile.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 bool GdalAllRegisteredCalled = false;
 
 
-END_CRUSTA
+} //namespace crusta

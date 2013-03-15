@@ -19,7 +19,7 @@
 #include <crusta/SurfaceApproximation.h>
 #include <crusta/SurfacePoint.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 struct CrustaGlData;
 
@@ -168,6 +168,6 @@ protected:
     static GlData* glData;
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_QuadTerrain_H_

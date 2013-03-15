@@ -17,7 +17,7 @@
 #include <Geometry/Matrix.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <class ScalarParam,int dimensionParam>
@@ -250,4 +250,4 @@ int main(void)
 }
 #endif
 
-END_CRUSTA
+} //namespace crusta

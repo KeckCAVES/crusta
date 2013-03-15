@@ -2,7 +2,7 @@
 
 #include <crusta/QuadNodeData.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 LodEvaluator::
 LodEvaluator() :
@@ -19,4 +19,4 @@ evaluate(const NodeData& node)
     return (scale * compute(node)) + bias;
 }
 
-END_CRUSTA
+} //namespace crusta

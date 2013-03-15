@@ -4,7 +4,7 @@
 #include <sstream>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 int ShaderFragment::nextSequenceNumber = 0;
@@ -36,4 +36,4 @@ makeUniqueName(const std::string& baseName) const
 }
 
 
-END_CRUSTA
+} //namespace crusta

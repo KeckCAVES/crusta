@@ -4,14 +4,14 @@
 #include <construo/ConstruoSettings.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 /** globally accessible settings for the construo process */
 extern ConstruoSettings CONSTRUO_SETTINGS;
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_construoGlobals_H_

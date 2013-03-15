@@ -28,7 +28,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 #include <construo/GeometryTypes.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 class ImageTransform
 {
@@ -107,6 +107,6 @@ protected:
     Point::Scalar offset[2];
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_ImageTransform_H_

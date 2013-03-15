@@ -5,7 +5,7 @@
 #include <crustacore/TreeIndex.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 /** uniquely specifies a data element for use in caching */
 struct DataIndex : public TreeIndex
@@ -28,7 +28,7 @@ struct DataIndex : public TreeIndex
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_DataIndex_H_

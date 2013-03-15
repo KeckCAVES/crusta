@@ -1,7 +1,7 @@
 #include <crusta/DataIndex.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 const DataIndex DataIndex::
@@ -74,4 +74,4 @@ getTreeIndex() const
 }
 
 
-END_CRUSTA
+} //namespace crusta

@@ -20,7 +20,7 @@
 class GLContextData;
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class Crusta;
@@ -288,6 +288,6 @@ public:
 extern DataManager* DATAMANAGER;
 
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_DataManager_H_

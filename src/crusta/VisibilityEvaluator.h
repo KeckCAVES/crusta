@@ -3,7 +3,7 @@
 
 #include <crustacore/basics.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 class NodeData;
 
@@ -15,6 +15,6 @@ public:
     virtual bool evaluate(const NodeData& node) = 0;
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_VisibilityEvaluator_H_

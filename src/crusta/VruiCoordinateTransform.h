@@ -5,7 +5,7 @@
 #include <Vrui/CoordinateTransform.h>
 #include <crusta/CrustaComponent.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 class VruiCoordinateTransform: public Vrui::CoordinateTransform, public CrustaComponent
 {
@@ -19,6 +19,6 @@ class VruiCoordinateTransform: public Vrui::CoordinateTransform, public CrustaCo
   Geometry::Geoid<double> geoid;
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #endif

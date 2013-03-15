@@ -8,7 +8,7 @@
 #include <construo/Tree.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class BuilderBase
@@ -113,7 +113,7 @@ void verifyQuadtreeNode(Node* node);
 void verifyQuadtreeFile(Node* node);
 };
 
-END_CRUSTA
+} //namespace crusta
 
 #include <construo/Builder.hpp>
 

@@ -56,7 +56,7 @@ static const Geometry::Point<int,2> DATALISTBOX_SIZE(30, 8);
 using namespace GLMotif;
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 CrustaApp::
@@ -1077,7 +1077,7 @@ toolDestructionCallback(Vrui::ToolManager::ToolDestructionCallbackData* cbData)
 
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 int main(int argc, char* argv[])

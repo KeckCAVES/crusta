@@ -9,7 +9,7 @@
 #include <crusta/glbasics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class CrustaSettings
@@ -89,7 +89,7 @@ public:
 extern CrustaSettings* SETTINGS;
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_CrustaSettings_H_

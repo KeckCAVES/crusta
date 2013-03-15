@@ -7,7 +7,7 @@
 #include <crusta/DataManager.h>
 #include <crusta/SliceTool.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 NodeData::Tile::
@@ -185,4 +185,4 @@ std::ostream& operator<<(std::ostream& os,
 }
 
 
-END_CRUSTA
+} //namespace crusta

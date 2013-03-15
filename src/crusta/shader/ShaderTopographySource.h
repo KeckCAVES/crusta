@@ -5,7 +5,7 @@
 #include <crusta/shader/ShaderDataSource.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class ShaderTopographySource : public ShaderDataSource
@@ -32,7 +32,7 @@ public:
 };
 
 
-END_CRUSTA //_ShaderTopographySource_H_
+} //namespace crusta //_ShaderTopographySource_H_
 
 
 #endif

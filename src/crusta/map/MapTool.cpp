@@ -16,7 +16,7 @@
 #include <crusta/StatsManager.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 MapTool::Factory* MapTool::factory = NULL;
@@ -505,4 +505,4 @@ setupComponent(Crusta* nCrusta)
     toolId = crusta->getMapManager()->registerMappingTool();
 }
 
-END_CRUSTA
+} //namespace crusta

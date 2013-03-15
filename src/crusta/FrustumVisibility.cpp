@@ -4,7 +4,7 @@
 #include <crusta/SliceTool.h>
 #include <crusta/CrustaSettings.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 bool FrustumVisibility::
 evaluate(const NodeData& node)
@@ -39,4 +39,4 @@ evaluate(const NodeData& node)
     }
 }
 
-END_CRUSTA
+} //namespace crusta

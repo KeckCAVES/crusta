@@ -10,7 +10,7 @@
 #include <crusta/map/Polyline.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 PolylineTool::Factory* PolylineTool::factory = NULL;
@@ -130,4 +130,4 @@ getFactory() const
 }
 
 
-END_CRUSTA
+} //namespace crusta

@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 static const Scope::Vertex baseVertices[] = {
     Scope::Vertex(0,0,0), //dummy because Mathematica indices start a 1 not 0
@@ -144,4 +144,4 @@ getConnectivity(size_t patchId, Connectivity connectivity[4]) const
 }
 
 
-END_CRUSTA
+} //namespace crusta

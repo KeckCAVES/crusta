@@ -27,7 +27,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <Misc/ThrowStdErr.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <class PixelType, class FileHeaderParam, class TileHeaderParam>
@@ -370,4 +370,4 @@ getLastTileHeader() const
 }
 
 
-END_CRUSTA
+} //namespace crusta

@@ -7,7 +7,7 @@
 #include <Geometry/Vector.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 //- single channel float -------------------------------------------------------
@@ -150,7 +150,7 @@ struct PixelOps<Geometry::Vector<uint8_t,3> >
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_PixelOps_HPP_

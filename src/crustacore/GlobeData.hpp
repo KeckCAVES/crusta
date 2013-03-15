@@ -9,7 +9,7 @@
 #include <Math/Constants.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 //- Topography -----------------------------------------------------------------
@@ -132,7 +132,7 @@ struct GlobeData<TextureColor>
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_GlobeData_H_

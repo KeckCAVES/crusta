@@ -7,7 +7,7 @@
 #include <crusta/shader/ShaderAtlasDataSource.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class ShaderColorReader : public ShaderDataSource
@@ -27,7 +27,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_ShaderColorReader_H_

@@ -9,7 +9,7 @@
 #include <crusta/checkGl.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ShaderAtlasDataSourceBase::
@@ -169,4 +169,4 @@ getCode()
 }
 
 
-END_CRUSTA
+} //namespace crusta

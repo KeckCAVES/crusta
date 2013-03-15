@@ -7,7 +7,7 @@
 #include <crustacore/basics.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class ConstruoSettings
@@ -24,7 +24,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_ConstruoSettings_H_

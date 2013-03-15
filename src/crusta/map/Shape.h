@@ -9,7 +9,7 @@
 #include <crusta/IdGenerator.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 class NodeData;
@@ -143,7 +143,7 @@ std::ostream& operator<<(std::ostream& os,
                          const Shape::ControlPointHandle& cid);
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_Shape_H_

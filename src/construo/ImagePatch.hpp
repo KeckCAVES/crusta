@@ -4,7 +4,7 @@
 #include <crustacore/Vector3ui8.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename PixelType>
@@ -101,4 +101,4 @@ ImagePatch<PixelType>::
 }
 
 
-END_CRUSTA
+} //namespace crusta

@@ -15,7 +15,7 @@
 #include <Vrui/Vrui.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 DataManager::SourceShaders::
@@ -1399,4 +1399,4 @@ initContext(GLContextData& contextData) const
 DataManager* DATAMANAGER = NULL;
 
 
-END_CRUSTA
+} //namespace crusta

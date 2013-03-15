@@ -1,4 +1,4 @@
-BEGIN_CRUSTA
+namespace crusta {
 
 
 
@@ -27,4 +27,4 @@ centroid(const Ellipsoid& ellipse, size_t oneIndex, size_t twoIndex,
 }
 
 
-END_CRUSTA
+} //namespace crusta

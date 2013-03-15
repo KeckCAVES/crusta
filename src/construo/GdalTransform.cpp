@@ -8,7 +8,7 @@
 #include <construo/construoGlobals.h>
 #include <construo/Converters.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 GdalTransform::
 GdalTransform() :
@@ -303,4 +303,4 @@ getFileSize() const
     return 0;
 }
 
-END_CRUSTA
+} //namespace crusta

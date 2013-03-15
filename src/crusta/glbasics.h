@@ -5,11 +5,11 @@
 #include <crusta/GL/VruiGlew.h> //must be included before gl.h
 #include <GL/GLColor.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 typedef GLColor<float, 4>           Color;
 typedef std::vector<Color>          Colors;
 
-END_CRUSTA
+} //namespace crusta
 
 #endif //_glbasics_H_

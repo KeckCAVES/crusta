@@ -11,7 +11,7 @@
 #include <cstdio>
 #endif //DEBUG_COVERAGE
 
-BEGIN_CRUSTA
+namespace crusta {
 
 static const Point::Scalar EPSILON = 1e-5;
 static const Point::Scalar PI      = Math::Constants<Point::Scalar>::pi;
@@ -472,4 +472,4 @@ fprintf(stderr, "[[%f, %f]]\n", shiftVec[0], shiftVec[1]);
 }
 
 
-END_CRUSTA
+} //namespace crusta

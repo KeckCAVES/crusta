@@ -5,7 +5,7 @@
 #include <crusta/QuadNodeData.h>
 #include <crusta/CrustaSettings.h>
 
-BEGIN_CRUSTA
+namespace crusta {
 
 float ViewLod::
 compute(const NodeData& node)
@@ -23,4 +23,4 @@ compute(const NodeData& node)
     return lod;
 }
 
-END_CRUSTA
+} //namespace crusta

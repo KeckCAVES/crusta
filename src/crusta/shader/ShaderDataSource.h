@@ -7,7 +7,7 @@
 #include <crusta/shader/ShaderFragment.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ///\todo comment!!
@@ -18,7 +18,7 @@ public:
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_ShaderDataSource_H_

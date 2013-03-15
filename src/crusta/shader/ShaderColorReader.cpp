@@ -6,7 +6,7 @@
 #include <crusta/checkGl.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 ShaderColorReader::
@@ -56,4 +56,4 @@ getCode()
 }
 
 
-END_CRUSTA
+} //namespace crusta

@@ -16,7 +16,7 @@
 #include <crustacore/PolyhedronLoader.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 template <typename PixelParam>
@@ -324,7 +324,7 @@ createBaseFolder(std::string path, bool parent)
 }
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_GlobeFile_HPP_

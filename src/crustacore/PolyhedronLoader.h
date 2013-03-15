@@ -7,7 +7,7 @@
 #include <crustacore/Polyhedron.h>
 
 
-BEGIN_CRUSTA
+namespace crusta {
 
 
 struct PolyhedronLoader
@@ -17,7 +17,7 @@ struct PolyhedronLoader
 };
 
 
-END_CRUSTA
+} //namespace crusta
 
 
 #endif //_PolyhedronLoader_H_
