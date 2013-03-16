@@ -1,22 +1,11 @@
 #include <crusta/SliceTool.h>
 #include <crusta/CrustaSettings.h>
 
-#include <Cluster/MulticastPipe.h>
-#include <Geometry/OrthogonalTransformation.h>
-#include <GL/GLTransformationWrappers.h>
-#include <GLMotif/PopupWindow.h>
-#include <GLMotif/RowColumn.h>
-#include <GLMotif/StyleSheet.h>
-#include <GLMotif/WidgetManager.h>
-#include <GLMotif/StyleSheet.h>
-#include <Vrui/InputGraphManager.h>
-#include <Vrui/ToolManager.h>
-#include <Vrui/DisplayState.h>
-#include <Vrui/Vrui.h>
-
 #include <limits>
 
 #include <crusta/Crusta.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

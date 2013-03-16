@@ -2,8 +2,7 @@
 #include <iostream>
 #include <cassert>
 
-#include <Math/Constants.h>
-#include <Misc/ThrowStdErr.h>
+#include <crusta/vrui.h>
 
 namespace crusta {
 

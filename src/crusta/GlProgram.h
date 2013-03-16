@@ -5,7 +5,7 @@
 #include <list>
 #include <string>
 
-#include <crusta/GL/VruiGlew.h>
+#include <crustavrui/GL/VruiGlew.h>
 
 
 class GlProgram

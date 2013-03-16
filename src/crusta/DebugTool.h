@@ -1,9 +1,9 @@
 #ifndef _DebugTool_H_
 #define _DebugTool_H_
 
-#include <Vrui/GenericToolFactory.h>
-
 #include <crusta/CrustaComponent.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

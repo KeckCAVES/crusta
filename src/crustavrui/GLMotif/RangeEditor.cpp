@@ -1,14 +1,9 @@
-#include <crusta/GLMotif/RangeEditor.h>
+#include <crustavrui/GLMotif/RangeEditor.h>
 
 
 #include <string>
 
-#include <GLMotif/Label.h>
-#include <GLMotif/Margin.h>
-#include <GLMotif/RowColumn.h>
-#include <GLMotif/StyleSheet.h>
-#include <GLMotif/TextField.h>
-#include <GLMotif/WidgetManager.h>
+#include <crustavrui/vrui.h>
 
 
 namespace GLMotif {

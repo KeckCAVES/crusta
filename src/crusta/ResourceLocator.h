@@ -2,10 +2,9 @@
 #define _ResourceLocator_H_
 
 
-#include <Misc/FileLocator.h>
-#include <IO/Directory.h>
-
 #include <crustacore/basics.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

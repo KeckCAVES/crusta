@@ -1,8 +1,9 @@
 #ifndef _ColorPickerWindow_H_
 
 
-#include <crusta/GLMotif/ColorPicker.h>
-#include <GLMotif/PopupWindow.h>
+#include <crustavrui/GLMotif/ColorPicker.h>
+
+#include <crustavrui/vrui.h>
 
 
 namespace GLMotif {

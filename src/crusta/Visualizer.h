@@ -24,20 +24,12 @@
 
 #include <vector>
 
-#include <crusta/GL/VruiGlew.h> //must be included before gl.h
-
-#include <GL/GLContextData.h>
-#include <GLMotif/Button.h>
-#include <GLMotif/PopupMenu.h>
-#include <GLMotif/PopupWindow.h>
-#include <Threads/Thread.h>
-#include <Threads/Mutex.h>
-#include <Threads/Cond.h>
-#include <Vrui/Application.h>
-#include <Vrui/Vrui.h>
+#include <crustavrui/GL/VruiGlew.h> //must be included before gl.h
 
 #include <crustacore/basics.h>
 #include <crusta/glbasics.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

@@ -7,14 +7,7 @@
 #include <iomanip>
 #endif //HOMOGRAPHY_VERBOSE
 
-#include <Misc/Utility.h>
-#include <Math/Math.h>
-#include <Math/Random.h>
-#define NONSTANDARD_TEMPLATES
-#include <Geometry/ComponentArray.h>
-#include <Geometry/Point.h>
-#include <Geometry/HVector.h>
-#include <Geometry/Matrix.h>
+#include <crusta/vrui.h>
 
 
 namespace crusta {

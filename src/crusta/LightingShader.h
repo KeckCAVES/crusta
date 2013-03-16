@@ -28,7 +28,7 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <iostream>
 #include <string>
 
-#include <crusta/GL/VruiGlew.h>
+#include <crustavrui/GL/VruiGlew.h>
 
 #include <crustacore/basics.h>
 #include <crusta/glbasics.h>

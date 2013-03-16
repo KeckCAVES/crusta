@@ -2,8 +2,7 @@
 #define _GLMotif_RelativeSlider_H_
 
 
-#include <GLMotif/Slider.h>
-#include <Misc/TimerEventScheduler.h>
+#include <crustavrui/vrui.h>
 
 
 namespace GLMotif {

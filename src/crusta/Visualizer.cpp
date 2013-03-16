@@ -2,15 +2,9 @@
 
 #include <iostream>
 
-#include <Geometry/OrthogonalTransformation.h>
-#include <GL/GLColorTemplates.h>
-#include <GL/GLTransformationWrappers.h>
-#include <GLMotif/Button.h>
-#include <GLMotif/Menu.h>
-#include <Vrui/DisplayState.h>
-#include <Vrui/Vrui.h>
-
 #include <crusta/checkGl.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

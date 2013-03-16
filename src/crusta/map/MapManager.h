@@ -4,15 +4,12 @@
 #include <map>
 #include <string>
 
-#include <GLMotif/Button.h>
-#include <GLMotif/FileSelectionDialog.h>
-#include <GLMotif/ListBox.h>
-#include <GLMotif/ToggleButton.h>
-
 #include <crusta/CrustaComponent.h>
 #include <crusta/DataManager.h>
 #include <crusta/map/PolylineRenderer.h>
 #include <crusta/map/Shape.h>
+
+#include <crusta/vrui.h>
 
 
 class GLContextData;

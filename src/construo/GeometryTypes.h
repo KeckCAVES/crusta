@@ -25,10 +25,9 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #ifndef _GeometryTypes_H_
 #define _GeometryTypes_H_
 
-#include <Geometry/Point.h>
-#include <Geometry/Box.h>
-
 #include <crustacore/basics.h>
+
+#include <construo/vrui.h>
 
 namespace crusta {
 

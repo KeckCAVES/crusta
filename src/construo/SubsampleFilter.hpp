@@ -4,9 +4,9 @@
 
 #include <construo/SubsampleFilter.h>
 
-#include <Math/Math.h>
-
 #include <crustacore/Vector3ui8.h>
+
+#include <construo/vrui.h>
 
 
 namespace crusta {

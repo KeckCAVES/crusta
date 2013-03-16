@@ -25,8 +25,8 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 #include <cstring>
 #include <cstdio>
-#include <Misc/File.h>
-#include <Misc/ThrowStdErr.h>
+
+#include <construo/vrui.h>
 
 namespace crusta {
 

@@ -1,20 +1,9 @@
-#include <crusta/GLMotif/PaletteEditor.h>
-
+#include <crustavrui/GLMotif/PaletteEditor.h>
 
 #include <cstdio>
 #include <sstream>
 
-#include <GLMotif/StyleSheet.h>
-#include <GLMotif/Label.h>
-#include <GLMotif/Button.h>
-#include <GLMotif/TextField.h>
-#include <GLMotif/Slider.h>
-#include <GLMotif/RowColumn.h>
-#include <GLMotif/WidgetManager.h>
-#include <Misc/CreateNumberedFileName.h>
-#include <Misc/File.h>
-#include <IO/OpenFile.h>
-#include <Vrui/Vrui.h>
+#include <crustavrui/vrui.h>
 
 
 namespace GLMotif {

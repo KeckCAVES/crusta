@@ -2,8 +2,9 @@
 #define _GLMotif_ColorMapInOut_H_
 
 
-#include <GLMotif/Button.h>
-#include <crusta/Misc/ColorMap.h>
+#include <crustavrui/Misc/ColorMap.h>
+
+#include <crustavrui/vrui.h>
 
 
 namespace GLMotif {

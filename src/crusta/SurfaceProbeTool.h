@@ -2,16 +2,12 @@
 #define _Crusta_SurfaceProbeTool_H_
 
 
-#include <crusta/GL/VruiGlew.h>
-
-#include <Misc/CallbackData.h>
-#include <Misc/CallbackList.h>
-#include <GLMotif/Button.h>
-#include <GLMotif/RadioBox.h>
-#include <Vrui/GenericToolFactory.h>
+#include <crustavrui/GL/VruiGlew.h>
 
 #include <crusta/SurfaceProjector.h>
 #include <crusta/Tool.h>
+
+#include <crusta/vrui.h>
 
 
 namespace GLMotif {

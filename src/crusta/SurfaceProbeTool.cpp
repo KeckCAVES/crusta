@@ -1,20 +1,8 @@
 #include <crusta/SurfaceProbeTool.h>
 
-
-#include <Cluster/MulticastPipe.h>
-#include <Geometry/OrthogonalTransformation.h>
-#include <GL/GLTransformationWrappers.h>
-#include <GLMotif/PopupWindow.h>
-#include <GLMotif/RowColumn.h>
-#include <GLMotif/StyleSheet.h>
-#include <GLMotif/ToggleButton.h>
-#include <GLMotif/WidgetManager.h>
-#include <Vrui/InputGraphManager.h>
-#include <Vrui/ToolManager.h>
-#include <Vrui/DisplayState.h>
-#include <Vrui/Vrui.h>
-
 #include <crusta/Crusta.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

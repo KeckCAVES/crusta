@@ -4,8 +4,6 @@
 
 #include <string>
 
-#include <Misc/ConfigurationFile.h>
-
 #include <crustacore/GlobeData.h>
 #include <crustacore/Polyhedron.h>
 #include <crustacore/TileIndex.h>

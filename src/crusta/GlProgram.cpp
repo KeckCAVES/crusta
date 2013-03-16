@@ -1,9 +1,9 @@
-#include <crusta/GL/GlProgram.h>
+#include <crusta/GlProgram.h>
 
 #include <fstream>
 #include <stdexcept>
 
-#include <Misc/ThrowStdErr.h>
+#include <crusta/vrui.h>
 
 
 GlProgram::

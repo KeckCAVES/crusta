@@ -3,7 +3,7 @@
 
 #include <crusta/VisibilityEvaluator.h>
 
-#include <GL/GLFrustum.h>
+#include <crusta/vrui.h>
 
 namespace crusta {
 

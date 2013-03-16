@@ -5,10 +5,11 @@
 
 #include <vector>
 
-#include <Geometry/Vector.h>
+#include <crustacore/Scope.h>
 
 #include <construo/GeometryTypes.h>
-#include <crustacore/Scope.h>
+
+#include <construo/vrui.h>
 
 namespace crusta {
 

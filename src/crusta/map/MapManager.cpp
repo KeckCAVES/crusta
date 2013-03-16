@@ -1,4 +1,4 @@
-#include <crusta/GL/VruiGlew.h> //must be included before gl.h
+#include <crustavrui/GL/VruiGlew.h> //must be included before gl.h
 
 #include <crusta/map/MapManager.h>
 
@@ -10,22 +10,6 @@
 #include <ogr_api.h>
 #include <ogrsf_frmts.h>
 
-#include <Geometry/Geoid.h>
-#include <Geometry/OrthogonalTransformation.h>
-#include <Geometry/ProjectiveTransformation.h>
-#include <GL/GLContextData.h>
-#include <GLMotif/CascadeButton.h>
-#include <GLMotif/Menu.h>
-#include <GLMotif/Popup.h>
-#include <GLMotif/PopupWindow.h>
-#include <GLMotif/ScrolledListBox.h>
-#include <GLMotif/SubMenu.h>
-#include <GLMotif/WidgetManager.h>
-#include <Misc/CreateNumberedFileName.h>
-#include <Vrui/Vrui.h>
-#include <Vrui/DisplayState.h>
-#include <Vrui/OpenFile.h>
-
 #include <crusta/checkGl.h>
 #include <crusta/Crusta.h>
 #include <crusta/map/MapTool.h>
@@ -36,6 +20,8 @@
 #include <crusta/QuadNodeData.h>
 #include <crusta/QuadTerrain.h>
 #include <crusta/ResourceLocator.h>
+
+#include <crusta/vrui.h>
 
 ///\todo remove dbg
 #if CRUSTA_ENABLE_DEBUG

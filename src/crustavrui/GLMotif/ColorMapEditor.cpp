@@ -1,10 +1,7 @@
-#include <crusta/GLMotif/ColorMapEditor.h>
+#include <crustavrui/GLMotif/ColorMapEditor.h>
 
 
-#include <GL/GLColorTemplates.h>
-#include <GL/GLVertexTemplates.h>
-#include <GLMotif/Container.h>
-#include <GLMotif/Event.h>
+#include <crustavrui/vrui.h>
 
 
 namespace GLMotif {

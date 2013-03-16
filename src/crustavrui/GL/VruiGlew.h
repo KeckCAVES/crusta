@@ -2,9 +2,7 @@
 #define _VruiGlew_H_
 
 
-#include <GL/glew.h>
-#include <GL/GLObject.h>
-#include <GL/TLSHelper.h>
+#include <crustavrui/vrui.h>
 
 
 class GLContextData;

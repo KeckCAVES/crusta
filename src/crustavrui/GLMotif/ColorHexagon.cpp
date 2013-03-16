@@ -1,9 +1,6 @@
-#include <crusta/GLMotif/ColorHexagon.h>
+#include <crustavrui/GLMotif/ColorHexagon.h>
 
-#include <GL/GLColorTemplates.h>
-#include <GL/GLVertexTemplates.h>
-#include <GLMotif/Container.h>
-#include <GLMotif/Event.h>
+#include <crustavrui/vrui.h>
 
 #define LEFT_X  0.21132487
 #define RIGHT_X 0.78867513

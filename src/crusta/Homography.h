@@ -2,8 +2,9 @@
 #define _Homography_H_
 
 
-#include <Geometry/ProjectiveTransformation.h>
 #include <crustacore/basics.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

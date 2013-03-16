@@ -3,9 +3,6 @@
 
 
 #include <crustacore/GlobeData.h>
-
-#include <Math/Constants.h>
-
 #include <crustacore/LayerData.h>
 
 

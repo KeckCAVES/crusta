@@ -1,9 +1,8 @@
 #ifndef _VruiCoordinateTransform_H_
 #define _VruiCoordinateTransform_H_
 
-#include <Geometry/Geoid.h>
-#include <Vrui/CoordinateTransform.h>
 #include <crusta/CrustaComponent.h>
+#include <crusta/vrui.h>
 
 namespace crusta {
 

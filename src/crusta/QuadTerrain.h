@@ -1,13 +1,11 @@
 #ifndef _QuadTerrain_H_
 #define _QuadTerrain_H_
 
-#include <crusta/GL/VruiGlew.h> //must be included before gl.h
+#include <crustavrui/GL/VruiGlew.h> //must be included before gl.h
 
 #include <list>
 
-#include <GL/GLContextData.h>
-#include <GL/GLObject.h>
-#include <crusta/GL/GlProgram.h>
+#include <crusta/GlProgram.h>
 
 #include <crusta/CrustaComponent.h>
 #include <crusta/CrustaSettings.h>
@@ -18,6 +16,8 @@
 #include <crusta/QuadCache.h>
 #include <crusta/SurfaceApproximation.h>
 #include <crusta/SurfacePoint.h>
+
+#include <crusta/vrui.h>
 
 namespace crusta {
 

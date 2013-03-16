@@ -25,13 +25,12 @@
 #ifndef _UtmTransfrom_H_
 #define _UtmTransfrom_H_
 
-#include <Geometry/AffineTransformation.h>
-#include <Math/Math.h>
-
 #include <ogr_spatialref.h>
 #include <ogr_srs_api.h>
 
 #include <construo/ImageTransform.h>
+
+#include <construo/vrui.h>
 
 namespace crusta {
 

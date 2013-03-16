@@ -17,9 +17,9 @@
 #include <list>
 #include <vector>
 
-#include <Threads/Mutex.h>
-
 #include <crusta/DataIndex.h>
+
+#include <crusta/vrui.h>
 
 #ifdef __GNUC__
     #if __GNUC__ > 3 && __GNUC_MINOR__ > 0

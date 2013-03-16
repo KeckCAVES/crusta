@@ -12,7 +12,8 @@
 #include <crustacore/Scope.h>
 
 #include <crusta/glbasics.h>
-#include <GL/GLVertex.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

@@ -1,15 +1,12 @@
 #ifndef _GLMotif_PaletteEditor_H_
 #define _GLMotif_PaletteEditor_H_
 
+#include <crustavrui/GLMotif/ColorMapEditor.h>
+#include <crustavrui/GLMotif/ColorMapInOut.h>
+#include <crustavrui/GLMotif/ColorPicker.h>
+#include <crustavrui/GLMotif/RangeEditor.h>
 
-#include <Misc/CallbackList.h>
-#include <GLMotif/FileSelectionDialog.h>
-#include <GLMotif/PopupWindow.h>
-
-#include <crusta/GLMotif/ColorMapEditor.h>
-#include <crusta/GLMotif/ColorMapInOut.h>
-#include <crusta/GLMotif/ColorPicker.h>
-#include <crusta/GLMotif/RangeEditor.h>
+#include <crustavrui/vrui.h>
 
 
 namespace Misc {

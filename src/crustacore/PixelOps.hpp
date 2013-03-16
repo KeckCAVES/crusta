@@ -4,8 +4,6 @@
 
 #include <crustacore/PixelOps.h>
 
-#include <Geometry/Vector.h>
-
 
 namespace crusta {
 

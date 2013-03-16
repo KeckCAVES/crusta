@@ -6,11 +6,7 @@
 #include <stdint.h>
 #include <vector>
 
-#include <Geometry/HitResult.h>
-#include <Geometry/Ray.h>
-#include <Geometry/Point.h>
-#include <Geometry/Vector.h>
-
+#include <crustacore/vrui.h>
 
 namespace crusta {
 

@@ -1,11 +1,8 @@
 #include <construo/ConstruoSettings.h>
 
-
 #include <iostream>
 
-#include <Misc/ConfigurationFile.h>
-#include <Misc/File.h>
-#include <Misc/StandardValueCoders.h>
+#include <construo/vrui.h>
 
 
 namespace crusta {

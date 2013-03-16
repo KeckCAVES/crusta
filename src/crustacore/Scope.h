@@ -4,7 +4,6 @@
 
 #include <vector>
 
-#include <Geometry/Point.h>
 #include <crustacore/basics.h>
 
 

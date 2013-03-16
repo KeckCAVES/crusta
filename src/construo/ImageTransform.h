@@ -24,9 +24,9 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #ifndef _ImageTransform_H_
 #define _ImageTransform_H_
 
-#include <Math/Math.h>
-
 #include <construo/GeometryTypes.h>
+
+#include <construo/vrui.h>
 
 namespace crusta {
 

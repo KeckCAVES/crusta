@@ -4,9 +4,7 @@
 #include <crusta/Crusta.h>
 #include <crusta/CrustaSettings.h>
 
-#include <Cluster/MulticastPipe.h>
-#include <Geometry/OrthogonalTransformation.h>
-#include <Vrui/Vrui.h>
+#include <crusta/vrui.h>
 
 
 namespace crusta {

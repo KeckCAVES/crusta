@@ -3,13 +3,9 @@
 
 #include <iostream>
 
-#include <Misc/ConfigurationFile.h>
-#include <Misc/File.h>
-#include <Misc/CompoundValueCoders.h>
-#include <Misc/StandardValueCoders.h>
-#include <GL/GLValueCoders.h>
-
 #include <crusta/ResourceLocator.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

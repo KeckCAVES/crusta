@@ -1,18 +1,5 @@
 #include <crusta/Crusta.h>
 
-#include <Images/Image.h>
-#include <Images/TargaImageFileReader.h>
-#include <Geometry/OrthogonalTransformation.h>
-#include <GL/GLColorMap.h>
-#include <GL/GLContextData.h>
-#include <GL/GLTransformationWrappers.h>
-#include <Misc/File.h>
-#include <Misc/ThrowStdErr.h>
-#include <Vrui/DisplayState.h>
-#include <Vrui/Viewer.h>
-#include <Vrui/Vrui.h>
-#include <Vrui/OpenFile.h>
-
 #include <crusta/checkGl.h>
 #include <crusta/ColorMapper.h>
 #include <crusta/DataManager.h>
@@ -30,6 +17,8 @@
 #include <crusta/Triangle.h>
 
 #include <crusta/StatsManager.h>
+
+#include <crusta/vrui.h>
 
 ///todo debug
 #include <crusta/CrustaVisualizer.h>

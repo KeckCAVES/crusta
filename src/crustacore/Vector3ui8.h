@@ -2,8 +2,6 @@
 #define _Vector3ui8_H_
 
 
-#include <Geometry/Vector.h>
-
 #include <crustacore/basics.h>
 
 

@@ -2,23 +2,16 @@
 #define _CrustaApp_H_
 
 
-#include <GLMotif/Button.h>
-#include <crusta/GLMotif/ColorMapEditor.h>
-#include <crusta/GLMotif/ColorPickerWindow.h>
-#include <GLMotif/FileSelectionDialog.h>
-#include <crusta/GLMotif/RangeEditor.h>
-#include <GLMotif/Slider.h>
-#include <GLMotif/ToggleButton.h>
-
-#include <Vrui/SurfaceNavigationTool.h>
-#include <Vrui/Application.h>
-#include <Vrui/Geometry.h>
-#include <Vrui/Lightsource.h>
+#include <crustavrui/GLMotif/ColorMapEditor.h>
+#include <crustavrui/GLMotif/ColorPickerWindow.h>
+#include <crustavrui/GLMotif/RangeEditor.h>
 
 #include <crustacore/basics.h>
 #include <crusta/glbasics.h>
 #include <crusta/CrustaComponent.h>
 #include <crusta/SurfaceProbeTool.h>
+
+#include <crusta/vrui.h>
 
 
 class GLContextData;

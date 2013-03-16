@@ -3,7 +3,7 @@
 
 #include <crusta/LodEvaluator.h>
 
-#include <GL/GLFrustum.h>
+#include <crusta/vrui.h>
 
 namespace crusta {
 

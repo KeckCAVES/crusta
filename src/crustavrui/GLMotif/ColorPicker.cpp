@@ -1,14 +1,10 @@
-#include <crusta/GLMotif/ColorPicker.h>
+#include <crustavrui/GLMotif/ColorPicker.h>
 
 #include <cstring>
 #include <iostream>
 #include <sstream>
 
-#include <GLMotif/Label.h>
-#include <GLMotif/RowColumn.h>
-#include <GLMotif/StyleSheet.h>
-#include <GLMotif/WidgetManager.h>
-#include <Vrui/Vrui.h>
+#include <crustavrui/vrui.h>
 
 namespace GLMotif {
 

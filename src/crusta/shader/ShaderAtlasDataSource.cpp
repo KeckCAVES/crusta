@@ -4,9 +4,9 @@
 #include <cassert>
 #include <sstream>
 
-#include <Misc/ThrowStdErr.h>
-
 #include <crusta/checkGl.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

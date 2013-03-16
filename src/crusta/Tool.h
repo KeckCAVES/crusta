@@ -2,9 +2,9 @@
 #define _Tool_H_
 
 
-#include <Vrui/GenericToolFactory.h>
-
 #include <crusta/CrustaComponent.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

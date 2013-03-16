@@ -3,15 +3,6 @@
 #include <algorithm>
 #include <assert.h>
 
-#include <Geometry/OrthogonalTransformation.h>
-#include <GL/GLColorTemplates.h>
-#include <GL/GLMaterialTemplates.h>
-#include <GL/GLTransformationWrappers.h>
-#include <Vrui/DisplayState.h>
-#include <Vrui/ViewSpecification.h>
-#include <Vrui/Vrui.h>
-#include <Vrui/VRWindow.h>
-
 #include <crusta/checkGl.h>
 #include <crusta/Crusta.h>
 #include <crusta/DataManager.h>
@@ -24,6 +15,8 @@
 #include <crustacore/Section.h>
 #include <crusta/Sphere.h>
 #include <crusta/SliceTool.h>
+
+#include <crusta/vrui.h>
 
 #define DO_RELATIVE_LEAF_TRIANGLE_INTERSECTIONS 1
 

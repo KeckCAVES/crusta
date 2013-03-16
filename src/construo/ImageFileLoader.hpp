@@ -25,10 +25,11 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 #include <cstring>
 #include <iostream>
-#include <Misc/FileNameExtensions.h>
 
 #include <construo/GdalImageFile.h>
 #include <construo/TpmImageFile.h>
+
+#include <construo/vrui.h>
 
 
 namespace crusta {

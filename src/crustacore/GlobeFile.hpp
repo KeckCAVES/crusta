@@ -8,11 +8,6 @@
 #include <sstream>
 #include <sys/stat.h>
 
-#include <Geometry/GeometryValueCoders.h>
-#include <Misc/File.h>
-#include <Misc/StandardValueCoders.h>
-#include <Misc/ThrowStdErr.h>
-
 #include <crustacore/PolyhedronLoader.h>
 
 

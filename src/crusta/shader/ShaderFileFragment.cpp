@@ -3,7 +3,7 @@
 
 #include <sys/stat.h>
 
-#include <Misc/ThrowStdErr.h>
+#include <crusta/vrui.h>
 
 namespace crusta {
 

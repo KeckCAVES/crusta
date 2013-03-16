@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include <GL/GLColor.h>
+#include <crustavrui/vrui.h>
 
 
 namespace Misc {

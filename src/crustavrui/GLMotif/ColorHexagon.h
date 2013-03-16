@@ -3,12 +3,8 @@
 
 
 #include <vector>
-#include <Misc/CallbackData.h>
-#include <Misc/CallbackList.h>
-#include <GL/gl.h>
-#include <GL/GLColor.h>
-#include <GLMotif/Types.h>
-#include <GLMotif/Widget.h>
+
+#include <crustavrui/vrui.h>
 
 
 namespace GLMotif {

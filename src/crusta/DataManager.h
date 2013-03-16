@@ -1,12 +1,7 @@
 #ifndef _DataManager_H_
 #define _DataManager_H_
 
-#include <crusta/GL/VruiGlew.h> //must be included before gl.h
-#include <GL/GLContextData.h>
-#include <GL/GLObject.h>
-#include <Threads/Cond.h>
-#include <Threads/Mutex.h>
-#include <Threads/Thread.h>
+#include <crustavrui/GL/VruiGlew.h> //must be included before gl.h
 
 #include <crustacore/GlobeFile.h>
 #include <crusta/QuadCache.h>
@@ -15,6 +10,8 @@
 #include <crusta/shader/ShaderTopographySource.h>
 #include <crusta/SurfaceApproximation.h>
 #include <crusta/SurfacePoint.h>
+
+#include <crusta/vrui.h>
 
 
 class GLContextData;

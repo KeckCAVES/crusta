@@ -4,9 +4,7 @@
 #include <string>
 #include <vector>
 
-#include <crusta/GL/VruiGlew.h>
-#include <GL/GLObject.h>
-#include <Threads/Mutex.h>
+#include <crustavrui/GL/VruiGlew.h>
 
 #include <crustacore/basics.h>
 #include <crusta/glbasics.h>
@@ -15,6 +13,8 @@
 #include <crusta/map/Shape.h>
 #include <crusta/QuadCache.h>
 #include <crusta/SurfacePoint.h>
+
+#include <crusta/vrui.h>
 
 #if CRUSTA_ENABLE_DEBUG
 #include <crusta/DebugTool.h>

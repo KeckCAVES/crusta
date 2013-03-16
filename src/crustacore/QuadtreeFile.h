@@ -26,8 +26,6 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #ifndef _QuadTreeFile_H_
 #define _QuadTreeFile_H_
 
-#include <Misc/LargeFile.h>
-
 #include <crustacore/TileIndex.h>
 #include <crustacore/TreeIndex.h>
 

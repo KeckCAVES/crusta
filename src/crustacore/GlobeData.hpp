@@ -6,8 +6,6 @@
 
 #include <string>
 
-#include <Math/Constants.h>
-
 
 namespace crusta {
 

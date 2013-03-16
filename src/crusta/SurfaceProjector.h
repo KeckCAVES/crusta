@@ -2,11 +2,10 @@
 #define _Crusta_SurfaceProjector_H_
 
 
-#include <GL/GLContextData.h>
-#include <Vrui/InputDevice.h>
-
 #include <crusta/CrustaComponent.h>
 #include <crusta/SurfacePoint.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

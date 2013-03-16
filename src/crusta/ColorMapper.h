@@ -4,16 +4,16 @@
 
 #include <vector>
 
-#include <crusta/GL/VruiGlew.h> //must include glew before any GL
-#include <GL/GLColorMap.h>
-#include <GL/GLObject.h>
-#include <crusta/Misc/ColorMap.h>
+#include <crustavrui/GL/VruiGlew.h> //must include glew before any GL
+#include <crustavrui/Misc/ColorMap.h>
 
 #include <crusta/QuadCache.h>
 #include <crusta/shader/ShaderColorMapper.h>
 #include <crusta/shader/ShaderColorMixer.h>
 #include <crusta/shader/ShaderColorMultiplier.h>
 #include <crusta/shader/ShaderColorReader.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

@@ -2,8 +2,9 @@
 #define _glbasics_H_
 
 #include <crustacore/basics.h>
-#include <crusta/GL/VruiGlew.h> //must be included before gl.h
-#include <GL/GLColor.h>
+#include <crustavrui/GL/VruiGlew.h> //must be included before gl.h
+
+#include <crusta/vrui.h>
 
 namespace crusta {
 

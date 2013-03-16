@@ -2,9 +2,9 @@
 
 #include <cassert>
 
-#include <Vrui/Vrui.h>
-
 #include <crusta/Crusta.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

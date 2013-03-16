@@ -1,18 +1,11 @@
 #include <crusta/map/PolylineRenderer.h>
 
-#include <Geometry/OrthogonalTransformation.h>
-#include <GL/gl.h>
-#include <GL/GLColorTemplates.h>
-#include <GL/GLContextData.h>
-#include <GL/GLGeometryWrappers.h>
-#include <GL/GLTransformationWrappers.h>
-#include <Vrui/DisplayState.h>
-#include <Vrui/Vrui.h>
-
 #include <crusta/checkGl.h>
 #include <crusta/Crusta.h>
 #include <crusta/map/Polyline.h>
 #include <crusta/QuadNodeData.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

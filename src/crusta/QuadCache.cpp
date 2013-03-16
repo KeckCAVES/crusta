@@ -1,10 +1,9 @@
 #include <crusta/QuadCache.h>
 
-#include <GL/GLContextData.h>
-#include <Vrui/Vrui.h>
-
 #include <crusta/CrustaSettings.h>
 #include <crusta/DataManager.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

@@ -1,4 +1,4 @@
-#include <crusta/GL/VruiGlew.h> //must be included before gl.h
+#include <crustavrui/GL/VruiGlew.h> //must be included before gl.h
 
 #include <crusta/CrustaApp.h>
 
@@ -7,30 +7,7 @@
 #include <ogr_api.h>
 #include <ogrsf_frmts.h>
 
-#include <Geometry/OrthogonalTransformation.h>
-#include <GLMotif/CascadeButton.h>
-#include <GLMotif/DropdownBox.h>
-#include <GLMotif/Label.h>
-#include <GLMotif/Margin.h>
-#include <GLMotif/Menu.h>
-#include <crusta/GLMotif/PaletteEditor.h>
-#include <GLMotif/PopupMenu.h>
-#include <GLMotif/PopupWindow.h>
-#include <GLMotif/RadioBox.h>
-#include <GLMotif/RowColumn.h>
-#include <GLMotif/ScrolledListBox.h>
-#include <GLMotif/StyleSheet.h>
-#include <GLMotif/SubMenu.h>
-#include <GLMotif/TextField.h>
-#include <GLMotif/WidgetManager.h>
-#include <GL/GLColorMap.h>
-#include <GL/GLContextData.h>
-#include <Vrui/LightsourceManager.h>
-#include <Vrui/LocatorTool.h>
-#include <Vrui/Viewer.h>
-#include <Vrui/CoordinateManager.h>
-#include <Vrui/Vrui.h>
-
+#include <crustavrui/GLMotif/PaletteEditor.h>
 #include <crusta/ResourceLocator.h>
 #include <crusta/ColorMapper.h>
 #include <crusta/Crusta.h>
@@ -40,11 +17,8 @@
 #include <crusta/SurfaceTool.h>
 #include <crusta/VruiCoordinateTransform.h>
 
+#include <crusta/vrui.h>
 
-#include <Geometry/Geoid.h>
-#include <Misc/FunctionCalls.h>
-#include <Vrui/ToolManager.h>
-#include <Vrui/SurfaceNavigationTool.h>
 
 #if CRUSTA_ENABLE_DEBUG
 #include <crusta/DebugTool.h>

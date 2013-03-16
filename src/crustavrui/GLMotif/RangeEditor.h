@@ -2,11 +2,10 @@
 #define _GLMotif_RangeEditor_H_
 
 
-#include <Misc/CallbackData.h>
-#include <Misc/CallbackList.h>
-#include <crusta/Misc/ColorMap.h>
-#include <crusta/GLMotif/RelativeSlider.h>
-#include <GLMotif/RowColumn.h>
+#include <crustavrui/Misc/ColorMap.h>
+#include <crustavrui/GLMotif/RelativeSlider.h>
+
+#include <crustavrui/vrui.h>
 
 
 namespace GLMotif {

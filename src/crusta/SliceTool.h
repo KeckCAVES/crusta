@@ -2,19 +2,13 @@
 #define _Crusta_SliceTool_H_
 
 
-#include <crusta/GL/VruiGlew.h>
-
-#include <Misc/CallbackData.h>
-#include <Misc/CallbackList.h>
-#include <GLMotif/Button.h>
-#include <GLMotif/RadioBox.h>
-#include <crusta/GLMotif/RelativeSlider.h>
-#include <GLMotif/ToggleButton.h>
-#include <GLMotif/TextField.h>
-#include <Vrui/GenericToolFactory.h>
+#include <crustavrui/GL/VruiGlew.h>
+#include <crustavrui/GLMotif/RelativeSlider.h>
 
 #include <crusta/SurfaceProjector.h>
 #include <crusta/Tool.h>
+
+#include <crusta/vrui.h>
 
 
 namespace GLMotif {

@@ -2,12 +2,11 @@
 
 #include <cassert>
 
-#include <Vrui/ToolManager.h>
-#include <Vrui/Vrui.h>
-
 #include <crusta/Crusta.h>
 #include <crusta/map/MapManager.h>
 #include <crusta/map/Polyline.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

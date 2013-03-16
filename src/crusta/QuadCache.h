@@ -5,7 +5,7 @@
 #include <crusta/Cache.h>
 #include <crusta/QuadNodeData.h>
 
-#include <GL/GLObject.h>
+#include <crusta/vrui.h>
 
 
 namespace crusta {

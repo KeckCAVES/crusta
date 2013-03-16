@@ -3,10 +3,10 @@
 #include <cassert>
 #include <stdexcept>
 
-#include <Math/Constants.h>
-
 #include <crusta/Crusta.h>
 #include <crusta/map/MapManager.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

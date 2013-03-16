@@ -1,10 +1,9 @@
 #ifndef _Converters_H_
 #define _Converters_H_
 
-#include <Geometry/Point.h>
-#include <Math/Constants.h>
-
 #include <crustacore/basics.h>
+
+#include <construo/vrui.h>
 
 namespace crusta {
 

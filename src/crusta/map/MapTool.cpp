@@ -2,15 +2,10 @@
 
 #include <cassert>
 
-#include <Geometry/OrthogonalTransformation.h>
-#include <GL/GLTransformationWrappers.h>
-#include <Math/Constants.h>
-#include <Vrui/ToolManager.h>
-#include <Vrui/DisplayState.h>
-#include <Vrui/Vrui.h>
-
 #include <crusta/Crusta.h>
 #include <crusta/map/MapManager.h>
+
+#include <crusta/vrui.h>
 
 
 #include <crusta/StatsManager.h>

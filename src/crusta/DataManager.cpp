@@ -2,8 +2,6 @@
 
 #include <sstream>
 
-#include <Math/Constants.h>
-
 #include <crusta/Crusta.h>
 #include <crusta/map/MapManager.h>
 #include <crustacore/PixelOps.h>
@@ -12,7 +10,7 @@
 #include <crusta/QuadTerrain.h>
 #include <crustacore/Triacontahedron.h>
 
-#include <Vrui/Vrui.h>
+#include <crusta/vrui.h>
 
 
 namespace crusta {

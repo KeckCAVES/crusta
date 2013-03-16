@@ -23,11 +23,10 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #ifndef _TpmImageFile_H_
 #define _TpmImageFile_H_
 
-#include <Misc/LargeFile.h>
-#include <Threads/Mutex.h>
-
 #include <construo/ImageFile.h>
 #include <construo/TpmFile.h>
+
+#include <construo/vrui.h>
 
 
 namespace crusta {

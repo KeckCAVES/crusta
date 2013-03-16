@@ -1,8 +1,7 @@
-#include <crusta/GLMotif/RelativeSlider.h>
+#include <crustavrui/GLMotif/RelativeSlider.h>
 
 
-#include <GLMotif/Event.h>
-#include <GLMotif/WidgetManager.h>
+#include <crustavrui/vrui.h>
 
 
 namespace GLMotif {

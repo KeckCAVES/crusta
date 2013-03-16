@@ -142,6 +142,9 @@ install(DIRECTORY etc/ DESTINATION ${ETC_DIR})
 file(GLOB_RECURSE CRUSTACORE_SOURCES src/crustacore/*)
 add_library(crustacore STATIC ${CRUSTACORE_SOURCES})
 
+file(GLOB_RECURSE CRUSTAVRUI_SOURCES src/crustavrui/*)
+add_library(crustavrui STATIC ${CRUSTAVRUI_SOURCES})
+
 macro(add_crusta_exe)
   add_executable(${ARGV})
   target_link_libraries(${ARGV0} crustacore ${VRUI_LDFLAGS} ${GDAL_LIBS} ${OPENGL_LIBRARY} ${GLEW_LDFLAGS})
@@ -153,6 +156,7 @@ add_crusta_exe(construo ${CONSTRUO_SOURCES})
 
 file(GLOB_RECURSE CRUSTA_SOURCES src/crusta/*)
 add_crusta_exe(crusta ${CRUSTA_SOURCES})
+target_link_libraries(crusta crustavrui)
 
 macro(add_baked_args_exe NAME)
   set(OUTPUT ${NAME})

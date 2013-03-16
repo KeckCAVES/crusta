@@ -2,11 +2,9 @@
 #define _GLMotif_ColorMapEditor_H_
 
 
-#include <Misc/CallbackData.h>
-#include <Misc/CallbackList.h>
-#include <crusta/Misc/ColorMap.h>
-#include <GLMotif/Types.h>
-#include <GLMotif/Widget.h>
+#include <crustavrui/Misc/ColorMap.h>
+
+#include <crustavrui/vrui.h>
 
 
 namespace GLMotif {

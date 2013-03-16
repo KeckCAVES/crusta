@@ -27,9 +27,9 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #ifndef _GeoTransform_H_
 #define _GeoTransform_H_
 
-#include <Math/Math.h>
-
 #include <construo/ImageTransform.h>
+
+#include <construo/vrui.h>
 
 namespace crusta {
 

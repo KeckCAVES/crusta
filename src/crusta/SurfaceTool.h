@@ -1,11 +1,9 @@
 #ifndef _SurfaceTool_H_
 #define _SurfaceTool_H_
 
-
-#include <Vrui/GenericToolFactory.h>
-#include <Vrui/TransformTool.h>
-
 #include <crusta/SurfaceProjector.h>
+
+#include <crusta/vrui.h>
 
 
 namespace crusta {

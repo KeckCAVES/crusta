@@ -1,4 +1,4 @@
-#include <crusta/Misc/ColorMap.h>
+#include <crustavrui/Misc/ColorMap.h>
 
 
 #include <algorithm>
@@ -6,8 +6,7 @@
 #include <cstdio>
 #include <fstream>
 
-#include <GL/GLColorMap.h>
-#include <Math/Constants.h>
+#include <crustavrui/vrui.h>
 
 
 namespace Misc {

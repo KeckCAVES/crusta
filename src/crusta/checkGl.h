@@ -4,10 +4,10 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include <crusta/GL/VruiGlew.h> //must be included instead of gl.h
-#include <Misc/ThrowStdErr.h>
-
 #include <crustacore/basics.h>
+
+#include <crustavrui/GL/VruiGlew.h> //must be included instead of gl.h
+
 
 namespace crusta {
 

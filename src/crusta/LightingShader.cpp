@@ -25,13 +25,14 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <string.h>
 #include <stdio.h>
 #include <iostream>
-#include <Misc/ThrowStdErr.h>
 
 #include <crusta/ColorMapper.h>
 #include <crusta/DataManager.h>
 #include <crusta/ResourceLocator.h>
 ///\todo integrate properly (VIS 2010)
 #include <crusta/Crusta.h>
+
+#include <crusta/vrui.h>
 
 ///\todo remove debug
 #include <sys/stat.h>

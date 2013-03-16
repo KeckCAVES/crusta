@@ -1,4 +1,4 @@
-#include <crusta/GLMotif/ColorPickerWindow.h>
+#include <crustavrui/GLMotif/ColorPickerWindow.h>
 
 
 namespace GLMotif {

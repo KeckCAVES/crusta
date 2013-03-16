@@ -30,8 +30,8 @@ Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
-#include <Misc/ThrowStdErr.h>
-#include <Misc/Endianness.h>
+
+#include <construo/vrui.h>
 
 #if defined(__APPLE__)
 #define lseek64 lseek

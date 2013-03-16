@@ -1,8 +1,7 @@
-#include <crusta/GL/VruiGlew.h>
+#include <crustavrui/GL/VruiGlew.h>
 
 
-#include <GL/GLContextData.h>
-#include <Misc/ThrowStdErr.h>
+#include <crustavrui/vrui.h>
 
 
 GL_THREAD_LOCAL(VruiGlew) VruiGlew::singleton;
