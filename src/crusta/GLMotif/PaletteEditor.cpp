@@ -13,6 +13,7 @@
 #include <GLMotif/WidgetManager.h>
 #include <Misc/CreateNumberedFileName.h>
 #include <Misc/File.h>
+#include <IO/OpenFile.h>
 #include <Vrui/Vrui.h>
 
 
@@ -280,7 +281,7 @@ void PaletteEditor::
 loadPaletteCallback(Misc::CallbackData*)
 {
     FileSelectionDialog* fileDialog = new FileSelectionDialog(
-        Vrui::getWidgetManager(), "Load Palette", 0, ".pal");
+        Vrui::getWidgetManager(), "Load Palette", IO::openDirectory("."), ".pal");
     fileDialog->getOKCallbacks().add(this, &PaletteEditor::loadFileOKCallback);
     fileDialog->getCancelCallbacks().add(this,
         &PaletteEditor::loadFileCancelCallback);
