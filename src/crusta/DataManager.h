@@ -117,8 +117,10 @@ public:
 
     /**\{ retrieve the path to the loaded files */
     const std::string& getDemFilePath() const;
+    const std::string& getDemPaletteFilePath() const;
     const Strings& getColorFilePaths() const;
     const Strings& getLayerfFilePaths() const;
+    const Strings& getLayerfPaletteFilePaths() const;
     /**\}*/
 
     /** query the number of color data layers managed */
@@ -232,6 +234,8 @@ protected:
 
     /** path to the loaded dem file */
     std::string demFilePath;
+    /** path to a color palette for the dem */
+    std::string demPaletteFilePath;
     /** globe file from which to source data for the elevation */
     DemFile* demFile;
     /** paths to the loaded color files */
@@ -240,6 +244,8 @@ protected:
     ColorFiles colorFiles;
     /** paths to the loaded layerf files */
     Strings layerfFilePaths;
+    /** paths to color palettes for the layerf files */
+    Strings layerfPaletteFilePaths;
     /** globe files from which to source 1-channel float data */
     LayerfFiles layerfFiles;
 

@@ -103,6 +103,8 @@ load(Strings& dataPaths)
     //detach from existing databases
     unload();
 
+    std::string paletteExt = ".pal";
+
 /**\todo check for mismatching polyhedra and no-data values
 for now just use the default polyhedron and no-data irrespective of sources */
 
@@ -124,6 +126,10 @@ for now just use the default polyhedron and no-data irrespective of sources */
                     while (demFilePath[demFilePath.size()-1]=='/')
                         demFilePath.resize(demFilePath.size()-1);
                     ++it;
+                    if (it!=dataPaths.end() && it->rfind(paletteExt) == it->size()-paletteExt.size()) {
+                       demPaletteFilePath = *it;
+                       ++it;
+                    }
                 }
                 catch (std::runtime_error e)
                 {
@@ -170,6 +176,12 @@ for now just use the default polyhedron and no-data irrespective of sources */
                 while (path[path.size()-1]=='/')
                     path.resize(path.size()-1);
                 ++it;
+                if (it!=dataPaths.end() && it->rfind(paletteExt) == it->size()-paletteExt.size()) {
+                   layerfPaletteFilePaths.push_back(*it);
+                   ++it;
+                } else {
+                   layerfPaletteFilePaths.push_back("");
+                }
             }
             catch (std::runtime_error e)
             {
@@ -284,6 +296,12 @@ getDemFilePath() const
     return demFilePath;
 }
 
+const std::string& DataManager::
+getDemPaletteFilePath() const
+{
+    return demPaletteFilePath;
+}
+
 const DataManager::Strings& DataManager::
 getColorFilePaths() const
 {
@@ -294,6 +312,12 @@ const DataManager::Strings& DataManager::
 getLayerfFilePaths() const
 {
     return layerfFilePaths;
+}
+
+const DataManager::Strings& DataManager::
+getLayerfPaletteFilePaths() const
+{
+    return layerfPaletteFilePaths;
 }
 
 const int DataManager::

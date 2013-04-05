@@ -432,9 +432,24 @@ configureMainLayers()
     numLayers    += demOffset;
     mainFloatLayers.resize(numLayers, MainFloatLayer(CURRENT_FRAME));
 
-    //initialize all additional layers as transparent
-    for (int l=0; l<numLayers; ++l)
-        mainFloatLayers[l].mapColor = Misc::ColorMap::black;
+    //initialize DEM color layer
+    if (DATAMANAGER->hasDem()) {
+        const std::string& path = DATAMANAGER->getDemPaletteFilePath();
+        if (path.empty()) {
+            mainFloatLayers[0].mapColor = Misc::ColorMap::black;
+        } else {
+            mainFloatLayers[0].mapColor.load(path);
+        }
+    }
+    //initialize float layers
+    for (int l=demOffset; l<numLayers; ++l) {
+        const std::string& path = DATAMANAGER->getLayerfPaletteFilePaths()[l-demOffset];
+        if (path.empty()) {
+            mainFloatLayers[l].mapColor = Misc::ColorMap::black;
+        } else {
+            mainFloatLayers[l].mapColor.load(path);
+        }
+    }
 }
 
 
