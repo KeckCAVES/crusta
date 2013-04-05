@@ -172,7 +172,7 @@ macro(add_baked_args_exe NAME)
   install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT} DESTINATION ${BIN_DIR})
 endmacro()
 
-set(desktopargs -mergeConfig ${SHARE_DIR}/vrui/mouse.cfg)
+set(desktopargs -mergeConfig ${SHARE_DIR}/vrui/desktop.cfg)
 set(slicetoolargs -settings ${SHARE_DIR}/etc/enableSliceTool.cfg)
 add_baked_args_exe(crusta-desktop ${desktopargs})
 add_baked_args_exe(crusta-slicing ${slicetoolargs})
