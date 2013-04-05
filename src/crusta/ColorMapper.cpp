@@ -94,6 +94,13 @@ setVisible(int layerIndex, bool visible)
     mapperConfigurationStamp = CURRENT_FRAME;
 }
 
+void ColorMapper::
+setVisibleAll(bool visible)
+{
+    int numLayers = static_cast<int>(mainColorLayers.size()+mainFloatLayers.size());
+    for(int i=0; i<numLayers; ++i) setVisible(i, visible);
+}
+
 bool ColorMapper::
 isVisible(int layerIndex) const
 {

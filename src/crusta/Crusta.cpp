@@ -13,6 +13,7 @@
 #include <crusta/SurfaceProbeTool.h>
 #include <crusta/SliceTool.h>
 #include <crusta/SurfaceTool.h>
+#include <crusta/LayerToggleTool.h>
 #include <crusta/Tool.h>
 #include <crusta/Triangle.h>
 
@@ -160,6 +161,8 @@ init(const std::string& exePath, const Strings& settingsFiles,
     SurfaceTool::init();
     //initialize the surface probing tool
     SurfaceProbeTool::init();
+    //initialize the layer visibility toggle tool
+    LayerToggleTool::init();
 
     if (SETTINGS->sliceToolEnable) {
         //initialize the slicing tool

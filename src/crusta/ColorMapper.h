@@ -56,6 +56,7 @@ public:
     void touchRange(int layerIndex);
 
     void setVisible(int layerIndex, bool visible);
+    void setVisibleAll(bool visible);
     bool isVisible(int layerIndex) const;
     void setClamping(int layerIndex, bool clamp);
     bool isClamped(int layerIndex) const;
