@@ -7,7 +7,7 @@
 # Give path to directory of Vrui.pc, if CMake can't find it automatically.
 # (Or, prepend PKG_CONFIG_PATH=/path/to/Vrui/pkgconfig to cmake)
 #
-#set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:$ENV{HOME}/Vrui-2.6/lib64/pkgconfig" )
+#set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:$ENV{HOME}/Vrui-2.7/lib64/pkgconfig" )
 
 #
 # Set the installation path prefix.
@@ -100,7 +100,7 @@ execute_process(COMMAND ${GDAL_CONFIG} --cflags OUTPUT_VARIABLE GDAL_CFLAGS OUTP
 add_definitions(${GDAL_CFLAGS})
 
 # Setup Vrui
-pkg_search_module(VRUI REQUIRED Vrui-2.6 Vrui)
+pkg_search_module(VRUI REQUIRED Vrui-2.7 Vrui)
 string(REPLACE "-framework;" "-framework " VRUI_LDFLAGS "${VRUI_LDFLAGS}")
 add_definitions(${VRUI_CFLAGS})
 

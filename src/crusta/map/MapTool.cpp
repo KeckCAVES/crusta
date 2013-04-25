@@ -44,7 +44,7 @@ init(Vrui::ToolFactory* parent)
 {
     Factory* mapFactory = new Factory("MapTool", "Mapping Tool", parent,
                                       *Vrui::getToolManager());
-    Vrui::getToolManager()->addClass(mapFactory,
+    Vrui::getToolManager()->addAbstractClass(mapFactory,
         Vrui::ToolManager::defaultToolFactoryDestructor);
 
     MapTool::factory = mapFactory;

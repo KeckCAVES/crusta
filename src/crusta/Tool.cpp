@@ -24,7 +24,7 @@ init(Vrui::ToolFactory* parent)
 {
     Factory* toolFactory = new Factory("CrustaTool", "Crusta Tool", parent,
                                        *Vrui::getToolManager());
-    Vrui::getToolManager()->addClass(toolFactory,
+    Vrui::getToolManager()->addAbstractClass(toolFactory,
         Vrui::ToolManager::defaultToolFactoryDestructor);
 
     return toolFactory;
