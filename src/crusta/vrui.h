@@ -34,6 +34,11 @@
 #include <Misc/StandardValueCoders.h>
 #include <Misc/ThrowStdErr.h>
 #include <Misc/Utility.h>
+#include <SceneGraph/GroupNode.h>
+#include <SceneGraph/NodeCreator.h>
+#include <SceneGraph/NodeFactory.h>
+#include <SceneGraph/SphereNode.h>
+#include <SceneGraph/VRMLFile.h>
 #include <Threads/Cond.h>
 #include <Threads/Mutex.h>
 #include <Threads/Thread.h>
@@ -48,6 +53,8 @@
 #include <Vrui/Lightsource.h>
 #include <Vrui/LightsourceManager.h>
 #include <Vrui/LocatorTool.h>
+#include <Vrui/OpenFile.h>
+#include <Vrui/SceneGraphSupport.h>
 #include <Vrui/SurfaceNavigationTool.h>
 #include <Vrui/ToolManager.h>
 #include <Vrui/TransformTool.h>

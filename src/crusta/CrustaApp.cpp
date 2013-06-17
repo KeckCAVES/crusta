@@ -48,12 +48,15 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
 
     Strings dataNames;
     Strings settingsNames;
+    Strings sceneGraphNames;
     std::string resourcePath;
     for (int i=1; i<argc; ++i)
     {
         std::string token = std::string(argv[i]);
         if (token == std::string("-settings"))
             settingsNames.push_back(argv[++i]);
+        else if (token == std::string("-sceneGraphName") || token == std::string("-sg"))
+            sceneGraphNames.push_back(argv[++i]);
         else if (token == std::string("-resourcePath"))
             resourcePath = argv[++i];
         else
@@ -64,6 +67,8 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     crusta->init(argv[0], settingsNames, resourcePath);
     //load data passed through command line?
     crusta->load(dataNames);
+    for (Strings::const_iterator itr=sceneGraphNames.begin(); itr!=sceneGraphNames.end(); ++itr)
+      crusta->loadSceneGraph(*itr);
 
     produceMainMenu();
 

@@ -16,6 +16,7 @@
 #include <crusta/LayerToggleTool.h>
 #include <crusta/Tool.h>
 #include <crusta/Triangle.h>
+#include <crusta/SceneGraphViewer.h>
 
 #include <crusta/StatsManager.h>
 
@@ -189,8 +190,16 @@ init(const std::string& exePath, const Strings& settingsFiles,
 }
 
 void Crusta::
+loadSceneGraph(const std::string& name)
+{
+  if (!sceneGraphViewer) sceneGraphViewer = new SceneGraphViewer();
+  sceneGraphViewer->load(name);
+}
+
+void Crusta::
 shutdown()
 {
+    if (sceneGraphViewer){ delete sceneGraphViewer; sceneGraphViewer=NULL; }
     delete mapMan;
     for (RenderPatches::iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
@@ -943,6 +952,8 @@ CRUSTA_DEBUG(9, CRUSTA_DEBUG_OUT <<
 
     glPopAttrib();
     glActiveTexture(activeTexture);
+
+    if (sceneGraphViewer) sceneGraphViewer->display(contextData);
 }
 
 

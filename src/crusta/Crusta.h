@@ -33,6 +33,7 @@ class CacheBuffer;
 class MapManager;
 class NodeData;
 class QuadTerrain;
+class SceneGraphViewer;
 
 struct CrustaGlData : public GLObject::DataItem
 {
@@ -63,6 +64,7 @@ public:
 
     void init(const std::string& exePath, const Strings& settingsFiles,
               const std::string& resourcePath);
+    void loadSceneGraph(const std::string& name);
     void shutdown();
 
     void load(Strings& dataBases);
@@ -141,6 +143,8 @@ protected:
 
     /** the global height range */
     Scalar globalElevationRange[2];
+
+    SceneGraphViewer* sceneGraphViewer;
 
 //- inherited from GLObject
 public:
