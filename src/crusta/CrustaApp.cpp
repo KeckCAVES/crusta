@@ -46,21 +46,37 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
 
     typedef std::vector<std::string> Strings;
 
+    enum { GET_DATA, GET_SETTINGS, GET_SG, GET_DONE };
+    unsigned get_mode = GET_DATA;
     Strings dataNames;
     Strings settingsNames;
     Strings sceneGraphNames;
     std::string resourcePath;
     for (int i=1; i<argc; ++i)
     {
-        std::string token = std::string(argv[i]);
-        if (token == std::string("-settings"))
-            settingsNames.push_back(argv[++i]);
+      std::string token = std::string(argv[i]);
+      if (get_mode != GET_DONE){
+        if (token == std::string("-data"))
+          { get_mode = GET_DATA; continue; }
+        else if (token == std::string("-settings"))
+          { get_mode = GET_SETTINGS; continue; }
         else if (token == std::string("-sceneGraphName") || token == std::string("-sg"))
-            sceneGraphNames.push_back(argv[++i]);
+          { get_mode = GET_SG; continue; }
         else if (token == std::string("-resourcePath"))
-            resourcePath = argv[++i];
-        else
-            dataNames.push_back(token);
+          { resourcePath = argv[++i]; get_mode = GET_DATA; continue; }
+        else if (token == std::string("--"))
+          { get_mode = GET_DONE; continue; }
+      }
+      switch (get_mode){
+        case GET_DONE:
+        case GET_DATA:
+          dataNames.push_back(token); break;
+        case GET_SETTINGS:
+          settingsNames.push_back(token); break;
+        case GET_SG:
+          sceneGraphNames.push_back(token); break;
+        default: break;
+      }
     }
 
     crusta = new Crusta;
