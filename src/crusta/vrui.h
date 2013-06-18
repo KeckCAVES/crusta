@@ -37,7 +37,6 @@
 #include <SceneGraph/GroupNode.h>
 #include <SceneGraph/NodeCreator.h>
 #include <SceneGraph/NodeFactory.h>
-#include <SceneGraph/SphereNode.h>
 #include <SceneGraph/VRMLFile.h>
 #include <Threads/Cond.h>
 #include <Threads/Mutex.h>
