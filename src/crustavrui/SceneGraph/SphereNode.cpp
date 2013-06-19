@@ -39,70 +39,70 @@ Methods of class SphereNode:
 ***************************/
 
 void SphereNode::createList(GLContextData& renderState) const
-	{
-	glDrawSphereMercatorWithTexture(radius.getValue(),45,90);
-	}
+{
+  glDrawSphereMercatorWithTexture(radius.getValue(),45,90);
+}
 
 SphereNode::SphereNode(void)
-	:radius(Scalar(1.0))
-	{
-	}
+  :radius(Scalar(1.0))
+{
+}
 
 const char* SphereNode::getStaticClassName(void)
-	{
-	return "Sphere";
-	}
+{
+  return "Sphere";
+}
 
 const char* SphereNode::getClassName(void) const
-	{
-	return "Sphere";
-	}
+{
+  return "Sphere";
+}
 
 EventOut* SphereNode::getEventOut(const char* fieldName) const
-	{
-	if(strcmp(fieldName,"radius")==0)
-		return makeEventOut(this,radius);
-	else
-		return GeometryNode::getEventOut(fieldName);
-	}
+{
+  if(strcmp(fieldName,"radius")==0)
+    return makeEventOut(this,radius);
+  else
+    return GeometryNode::getEventOut(fieldName);
+}
 
 EventIn* SphereNode::getEventIn(const char* fieldName)
-	{
-	if(strcmp(fieldName,"radius")==0)
-		return makeEventIn(this,radius);
-	else
-		return GeometryNode::getEventIn(fieldName);
-	}
+{
+  if(strcmp(fieldName,"radius")==0)
+    return makeEventIn(this,radius);
+  else
+    return GeometryNode::getEventIn(fieldName);
+}
 
 void SphereNode::parseField(const char* fieldName,VRMLFile& vrmlFile)
-	{
-	if(strcmp(fieldName,"radius")==0)
-		{
-		vrmlFile.parseField(radius);
-		}
-	else
-		GeometryNode::parseField(fieldName,vrmlFile);
-	}
+{
+  if(strcmp(fieldName,"radius")==0)
+  {
+    vrmlFile.parseField(radius);
+  }
+  else
+    GeometryNode::parseField(fieldName,vrmlFile);
+}
 
 void SphereNode::update(void)
-	{
-	/* Invalidate the display list: */
-	DisplayList::update();
-	}
+{
+  /* Invalidate the display list: */
+  DisplayList::update();
+}
 
 Box SphereNode::calcBoundingBox(void) const
-	{
+{
   Scalar r=radius.getValue();
-	return Box(Point(-r,-r,-r),Point(r,r,r));
-	}
+  return Box(Point(-r,-r,-r),Point(r,r,r));
+}
 
 void SphereNode::glRenderAction(GLRenderState& renderState) const
-	{
-	/* Set up OpenGL state: */
-	renderState.enableCulling(GL_BACK);
-	
-	/* Render the display list: */
-	DisplayList::glRenderAction(renderState.contextData);
-	}
+{
+  /* Set up OpenGL state: */
+  renderState.enableCulling(GL_BACK);
+  
+  /* Render the display list: */
+  DisplayList::glRenderAction(renderState.contextData);
+}
 
 }
