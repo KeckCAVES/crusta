@@ -40,7 +40,7 @@ Methods of class SphereNode:
 
 void SphereNode::createList(GLContextData& renderState) const
 {
-  glDrawSphereMercatorWithTexture(radius.getValue(),45,90);
+  glDrawSphereMercatorWithTexture(radius.getValue(), 8, 16);
 }
 
 SphereNode::SphereNode(void)
