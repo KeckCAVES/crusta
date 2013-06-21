@@ -3,6 +3,7 @@
 #include <crusta/CrustaApp.h>
 
 #include <sstream>
+#include <algorithm>
 
 #include <ogr_api.h>
 #include <ogrsf_frmts.h>
@@ -32,6 +33,18 @@ using namespace GLMotif;
 
 namespace crusta {
 
+std::string get_extension(const std::string& name)
+{
+  size_t dot_pos = name.rfind(".");
+  size_t slash_pos = name.rfind("/");
+  if (dot_pos != std::string::npos && (slash_pos != std::string::npos || dot_pos > slash_pos)) {
+    std::string ext = name.substr(dot_pos+1);
+    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+    return ext;
+  } else {
+    return "";
+  }
+}
 
 CrustaApp::
 CrustaApp(int& argc, char**& argv, char**& appDefaults) :
@@ -46,8 +59,8 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
 
     typedef std::vector<std::string> Strings;
 
-    enum { GET_DATA, GET_SETTINGS, GET_SG, GET_DONE };
-    unsigned get_mode = GET_DATA;
+    enum { GET_AUTO, GET_DATA, GET_SETTINGS, GET_SG, GET_DONE };
+    unsigned get_mode = GET_AUTO;
     Strings dataNames;
     Strings settingsNames;
     Strings sceneGraphNames;
@@ -56,19 +69,32 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     {
       std::string token = std::string(argv[i]);
       if (get_mode != GET_DONE){
-        if (token == std::string("-data"))
+        if (token == "-auto")
+          { get_mode = GET_AUTO; continue; }
+        else if (token == "-data")
           { get_mode = GET_DATA; continue; }
-        else if (token == std::string("-settings"))
+        else if (token == "-settings")
           { get_mode = GET_SETTINGS; continue; }
-        else if (token == std::string("-sceneGraphName") || token == std::string("-sg"))
+        else if (token == "-sceneGraphName" || token == "-sg")
           { get_mode = GET_SG; continue; }
-        else if (token == std::string("-resourcePath"))
+        else if (token == "-resourcePath")
           { resourcePath = argv[++i]; get_mode = GET_DATA; continue; }
-        else if (token == std::string("--"))
+        else if (token == "--")
           { get_mode = GET_DONE; continue; }
       }
       switch (get_mode){
         case GET_DONE:
+        case GET_AUTO:
+        {
+          std::string ext = get_extension(token);
+          if (ext == "cfg")
+            { settingsNames.push_back(token); }
+          else if (ext == "wrl")
+            { sceneGraphNames.push_back(token); }
+          else
+            { dataNames.push_back(token); }
+          break;
+        }
         case GET_DATA:
           dataNames.push_back(token); break;
         case GET_SETTINGS:
