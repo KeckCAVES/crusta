@@ -122,7 +122,8 @@ include_directories(src)
 add_definitions(-DCRUSTA_VERSION=\"${PROJECT_VERSION}\")
 
 # Show all warnings
-set_property(GLOBAL APPEND PROPERTY CMAKE_CXX_FLAGS "-Wall")
+add_definitions("-Wall")
+add_definitions("-Wfatal-errors")
 
 # Report resource paths to source files
 add_definitions(-DCRUSTA_ETC_PATH="${ETC_DIR}")
