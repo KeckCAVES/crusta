@@ -1,7 +1,7 @@
 /***********************************************************************
 SphereNode - Node class for sphere shapes.
-Copyright (c) 2008 Oliver Kreylos
 Copyright (c) 2013 Braden Pellett
+Copyright (c) 2008 Oliver Kreylos
 
 This file is part of the Crusta Virtual Globe.
 
@@ -32,28 +32,44 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <SceneGraph/VRMLFile.h>
 #include <SceneGraph/GLRenderState.h>
 
+// Tuned manually
+#define COARSE 0
+#define FINE 6
+#define FINEST 12
+#define COARSE_TO_FINE 10000000000
+#define FINE_TO_FINEST 100000000
+
 namespace SceneGraph {
 
-/***************************
-Methods of class SphereNode:
-***************************/
-
-void SphereNode::createList(GLContextData& renderState) const
+SphereNodeDisplayList::SphereNodeDisplayList(Scalar radius, int fineness):
+  radius(radius),
+  fineness(fineness)
 {
-  glDrawSphereMercatorWithTexture(radius.getValue(), 8, 16);
+  if (fineness < 0) fineness = 0;
 }
 
-SphereNode::SphereNode(void)
-  :radius(Scalar(1.0))
+void SphereNodeDisplayList::createList(GLContextData& renderState) const
+{
+  if (fineness < 3)
+    { glDrawSphereMercatorWithTexture(radius, 3, 3+fineness); }
+  else
+    { glDrawSphereMercatorWithTexture(radius, fineness, fineness*2); }
+}
+
+SphereNode::SphereNode():
+  radius(Scalar(1.0)),
+  coarse(1, COARSE),
+  fine(1, FINE),
+  finest(1, FINEST)
 {
 }
 
-const char* SphereNode::getStaticClassName(void)
+const char* SphereNode::getStaticClassName()
 {
   return "Sphere";
 }
 
-const char* SphereNode::getClassName(void) const
+const char* SphereNode::getClassName() const
 {
   return "Sphere";
 }
@@ -84,13 +100,17 @@ void SphereNode::parseField(const char* fieldName,VRMLFile& vrmlFile)
     GeometryNode::parseField(fieldName,vrmlFile);
 }
 
-void SphereNode::update(void)
+void SphereNode::update()
 {
-  /* Invalidate the display list: */
-  DisplayList::update();
+  coarse.radius = radius.getValue();
+  fine.radius = radius.getValue();
+  finest.radius = radius.getValue();
+  coarse.update();
+  fine.update();
+  finest.update();
 }
 
-Box SphereNode::calcBoundingBox(void) const
+Box SphereNode::calcBoundingBox() const
 {
   Scalar r=radius.getValue();
   return Box(Point(-r,-r,-r),Point(r,r,r));
@@ -98,11 +118,14 @@ Box SphereNode::calcBoundingBox(void) const
 
 void SphereNode::glRenderAction(GLRenderState& renderState) const
 {
-  /* Set up OpenGL state: */
+  Scalar ratio = Geometry::sqrDist(renderState.getViewerPos(), Point::origin) / radius.getValue();
   renderState.enableCulling(GL_BACK);
-  
-  /* Render the display list: */
-  DisplayList::glRenderAction(renderState.contextData);
+  if (ratio < FINE_TO_FINEST)
+    { finest.glRenderAction(renderState.contextData); }
+  if (ratio < COARSE_TO_FINE)
+    { fine.glRenderAction(renderState.contextData); }
+  else
+    { coarse.glRenderAction(renderState.contextData); }
 }
 
 }

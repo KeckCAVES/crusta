@@ -1,7 +1,7 @@
 /***********************************************************************
 SphereNode - Node class for sphere shapes.
-Copyright (c) 2008 Oliver Kreylos
 Copyright (c) 2013 Braden Pellett
+Copyright (c) 2008 Oliver Kreylos
 
 This file is part of the Crusta Virtual Globe.
 
@@ -29,31 +29,36 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 namespace SceneGraph {
 
-class SphereNode:public GeometryNode, public DisplayList
+class SphereNodeDisplayList: public DisplayList
 {
-  /* Fields: */
   public:
+  SphereNodeDisplayList(Scalar radius, int fineness);
+  void createList(GLContextData& contextData) const;
+  Scalar radius;
+  int fineness;
+};
+
+class SphereNode: public GeometryNode
+{
+  public:
+  SphereNode();
+  
+  // class Node
+  static const char* getStaticClassName();
+  const char* getClassName() const;
+  EventOut* getEventOut(const char* fieldName) const;
+  EventIn* getEventIn(const char* fieldName);
+  void parseField(const char* fieldName,VRMLFile& vrmlFile);
+  void update();
+  
+  // class GeometryNode
+  Box calcBoundingBox() const;
+  void glRenderAction(GLRenderState& renderState) const;
+
   SFFloat radius;
-  
-  /* Protected methods from DisplayList: */
-  protected:
-  virtual void createList(GLContextData& contextData) const;
-  
-  /* Constructors and destructors: */
-  public:
-  SphereNode(void);
-  
-  /* Methods from Node: */
-  static const char* getStaticClassName(void);
-  virtual const char* getClassName(void) const;
-  virtual EventOut* getEventOut(const char* fieldName) const;
-  virtual EventIn* getEventIn(const char* fieldName);
-  virtual void parseField(const char* fieldName,VRMLFile& vrmlFile);
-  virtual void update(void);
-  
-  /* Methods from GeometryNode: */
-  virtual Box calcBoundingBox(void) const;
-  virtual void glRenderAction(GLRenderState& renderState) const;
+  SphereNodeDisplayList coarse;
+  SphereNodeDisplayList fine;
+  SphereNodeDisplayList finest;
 };
 
 }
