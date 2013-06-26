@@ -112,6 +112,14 @@ include_directories(${OPENGL_INCLUDE_DIR})
 pkg_search_module(GLEW REQUIRED glewmx glew)
 add_definitions(${GLEW_CFLAGS})
 
+# Setup FTGL
+pkg_search_module(FTGL ftgl)
+add_definitions(${FTGL_CFLAGS})
+
+# Setup Fontconfig
+pkg_search_module(FONTCONFIG fontconfig)
+add_definitions(${FONTCONFIG_CFLAGS})
+
 
 ##-- Setup compile properties
 
@@ -129,6 +137,10 @@ add_definitions("-Wfatal-errors")
 add_definitions(-DCRUSTA_ETC_PATH="${ETC_DIR}")
 add_definitions(-DCRUSTA_SHARE_PATH="${SHARE_DIR}")
 
+# Enable optional code
+if(FTGL_FOUND AND FONTCONFIG_FOUND)
+  add_definitions(-DENABLE_SCENEGRAPH_FTFONT)
+endif()
 
 ##-- Install data and configs
 
@@ -148,7 +160,7 @@ add_library(crustavrui STATIC ${CRUSTAVRUI_SOURCES})
 
 macro(add_crusta_exe)
   add_executable(${ARGV})
-  target_link_libraries(${ARGV0} crustacore ${VRUI_LDFLAGS} ${GDAL_LIBS} ${OPENGL_LIBRARY} ${GLEW_LDFLAGS})
+  target_link_libraries(${ARGV0} crustacore ${VRUI_LDFLAGS} ${GDAL_LIBS} ${OPENGL_LIBRARY} ${GLEW_LDFLAGS} ${FTGL_LDFLAGS} ${FONTCONFIG_LDFLAGS})
   install(TARGETS ${ARGV0} DESTINATION ${BIN_DIR})
 endmacro()
 

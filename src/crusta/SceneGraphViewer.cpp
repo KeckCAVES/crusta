@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <crusta/SceneGraphViewer.h>
 #include <crustavrui/SceneGraph/SphereNode.h>
+#include <crustavrui/SceneGraph/FTFontStyleNode.h>
+#include <crustavrui/SceneGraph/FTTextNode.h>
 
 namespace crusta {
 
@@ -31,6 +33,10 @@ SceneGraphViewer::SceneGraphViewer():
 {
   // Load crusta-specific node types
   nodeCreator.registerNodeType(new SceneGraph::GenericNodeFactory<SceneGraph::SphereNode>());
+  #ifdef ENABLE_SCENEGRAPH_FTFONT
+    nodeCreator.registerNodeType(new SceneGraph::GenericNodeFactory<SceneGraph::FTFontStyleNode>());
+    nodeCreator.registerNodeType(new SceneGraph::GenericNodeFactory<SceneGraph::FTTextNode>());
+  #endif
   root = new SceneGraph::GroupNode;
 }
 
