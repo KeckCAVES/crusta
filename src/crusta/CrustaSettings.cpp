@@ -20,10 +20,10 @@ CrustaSettings::CrustaSettings() :
     terrainDefaultHeight(0.0f),
     terrainDefaultColor(0.5f, 0.5f, 0.5f, 1.0f),
     terrainDefaultLayerfData(0.0f),
-    terrainAmbientColor(0.4f, 0.4f, 0.4f, 1.0f),
+    terrainAmbientColor(1.0f, 1.0f, 1.0f, 1.0f),
     terrainDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f),
     terrainEmissiveColor(0.0f, 0.0f, 0.0f, 1.0f),
-    terrainSpecularColor(0.3f, 0.3f, 0.3f, 1.0f),
+    terrainSpecularColor(0.0f, 0.0f, 0.0f, 1.0f),
     terrainShininess(55.0f),
 
     // /Crusta/Cache
