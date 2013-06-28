@@ -121,14 +121,14 @@ void FTTextGLObject::glRenderAction(GLRenderState& renderState) const
 
   glPushAttrib(GL_ALL_ATTRIB_BITS);
   glEnable(GL_ALPHA_TEST);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glAlphaFunc(GL_GEQUAL, 0.5f);
+  
   glPushMatrix();
-
   glScalef(FACE_SIZE_FACTOR, FACE_SIZE_FACTOR, FACE_SIZE_FACTOR);
   //TODO allow multiple lines 
   fs->ftfont->Render(text->string.getValue(0).c_str(), -1, FTPoint(data->offset, 0, 0));
-
   glPopMatrix();
+
   glDisable(GL_BLEND);
   glPopAttrib();
 }
