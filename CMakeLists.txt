@@ -157,6 +157,7 @@ add_library(crustacore STATIC ${CRUSTACORE_SOURCES})
 
 file(GLOB_RECURSE CRUSTAVRUI_SOURCES src/crustavrui/*)
 add_library(crustavrui STATIC ${CRUSTAVRUI_SOURCES})
+target_link_libraries(crustavrui crustacore ${VRUI_LDFLAGS} ${FTGL_LDFLAGS} ${FONTCONFIG_LDFLAGS})
 
 macro(add_crusta_exe)
   add_executable(${ARGV})
