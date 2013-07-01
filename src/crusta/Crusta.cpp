@@ -862,6 +862,9 @@ display(GLContextData& contextData)
 {
     CHECK_GLA
 
+    if (sceneGraphViewer) sceneGraphViewer->display(contextData);
+    CHECK_GLA
+
     CACHE->display(contextData);
     CHECK_GLA
     DATAMANAGER->display(contextData);
@@ -952,8 +955,6 @@ CRUSTA_DEBUG(9, CRUSTA_DEBUG_OUT <<
 
     glPopAttrib();
     glActiveTexture(activeTexture);
-
-    if (sceneGraphViewer) sceneGraphViewer->display(contextData);
 }
 
 
