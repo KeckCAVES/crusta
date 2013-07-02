@@ -187,6 +187,7 @@ init(const std::string& exePath, const Strings& settingsFiles,
     QuadTerrain::initGlData();
 
     mapMan = new MapManager(crustaTool, this);
+    sceneGraphViewer = NULL;
 }
 
 void Crusta::
