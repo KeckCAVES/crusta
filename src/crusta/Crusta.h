@@ -89,6 +89,9 @@ public:
     /** retrieve the vertical exaggeration factor */
     double getVerticalScale() const;
 
+    void setOpacity(double newOpacity);
+    double getOpacity(double newOpacity) const;
+
     /** map a 3D cartesian point specified wrt an unscaled globe representation
         to the corresponding point in a scaled representation */
     Geometry::Point<double,3> mapToScaledGlobe(const Geometry::Point<double,3>& pos);

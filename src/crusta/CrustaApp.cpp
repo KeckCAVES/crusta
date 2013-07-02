@@ -236,6 +236,56 @@ changeScaleCallback(Slider::ValueChangedCallbackData* cbData)
     scaleLabel->setString(oss.str().c_str());
 }
 
+CrustaApp::OpacityDialog::
+OpacityDialog() :
+    crusta(NULL), opacityLabel(NULL)
+{
+    name  = "OpacityDialog";
+    label = "Opacity";
+}
+
+void CrustaApp::OpacityDialog::
+setCrusta(Crusta* newCrusta)
+{
+    crusta = newCrusta;
+}
+
+void CrustaApp::OpacityDialog::
+init()
+{
+    Dialog::init();
+
+    const StyleSheet* style =
+        Vrui::getWidgetManager()->getStyleSheet();
+
+    RowColumn* root = new RowColumn("OpacityRoot", dialog, false);
+
+    Slider* slider = new Slider(
+        "OpacitySlider", root, Slider::HORIZONTAL,
+        10.0 * style->fontHeight);
+    slider->setValue(1.0);
+    slider->setValueRange(0.0, 1.0, 0.01);
+    slider->getValueChangedCallbacks().add(
+        this, &CrustaApp::OpacityDialog::changeOpacityCallback);
+
+    opacityLabel = new Label("OpacityLabel", root, "1.0");
+
+    root->setNumMinorWidgets(2);
+    root->manageChild();
+}
+
+void CrustaApp::OpacityDialog::
+changeOpacityCallback(Slider::ValueChangedCallbackData* cbData)
+{
+    double newOpacity = cbData->value;
+    crusta->setOpacity(newOpacity);
+
+    std::ostringstream oss;
+    oss.precision(2);
+    oss << newOpacity;
+    opacityLabel->setString(oss.str().c_str());
+}
+
 CrustaApp::LightSettingsDialog::
 LightSettingsDialog() :
     viewerHeadlightStates(Vrui::getNumViewers()),
@@ -676,6 +726,10 @@ produceMainMenu()
     //vertical scale dialog
     verticalScaleSettings.setCrusta(crusta);
     verticalScaleSettings.createMenuEntry(mainMenu);
+
+    //opacity dialog
+    opacitySettings.setCrusta(crusta);
+    opacitySettings.createMenuEntry(mainMenu);
 
     //light settings dialog
     lightSettings.createMenuEntry(mainMenu);

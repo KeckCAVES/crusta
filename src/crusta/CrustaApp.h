@@ -78,6 +78,20 @@ private:
         GLMotif::Label* scaleLabel;
     };
 
+    class OpacityDialog : public Dialog
+    {
+    public:
+        OpacityDialog();
+        void setCrusta(Crusta* newCrusta);
+    protected:
+        void init();
+        void changeOpacityCallback(
+            GLMotif::Slider::ValueChangedCallbackData* cbData);
+    private:
+        Crusta*         crusta;
+        GLMotif::Label* opacityLabel;
+    };
+
     class LightSettingsDialog : public Dialog
     {
     public:
@@ -196,6 +210,7 @@ private:
     GLMotif::PaletteEditor* paletteEditor;
 
     VerticalScaleDialog        verticalScaleSettings;
+    OpacityDialog              opacitySettings;
     LightSettingsDialog        lightSettings;
     TerrainColorSettingsDialog terrainColorSettings;
     LayerSettingsDialog        layerSettings;

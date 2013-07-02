@@ -728,6 +728,15 @@ getVerticalScale() const
     return verticalScale;
 }
 
+void Crusta::setOpacity(double newOpacity)
+{
+    SETTINGS->terrainDiffuseColor[3] = newOpacity;
+}
+
+double Crusta::getOpacity(double newOpacity) const
+{
+    return SETTINGS->terrainDiffuseColor[3];
+}
 
 Geometry::Point<double,3> Crusta::
 mapToScaledGlobe(const Geometry::Point<double,3>& pos)
