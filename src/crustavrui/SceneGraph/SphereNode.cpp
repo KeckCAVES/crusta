@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <GL/gl.h>
 #include <GL/GLContextData.h>
 #include <GL/GLModels.h>
+#include <Misc/ThrowStdErr.h>
 #include <SceneGraph/EventTypes.h>
 #include <SceneGraph/VRMLFile.h>
 #include <SceneGraph/GLRenderState.h>
@@ -41,27 +42,36 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 namespace SceneGraph {
 
-SphereNodeDisplayList::SphereNodeDisplayList(Scalar radius, int fineness):
+SphereNodeDisplayList::SphereNodeDisplayList(Scalar radius, int detail):
   radius(radius),
-  fineness(fineness)
+  detail(detail)
 {
-  if (fineness < 0) fineness = 0;
 }
 
 void SphereNodeDisplayList::createList(GLContextData& renderState) const
 {
-  if (fineness < 3)
-    { glDrawSphereMercatorWithTexture(radius, 3, 3+fineness); }
+  if (detail < 3)
+    { glDrawSphereMercatorWithTexture(radius, 3, 3+detail); }
   else
-    { glDrawSphereMercatorWithTexture(radius, fineness, fineness*2); }
+    { glDrawSphereMercatorWithTexture(radius, detail, detail*2); }
 }
 
 SphereNode::SphereNode():
-  radius(Scalar(1.0)),
-  coarse(1, COARSE),
-  fine(1, FINE),
-  finest(1, FINEST)
+  radius(Scalar(1.0))
 {
+  detail.appendValue(COARSE);
+  lodRatio.appendValue(COARSE_TO_FINE);
+  detail.appendValue(FINE);
+  lodRatio.appendValue(FINE_TO_FINEST);
+  detail.appendValue(FINEST);
+}
+
+SphereNode::~SphereNode()
+{
+  while (!spheres.empty()) {
+    delete spheres.back();
+    spheres.pop_back();
+  }
 }
 
 const char* SphereNode::getStaticClassName()
@@ -76,38 +86,51 @@ const char* SphereNode::getClassName() const
 
 EventOut* SphereNode::getEventOut(const char* fieldName) const
 {
-  if(strcmp(fieldName,"radius")==0)
+  std::string f = fieldName;
+  if (f == "radius")
     return makeEventOut(this,radius);
+  else if (f == "detail")
+    return makeEventOut(this,detail);
+  else if (f == "lodRatio")
+    return makeEventOut(this,lodRatio);
   else
     return GeometryNode::getEventOut(fieldName);
 }
 
 EventIn* SphereNode::getEventIn(const char* fieldName)
 {
-  if(strcmp(fieldName,"radius")==0)
+  std::string f = fieldName;
+  if(f == "radius")
     return makeEventIn(this,radius);
+  else if (f == "detail")
+    return makeEventIn(this,detail);
+  else if (f == "lodRatio")
+    return makeEventIn(this,lodRatio);
   else
     return GeometryNode::getEventIn(fieldName);
 }
 
 void SphereNode::parseField(const char* fieldName,VRMLFile& vrmlFile)
 {
-  if(strcmp(fieldName,"radius")==0)
-  {
-    vrmlFile.parseField(radius);
-  }
+  std::string f = fieldName;
+  if(f == "radius")
+    return vrmlFile.parseField(radius);
+  else if (f == "detail")
+    return vrmlFile.parseField(detail);
+  else if (f == "lodRatio")
+    return vrmlFile.parseField(lodRatio);
   else
     GeometryNode::parseField(fieldName,vrmlFile);
 }
 
 void SphereNode::update()
 {
-  coarse.radius = radius.getValue();
-  fine.radius = radius.getValue();
-  finest.radius = radius.getValue();
-  coarse.update();
-  fine.update();
-  finest.update();
+  if (lodRatio.getNumValues()+1 != detail.getNumValues() && detail.getNumValues() != 1)
+    Misc::throwStdErr("SphereNode: there must be one lodRatio per detail transition (|lodRatio|+1 != |detail|)");
+  for (MFInt::ValueList::const_iterator i = detail.getValues().begin(); i != detail.getValues().end(); ++i) {
+    spheres.push_back(new SphereNodeDisplayList(radius.getValue(), *i));
+    spheres.back()->update();
+  }
 }
 
 Box SphereNode::calcBoundingBox() const
@@ -118,14 +141,19 @@ Box SphereNode::calcBoundingBox() const
 
 void SphereNode::glRenderAction(GLRenderState& renderState) const
 {
-  Scalar ratio = Geometry::sqrDist(renderState.getViewerPos(), Point::origin) / radius.getValue();
+  Scalar current_ratio = Geometry::sqrDist(renderState.getViewerPos(), Point::origin) / radius.getValue();
   renderState.enableCulling(GL_BACK);
-  if (ratio < FINE_TO_FINEST)
-    { finest.glRenderAction(renderState.contextData); }
-  if (ratio < COARSE_TO_FINE)
-    { fine.glRenderAction(renderState.contextData); }
-  else
-    { coarse.glRenderAction(renderState.contextData); }
+  if (detail.getNumValues() == 1) {
+    spheres.front()->glRenderAction(renderState.contextData);
+  } else {
+    std::vector<SphereNodeDisplayList*>::const_reverse_iterator sphere = spheres.rbegin();
+    MFFloat::ValueList::const_reverse_iterator ratio = lodRatio.getValues().rbegin();
+    while (sphere != spheres.rend() && ratio != lodRatio.getValues().rend()) {
+      if (current_ratio < *ratio) break;
+      ++sphere; ++ratio;
+    }
+    (*sphere)->glRenderAction(renderState.contextData);
+  }
 }
 
 }

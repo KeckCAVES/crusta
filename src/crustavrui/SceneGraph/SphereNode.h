@@ -32,16 +32,17 @@ namespace SceneGraph {
 class SphereNodeDisplayList: public DisplayList
 {
   public:
-  SphereNodeDisplayList(Scalar radius, int fineness);
+  SphereNodeDisplayList(Scalar radius, int detail);
   void createList(GLContextData& contextData) const;
   Scalar radius;
-  int fineness;
+  int detail;
 };
 
 class SphereNode: public GeometryNode
 {
   public:
   SphereNode();
+  ~SphereNode();
   
   // class Node
   static const char* getStaticClassName();
@@ -56,9 +57,9 @@ class SphereNode: public GeometryNode
   void glRenderAction(GLRenderState& renderState) const;
 
   SFFloat radius;
-  SphereNodeDisplayList coarse;
-  SphereNodeDisplayList fine;
-  SphereNodeDisplayList finest;
+  MFInt detail;
+  MFFloat lodRatio;
+  std::vector<SphereNodeDisplayList*> spheres;
 };
 
 }
