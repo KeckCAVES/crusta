@@ -2,6 +2,10 @@
 
 #include <crusta/CrustaApp.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 #include <sstream>
 #include <algorithm>
 
@@ -46,6 +50,54 @@ std::string get_extension(const std::string& name)
   }
 }
 
+void get_arg(
+  const std::string& arg,
+  std::vector<std::string>& dataNames, 
+  std::vector<std::string>& settingsNames,
+  std::vector<std::string>& sceneGraphNames)
+{
+  std::cerr << "arg=\"" << arg << "\"" << std::endl;
+  int file = open(arg.c_str(), O_RDONLY | O_NONBLOCK);
+  if (file == -1) {
+    Misc::throwStdErr((std::string("Cannot read file ") + arg).c_str()); }
+  struct stat stat_buf;
+  int stat_status = fstat(file, &stat_buf);
+  if (stat_status == -1) {
+    Misc::throwStdErr((std::string("Cannot stat file ") + arg).c_str());
+  }
+  std::string ext = get_extension(arg);
+  if (ext == "cfg") {
+    settingsNames.push_back(arg);
+  } else if (ext == "wrl") {
+    sceneGraphNames.push_back(arg);
+  }
+  else {
+    if (S_ISDIR(stat_buf.st_mode)) {
+      dataNames.push_back(arg);
+    } else {
+      std::string basedir = "./";
+      size_t pos = arg.find_last_of("/");
+      if (pos != string::npos) basedir = arg.substr(0, pos+1);
+      std::string line;
+      fcntl(file, F_SETFL, 0); // clear O_NONBLOCK
+      while (true) {
+        char buf;
+        ssize_t s = read(file, &buf, 1);
+        if (s <= 0 || buf == '\n' || buf == '\r') {
+          if (!line.empty()) {
+            if (line[0] != '/') line = basedir + line;
+            get_arg(line, dataNames, settingsNames, sceneGraphNames);
+          }
+          if (s > 0) line.clear(); else break;
+        } else {
+          line += buf;
+        }
+      }
+    }
+  }
+  close(file);
+}
+
 CrustaApp::
 CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     Vrui::Application(argc, argv, appDefaults),
@@ -57,59 +109,16 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     paletteEditor->getRangeEditor()->getRangeChangedCallbacks().add(
         this, &CrustaApp::changeColorMapRangeCallback);
 
-    typedef std::vector<std::string> Strings;
-
-    enum { GET_AUTO, GET_DATA, GET_SETTINGS, GET_SG, GET_DONE };
-    unsigned get_mode = GET_AUTO;
-    Strings dataNames;
-    Strings settingsNames;
-    Strings sceneGraphNames;
-    std::string resourcePath;
-    for (int i=1; i<argc; ++i)
-    {
-      std::string token = std::string(argv[i]);
-      if (get_mode != GET_DONE){
-        if (token == "-auto")
-          { get_mode = GET_AUTO; continue; }
-        else if (token == "-data")
-          { get_mode = GET_DATA; continue; }
-        else if (token == "-settings")
-          { get_mode = GET_SETTINGS; continue; }
-        else if (token == "-sceneGraphName" || token == "-sg")
-          { get_mode = GET_SG; continue; }
-        else if (token == "-resourcePath")
-          { resourcePath = argv[++i]; get_mode = GET_DATA; continue; }
-        else if (token == "--")
-          { get_mode = GET_DONE; continue; }
-      }
-      switch (get_mode){
-        case GET_DONE:
-        case GET_AUTO:
-        {
-          std::string ext = get_extension(token);
-          if (ext == "cfg")
-            { settingsNames.push_back(token); }
-          else if (ext == "wrl")
-            { sceneGraphNames.push_back(token); }
-          else
-            { dataNames.push_back(token); }
-          break;
-        }
-        case GET_DATA:
-          dataNames.push_back(token); break;
-        case GET_SETTINGS:
-          settingsNames.push_back(token); break;
-        case GET_SG:
-          sceneGraphNames.push_back(token); break;
-        default: break;
-      }
-    }
+    std::vector<std::string> dataNames;
+    std::vector<std::string> settingsNames;
+    std::vector<std::string> sceneGraphNames;
+    for (int i=1; i<argc; ++i) get_arg(argv[i], dataNames, settingsNames, sceneGraphNames);
 
     crusta = new Crusta;
-    crusta->init(argv[0], settingsNames, resourcePath);
+    crusta->init(argv[0], settingsNames, "");
     //load data passed through command line?
     crusta->load(dataNames);
-    for (Strings::const_iterator itr=sceneGraphNames.begin(); itr!=sceneGraphNames.end(); ++itr)
+    for (std::vector<std::string>::const_iterator itr=sceneGraphNames.begin(); itr!=sceneGraphNames.end(); ++itr)
       crusta->loadSceneGraph(*itr);
 
     produceMainMenu();

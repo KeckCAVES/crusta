@@ -140,8 +140,7 @@ CrustaGlData::
 
 ///\todo split crusta and planet
 void Crusta::
-init(const std::string& exePath, const Strings& settingsFiles,
-     const std::string& resourcePath)
+init(const std::string& exePath, const Strings& settingsFiles, const std::string& resourcePath)
 {
 ///\todo split crusta and planet
 ///\todo extend the interface to pass an optional configuration file
