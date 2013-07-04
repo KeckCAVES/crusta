@@ -90,9 +90,7 @@ void FTFontStyleNode::update()
     FcDefaultSubstitute(pattern);
     FcResult resultMatch = FcResultMatch;
     FcPattern* match = FcFontSetMatch(config, &ttfonts, 1, pattern, &resultMatch);
-    if (FcPatternGetString(match, FC_FILE, 0, (FcChar8**)&path) == FcResultMatch) {
-      fprintf(stderr, "Fontconfig: using font %s\n", path);
-    } else {
+    if (FcPatternGetString(match, FC_FILE, 0, (FcChar8**)&path) != FcResultMatch) {
       Misc::throwStdErr("Fontconfig: Could not find matching font");
     }
     FcFini();

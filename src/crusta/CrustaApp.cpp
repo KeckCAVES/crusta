@@ -56,7 +56,6 @@ void get_arg(
   std::vector<std::string>& settingsNames,
   std::vector<std::string>& sceneGraphNames)
 {
-  std::cerr << "arg=\"" << arg << "\"" << std::endl;
   int file = open(arg.c_str(), O_RDONLY | O_NONBLOCK);
   if (file == -1) {
     Misc::throwStdErr((std::string("Cannot read file ") + arg).c_str()); }
