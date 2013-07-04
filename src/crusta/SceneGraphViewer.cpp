@@ -22,14 +22,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ***********************************************************************/
 
 #include <crusta/SceneGraphViewer.h>
+#include <crusta/CrustaSettings.h>
 #include <crustavrui/SceneGraph/SphereNode.h>
 #include <crustavrui/SceneGraph/FTFontStyleNode.h>
 #include <crustavrui/SceneGraph/FTTextNode.h>
 
 namespace crusta {
 
-SceneGraphViewer::SceneGraphViewer():
-  active(true)
+SceneGraphViewer::SceneGraphViewer()
 {
   // Load crusta-specific node types
   nodeCreator.registerNodeType(new SceneGraph::GenericNodeFactory<SceneGraph::SphereNode>());
@@ -50,19 +50,9 @@ void SceneGraphViewer::load(const std::string& name)
   vrmlFile.parse(root);
 }
 
-void SceneGraphViewer::disable()
-{
-  active = false;
-}
-
-void SceneGraphViewer::enable()
-{
-  active = true;
-}
-
 void SceneGraphViewer::display(GLContextData& contextData) const
 {
-  if(active){
+  if (SETTINGS->sceneGraphViewerEnabled){
     glPushAttrib(GL_ENABLE_BIT|GL_LIGHTING_BIT|GL_TEXTURE_BIT);
     Vrui::renderSceneGraph(root.getPointer(), true, contextData);
     glPopAttrib();

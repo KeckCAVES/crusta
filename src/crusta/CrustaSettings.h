@@ -83,6 +83,8 @@ public:
     ///\{ Slice tool settings
     bool sliceToolEnable;
     ///\}
+
+    bool sceneGraphViewerEnabled;
 };
 
 

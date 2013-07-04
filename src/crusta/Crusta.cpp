@@ -14,6 +14,7 @@
 #include <crusta/SliceTool.h>
 #include <crusta/SurfaceTool.h>
 #include <crusta/LayerToggleTool.h>
+#include <crusta/SGToggleTool.h>
 #include <crusta/Tool.h>
 #include <crusta/Triangle.h>
 #include <crusta/SceneGraphViewer.h>
@@ -163,6 +164,8 @@ init(const std::string& exePath, const Strings& settingsFiles, const std::string
     SurfaceProbeTool::init();
     //initialize the layer visibility toggle tool
     LayerToggleTool::init();
+    //initialize the scene graph visibility toggle tool
+    SGToggleTool::init();
 
     if (SETTINGS->sliceToolEnable) {
         //initialize the slicing tool
@@ -290,7 +293,6 @@ unload()
     DATAMANAGER->unload();
     COLORMAPPER->unload();
 }
-
 
 SurfacePoint Crusta::
 snapToSurface(const Geometry::Point<double,3>& pos, Scalar elevationOffset)

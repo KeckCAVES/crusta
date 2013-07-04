@@ -57,7 +57,9 @@ CrustaSettings::CrustaSettings() :
     surfaceProjectorRayIntersect(true),
 
     // /Crusta/SliceTool
-    sliceToolEnable(false)
+    sliceToolEnable(false),
+
+    sceneGraphViewerEnabled(true)
 {
 }
 

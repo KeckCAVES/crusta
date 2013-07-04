@@ -36,11 +36,8 @@ class SceneGraphViewer
   ~SceneGraphViewer();
  
   void load(const std::string& name);
-  void disable();
-  void enable();
   void display(GLContextData& contextData) const;
 
-  bool active;
   SceneGraph::NodeCreator nodeCreator;
   SceneGraph::GroupNodePointer root;
 };
