@@ -66,14 +66,18 @@ void get_arg(
   }
   std::string ext = get_extension(arg);
   if (ext == "cfg") {
+    std::cerr << "Config: " << arg << std::endl;
     settingsNames.push_back(arg);
   } else if (ext == "wrl") {
+    std::cerr << "VRML: " << arg << std::endl;
     sceneGraphNames.push_back(arg);
   }
   else {
     if (S_ISDIR(stat_buf.st_mode)) {
+      std::cerr << "Globe: " << arg << std::endl;
       dataNames.push_back(arg);
     } else {
+      std::cerr << "Project: " << arg << std::endl;
       std::string basedir = "./";
       size_t pos = arg.find_last_of("/");
       if (pos != string::npos) basedir = arg.substr(0, pos+1);
@@ -83,7 +87,7 @@ void get_arg(
         char buf;
         ssize_t s = read(file, &buf, 1);
         if (s <= 0 || buf == '\n' || buf == '\r') {
-          if (!line.empty()) {
+          if (!line.empty() && line[0] != '#') {
             if (line[0] != '/') line = basedir + line;
             get_arg(line, dataNames, settingsNames, sceneGraphNames);
           }
