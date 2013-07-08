@@ -1,5 +1,3 @@
-#include <crustavrui/GL/VruiGlew.h> //must be included before gl.h
-
 #include <crusta/CrustaApp.h>
 
 #include <sys/types.h>
@@ -21,8 +19,6 @@
 #include <crusta/SurfaceProbeTool.h>
 #include <crusta/SurfaceTool.h>
 #include <crusta/VruiCoordinateTransform.h>
-
-#include <crusta/vrui.h>
 
 
 #if CRUSTA_ENABLE_DEBUG
@@ -138,52 +134,6 @@ CrustaApp::
     delete crusta;
 }
 
-
-void CrustaApp::Dialog::
-createMenuEntry(Container* menu)
-{
-    init();
-
-    parentMenu = menu;
-
-    toggle = new ToggleButton(
-        (name+"Toggle").c_str(), parentMenu, label.c_str());
-    toggle->setToggle(false);
-    toggle->getValueChangedCallbacks().add(
-        this, &CrustaApp::Dialog::showCallback);
-}
-
-void CrustaApp::Dialog::
-init()
-{
-    dialog = new PopupWindow(
-        (name+"Dialog").c_str(), Vrui::getWidgetManager(), label.c_str());
-    dialog->setCloseButton(true);
-    dialog->getCloseCallbacks().add(this, &CrustaApp::Dialog::closeCallback);
-}
-
-void CrustaApp::Dialog::
-showCallback(ToggleButton::ValueChangedCallbackData* cbData)
-{
-    if(cbData->set)
-    {
-        //open the dialog at the same position as the menu:
-        Vrui::popupPrimaryWidget(dialog);
-    }
-    else
-    {
-        //close the dialog:
-        Vrui::popdownPrimaryWidget(dialog);
-    }
-}
-
-void CrustaApp::Dialog::
-closeCallback(Misc::CallbackData* cbData)
-{
-    toggle->setToggle(false);
-}
-
-
 CrustaApp::VerticalScaleDialog::
 VerticalScaleDialog() :
     crusta(NULL), scaleLabel(NULL)
@@ -283,166 +233,6 @@ changeOpacityCallback(Slider::ValueChangedCallbackData* cbData)
     oss << newOpacity;
     opacityLabel->setString(oss.str().c_str());
 }
-
-CrustaApp::LightSettingsDialog::
-LightSettingsDialog() :
-    viewerHeadlightStates(Vrui::getNumViewers()),
-    enableSun(false),
-    sun(Vrui::getLightsourceManager()->createLightsource(false)),
-    sunAzimuth(180.0), sunElevation(45.0)
-{
-    name  = "LightSettingsDialog";
-    label = "Light Settings";
-
-    //save all viewers' headlight enable states
-    for (int i=0; i<Vrui::getNumViewers(); ++i)
-    {
-        viewerHeadlightStates[i] =
-            Vrui::getViewer(i)->getHeadlight().isEnabled();
-    }
-
-    //update the sun parameters
-    updateSun();
-}
-
-CrustaApp::LightSettingsDialog::
-~LightSettingsDialog()
-{
-    Vrui::getLightsourceManager()->destroyLightsource(sun);
-}
-
-void CrustaApp::LightSettingsDialog::
-init()
-{
-    Dialog::init();
-
-    const StyleSheet* style =
-        Vrui::getWidgetManager()->getStyleSheet();
-    RowColumn* lightSettings = new RowColumn(
-        "LightSettings", dialog, false);
-    lightSettings->setNumMinorWidgets(2);
-
-    /* Create a toggle button and two sliders to manipulate the sun light
-       source: */
-    Margin* enableSunToggleMargin = new Margin(
-        "SunToggleMargin", lightSettings, false);
-    enableSunToggleMargin->setAlignment(Alignment(
-        Alignment::HFILL,Alignment::VCENTER));
-    ToggleButton* enableSunToggle = new ToggleButton(
-        "SunToggle", enableSunToggleMargin, "Sun Light Source");
-    enableSunToggle->setToggle(enableSun);
-    enableSunToggle->getValueChangedCallbacks().add(
-        this, &CrustaApp::LightSettingsDialog::enableSunToggleCallback);
-    enableSunToggleMargin->manageChild();
-
-    RowColumn* sunBox = new RowColumn("SunBox", lightSettings, false);
-    sunBox->setOrientation(RowColumn::VERTICAL);
-    sunBox->setNumMinorWidgets(2);
-    sunBox->setPacking(RowColumn::PACK_TIGHT);
-
-    sunAzimuthTextField = new TextField("SunAzimuthTextField", sunBox, 5);
-    sunAzimuthTextField->setFloatFormat(TextField::FIXED);
-    sunAzimuthTextField->setFieldWidth(3);
-    sunAzimuthTextField->setPrecision(0);
-    sunAzimuthTextField->setValue(double(sunAzimuth));
-
-    sunAzimuthSlider = new Slider("SunAzimuthSlider", sunBox,
-        Slider::HORIZONTAL,style->fontHeight*10.0f);
-    sunAzimuthSlider->setValueRange(0.0,360.0,1.0);
-    sunAzimuthSlider->setValue(double(sunAzimuth));
-    sunAzimuthSlider->getValueChangedCallbacks().add(
-        this, &CrustaApp::LightSettingsDialog::sunAzimuthSliderCallback);
-
-    sunElevationTextField = new TextField("SunElevationTextField", sunBox, 5);
-    sunElevationTextField->setFloatFormat(TextField::FIXED);
-    sunElevationTextField->setFieldWidth(2);
-    sunElevationTextField->setPrecision(0);
-    sunElevationTextField->setValue(double(sunElevation));
-
-    sunElevationSlider = new Slider("SunElevationSlider", sunBox,
-        Slider::HORIZONTAL,style->fontHeight*10.0f);
-    sunElevationSlider->setValueRange(-90.0,90.0,1.0);
-    sunElevationSlider->setValue(double(sunElevation));
-    sunElevationSlider->getValueChangedCallbacks().add(
-        this, &CrustaApp::LightSettingsDialog::sunElevationSliderCallback);
-
-    sunBox->manageChild();
-    lightSettings->manageChild();
-}
-
-void CrustaApp::LightSettingsDialog::
-updateSun()
-{
-    /* Enable or disable the light source: */
-    if(enableSun)
-        sun->enable();
-    else
-        sun->disable();
-
-    /* Compute the light source's direction vector: */
-    Vrui::Scalar z  = Math::sin(Math::rad(sunElevation));
-    Vrui::Scalar xy = Math::cos(Math::rad(sunElevation));
-    Vrui::Scalar x  = xy * Math::sin(Math::rad(sunAzimuth));
-    Vrui::Scalar y  = xy * Math::cos(Math::rad(sunAzimuth));
-    sun->getLight().position = GLLight::Position(
-        GLLight::Scalar(x), GLLight::Scalar(y), GLLight::Scalar(z),
-        GLLight::Scalar(0));
-}
-
-void CrustaApp::LightSettingsDialog::
-enableSunToggleCallback(ToggleButton::ValueChangedCallbackData* cbData)
-{
-    /* Set the sun enable flag: */
-    enableSun = cbData->set;
-
-    /* Enable/disable all viewers' headlights: */
-    if (enableSun)
-    {
-        for (int i=0; i<Vrui::getNumViewers(); ++i)
-            Vrui::getViewer(i)->setHeadlightState(false);
-    }
-    else
-    {
-        for (int i=0; i<Vrui::getNumViewers(); ++i)
-            Vrui::getViewer(i)->setHeadlightState(viewerHeadlightStates[i]);
-    }
-
-    /* Update the sun light source: */
-    updateSun();
-
-    Vrui::requestUpdate();
-}
-
-void CrustaApp::LightSettingsDialog::
-sunAzimuthSliderCallback(Slider::ValueChangedCallbackData* cbData)
-{
-    //update the sun azimuth angle
-    sunAzimuth = Vrui::Scalar(cbData->value);
-
-    //update the sun azimuth value label
-    sunAzimuthTextField->setValue(double(cbData->value));
-
-    //update the sun light source
-    updateSun();
-
-    Vrui::requestUpdate();
-}
-
-void CrustaApp::LightSettingsDialog::
-sunElevationSliderCallback(Slider::ValueChangedCallbackData* cbData)
-{
-    //update the sun elevation angle
-    sunElevation=Vrui::Scalar(cbData->value);
-
-    //update the sun elevation value label
-    sunElevationTextField->setValue(double(cbData->value));
-
-    //update the sun light source
-    updateSun();
-
-    Vrui::requestUpdate();
-}
-
 
 CrustaApp::TerrainColorSettingsDialog::
 TerrainColorSettingsDialog() :

@@ -8,8 +8,10 @@
 
 #include <crustacore/basics.h>
 #include <crusta/glbasics.h>
+#include <crusta/Dialog.h>
 #include <crusta/CrustaComponent.h>
 #include <crusta/SurfaceProbeTool.h>
+#include <crusta/LightSettingsDialog.h>
 
 #include <crusta/vrui.h>
 
@@ -48,25 +50,6 @@ private:
     void handleArg(const std::string& arg);
 
 private:
-    class Dialog
-    {
-    public:
-        void createMenuEntry(GLMotif::Container* menu);
-
-    protected:
-        virtual void init();
-        void showCallback(
-            GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
-        void closeCallback(Misc::CallbackData* cbData);
-
-        std::string name;
-        std::string label;
-
-        GLMotif::PopupWindow*  dialog;
-        GLMotif::Container*    parentMenu;
-        GLMotif::ToggleButton* toggle;
-    };
-
     class VerticalScaleDialog : public Dialog
     {
     public:
@@ -93,38 +76,6 @@ private:
     private:
         Crusta*         crusta;
         GLMotif::Label* opacityLabel;
-    };
-
-    class LightSettingsDialog : public Dialog
-    {
-    public:
-        LightSettingsDialog();
-        ~LightSettingsDialog();
-    protected:
-        void init();
-        void updateSun(void);
-        void enableSunToggleCallback(
-            GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
-        void sunAzimuthSliderCallback(
-            GLMotif::Slider::ValueChangedCallbackData* cbData);
-        void sunElevationSliderCallback(
-            GLMotif::Slider::ValueChangedCallbackData* cbData);
-    private:
-        /** Initial enable states of all viewers' headlights */
-        std::vector<bool> viewerHeadlightStates;
-        /** Flag to store the sun activation state */
-        bool enableSun;
-        /** Light source representing the sun */
-        Vrui::Lightsource* sun;
-        /** Azimuth of sunlight direction */
-        Vrui::Scalar sunAzimuth;
-        /** Elevation of sunlight direction */
-        Vrui::Scalar sunElevation;
-
-        GLMotif::TextField* sunAzimuthTextField;
-        GLMotif::Slider* sunAzimuthSlider;
-        GLMotif::TextField* sunElevationTextField;
-        GLMotif::Slider* sunElevationSlider;
     };
 
     class TerrainColorSettingsDialog : public Dialog
