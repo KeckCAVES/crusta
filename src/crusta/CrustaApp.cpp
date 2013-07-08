@@ -50,79 +50,18 @@ std::string get_extension(const std::string& name)
   }
 }
 
-void get_arg(
-  const std::string& arg,
-  std::vector<std::string>& dataNames, 
-  std::vector<std::string>& settingsNames,
-  std::vector<std::string>& sceneGraphNames)
-{
-  int file = open(arg.c_str(), O_RDONLY | O_NONBLOCK);
-  if (file == -1) {
-    Misc::throwStdErr((std::string("Cannot read file ") + arg).c_str()); }
-  struct stat stat_buf;
-  int stat_status = fstat(file, &stat_buf);
-  if (stat_status == -1) {
-    Misc::throwStdErr((std::string("Cannot stat file ") + arg).c_str());
-  }
-  std::string ext = get_extension(arg);
-  if (ext == "cfg") {
-    std::cerr << "Config: " << arg << std::endl;
-    settingsNames.push_back(arg);
-  } else if (ext == "wrl") {
-    std::cerr << "VRML: " << arg << std::endl;
-    sceneGraphNames.push_back(arg);
-  }
-  else {
-    if (S_ISDIR(stat_buf.st_mode)) {
-      std::cerr << "Globe: " << arg << std::endl;
-      dataNames.push_back(arg);
-    } else {
-      std::cerr << "Project: " << arg << std::endl;
-      std::string basedir = "./";
-      size_t pos = arg.find_last_of("/");
-      if (pos != string::npos) basedir = arg.substr(0, pos+1);
-      std::string line;
-      fcntl(file, F_SETFL, 0); // clear O_NONBLOCK
-      while (true) {
-        char buf;
-        ssize_t s = read(file, &buf, 1);
-        if (s <= 0 || buf == '\n' || buf == '\r') {
-          if (!line.empty() && line[0] != '#') {
-            if (line[0] != '/') line = basedir + line;
-            get_arg(line, dataNames, settingsNames, sceneGraphNames);
-          }
-          if (s > 0) line.clear(); else break;
-        } else {
-          line += buf;
-        }
-      }
-    }
-  }
-  close(file);
-}
-
 CrustaApp::
 CrustaApp(int& argc, char**& argv, char**& appDefaults) :
     Vrui::Application(argc, argv, appDefaults),
     dataDialog(NULL),
     paletteEditor(new PaletteEditor), layerSettings(paletteEditor)
 {
-    paletteEditor->getColorMapEditor()->getColorMapChangedCallbacks().add(
-        this, &CrustaApp::changeColorMapCallback);
-    paletteEditor->getRangeEditor()->getRangeChangedCallbacks().add(
-        this, &CrustaApp::changeColorMapRangeCallback);
+    crusta = new Crusta(argv[0]);
+    paletteEditor->getColorMapEditor()->getColorMapChangedCallbacks().add(this, &CrustaApp::changeColorMapCallback);
+    paletteEditor->getRangeEditor()->getRangeChangedCallbacks().add(this, &CrustaApp::changeColorMapRangeCallback);
 
-    std::vector<std::string> dataNames;
-    std::vector<std::string> settingsNames;
-    std::vector<std::string> sceneGraphNames;
-    for (int i=1; i<argc; ++i) get_arg(argv[i], dataNames, settingsNames, sceneGraphNames);
-
-    crusta = new Crusta;
-    crusta->init(argv[0], settingsNames, "");
-    //load data passed through command line?
-    crusta->load(dataNames);
-    for (std::vector<std::string>::const_iterator itr=sceneGraphNames.begin(); itr!=sceneGraphNames.end(); ++itr)
-      crusta->loadSceneGraph(*itr);
+    for (int i=1; i<argc; ++i) handleArg(argv[i]);
+    crusta->start();
 
     produceMainMenu();
 
@@ -143,12 +82,59 @@ CrustaApp(int& argc, char**& argv, char**& appDefaults) :
 #endif //CRUSTA_ENABLE_DEBUG
 }
 
+void CrustaApp::handleArg(const std::string& arg)
+{
+  int file = open(arg.c_str(), O_RDONLY | O_NONBLOCK);
+  if (file == -1) {
+    std::cerr << "Warning: skipping unreadable file " << arg << std::endl;
+    return;
+  }
+  struct stat stat_buf;
+  int stat_status = fstat(file, &stat_buf);
+  if (stat_status == -1) {
+    std::cerr << "Warning: skipping unstatable file " << arg << std::endl;
+  }
+  std::string ext = get_extension(arg);
+  if (ext == "cfg") {
+    std::cerr << "Config: " << arg << std::endl;
+    SETTINGS->mergeFromCfgFile(arg);
+  } else if (ext == "wrl") {
+    std::cerr << "VRML: " << arg << std::endl;
+    crusta->loadSceneGraph(arg);
+  } else if (ext == "pal") {
+    std::cerr << "Palette: " << arg << std::endl;
+    crusta->setPalette(arg);
+  } else if (S_ISDIR(stat_buf.st_mode)) {
+      std::cerr << "Globe: " << arg << std::endl;
+      crusta->loadGlobe(arg);
+  } else {
+    std::cerr << "Project: " << arg << std::endl;
+    std::string basedir = "./";
+    size_t pos = arg.find_last_of("/");
+    if (pos != string::npos) basedir = arg.substr(0, pos+1);
+    std::string line;
+    fcntl(file, F_SETFL, 0); // clear O_NONBLOCK
+    while (true) {
+      char buf;
+      ssize_t s = read(file, &buf, 1);
+      if (s <= 0 || buf == '\n' || buf == '\r') {
+        if (!line.empty() && line[0] != '#') {
+          if (line[0] != '/') line = basedir + line;
+          handleArg(line);
+        }
+        if (s > 0) line.clear(); else break;
+      } else {
+        line += buf;
+      }
+    }
+  }
+  close(file);
+}
+
 CrustaApp::
 ~CrustaApp()
 {
     delete popMenu;
-
-    crusta->shutdown();
     delete crusta;
 }
 
@@ -965,7 +951,7 @@ void CrustaApp::
 loadDataOkCallback(Button::SelectCallbackData*)
 {
     //load the current data selection
-    crusta->load(dataPaths);
+    //crusta->load(dataPaths); //TODO re-implement
 
     layerSettings.updateLayerList();
 

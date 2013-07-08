@@ -19,7 +19,8 @@ public:
 
     CrustaSettings();
 
-    void loadFromFiles(const Strings& cfgNames=Strings());
+    void mergeFromCfgFile(const std::string& path);
+    void setFromCfg();
 
     /** name of the sphere onto which data is mapped */
     std::string globeName;
@@ -85,6 +86,7 @@ public:
     ///\}
 
     bool sceneGraphViewerEnabled;
+    Misc::ConfigurationFile cfgFile;
 };
 
 

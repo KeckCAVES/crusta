@@ -98,10 +98,13 @@ public:
     DataManager();
     ~DataManager();
 
-    /** assign the given databases to the data manager */
-    void load(Strings& dataPaths);
-    /** detach the data manager from the current databases */
+    /** data loading **/
+    void loadGlobe(const std::string& path);
+    void setPalette(const std::string& path);
+    void resetPalette();
     void unload();
+    void startFetching();
+    void stopFetching();
 
     /** check if elevation data is available */
     bool hasDem() const;
@@ -224,13 +227,10 @@ protected:
     /** merge a new request into the pending list */
     void addRequest(Request req);
 
-    /** start the fetching thread */
-    void startFetchThread();
-    /** terminate the fetching thread */
-    void terminateFetchThread();
-
     /** fetch thread function: process the generation/reading of the data */
     void* fetchThreadFunc();
+
+    std::string curPaletteFilePath;
 
     /** path to the loaded dem file */
     std::string demFilePath;
@@ -238,10 +238,12 @@ protected:
     std::string demPaletteFilePath;
     /** globe file from which to source data for the elevation */
     DemFile* demFile;
+
     /** paths to the loaded color files */
     Strings colorFilePaths;
     /** globe files from which to source 3-channel color data */
     ColorFiles colorFiles;
+
     /** paths to the loaded layerf files */
     Strings layerfFilePaths;
     /** paths to color palettes for the layerf files */

@@ -87,136 +87,92 @@ DataManager() :
     terminateFetch(false), resetSourceShadersStamp(0)
 {
     tempGeometryBuf = new double[TILE_RESOLUTION*TILE_RESOLUTION*3];
+    //reset the data source shaders
+    resetSourceShadersStamp = CURRENT_FRAME;
 }
 
 DataManager::
 ~DataManager()
 {
     unload();
-
     delete[] tempGeometryBuf;
 }
 
-void DataManager::
-load(Strings& dataPaths)
+void DataManager::loadGlobe(const std::string& path)
 {
-    //detach from existing databases
-    unload();
-
-    std::string paletteExt = ".pal";
-
-/**\todo check for mismatching polyhedra and no-data values
-for now just use the default polyhedron and no-data irrespective of sources */
-
-    /* go through the paths and try to load corresponding data sources. Remove
-       unsupported paths to communicate back what was actually loaded */
-    for (Strings::iterator it=dataPaths.begin(); it!=dataPaths.end(); )
+    /**\todo check for mismatching polyhedra and no-data values
+      for now just use the default polyhedron and no-data irrespective of sources */
+    stopFetching();
+    if (DemFile::isCompatible(path))
     {
-    //- load DEM?
-        if (DemFile::isCompatible(*it))
+        //only a single DEM is supported so check we haven't one already
+        if (demFile == NULL)
         {
-            //only a single DEM is supported so check we haven't one already
-            if (demFile == NULL)
-            {
-                demFile = new DemFile(false);
-                try
-                {
-                    demFile->open(*it);
-                    demFilePath = *it;
-                    while (demFilePath[demFilePath.size()-1]=='/')
-                        demFilePath.resize(demFilePath.size()-1);
-                    ++it;
-                    if (it!=dataPaths.end() && it->rfind(paletteExt) == it->size()-paletteExt.size()) {
-                       demPaletteFilePath = *it;
-                       ++it;
-                    }
-                }
-                catch (std::runtime_error e)
-                {
-                    delete demFile;
-                    demFile = NULL;
-                    it = dataPaths.erase(it);
-
-                    std::cerr << e.what();
-                }
-            }
-        }
-    //- load Color?
-        else if (ColorFile::isCompatible(*it))
-        {
-            ColorFile* file = new ColorFile(false);
+            demFile = new DemFile(false);
             try
             {
-                file->open(*it);
-                colorFiles.push_back(file);
-                colorFilePaths.push_back(*it);
-                std::string& path = colorFilePaths.back();
-                while (path[path.size()-1]=='/')
-                    path.resize(path.size()-1);
-                ++it;
+                demFile->open(path);
+                demFilePath = path.substr(0, path.find_last_not_of("/"));
+                demPaletteFilePath = curPaletteFilePath;
             }
             catch (std::runtime_error e)
             {
-                delete file;
-                it = dataPaths.erase(it);
-
+                delete demFile;
+                demFile = NULL;
                 std::cerr << e.what();
             }
+        } else {
+          std::cerr << "Warning: only one DEM file is usable at a time; skipping " << path << std::endl;
         }
-    //- load Layerf?
-        else if (LayerfFile::isCompatible(*it))
+    } else if (ColorFile::isCompatible(path)) {
+        ColorFile* file = new ColorFile(false);
+        try
         {
-            LayerfFile* file = new LayerfFile(false);
-            try
-            {
-                file->open(*it);
-                layerfFiles.push_back(file);
-                layerfFilePaths.push_back(*it);
-                std::string& path = layerfFilePaths.back();
-                while (path[path.size()-1]=='/')
-                    path.resize(path.size()-1);
-                ++it;
-                if (it!=dataPaths.end() && it->rfind(paletteExt) == it->size()-paletteExt.size()) {
-                   layerfPaletteFilePaths.push_back(*it);
-                   ++it;
-                } else {
-                   layerfPaletteFilePaths.push_back("");
-                }
-            }
-            catch (std::runtime_error e)
-            {
-                delete file;
-                it = dataPaths.erase(it);
-
-                std::cerr << e.what();
-            }
+            file->open(path);
+            colorFiles.push_back(file);
+            colorFilePaths.push_back(path.substr(0, path.find_last_not_of("/")));
         }
-    //- not recognized data base
-        else
+        catch (std::runtime_error e)
         {
-            it = dataPaths.erase(it);
+            delete file;
+            std::cerr << e.what();
         }
+    } else if (LayerfFile::isCompatible(path)) {
+        LayerfFile* file = new LayerfFile(false);
+        try
+        {
+            file->open(path);
+            layerfFiles.push_back(file);
+            layerfFilePaths.push_back(path.substr(0, path.find_last_not_of("/")));
+            layerfPaletteFilePaths.push_back(curPaletteFilePath);
+        }
+        catch (std::runtime_error e)
+        {
+            delete file;
+            std::cerr << e.what();
+        }
+    } else {
+        std::cerr << "Warning: ignoring unrecognized globe file " << path << std::endl;
     }
-
-///\todo get the no-data values from the files
-    demNodata    = GlobeData<DemHeight>::defaultNodata();
-    colorNodata  = GlobeData<TextureColor>::defaultNodata();
-    layerfNodata = GlobeData<LayerDataf>::defaultNodata();
-
-///\todo get the polyhedron from the files and check compatibility
-    polyhedron = new Triacontahedron(SETTINGS->globeRadius);
-
     //reset the data source shaders
     resetSourceShadersStamp = CURRENT_FRAME;
+}
 
-    startFetchThread();
+void DataManager::setPalette(const std::string& path)
+{
+    curPaletteFilePath = path;
+}
+
+void DataManager::resetPalette()
+{
+    curPaletteFilePath.clear();
 }
 
 void DataManager::
 unload()
 {
     //stop the fetching thread
-    terminateFetchThread();
+    stopFetching();
 
     //clear all the requests
     {
@@ -258,6 +214,32 @@ unload()
     }
 }
 
+void DataManager::startFetching()
+{
+    ///\todo get the no-data values from the files
+    demNodata    = GlobeData<DemHeight>::defaultNodata();
+    colorNodata  = GlobeData<TextureColor>::defaultNodata();
+    layerfNodata = GlobeData<LayerDataf>::defaultNodata();
+
+    ///\todo get the polyhedron from the files and check compatibility
+    if (!polyhedron) polyhedron = new Triacontahedron(SETTINGS->globeRadius);
+
+    terminateFetch = false;
+    fetchThread.start(this, &DataManager::fetchThreadFunc);
+}
+
+void DataManager::stopFetching()
+{
+    if (!fetchThread.isJoined())
+    {
+        //let the fetch thread know that it should terminate
+        terminateFetch = true;
+        //make sure the thread is not stuck waiting for requests
+        fetchCond.signal();
+        //wait for the termination
+        fetchThread.join();
+    }
+}
 
 bool DataManager::
 hasDem() const
@@ -1331,27 +1313,6 @@ addRequest(Request req)
         childRequests.pop_front();
     }
     assert(!childRequests.empty());
-}
-
-void DataManager::
-startFetchThread()
-{
-    terminateFetch = false;
-    fetchThread.start(this, &DataManager::fetchThreadFunc);
-}
-
-void DataManager::
-terminateFetchThread()
-{
-    if (!fetchThread.isJoined())
-    {
-        //let the fetch thread know that it should terminate
-        terminateFetch = true;
-        //make sure the thread is not stuck waiting for requests
-        fetchCond.signal();
-        //wait for the termination
-        fetchThread.join();
-    }
 }
 
 void* DataManager::

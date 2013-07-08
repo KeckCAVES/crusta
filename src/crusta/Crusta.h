@@ -61,14 +61,15 @@ class Crusta : public GLObject
 {
 public:
     typedef std::vector<std::string> Strings;
+    Crusta(const std::string& exePath, const std::string& resourcePath="");
+    ~Crusta();
 
-    void init(const std::string& exePath, const Strings& settingsFiles,
-              const std::string& resourcePath);
-    void loadSceneGraph(const std::string& name);
-    void shutdown();
-
-    void load(Strings& dataBases);
-    void unload();
+    void loadSceneGraph(const std::string& path);
+    void loadGlobe(const std::string& path);
+    void setPalette(const std::string& path);
+    void resetPalette();
+    void start();
+    void reset();
 
 ///\todo potentially deprecate
     /** snap the given cartesian point to the surface of the terrain (at an

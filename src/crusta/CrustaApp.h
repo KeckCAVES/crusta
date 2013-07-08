@@ -45,6 +45,9 @@ public:
     ~CrustaApp();
 
 private:
+    void handleArg(const std::string& arg);
+
+private:
     class Dialog
     {
     public:

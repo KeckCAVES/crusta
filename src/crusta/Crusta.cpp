@@ -138,10 +138,9 @@ CrustaGlData::
 }
 
 
-
-///\todo split crusta and planet
-void Crusta::
-init(const std::string& exePath, const Strings& settingsFiles, const std::string& resourcePath)
+Crusta::Crusta(const std::string& exePath, const std::string& resourcePath):
+  mapMan(NULL),
+  sceneGraphViewer(NULL)
 {
 ///\todo split crusta and planet
 ///\todo extend the interface to pass an optional configuration file
@@ -154,23 +153,6 @@ init(const std::string& exePath, const Strings& settingsFiles, const std::string
 		
     //initialize the crusta user settings
     SETTINGS = new CrustaSettings;
-    SETTINGS->loadFromFiles(settingsFiles);
-
-    //initialize the abstract crusta tool (adds an entry to the VRUI menu)
-    Vrui::ToolFactory* crustaTool = Tool::init(NULL);
-    //initialize the surface transformation tool
-    SurfaceTool::init();
-    //initialize the surface probing tool
-    SurfaceProbeTool::init();
-    //initialize the layer visibility toggle tool
-    LayerToggleTool::init();
-    //initialize the scene graph visibility toggle tool
-    SGToggleTool::init();
-
-    if (SETTINGS->sliceToolEnable) {
-        //initialize the slicing tool
-        SliceTool::init();
-    }
 
     /* start the frame counting at 2 because initialization code uses unsigneds
     that are initialized with 0. Thus if crustaFrameNumber starts at 0, the
@@ -188,19 +170,15 @@ init(const std::string& exePath, const Strings& settingsFiles, const std::string
 ///\todo VruiGlew dependent dynamic allocation
     QuadTerrain::initGlData();
 
+    Vrui::ToolFactory* crustaTool = Tool::init(NULL);
+    SurfaceTool::init();
+    SurfaceProbeTool::init();
+    LayerToggleTool::init();
+    SGToggleTool::init();
     mapMan = new MapManager(crustaTool, this);
-    sceneGraphViewer = NULL;
 }
 
-void Crusta::
-loadSceneGraph(const std::string& name)
-{
-  if (!sceneGraphViewer) sceneGraphViewer = new SceneGraphViewer();
-  sceneGraphViewer->load(name);
-}
-
-void Crusta::
-shutdown()
+Crusta::~Crusta()
 {
     if (sceneGraphViewer){ delete sceneGraphViewer; sceneGraphViewer=NULL; }
     delete mapMan;
@@ -224,14 +202,32 @@ delete CRUSTA_FRAMERATE_RECORDER;
 #endif //CRUSTA_ENABLE_RECORD_FRAMERATE
 }
 
-
-void Crusta::
-load(Strings& dataBases)
+void Crusta::loadSceneGraph(const std::string& path)
 {
-    //clear the currently loaded data
-    unload();
+  if (!sceneGraphViewer) sceneGraphViewer = new SceneGraphViewer();
+  sceneGraphViewer->load(path);
+}
 
-    DATAMANAGER->load(dataBases);
+void Crusta::loadGlobe(const std::string& path)
+{
+    DATAMANAGER->loadGlobe(path);
+}
+
+void Crusta::setPalette(const std::string& path)
+{
+    DATAMANAGER->setPalette(path);
+}
+
+void Crusta::resetPalette()
+{
+    DATAMANAGER->resetPalette();
+}
+
+void Crusta::start()
+{
+    if (SETTINGS->sliceToolEnable) SliceTool::init();
+
+    DATAMANAGER->startFetching();
     COLORMAPPER->load();
 
     globalElevationRange[0] =  Math::Constants<Scalar>::max;
@@ -275,8 +271,7 @@ CRUSTA_FRAMERATE_RECORDER = new FrameRateRecorder(1.0/20.0);
 #endif //CRUSTA_ENABLE_RECORD_FRAMERATE
 }
 
-void Crusta::
-unload()
+void Crusta::reset()
 {
     //destroy all the current render patches
     for (RenderPatches::iterator it=renderPatches.begin();
