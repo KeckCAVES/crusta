@@ -187,7 +187,7 @@ macro(add_baked_args_exe NAME)
 endmacro()
 
 set(desktopargs -mergeConfig ${SHARE_DIR}/vrui/desktop.cfg)
-set(slicetoolargs -settings ${SHARE_DIR}/etc/enableSliceTool.cfg)
+set(slicetoolargs ${SHARE_DIR}/etc/enableSliceTool.cfg)
 add_baked_args_exe(crusta-desktop ${desktopargs})
 add_baked_args_exe(crusta-slicing ${slicetoolargs})
 add_baked_args_exe(crusta-slicing-desktop ${slicetoolargs} ${desktopargs})
