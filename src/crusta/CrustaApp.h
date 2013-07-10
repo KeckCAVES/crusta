@@ -13,9 +13,9 @@
 #include <crusta/Dialog.h>
 #include <crusta/LightSettingsDialog.h>
 #include <crusta/VerticalScaleDialog.h>
+#include <crusta/OpacityDialog.h>
 
 #include <crusta/vrui.h>
-
 
 class GLContextData;
 
@@ -35,9 +35,7 @@ namespace Vrui {
 class Lightsource;
 }
 
-
 namespace crusta {
-
 
 class Crusta;
 
@@ -51,20 +49,6 @@ private:
     void handleArg(const std::string& arg);
 
 private:
-    class OpacityDialog : public Dialog
-    {
-    public:
-        OpacityDialog();
-        void setCrusta(Crusta* newCrusta);
-    protected:
-        void init();
-        void changeOpacityCallback(
-            GLMotif::Slider::ValueChangedCallbackData* cbData);
-    private:
-        Crusta*         crusta;
-        GLMotif::Label* opacityLabel;
-    };
-
     class TerrainColorSettingsDialog : public Dialog
     {
     public:
