@@ -112,7 +112,7 @@ void DataManager::loadGlobe(const std::string& path)
             try
             {
                 demFile->open(path);
-                demFilePath = path.substr(0, path.find_last_not_of("/"));
+                demFilePath = path.substr(0, path.find_last_not_of("/")+1);
                 demPaletteFilePath = curPaletteFilePath;
             }
             catch (std::runtime_error e)
@@ -130,7 +130,7 @@ void DataManager::loadGlobe(const std::string& path)
         {
             file->open(path);
             colorFiles.push_back(file);
-            colorFilePaths.push_back(path.substr(0, path.find_last_not_of("/")));
+            colorFilePaths.push_back(path.substr(0, path.find_last_not_of("/")+1));
         }
         catch (std::runtime_error e)
         {
@@ -143,7 +143,7 @@ void DataManager::loadGlobe(const std::string& path)
         {
             file->open(path);
             layerfFiles.push_back(file);
-            layerfFilePaths.push_back(path.substr(0, path.find_last_not_of("/")));
+            layerfFilePaths.push_back(path.substr(0, path.find_last_not_of("/")+1));
             layerfPaletteFilePaths.push_back(curPaletteFilePath);
         }
         catch (std::runtime_error e)
