@@ -1,11 +1,6 @@
 #ifndef _CrustaApp_H_
 #define _CrustaApp_H_
 
-
-#include <crustavrui/GLMotif/ColorMapEditor.h>
-#include <crustavrui/GLMotif/ColorPickerWindow.h>
-#include <crustavrui/GLMotif/RangeEditor.h>
-
 #include <crustacore/basics.h>
 #include <crusta/glbasics.h>
 #include <crusta/CrustaComponent.h>
@@ -14,6 +9,7 @@
 #include <crusta/LightSettingsDialog.h>
 #include <crusta/VerticalScaleDialog.h>
 #include <crusta/OpacityDialog.h>
+#include <crusta/TerrainColorSettingsDialog.h>
 
 #include <crusta/vrui.h>
 
@@ -49,25 +45,6 @@ private:
     void handleArg(const std::string& arg);
 
 private:
-    class TerrainColorSettingsDialog : public Dialog
-    {
-    public:
-        TerrainColorSettingsDialog();
-    protected:
-        void init();
-    private:
-        void colorButtonCallback(
-            GLMotif::Button::SelectCallbackData* cbData);
-        void colorChangedCallback(
-            GLMotif::ColorPicker::ColorChangedCallbackData* cbData);
-        void shininessChangedCallback(
-            GLMotif::Slider::ValueChangedCallbackData* cbData);
-
-        GLMotif::Button*           currentButton;
-        GLMotif::ColorPickerWindow colorPicker;
-        GLMotif::TextField*        shininessField;
-    };
-
     class LayerSettingsDialog : public Dialog
     {
     public:
