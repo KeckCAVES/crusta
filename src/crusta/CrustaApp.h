@@ -8,10 +8,11 @@
 
 #include <crustacore/basics.h>
 #include <crusta/glbasics.h>
-#include <crusta/Dialog.h>
 #include <crusta/CrustaComponent.h>
 #include <crusta/SurfaceProbeTool.h>
+#include <crusta/Dialog.h>
 #include <crusta/LightSettingsDialog.h>
+#include <crusta/VerticalScaleDialog.h>
 
 #include <crusta/vrui.h>
 
@@ -50,20 +51,6 @@ private:
     void handleArg(const std::string& arg);
 
 private:
-    class VerticalScaleDialog : public Dialog
-    {
-    public:
-        VerticalScaleDialog();
-        void setCrusta(Crusta* newCrusta);
-    protected:
-        void init();
-        void changeScaleCallback(
-            GLMotif::Slider::ValueChangedCallbackData* cbData);
-    private:
-        Crusta*         crusta;
-        GLMotif::Label* scaleLabel;
-    };
-
     class OpacityDialog : public Dialog
     {
     public:

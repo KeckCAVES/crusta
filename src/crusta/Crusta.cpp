@@ -30,6 +30,8 @@
 
 namespace crusta {
 
+Crusta* CRUSTA = NULL;
+
 ///\todo debug remove
 bool PROJECTION_FAILED = false;
 
@@ -176,6 +178,7 @@ Crusta::Crusta(const std::string& exePath, const std::string& resourcePath):
     LayerToggleTool::init();
     SGToggleTool::init();
     mapMan = new MapManager(crustaTool, this);
+    CRUSTA = this;
 }
 
 Crusta::~Crusta()
@@ -200,6 +203,8 @@ Crusta::~Crusta()
 #if CRUSTA_ENABLE_RECORD_FRAMERATE
 delete CRUSTA_FRAMERATE_RECORDER;
 #endif //CRUSTA_ENABLE_RECORD_FRAMERATE
+    
+    CRUSTA = NULL;
 }
 
 void Crusta::loadSceneGraph(const std::string& path)

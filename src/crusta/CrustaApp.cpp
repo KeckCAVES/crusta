@@ -134,56 +134,6 @@ CrustaApp::
     delete crusta;
 }
 
-CrustaApp::VerticalScaleDialog::
-VerticalScaleDialog() :
-    crusta(NULL), scaleLabel(NULL)
-{
-    name  = "VerticalScaleDialog";
-    label = "Vertical Scale";
-}
-
-void CrustaApp::VerticalScaleDialog::
-setCrusta(Crusta* newCrusta)
-{
-    crusta = newCrusta;
-}
-
-void CrustaApp::VerticalScaleDialog::
-init()
-{
-    Dialog::init();
-
-    const StyleSheet* style =
-        Vrui::getWidgetManager()->getStyleSheet();
-
-    RowColumn* root = new RowColumn("ScaleRoot", dialog, false);
-
-    Slider* slider = new Slider(
-        "ScaleSlider", root, Slider::HORIZONTAL,
-        10.0 * style->fontHeight);
-    slider->setValue(0.0);
-    slider->setValueRange(-0.5, 2.5, 0.00001);
-    slider->getValueChangedCallbacks().add(
-        this, &CrustaApp::VerticalScaleDialog::changeScaleCallback);
-
-    scaleLabel = new Label("ScaleLabel", root, "1.0x");
-
-    root->setNumMinorWidgets(2);
-    root->manageChild();
-}
-
-void CrustaApp::VerticalScaleDialog::
-changeScaleCallback(Slider::ValueChangedCallbackData* cbData)
-{
-    double newVerticalScale = pow(10, cbData->value);
-    crusta->setVerticalScale(newVerticalScale);
-
-    std::ostringstream oss;
-    oss.precision(2);
-    oss << newVerticalScale << "x";
-    scaleLabel->setString(oss.str().c_str());
-}
-
 CrustaApp::OpacityDialog::
 OpacityDialog() :
     crusta(NULL), opacityLabel(NULL)
@@ -512,7 +462,6 @@ produceMainMenu()
         this, &CrustaApp::showDataDialogCallback);
 
     //vertical scale dialog
-    verticalScaleSettings.setCrusta(crusta);
     verticalScaleSettings.createMenuEntry(mainMenu);
 
     //opacity dialog

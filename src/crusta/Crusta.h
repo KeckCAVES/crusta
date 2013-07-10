@@ -27,6 +27,9 @@ class GLContextData;
 
 namespace crusta {
 
+class Crusta;
+extern Crusta* CRUSTA;
+
 template <typename NodeDataType>
 class CacheBuffer;
 
