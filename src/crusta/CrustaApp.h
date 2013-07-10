@@ -10,26 +10,8 @@
 #include <crusta/VerticalScaleDialog.h>
 #include <crusta/OpacityDialog.h>
 #include <crusta/TerrainColorSettingsDialog.h>
-
+#include <crusta/LayerSettingsDialog.h>
 #include <crusta/vrui.h>
-
-class GLContextData;
-
-namespace GLMotif {
-    class DropdownBox;
-    class Label;
-    class ListBox;
-    class Menu;
-    class PaletteEditor;
-    class PopupMenu;
-    class PopupWindow;
-    class RadioBox;
-    class RowColumn;
-    class TextField;
-}
-namespace Vrui {
-class Lightsource;
-}
 
 namespace crusta {
 
@@ -45,26 +27,6 @@ private:
     void handleArg(const std::string& arg);
 
 private:
-    class LayerSettingsDialog : public Dialog
-    {
-    public:
-        LayerSettingsDialog(GLMotif::PaletteEditor* editor);
-        void updateLayerList();
-    protected:
-        void init();
-    private:
-        void layerChangedCallback(
-            GLMotif::ListBox::ValueChangedCallbackData* cbData);
-        void visibleCallback(
-            GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
-        void clampCallback(
-            GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
-
-        GLMotif::ListBox*       listBox;
-        GLMotif::PaletteEditor* paletteEditor;
-        GLMotif::RowColumn*     buttonRoot;
-    };
-
     void produceMainMenu();
 
     void produceDataDialog();
