@@ -17,7 +17,7 @@ namespace crusta {
 template <typename PixelParam>
 GlobeFile<PixelParam>::
 GlobeFile(bool writable) :
-	cfg(NULL), writable(writable)
+	writable(writable), cfg(NULL)
 {
 }
 
@@ -72,7 +72,7 @@ open(const std::string& path)
     {
         std::ostringstream oss;
         oss << path << "/patch_" << i << ".qtf";
-        uint32_t utileSize[2] = {tileSize[0], tileSize[1]};
+        uint32_t utileSize[2] = {uint32_t(tileSize[0]), uint32_t(tileSize[1])};
         patches.push_back(new File(oss.str().c_str(), utileSize, writable));
 
         if (writable)

@@ -79,9 +79,9 @@ subsampleChildren(Node* node)
     const PixelType& nodata = node->globeFile->getNodata();
 
     const int offsets[4] = {
-        0, (tileSize[0]-1)>>1, ((tileSize[1]-1)>>1)*tileSize[0],
-        ((tileSize[1]-1)>>1)*tileSize[0] + ((tileSize[0]-1)>>1) };
-    const int halfSize[2] = { (tileSize[0]+1)>>1, (tileSize[1]+1)>>1 };
+        0, int((tileSize[0]-1)>>1), int(((tileSize[1]-1)>>1)*tileSize[0]),
+        int(((tileSize[1]-1)>>1)*tileSize[0] + ((tileSize[0]-1)>>1)) };
+    const int halfSize[2] = { int((tileSize[0]+1)>>1), int((tileSize[1]+1)>>1) };
     for (int i=0; i<4; ++i)
     {
 //        #pragma omp parallel for
@@ -216,7 +216,7 @@ sourceFinest(Node* node, Patch* imgPatch, size_t overlap)
     ImgBoxes imgBoxes;
     const int*        imgSize  = imgPatch->image->getSize();
     const PixelType& imgNodata = imgPatch->image->getNodata();
-    const Point::Scalar allowedBoxSize[2]  = { imgSize[0]>>1, imgSize[1]>>1 };
+    const Point::Scalar allowedBoxSize[2] = { Point::Scalar(imgSize[0]>>1), Point::Scalar(imgSize[1]>>1) };
 
     //transform all the sample points into the image space
     node->scope.getRefinement(tileSize[0], scopeBuf);
@@ -557,7 +557,7 @@ Note: getKin across patches seem to be broken: e.g. offset==3 returned. */
 
                 double at[2];
                 int rectOrigin[2] = {0,0};
-                int rectSize[2]   = {tileSize[0], tileSize[1]};
+                int rectSize[2] = {int(tileSize[0]), int(tileSize[1])};
                 const PixelType& nodata = kin->globeFile->getNodata();
                 PixelType* wbase = nodeDataBuf;
 
@@ -586,10 +586,10 @@ kinO = 0;
         PixelType* base = domain +
                           domainOff[1] * (tileSize[1]-1) * domainSize[0] +
                           domainOff[0] * (tileSize[0]-1);
-        int startY[4] = { 0, tileSize[1]-1, tileSize[1]-1, 0 };
-        int stepY[4]  = { tileSize[0], 1,  -tileSize[0], -1 };
-        int startX[4] = { 0, 0, tileSize[0]-1, tileSize[0]-1 };
-        int stepX[4]  = { 1,  -tileSize[1], -1, tileSize[0]};
+        int startY[4] = { 0, int(tileSize[1])-1, int(tileSize[1])-1, 0 };
+        int stepY[4]  = { int(tileSize[0]), 1,  -int(tileSize[0]), -1 };
+        int startX[4] = { 0, 0, int(tileSize[0])-1, int(tileSize[0])-1 };
+        int stepX[4]  = { 1,  -int(tileSize[1]), -1, int(tileSize[0])};
 //        #pragma omp parallel for
         for (size_t y=0; y<tileSize[1]; ++y)
         {

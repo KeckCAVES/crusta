@@ -131,6 +131,7 @@ add_definitions(-DCRUSTA_VERSION=\"${PROJECT_VERSION}\")
 
 # Show all warnings
 add_definitions("-Wall")
+add_definitions("-Werror")
 add_definitions("-Wfatal-errors")
 
 # Report resource paths to source files

@@ -208,7 +208,7 @@ class LightingShader
 
         glUniform3fv(slopePlaneCentersUniform, numPlanes, pc);
 
-        float fc[3] = { faultCenter[0], faultCenter[1], faultCenter[2] };
+        float fc[3] = { float(faultCenter[0]), float(faultCenter[1]), float(faultCenter[2]) };
         glUniform3fv(sliceFaultCenterUniform, 1, fc);
 
         glUniform1f(sliceFalloffUniform, falloff);

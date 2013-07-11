@@ -1501,7 +1501,7 @@ confirmLineCoverageRemoval(const MainData& nodeData, Shape* shape,
 {
     typedef NodeData::ShapeCoverage        Coverage;
     typedef Shape::ControlPointHandleList  HandleList;
-    typedef Shape::ControlPointConstHandle Handle;
+    //typedef Shape::ControlPointConstHandle Handle;
 
     NodeData& node = *nodeData.node;
 

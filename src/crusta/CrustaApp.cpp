@@ -529,7 +529,7 @@ toolCreationCallback(Vrui::ToolManager::ToolCreationCallbackData* cbData)
     if (surfaceNavigationTool != NULL)
     {
         /* Set the new tool's alignment function: */
-        typedef Vrui::SurfaceNavigationTool::AlignmentData AlignmentData;
+        //typedef Vrui::SurfaceNavigationTool::AlignmentData AlignmentData;
         surfaceNavigationTool->setAlignFunction(
             Misc::createFunctionCall(
                 this,&CrustaApp::alignSurfaceFrame));
