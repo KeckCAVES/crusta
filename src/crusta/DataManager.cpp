@@ -613,32 +613,21 @@ find(const TreeIndex& index, NodeMainBuffer& mainBuf) const
 }
 
 
-void DataManager::
-startGpuBatch(GLContextData& contextData, const SurfaceApproximation& surface,
-              Batch& batch)
+void DataManager::startGpuBatch(const SurfaceApproximation& surface)
+{
+    assert(remainingBatchIndices.empty());
+    size_t numNodes = surface.visibles.size();
+    for (size_t i=0; i<numNodes; ++i) {
+        remainingBatchIndices.push_back(i);
+    }
+}
+
+void DataManager::streamBatchToGpu(
+    GLContextData& contextData,
+    const SurfaceApproximation& surface,
+    Batch& batch)
 {
     batch.clear();
-    assert(remainingBatchIndices.empty());
-
-    //stream nodes cached nodes and reserved the indices of the missing
-    size_t numNodes = surface.visibles.size();
-    for (size_t i=0; i<numNodes; ++i)
-    {
-        BatchElement batchel;
-        batchel.main = surface.visible(i);
-        NodeGpuBuffer gpuBuf;
-        if (findGpuBuffer(contextData, batchel.main, gpuBuf))
-        {
-            //make sure the data is up to date
-            streamGpuData(contextData, batchel, gpuBuf);
-            CHECK_GLA;
-            //add to the batch
-            batch.push_back(batchel);
-        }
-        else
-            remainingBatchIndices.push_back(i);
-    }
-
     //add missing nodes as much as the cache will allow
     while (!remainingBatchIndices.empty())
     {
@@ -654,18 +643,14 @@ startGpuBatch(GLContextData& contextData, const SurfaceApproximation& surface,
             batch.push_back(batchel);
             //remove the index from the remaining set
             remainingBatchIndices.pop_back();
-        }
-        else
+        } else {
             break;
+        }
     }
 }
 
-void DataManager::
-nextGpuBatch(GLContextData& contextData, const SurfaceApproximation& surface,
-             Batch& batch)
+void DataManager::ageGpuCaches(GLContextData& contextData)
 {
-    batch.clear();
-
     //are any more batches even possible
     size_t numNodes = remainingBatchIndices.size();
     if (numNodes == 0)
@@ -675,32 +660,14 @@ nextGpuBatch(GLContextData& contextData, const SurfaceApproximation& surface,
     GpuCache& gpuCache = CACHE->getGpuCache(contextData);
     gpuCache.geometry.ageMRU(numNodes, LAST_FRAME);
     gpuCache.color.ageMRU(numNodes * colorFiles.size(), LAST_FRAME);
-
-    size_t numLayerBufs = numNodes * 3*colorFiles.size() + layerfFiles.size();
-    gpuCache.layerf.ageMRU(numLayerBufs, LAST_FRAME);
-
+    gpuCache.layerf.ageMRU(numNodes * layerfFiles.size(), LAST_FRAME);
     gpuCache.coverage.ageMRU(numNodes, LAST_FRAME);
     gpuCache.lineData.ageMRU(numNodes, LAST_FRAME);
+}
 
-    //add missing nodes as much as the cache will allow
-    while (!remainingBatchIndices.empty())
-    {
-        BatchElement batchel;
-        batchel.main = surface.visible(remainingBatchIndices.back());
-        NodeGpuBuffer gpuBuf;
-        if (grabGpuBuffer(contextData, batchel.main, gpuBuf))
-        {
-            //make sure the data is up to date
-            streamGpuData(contextData, batchel, gpuBuf);
-            CHECK_GLA;
-            //add to the batch
-            batch.push_back(batchel);
-            //remove the index from the remaining set
-            remainingBatchIndices.pop_back();
-        }
-        else
-            break;
-    }
+bool DataManager::hasBatchToStreamToGpu()
+{
+    return !remainingBatchIndices.empty();
 }
 
 
@@ -1348,9 +1315,8 @@ fetchThreadFunc()
         NodeMainBuffer mainBuf;
         if (!grabMainBuffer(childIndex, LAST_FRAME, mainBuf))
         {
+            std::cerr << "!!! no more main memory cache" << std::endl;
             //we couldn't secure a buffer from the cache bail on this request
-CRUSTA_DEBUG(11, CRUSTA_DEBUG_OUT <<
-"FetchThread: no more room in the cache for new request\n";)
             continue;
         }
 

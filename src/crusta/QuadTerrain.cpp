@@ -577,21 +577,14 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
 
     //render the terrain nodes in batches
     DataManager::Batch batch;
-    DATAMANAGER->startGpuBatch(contextData, surface, batch);
-
-    // glLineWidth(1.0); // Needed for SliceTool?
-
-    while (!batch.empty())
+    DATAMANAGER->startGpuBatch(surface);
+    while (DATAMANAGER->hasBatchToStreamToGpu())
     {
-        //draw the nodes of the current batch
-        for (DataManager::Batch::const_iterator it=batch.begin();
-             it!=batch.end(); ++it)
-        {
+        DATAMANAGER->streamBatchToGpu(contextData, surface, batch);
+        for (DataManager::Batch::const_iterator it=batch.begin(); it!=batch.end(); ++it) {
             drawNode(contextData, crustaGl, it->main, it->gpu);
         }
-
-        //grab the next batch
-        DATAMANAGER->nextGpuBatch(contextData, surface, batch);
+        DATAMANAGER->ageGpuCaches(contextData);
     }
     
     if (SETTINGS->sliceToolEnable)

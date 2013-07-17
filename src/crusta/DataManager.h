@@ -158,13 +158,11 @@ public:
     /** grabs a combo-buffer corresponding to the crusta node */
     bool find(const TreeIndex& index, NodeMainBuffer& mainBuf) const;
 
-    /** setup batching gpu data for specified nodes and return the first
-        batch */
-    void startGpuBatch(GLContextData& contextData,
-                       const SurfaceApproximation& surface, Batch& batch);
-    /** continue a started gpu batching sequence */
-    void nextGpuBatch(GLContextData& contextData,
-                      const SurfaceApproximation& surface, Batch& batch);
+    // Batch streaming to GPU
+    void startGpuBatch(const SurfaceApproximation& surface);
+    void streamBatchToGpu(GLContextData& contextData, const SurfaceApproximation& surface, Batch& batch);
+    void ageGpuCaches(GLContextData& contextData);
+    bool hasBatchToStreamToGpu();
 
     /** check if the node node is part of the current hierarchy */
     bool isCurrent(const NodeMainBuffer& mainBuf) const;
