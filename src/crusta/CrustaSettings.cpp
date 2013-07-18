@@ -59,6 +59,10 @@ CrustaSettings::CrustaSettings() :
     // /Crusta/SliceTool
     sliceToolEnable(false),
 
+    // /Crusta/LOD
+    lodBias(0.0),
+    lodScale(1.0),
+
     sceneGraphViewerEnabled(true)
 {
     //try to load the default system-wide configuration
@@ -149,6 +153,11 @@ void CrustaSettings::setFromCfg()
     //try to extract the surface projector settings
     cfgFile.setCurrentSection("/Crusta/SurfaceProjector");
     surfaceProjectorRayIntersect = cfgFile.retrieveValue<bool>("rayIntersect", surfaceProjectorRayIntersect);
+
+    //try to extract the LOD settings
+    cfgFile.setCurrentSection("/Crusta/LOD");
+    lodBias = cfgFile.retrieveValue<float>("bias", lodBias);
+    lodScale = cfgFile.retrieveValue<float>("scale", lodScale);
 
     //try to extract the slice tool settings
     cfgFile.setCurrentSection("/Crusta/SliceTool");

@@ -358,6 +358,8 @@ prepareDisplay(GLContextData& contextData, SurfaceApproximation& surface)
     FrustumVisibility visibility;
     visibility.frustum = getFrustumFromVrui(contextData);
     FocusViewEvaluator lod;
+    lod.bias = SETTINGS->lodBias;
+    lod.scale = SETTINGS->lodScale;
     lod.frustum = visibility.frustum;
     lod.setFocusFromDisplay();
 

@@ -85,6 +85,10 @@ public:
     bool sliceToolEnable;
     ///\}
 
+    // Level of detail
+    float lodBias;
+    float lodScale;
+
     bool sceneGraphViewerEnabled;
     Misc::ConfigurationFile cfgFile;
 };
