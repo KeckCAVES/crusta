@@ -14,24 +14,10 @@ public:
   LightSettingsDialog();
   ~LightSettingsDialog();
 
-protected:
   void init();
-  void updateSun(void);
   void enableSunToggleCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
   void sunAzimuthSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
   void sunElevationSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData);
-
-private:
-  /** Initial enable states of all viewers' headlights */
-  std::vector<bool> viewerHeadlightStates;
-  /** Flag to store the sun activation state */
-  bool enableSun;
-  /** Light source representing the sun */
-  Vrui::Lightsource* sun;
-  /** Azimuth of sunlight direction */
-  Vrui::Scalar sunAzimuth;
-  /** Elevation of sunlight direction */
-  Vrui::Scalar sunElevation;
 
   GLMotif::TextField* sunAzimuthTextField;
   GLMotif::Slider* sunAzimuthSlider;

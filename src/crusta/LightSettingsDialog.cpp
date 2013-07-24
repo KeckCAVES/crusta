@@ -1,31 +1,16 @@
 #include <crusta/LightSettingsDialog.h>
+#include <crusta/Crusta.h>
 
 namespace crusta {
 
-LightSettingsDialog::LightSettingsDialog():
-  viewerHeadlightStates(Vrui::getNumViewers()),
-  enableSun(false),
-  sun(Vrui::getLightsourceManager()->createLightsource(false)),
-  sunAzimuth(180.0),
-  sunElevation(45.0)
+LightSettingsDialog::LightSettingsDialog()
 {
   name  = "LightSettingsDialog";
   label = "Light Settings";
-
-  //save all viewers' headlight enable states
-  for (int i=0; i<Vrui::getNumViewers(); ++i)
-  {
-    viewerHeadlightStates[i] =
-      Vrui::getViewer(i)->getHeadlight().isEnabled();
-  }
-
-  //update the sun parameters
-  updateSun();
 }
 
 LightSettingsDialog::~LightSettingsDialog()
 {
-  Vrui::getLightsourceManager()->destroyLightsource(sun);
 }
 
 void LightSettingsDialog::init()
@@ -40,7 +25,7 @@ void LightSettingsDialog::init()
   GLMotif::Margin* enableSunToggleMargin = new GLMotif::Margin("SunToggleMargin", lightSettings, false);
   enableSunToggleMargin->setAlignment(GLMotif::Alignment(GLMotif::Alignment::HFILL, GLMotif::Alignment::VCENTER));
   GLMotif::ToggleButton* enableSunToggle = new GLMotif::ToggleButton("SunToggle", enableSunToggleMargin, "Sun Light Source");
-  enableSunToggle->setToggle(enableSun);
+  enableSunToggle->setToggle(CRUSTA->getLightSettings()->enableSun);
   enableSunToggle->getValueChangedCallbacks().add(this, &LightSettingsDialog::enableSunToggleCallback);
   enableSunToggleMargin->manageChild();
 
@@ -53,55 +38,35 @@ void LightSettingsDialog::init()
   sunAzimuthTextField->setFloatFormat(GLMotif::TextField::FIXED);
   sunAzimuthTextField->setFieldWidth(3);
   sunAzimuthTextField->setPrecision(0);
-  sunAzimuthTextField->setValue(double(sunAzimuth));
+  sunAzimuthTextField->setValue(double(CRUSTA->getLightSettings()->sunAzimuth));
 
   sunAzimuthSlider = new GLMotif::Slider("SunAzimuthSlider", sunBox, GLMotif::Slider::HORIZONTAL,style->fontHeight*10.0f);
   sunAzimuthSlider->setValueRange(0.0,360.0,1.0);
-  sunAzimuthSlider->setValue(double(sunAzimuth));
+  sunAzimuthSlider->setValue(double(CRUSTA->getLightSettings()->sunAzimuth));
   sunAzimuthSlider->getValueChangedCallbacks().add(this, &LightSettingsDialog::sunAzimuthSliderCallback);
 
   sunElevationTextField = new GLMotif::TextField("SunElevationTextField", sunBox, 5);
   sunElevationTextField->setFloatFormat(GLMotif::TextField::FIXED);
   sunElevationTextField->setFieldWidth(2);
   sunElevationTextField->setPrecision(0);
-  sunElevationTextField->setValue(double(sunElevation));
+  sunElevationTextField->setValue(double(CRUSTA->getLightSettings()->sunElevation));
 
   sunElevationSlider = new GLMotif::Slider("SunElevationSlider", sunBox, GLMotif::Slider::HORIZONTAL,style->fontHeight*10.0f);
   sunElevationSlider->setValueRange(-90.0,90.0,1.0);
-  sunElevationSlider->setValue(double(sunElevation));
+  sunElevationSlider->setValue(double(CRUSTA->getLightSettings()->sunElevation));
   sunElevationSlider->getValueChangedCallbacks().add(this, &LightSettingsDialog::sunElevationSliderCallback);
 
   sunBox->manageChild();
   lightSettings->manageChild();
 }
 
-void LightSettingsDialog::updateSun()
-{
-  if(enableSun) sun->enable();
-    else sun->disable();
-
-  // Compute the light source's direction vector
-  Vrui::Scalar z  = Math::sin(Math::rad(sunElevation));
-  Vrui::Scalar xy = Math::cos(Math::rad(sunElevation));
-  Vrui::Scalar x  = xy * Math::sin(Math::rad(sunAzimuth));
-  Vrui::Scalar y  = xy * Math::cos(Math::rad(sunAzimuth));
-  sun->getLight().position = GLLight::Position(GLLight::Scalar(x), GLLight::Scalar(y), GLLight::Scalar(z), GLLight::Scalar(0));
-}
-
 void LightSettingsDialog::enableSunToggleCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
 {
   // Set the sun enable flag
-  enableSun = cbData->set;
-
-  // Enable/disable all viewers' headlights
-  if (enableSun) {
-    for (int i=0; i<Vrui::getNumViewers(); ++i) Vrui::getViewer(i)->setHeadlightState(false);
-  } else {
-    for (int i=0; i<Vrui::getNumViewers(); ++i) Vrui::getViewer(i)->setHeadlightState(viewerHeadlightStates[i]);
-  }
+  CRUSTA->getLightSettings()->enableSun = cbData->set;
 
   // Update the sun light source
-  updateSun();
+  CRUSTA->getLightSettings()->updateSun();
 
   Vrui::requestUpdate();
 }
@@ -109,13 +74,13 @@ void LightSettingsDialog::enableSunToggleCallback(GLMotif::ToggleButton::ValueCh
 void LightSettingsDialog::sunAzimuthSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
   // update the sun azimuth angle
-  sunAzimuth = Vrui::Scalar(cbData->value);
+  CRUSTA->getLightSettings()->sunAzimuth = Vrui::Scalar(cbData->value);
 
   // update the sun azimuth value label
   sunAzimuthTextField->setValue(double(cbData->value));
 
   // update the sun light source
-  updateSun();
+  CRUSTA->getLightSettings()->updateSun();
 
   Vrui::requestUpdate();
 }
@@ -123,13 +88,13 @@ void LightSettingsDialog::sunAzimuthSliderCallback(GLMotif::Slider::ValueChanged
 void LightSettingsDialog::sunElevationSliderCallback(GLMotif::Slider::ValueChangedCallbackData* cbData)
 {
   // update the sun elevation angle
-  sunElevation=Vrui::Scalar(cbData->value);
+  CRUSTA->getLightSettings()->sunElevation=Vrui::Scalar(cbData->value);
 
   // update the sun elevation value label
   sunElevationTextField->setValue(double(cbData->value));
 
   // update the sun light source
-  updateSun();
+  CRUSTA->getLightSettings()->updateSun();
 
   Vrui::requestUpdate();
 }

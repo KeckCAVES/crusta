@@ -178,12 +178,14 @@ Crusta::Crusta(const std::string& exePath, const std::string& resourcePath):
     LayerToggleTool::init();
     SGToggleTool::init();
     mapMan = new MapManager(crustaTool, this);
+    lightSettings = new LightSettings();
     CRUSTA = this;
 }
 
 Crusta::~Crusta()
 {
     if (sceneGraphViewer){ delete sceneGraphViewer; sceneGraphViewer=NULL; }
+    delete lightSettings;
     delete mapMan;
     for (RenderPatches::iterator it=renderPatches.begin();
          it!=renderPatches.end(); ++it)
@@ -987,6 +989,10 @@ setTerrainShininess(const float& shininess)
     SETTINGS->terrainShininess = shininess;
 }
 
+LightSettings* Crusta::getLightSettings() const
+{
+    return lightSettings;
+}
 
 void Crusta::
 initContext(GLContextData& contextData) const

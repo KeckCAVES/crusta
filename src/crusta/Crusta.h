@@ -13,6 +13,7 @@
 #include <crusta/map/Shape.h>
 #include <crusta/QuadCache.h>
 #include <crusta/SurfacePoint.h>
+#include <crusta/LightSettings.h>
 
 #include <crusta/vrui.h>
 
@@ -115,6 +116,7 @@ public:
     /** change the shininess of the terrain surface */
     void setTerrainShininess(const float& shininess);
 
+    LightSettings* getLightSettings() const;
 
 #if CRUSTA_ENABLE_DEBUG
 DebugTool* debugTool;
@@ -152,6 +154,8 @@ protected:
     Scalar globalElevationRange[2];
 
     SceneGraphViewer* sceneGraphViewer;
+
+    LightSettings* lightSettings;
 
 //- inherited from GLObject
 public:
