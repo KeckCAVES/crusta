@@ -582,7 +582,7 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
     DATAMANAGER->startGpuBatch(surface);
     while (DATAMANAGER->hasBatchToStreamToGpu())
     {
-        DATAMANAGER->streamBatchToGpu(contextData, surface, batch);
+        DATAMANAGER->streamBatchToGpu(contextData, batch);
         for (DataManager::Batch::const_iterator it=batch.begin(); it!=batch.end(); ++it) {
             drawNode(contextData, crustaGl, it->main, it->gpu);
         }

@@ -84,6 +84,7 @@ DataManager() :
     demNodata(GlobeData<DemHeight>::defaultNodata()),
     colorNodata(GlobeData<TextureColor>::defaultNodata()),
     layerfNodata(GlobeData<LayerDataf>::defaultNodata()),
+    curBatchIndex(0), curSurface(NULL),
     terminateFetch(false), resetSourceShadersStamp(0)
 {
     tempGeometryBuf = new double[TILE_RESOLUTION*TILE_RESOLUTION*3];
@@ -615,24 +616,18 @@ find(const TreeIndex& index, NodeMainBuffer& mainBuf) const
 
 void DataManager::startGpuBatch(const SurfaceApproximation& surface)
 {
-    assert(remainingBatchIndices.empty());
-    size_t numNodes = surface.visibles.size();
-    for (size_t i=0; i<numNodes; ++i) {
-        remainingBatchIndices.push_back(i);
-    }
+    curBatchIndex = 0;
+    curSurface = &surface;
 }
 
-void DataManager::streamBatchToGpu(
-    GLContextData& contextData,
-    const SurfaceApproximation& surface,
-    Batch& batch)
+void DataManager::streamBatchToGpu(GLContextData& contextData, Batch& batch)
 {
     batch.clear();
     //add missing nodes as much as the cache will allow
-    while (!remainingBatchIndices.empty())
-    {
+    size_t numNodes = curSurface->visibles.size();
+    for (; curBatchIndex < numNodes; ++curBatchIndex) {
         BatchElement batchel;
-        batchel.main = surface.visible(remainingBatchIndices.back());
+        batchel.main = curSurface->visible(curBatchIndex);
         NodeGpuBuffer gpuBuf;
         if (grabGpuBuffer(contextData, batchel.main, gpuBuf))
         {
@@ -641,8 +636,6 @@ void DataManager::streamBatchToGpu(
             CHECK_GLA;
             //add to the batch
             batch.push_back(batchel);
-            //remove the index from the remaining set
-            remainingBatchIndices.pop_back();
         } else {
             break;
         }
@@ -651,12 +644,9 @@ void DataManager::streamBatchToGpu(
 
 void DataManager::ageGpuCaches(GLContextData& contextData)
 {
-    //are any more batches even possible
-    size_t numNodes = remainingBatchIndices.size();
-    if (numNodes == 0)
-        return;
-
     //try to reset enough cache entries for the remaining nodes
+    size_t numNodes = curSurface->visibles.size() - curBatchIndex;
+    if (numNodes == 0) return;
     GpuCache& gpuCache = CACHE->getGpuCache(contextData);
     gpuCache.geometry.ageMRU(numNodes, LAST_FRAME);
     gpuCache.color.ageMRU(numNodes * colorFiles.size(), LAST_FRAME);
@@ -667,7 +657,7 @@ void DataManager::ageGpuCaches(GLContextData& contextData)
 
 bool DataManager::hasBatchToStreamToGpu()
 {
-    return !remainingBatchIndices.empty();
+    return curBatchIndex < curSurface->visibles.size();
 }
 
 

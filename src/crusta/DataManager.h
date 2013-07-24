@@ -160,7 +160,7 @@ public:
 
     // Batch streaming to GPU
     void startGpuBatch(const SurfaceApproximation& surface);
-    void streamBatchToGpu(GLContextData& contextData, const SurfaceApproximation& surface, Batch& batch);
+    void streamBatchToGpu(GLContextData& contextData, Batch& batch);
     void ageGpuCaches(GLContextData& contextData);
     bool hasBatchToStreamToGpu();
 
@@ -259,9 +259,11 @@ protected:
     /** value for the "no-data" float layer data element */
     LayerDataf::Type layerfNodata;
 
-    /** indices of the nodes of the surface that needs to be considered
-        for the next gpu batch */
-    std::vector<size_t> remainingBatchIndices;
+    /** last index of the nodes of the surface that got sent to the gpu */
+    size_t curBatchIndex;
+
+    /** current surface being sent to gpu */
+    const SurfaceApproximation* curSurface;
 
     /** temporary storage for computing the high-precision surface geometry */
     double* tempGeometryBuf;
