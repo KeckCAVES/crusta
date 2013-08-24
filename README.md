@@ -32,7 +32,7 @@ To get going quickly, from the same directory as this file, just do:
 
     cmake . -DCMAKE_INSTALL_PREFIX=/path/for/crusta && make install
 
-If you have any software in a non-standard place, you may need to set the cmake variable CMAKE_PREFIX_PATH or the environment variable PKG_CONFIG_PATH.  E.g.
+If you have any software in a non-standard place, you may need to set the environment variable `PKG_CONFIG_PATH`.  E.g.
 
     PKG_CONFIG_PATH=/path/to/Vrui/pkgconfig cmake . \
       -DCMAKE_INSTALL_PREFIX=/path/for/crusta && make install
