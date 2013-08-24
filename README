@@ -31,6 +31,11 @@ To install Crusta from source, you'll need the following:
   * GLU w/ development files
   * GLEW
 
+If you want the pretty scenegraph font additions, you'll also need:
+
+  * FTGL
+  * Fontconfig
+
 To get going quickly, from the same directory as this file, just do:
 
   cmake . -DCMAKE_INSTALL_PREFIX=/path/for/crusta && make install
