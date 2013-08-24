@@ -26,9 +26,10 @@ To install Crusta from source, you'll need the following:
 
   * git
   * cmake 2.8.0+
-  * Vrui 2.4+ w/ development files
-  * GLU w/ development files
+  * Vrui 2.7 w/ development files
   * GDAL 1.8+ w/ development files
+  * GLU w/ development files
+  * GLEW
 
 To get going quickly, from the same directory as this file, just do:
 
