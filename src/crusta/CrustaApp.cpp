@@ -37,7 +37,7 @@ std::string get_extension(const std::string& name)
 {
   size_t dot_pos = name.rfind(".");
   size_t slash_pos = name.rfind("/");
-  if (dot_pos != std::string::npos && (slash_pos != std::string::npos || dot_pos > slash_pos)) {
+  if (dot_pos != std::string::npos && (slash_pos == std::string::npos || dot_pos > slash_pos)) {
     std::string ext = name.substr(dot_pos+1);
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
     return ext;
