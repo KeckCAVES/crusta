@@ -51,7 +51,7 @@ QuadTerrain::GlData* QuadTerrain::glData = 0;
 
 
 static int
-computeContainingChild(const Geometry::Point<double,3>& pos, const Scope& scope)
+computeContainingChild(const QuadTerrain::Point& pos, const Scope& scope)
 {
     Section horizontal(Geometry::mid(scope.corners[2], scope.corners[3]),
                        Geometry::mid(scope.corners[0], scope.corners[1]));
@@ -65,10 +65,10 @@ computeContainingChild(const Geometry::Point<double,3>& pos, const Scope& scope)
 }
 
 static void
-computeExit(const Geometry::Ray<double,3>& ray, const double oldParam, const Scope& scope,
+computeExit(const QuadTerrain::Ray& ray, const double oldParam, const Scope& scope,
             double& param, int& side)
 {
-    const Geometry::Point<double,3>* edgeCorners[4][2] = {
+    const QuadTerrain::Point* edgeCorners[4][2] = {
         {&scope.corners[3], &scope.corners[2]},
         {&scope.corners[2], &scope.corners[0]},
         {&scope.corners[0], &scope.corners[1]},
@@ -122,7 +122,7 @@ getRootNode() const
 }
 
 SurfacePoint QuadTerrain::
-intersect(const Geometry::Ray<double,3>& ray, Scalar tin, int sin, Scalar& tout, int& sout,
+intersect(const QuadTerrain::Ray& ray, Scalar tin, int sin, Scalar& tout, int& sout,
           const Scalar gout) const
 {
 CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "\n\nIntersecting Geometry::Ray<double,3> with Globe:\n\n";)
@@ -131,7 +131,7 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "\n\nIntersecting Geometry::Ray<double,3> w
 
 
 void QuadTerrain::
-segmentCoverage(const Geometry::Point<double,3>& start, const Geometry::Point<double,3>& end,
+segmentCoverage(const QuadTerrain::Point& start, const QuadTerrain::Point& end,
                 Shape::IntersectionFunctor& callback) const
 {
     segmentCoverage(getRootBuffer(), start, end, callback);
@@ -166,7 +166,7 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
         elevationRange[1] = midElevation + sideLen;
     }
 
-    Geometry::Point<double,3> srcs[5];
+    Point srcs[5];
     srcs[0] = node.scope.corners[0];
     srcs[1] = node.scope.corners[1];
     srcs[2] = node.scope.corners[2];
@@ -179,20 +179,20 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
 
     Geometry::Plane<Scalar,3> plane;
     plane.setNormal(-normal);
-    plane.setPoint(Geometry::Point<double,3>(normal*(SETTINGS->globeRadius +
+    plane.setPoint(Point(normal*(SETTINGS->globeRadius +
                                   elevationRange[0])));
     for (int i=0; i<3; ++i)
     {
-        Geometry::Ray<double,3> ray(Geometry::Point<double,3>(0), srcs[i]);
+        Ray ray(Point::origin, srcs[i]);
         Geometry::HitResult<double> hit = plane.intersectRay(ray);
         assert(hit.isValid());
         srcs[i]    = ray(hit.getParameter());
     }
-    plane.setPoint(Geometry::Point<double,3>(normal*(SETTINGS->globeRadius +
+    plane.setPoint(Point(normal*(SETTINGS->globeRadius +
                                   elevationRange[1])));
     for (int i=3; i<5; ++i)
     {
-        Geometry::Ray<double,3> ray(Geometry::Point<double,3>(0), srcs[i]);
+        Ray ray(Point::origin, srcs[i]);
         Geometry::HitResult<double> hit = plane.intersectRay(ray);
         assert(hit.isValid());
         srcs[i] = ray(hit.getParameter());
@@ -243,10 +243,10 @@ renderLineCoverageMap(GLContextData& contextData, const MainData& nodeData)
     glEnable(GL_BLEND);
 
 #if 0
-    Geometry::Point<double,3> geo0(nodeData.geometry[0].position[0],
+    Point geo0(nodeData.geometry[0].position[0],
                 nodeData.geometry[0].position[1],
                 nodeData.geometry[0].position[2]);
-    Geometry::Point<double,3> geo1(nodeData.geometry[1].position[0],
+    Point geo1(nodeData.geometry[1].position[0],
                 nodeData.geometry[1].position[1],
                 nodeData.geometry[1].position[2]);
     double cellSize = Geometry::dist(geo0, geo1);
@@ -408,9 +408,9 @@ void QuadTerrain::initSlicingPlane(GLContextData& contextData, CrustaGlData* cru
 
         planeCenters.push_back(slopePlane.getPlaneCenter() - center);
 
-        Geometry::Vector<double,3> upDir = Geometry::Vector<double,3>(Geometry::Vector<double,3>(params.controlPoints[i]));
+        Geometry::Vector<double,3> upDir = Geometry::Vector<double,3>(params.controlPoints[i]);
         upDir.normalize();
-        Geometry::Vector<double,3> faultLine = Geometry::Vector<double,3>(params.controlPoints[i+1]) - Geometry::Vector<double,3>(params.controlPoints[i]);
+        Geometry::Vector<double,3> faultLine = params.controlPoints[i+1] - params.controlPoints[i];
         Geometry::Vector<double,3> strikeDir = faultLine - (upDir * faultLine) * upDir;
         strikeDir.normalize();
 
@@ -703,7 +703,7 @@ display(GLContextData& contextData, CrustaGlData* crustaGl,
             Geometry::Vector<double,3> p1 = Geometry::Vector<double,3>(params.controlPoints[2]);
 
             // find the great arc as the plane which contains the planet center, p1 and a point offset from the center parallel to the segment dir
-            Geometry::Vector<double,3> newN = cross(p1, Geometry::Vector<double,3>(params.controlPoints[1]) - Geometry::Vector<double,3>(params.controlPoints[0]));
+            Geometry::Vector<double,3> newN = cross(p1, params.controlPoints[1] - params.controlPoints[0]);
             newN.normalize();
 
             // determine the angle of rotation between the two great arcs (the angle between the plane normals)
@@ -919,7 +919,7 @@ generateIndexTemplate(GLuint& indexTemplate)
 
 
 SurfacePoint QuadTerrain::
-intersectNode(const MainBuffer& nodeBuf, const Geometry::Ray<double,3>& ray,
+intersectNode(const MainBuffer& nodeBuf, const QuadTerrain::Ray& ray,
               double tin, int sin, double& tout, int& sout,
               const double gout) const
 {
@@ -933,7 +933,7 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 CRUSTA_DEBUG(94, CrustaVisualizer::addScope(node.scope);)
 CRUSTA_DEBUG(94, CrustaVisualizer::addScope(node.scope, 3, Color(1,0,0,1));)
 CRUSTA_DEBUG(95,
-(Geometry::Ray<double,3>) blarg(ray.getOrigin(), ray(300000000.0));
+Ray blarg(ray.getOrigin(), ray(300000000.0));
 CrustaVisualizer::addRay(blarg,3);
 CrustaVisualizer::addHit(ray, tin, 4);)
 
@@ -949,7 +949,7 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "------------------------\n";)
     DemHeight::Type elevationRange[2];
     node.getElevationRange(elevationRange);
 
-    Sphere shell(Geometry::Point<double,3>(0), SETTINGS->globeRadius +
+    Sphere shell(Point::origin, SETTINGS->globeRadius +
                  verticalScale*elevationRange[1]);
     double t0, t1;
     bool intersects = shell.intersectRay(ray, t0, t1);
@@ -1052,7 +1052,7 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "------------------------\n";)
 }
 
 SurfacePoint QuadTerrain::
-intersectLeaf(const MainData& leafData, const Geometry::Ray<double,3>& ray,
+intersectLeaf(const MainData& leafData, const QuadTerrain::Ray& ray,
               double param, int side, const double gout) const
 {
     NodeData& leaf = *leafData.node;
@@ -1106,13 +1106,13 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 
 //- traverse cells
 #if DO_RELATIVE_LEAF_TRIANGLE_INTERSECTIONS
-    Geometry::Ray<double,3> relativeRay(Geometry::Point<double,3>(Geometry::Vector<double,3>(ray.getOrigin())-Geometry::Vector<double,3>(leaf.centroid)),
+    Ray relativeRay(ray.getOrigin()-Geometry::Vector<double,3>(leaf.centroid),
                     ray.getDirection());
 #else
-    Geometry::Ray<double,3> relativeRay(ray);
+    Ray relativeRay(ray);
 #endif //DO_RELATIVE_LEAF_TRIANGLE_INTERSECTIONS
 CRUSTA_DEBUG(96,
-(Geometry::Ray<double,3>) blarg(relativeRay.getOrigin(), relativeRay(300000000.0));
+Ray blarg(relativeRay.getOrigin(), relativeRay(300000000.0));
 CrustaVisualizer::addRay(blarg, 1);
 CrustaVisualizer::peek();)
 
@@ -1190,8 +1190,8 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT << "HIT! t0 \n";)
 
         //determine the exit point and side
         computeExit(ray, param,
-                    Scope(Geometry::Point<double,3>(cellCorners[0]), Geometry::Point<double,3>(cellCorners[1]),
-                          Geometry::Point<double,3>(cellCorners[2]), Geometry::Point<double,3>(cellCorners[3])),
+                    Scope(Point(cellCorners[0]), Point(cellCorners[1]),
+                          Point(cellCorners[2]), Point(cellCorners[3])),
                     param, side);
 
         //end traversal if we did not find an exit point from the current cell
@@ -1228,7 +1228,7 @@ CRUSTA_DEBUG(90, CRUSTA_DEBUG_OUT <<
 
 void QuadTerrain::
 segmentCoverage(const MainBuffer& nodeBuf,
-                const Geometry::Point<double,3>& start, const Geometry::Point<double,3>& end,
+                const QuadTerrain::Point& start, const QuadTerrain::Point& end,
                 Shape::IntersectionFunctor& callback) const
 {
     MainData  nodeData = DATAMANAGER->getData(nodeBuf);
@@ -1372,7 +1372,7 @@ crustaGl->terrainShader.disable();
     glDisable(GL_TEXTURE_2D);
 
     CHECK_GLA
-    Geometry::Point<double,3>* c = main.scope.corners;
+    Point* c = main.scope.corners;
     glBegin(GL_LINE_STRIP);
         glColor3f(1.0f, 0.0f, 0.0f);
         glVertex3f(c[0][0], c[0][1], c[0][2]);

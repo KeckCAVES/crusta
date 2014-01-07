@@ -1,5 +1,5 @@
 /***********************************************************************
-SphereNode - Node class for sphere shapes.
+LODSphereNode - Node class for sphere shapes.
 Copyright (c) 2013 Braden Pellett
 Copyright (c) 2008 Oliver Kreylos
 
@@ -20,8 +20,8 @@ with the Crusta Virtual Globe; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ***********************************************************************/
 
-#ifndef SCENEGRAPH_SPHERENODE_INCLUDED
-#define SCENEGRAPH_SPHERENODE_INCLUDED
+#ifndef SCENEGRAPH_LODSPHERENODE_INCLUDED
+#define SCENEGRAPH_LODSPHERENODE_INCLUDED
 
 #include <SceneGraph/FieldTypes.h>
 #include <SceneGraph/DisplayList.h>
@@ -29,20 +29,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 namespace SceneGraph {
 
-class SphereNodeDisplayList: public DisplayList
+class LODSphereNodeDisplayList: public DisplayList
 {
   public:
-  SphereNodeDisplayList(Scalar radius, int detail);
+  LODSphereNodeDisplayList(Scalar radius, int detail);
   void createList(GLContextData& contextData) const;
   Scalar radius;
   int detail;
 };
 
-class SphereNode: public GeometryNode
+class LODSphereNode: public GeometryNode
 {
   public:
-  SphereNode();
-  ~SphereNode();
+  LODSphereNode();
+  ~LODSphereNode();
   
   // class Node
   static const char* getStaticClassName();
@@ -59,7 +59,7 @@ class SphereNode: public GeometryNode
   SFFloat radius;
   MFInt detail;
   MFFloat lodRatio;
-  std::vector<SphereNodeDisplayList*> spheres;
+  std::vector<LODSphereNodeDisplayList*> spheres;
 };
 
 }

@@ -78,14 +78,14 @@ frame()
         Geometry::Vector<double,3> translation(p.position[0], p.position[1], p.position[2]);
         transformedDevice->setTransformation(Vrui::TrackerState(
             translation, dev->getTransformation().getRotation()));
-        transformedDevice->setDeviceRayDirection(
-            dev->getDeviceRayDirection());
+        transformedDevice->setDeviceRay(
+            dev->getDeviceRayDirection(),
+            dev->getDeviceRayStart());
     }
-
-    if (projectionFailed)
+    else
     {
         transformedDevice->setTransformation(dev->getTransformation());
-        transformedDevice->setDeviceRayDirection(dev->getDeviceRayDirection());
+        transformedDevice->setDeviceRay(dev->getDeviceRayDirection(),dev->getDeviceRayStart());
     }
 }
 

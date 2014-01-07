@@ -36,6 +36,9 @@ struct CrustaGlData;
 class QuadTerrain : public CrustaComponent
 {
 public:
+    typedef Geometry::Ray<double,3> Ray; // Type for intersection rays
+		typedef Geometry::Point<double,3> Point; // Type for points
+
     typedef NodeMainBuffer       MainBuffer;
     typedef NodeMainData         MainData;
     typedef NodeMainDatas        MainDatas;
@@ -50,11 +53,11 @@ public:
     const MainData getRootNode() const;
 
     /** ray patch intersection */
-    SurfacePoint intersect(const Geometry::Ray<double,3>& ray, Scalar tin, int sin,
+    SurfacePoint intersect(const Ray& ray, Scalar tin, int sin,
                         Scalar& tout, int& sout, const Scalar gout) const;
 
     /** traverse the cached representation for nodes that overlap a segment */
-    void segmentCoverage(const Geometry::Point<double,3>& start, const Geometry::Point<double,3>& end,
+    void segmentCoverage(const Point& start, const Point& end,
                          Shape::IntersectionFunctor& callback) const;
 
     /** render the coverage map for the given node */
@@ -135,11 +138,11 @@ protected:
     static void generateIndexTemplate(GLuint& indexTemplate);
 
     /** ray patch traversal function for inner nodes of the quadtree */
-    SurfacePoint intersectNode(const MainBuffer& nodeBuf, const Geometry::Ray<double,3>& ray,
+    SurfacePoint intersectNode(const MainBuffer& nodeBuf, const Ray& ray,
                             Scalar tin, int sin, Scalar& tout, int& sout,
                             const Scalar gout) const;
     /** ray patch traversal function for leaf nodes of the quadtree */
-    SurfacePoint intersectLeaf(const MainData& leaf, const Geometry::Ray<double,3>& ray,
+    SurfacePoint intersectLeaf(const MainData& leaf, const Ray& ray,
                             Scalar param, int side, const Scalar gout) const;
 
     /** traverse the cached representation starting at the given node for nodes

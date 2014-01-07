@@ -1,5 +1,5 @@
 /***********************************************************************
-SphereNode - Node class for sphere shapes.
+LODSphereNode - Node class for sphere shapes.
 Copyright (c) 2013 Braden Pellett
 Copyright (c) 2008 Oliver Kreylos
 
@@ -20,7 +20,7 @@ with the Crusta Virtual Globe; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ***********************************************************************/
 
-#include <crustavrui/SceneGraph/SphereNode.h>
+#include <crustavrui/SceneGraph/LODSphereNode.h>
 
 #include <string.h>
 #include <Math/Math.h>
@@ -42,13 +42,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 namespace SceneGraph {
 
-SphereNodeDisplayList::SphereNodeDisplayList(Scalar radius, int detail):
+LODSphereNodeDisplayList::LODSphereNodeDisplayList(Scalar radius, int detail):
   radius(radius),
   detail(detail)
 {
 }
 
-void SphereNodeDisplayList::createList(GLContextData& renderState) const
+void LODSphereNodeDisplayList::createList(GLContextData& renderState) const
 {
   if (detail < 3)
     { glDrawSphereMercatorWithTexture(radius, 3, 3+detail); }
@@ -56,7 +56,7 @@ void SphereNodeDisplayList::createList(GLContextData& renderState) const
     { glDrawSphereMercatorWithTexture(radius, detail, detail*2); }
 }
 
-SphereNode::SphereNode():
+LODSphereNode::LODSphereNode():
   radius(Scalar(1.0))
 {
   detail.appendValue(COARSE);
@@ -66,7 +66,7 @@ SphereNode::SphereNode():
   detail.appendValue(FINEST);
 }
 
-SphereNode::~SphereNode()
+LODSphereNode::~LODSphereNode()
 {
   while (!spheres.empty()) {
     delete spheres.back();
@@ -74,17 +74,17 @@ SphereNode::~SphereNode()
   }
 }
 
-const char* SphereNode::getStaticClassName()
+const char* LODSphereNode::getStaticClassName()
 {
-  return "Sphere";
+  return "LODSphere";
 }
 
-const char* SphereNode::getClassName() const
+const char* LODSphereNode::getClassName() const
 {
-  return "Sphere";
+  return "LODSphere";
 }
 
-EventOut* SphereNode::getEventOut(const char* fieldName) const
+EventOut* LODSphereNode::getEventOut(const char* fieldName) const
 {
   std::string f = fieldName;
   if (f == "radius")
@@ -97,7 +97,7 @@ EventOut* SphereNode::getEventOut(const char* fieldName) const
     return GeometryNode::getEventOut(fieldName);
 }
 
-EventIn* SphereNode::getEventIn(const char* fieldName)
+EventIn* LODSphereNode::getEventIn(const char* fieldName)
 {
   std::string f = fieldName;
   if(f == "radius")
@@ -110,7 +110,7 @@ EventIn* SphereNode::getEventIn(const char* fieldName)
     return GeometryNode::getEventIn(fieldName);
 }
 
-void SphereNode::parseField(const char* fieldName,VRMLFile& vrmlFile)
+void LODSphereNode::parseField(const char* fieldName,VRMLFile& vrmlFile)
 {
   std::string f = fieldName;
   if(f == "radius")
@@ -123,30 +123,30 @@ void SphereNode::parseField(const char* fieldName,VRMLFile& vrmlFile)
     GeometryNode::parseField(fieldName,vrmlFile);
 }
 
-void SphereNode::update()
+void LODSphereNode::update()
 {
   if (lodRatio.getNumValues()+1 != detail.getNumValues() && detail.getNumValues() != 1)
-    Misc::throwStdErr("SphereNode: there must be one lodRatio per detail transition (|lodRatio|+1 != |detail|)");
+    Misc::throwStdErr("LODSphereNode: there must be one lodRatio per detail transition (|lodRatio|+1 != |detail|)");
   for (MFInt::ValueList::const_iterator i = detail.getValues().begin(); i != detail.getValues().end(); ++i) {
-    spheres.push_back(new SphereNodeDisplayList(radius.getValue(), *i));
+    spheres.push_back(new LODSphereNodeDisplayList(radius.getValue(), *i));
     spheres.back()->update();
   }
 }
 
-Box SphereNode::calcBoundingBox() const
+Box LODSphereNode::calcBoundingBox() const
 {
   Scalar r=radius.getValue();
   return Box(Point(-r,-r,-r),Point(r,r,r));
 }
 
-void SphereNode::glRenderAction(GLRenderState& renderState) const
+void LODSphereNode::glRenderAction(GLRenderState& renderState) const
 {
   Scalar current_ratio = Geometry::sqrDist(renderState.getViewerPos(), Point::origin) / radius.getValue();
   renderState.enableCulling(GL_BACK);
   if (detail.getNumValues() == 1) {
     spheres.front()->glRenderAction(renderState.contextData);
   } else {
-    std::vector<SphereNodeDisplayList*>::const_reverse_iterator sphere = spheres.rbegin();
+    std::vector<LODSphereNodeDisplayList*>::const_reverse_iterator sphere = spheres.rbegin();
     MFFloat::ValueList::const_reverse_iterator ratio = lodRatio.getValues().rbegin();
     while (sphere != spheres.rend() && ratio != lodRatio.getValues().rend()) {
       if (current_ratio < *ratio) break;
